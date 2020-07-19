@@ -42,21 +42,170 @@ struct JProperty
     var string          name;
     var JStorageAtom    value;
 };
-var private array<JProperty> properties;
-
-//  Returns index of name-value pair in `properties` for a given name.
-//  Returns `-1` if such a pair does not exist.
-private final function int GetPropertyIndex(string name)
+//  Bucket of alias-value pairs, with the same alias hash.
+struct PropertyBucket
 {
-    local int i;
-    for (i = 0; i < properties.length; i += 1)
+    var array<JProperty> properties;
+};
+var private array<PropertyBucket>   hashTable;
+var private int                     storedElementCount;
+
+//  Reasonable lower and upper limits on hash table capacity,
+//  that will be enforced if user requires something outside those bounds
+var private config const int MINIMUM_CAPACITY;
+var private config const int MAXIMUM_CAPACITY;
+var private config const float MINIMUM_DENSITY;
+var private config const float MAXIMUM_DENSITY;
+var private config const int MINIMUM_DIFFERENCE_FOR_REALLOCATION;
+var private config const int ABSOLUTE_LOWER_CAPACITY_LIMIT;
+
+//      Helper method that is needed as a replacement for `%`, since it is
+//  an operation on `float`s in UnrealScript and does not have enough precision
+//  to work with hashes.
+//      Assumes positive input.
+private function int Remainder(int number, int divisor)
+{
+    local int quotient;
+    quotient = number / divisor;
+    return (number - quotient * divisor);
+}
+
+//  Finds indices for:
+//      1. Bucked that contains specified alias (`bucketIndex`);
+//      2. Pair for specified alias in the bucket's collection
+//          (`propertyIndex`).
+//  `bucketIndex` is always found,
+//  `propertyIndex` is valid iff method returns `true`, otherwise it's equal to
+//  the index at which new property can get inserted.
+private final function bool FindPropertyIndices(
+    string  name,
+    out int bucketIndex,
+    out int propertyIndex)
+{
+    local int               i;
+    local array<JProperty>  bucketProperties;
+    TouchHashTable();
+    bucketIndex = _.text.GetHash(name);
+    if (bucketIndex < 0) {
+        bucketIndex *= -1;
+    }
+    bucketIndex = Remainder(bucketIndex, hashTable.length);
+    //  Check if bucket actually has given name.
+    bucketProperties = hashTable[bucketIndex].properties;
+    for (i = 0; i < bucketProperties.length; i += 1)
     {
-        if (name == properties[i].name)
+        if (bucketProperties[i].name == name)
         {
-            return i;
+            propertyIndex = i;
+            return true;
         }
     }
-    return -1;
+    propertyIndex = bucketProperties.length;
+    return false;
+}
+
+//  Creates hash table in case it does not exist yet
+private final function TouchHashTable()
+{
+    if (hashTable.length <= 0) {
+        UpdateHashTableCapacity();
+    }
+}
+
+//  Attempts to find a property in a caller `JObject` by the name `name` and
+//  writes it into `result`. Returns `true` if it succeeds and `false` otherwise
+//  (in that case writes a blank property with a given name in `result`).
+private final function bool FindProperty(string name, out JProperty result)
+{
+    local JProperty newProperty;
+    local int       bucketIndex, propertyIndex;
+    if (FindPropertyIndices(name, bucketIndex, propertyIndex))
+    {
+        result = hashTable[bucketIndex].properties[propertyIndex];
+        return true;
+    }
+    newProperty.name = name;
+    result = newProperty;
+    return false;
+}
+
+//  Creates/replaces a property with a name `newProperty.name` in caller
+//  JSON object
+private final function UpdateProperty(JProperty newProperty)
+{
+    local bool  overriddenProperty;
+    local int   bucketIndex, propertyIndex;
+    overriddenProperty = !FindPropertyIndices(  newProperty.name,
+                                                bucketIndex, propertyIndex);
+    hashTable[bucketIndex].properties[propertyIndex] = newProperty;
+    if (overriddenProperty) {
+        storedElementCount += 1;
+        UpdateHashTableCapacity();
+    }
+}
+
+//  Removes a property with a name `newProperty.name` from caller JSON object
+//  Returns `true` if something was actually removed.
+private final function bool RemoveProperty(string propertyName)
+{
+    local int bucketIndex, propertyIndex;
+    //  Ensure has table was initialized before any updates
+    if (hashTable.length <= 0) {
+        UpdateHashTableCapacity();
+    }
+    if (FindPropertyIndices(propertyName, bucketIndex, propertyIndex)) {
+        hashTable[bucketIndex].properties.Remove(propertyIndex, 1);
+        storedElementCount = Max(0, storedElementCount - 1);
+        UpdateHashTableCapacity();
+        return true;
+    }
+    return false;
+}
+
+//  Checks if we need to change our current capacity and does so if needed
+private final function UpdateHashTableCapacity()
+{
+    local int oldCapacity, newCapacity;
+    oldCapacity = hashTable.length;
+    //  Calculate new capacity (and whether it is needed) based on amount of
+    //  stored properties and current capacity
+    newCapacity = oldCapacity;
+    if (storedElementCount < newCapacity * MINIMUM_DENSITY) {
+        newCapacity /= 2;
+    }
+    if (storedElementCount > newCapacity * MAXIMUM_DENSITY) {
+        newCapacity *= 2;
+    }
+    //  Enforce our limits
+    newCapacity = Clamp(newCapacity, MINIMUM_CAPACITY, MAXIMUM_CAPACITY);
+    newCapacity = Max(ABSOLUTE_LOWER_CAPACITY_LIMIT, newCapacity);
+    //  Only resize if difference is huge enough or table does not exists yet
+    if (    newCapacity - oldCapacity > MINIMUM_DIFFERENCE_FOR_REALLOCATION
+        ||  oldCapacity - newCapacity > MINIMUM_DIFFERENCE_FOR_REALLOCATION
+        ||  oldCapacity <= 0) {
+        ResizeHashTable(newCapacity);
+    }
+}
+
+//      Change size of the hash table, does not check any limits, does not check
+//  if `newCapacity` is a valid capacity (`newCapacity > 0`).
+//      Use `UpdateHashTableCapacity()` for that.
+private final function ResizeHashTable(int newCapacity)
+{
+    local int                   i, j;
+    local array<JProperty>      bucketProperties;
+    local array<PropertyBucket> oldHashTable;
+    oldHashTable = hashTable;
+    //  Clean current hash table
+    hashTable.length = 0;
+    hashTable.length = newCapacity;
+    for (i = 0; i < oldHashTable.length; i += 1)
+    {
+        bucketProperties = oldHashTable[i].properties;
+        for (j = 0; j < bucketProperties.length; j += 1) {
+            UpdateProperty(bucketProperties[j]);
+        }
+    }
 }
 
 //      Returns `JType` of a variable with a given name in our properties.
@@ -65,11 +214,11 @@ private final function int GetPropertyIndex(string name)
 //  function will return `JSON_Undefined`.
 public final function JType GetTypeOf(string name)
 {
-    local int index;
-    index = GetPropertyIndex(name);
-    if (index < 0) return JSON_Undefined;
-
-    return properties[index].value.type;
+    local JProperty property;
+    FindProperty(name, property);
+    //  If we did not find anything - `property` will be set up as
+    //  a `JSON_Undefined` type value.
+    return property.value.type;
 }
 
 //      Following functions are getters for various types of variables.
@@ -82,66 +231,93 @@ public final function JType GetTypeOf(string name)
 //  will simply return `none`.
 public final function float GetNumber(string name, optional float defaultValue)
 {
-    local int index;
-    index = GetPropertyIndex(name);
-    if (index < 0)                                      return defaultValue;
-    if (properties[index].value.type != JSON_Number)    return defaultValue;
-
-    return properties[index].value.numberValue;
+    local JProperty property;
+    FindProperty(name, property);
+    if (property.value.type != JSON_Number) {
+        return defaultValue;
+    }
+    return property.value.numberValue;
 }
 
-public final function string GetString
-(
-    string name,
+public final function int GetInteger(string name, optional int defaultValue)
+{
+    local JProperty property;
+    FindProperty(name, property);
+    if (property.value.type != JSON_Number) {
+        return defaultValue;
+    }
+    return property.value.numberValueAsInt;
+}
+
+public final function string GetString(
+    string          name,
     optional string defaultValue
 )
 {
-    local int index;
-    index = GetPropertyIndex(name);
-    if (index < 0)                                      return defaultValue;
-    if (properties[index].value.type != JSON_String)    return defaultValue;
+    local JProperty property;
+    FindProperty(name, property);
+    if (property.value.type != JSON_String) {
+        return defaultValue;
+    }
+    return property.value.stringValue;
+}
 
-    return properties[index].value.stringValue;
+public final function class<Object> GetClass(
+    string                  name,
+    optional class<Object>  defaultValue
+)
+{
+    local JProperty property;
+    FindProperty(name, property);
+    if (property.value.type != JSON_String) {
+        return defaultValue;
+    }
+    if (!property.value.classLoadingWasAttempted)
+    {
+        property.value.classLoadingWasAttempted = true;
+        property.value.stringValueAsClass =
+            class<Object>(DynamicLoadObject(    property.value.stringValue,
+                                                class'Class', true));
+    }
+    if (property.value.stringValueAsClass != none) {
+        return property.value.stringValueAsClass;
+    }
+    return defaultValue;
 }
 
 public final function bool GetBoolean(string name, optional bool defaultValue)
 {
-    local int index;
-    index = GetPropertyIndex(name);
-    if (index < 0)                                      return defaultValue;
-    if (properties[index].value.type != JSON_Boolean)   return defaultValue;
-
-    return properties[index].value.booleanValue;
+    local JProperty property;
+    FindProperty(name, property);
+    if (property.value.type != JSON_Boolean) {
+        return defaultValue;
+    }
+    return property.value.booleanValue;
 }
 
 public final function bool IsNull(string name)
 {
-    local int index;
-    index = GetPropertyIndex(name);
-    if (index < 0)                                  return false;
-    if (properties[index].value.type != JSON_Null)  return false;
-
-    return (properties[index].value.type == JSON_Null);
+    local JProperty property;
+    FindProperty(name, property);
+    return (property.value.type == JSON_Null);
 }
 
 public final function JArray GetArray(string name)
 {
-    local int index;
-    index = GetPropertyIndex(name);
-    if (index < 0)                                  return none;
-    if (properties[index].value.type != JSON_Array) return none;
-
-    return JArray(properties[index].value.complexValue);
+    local JProperty property;
+    FindProperty(name, property);
+    if (property.value.type != JSON_Array) {
+        return none;
+    }
+    return JArray(property.value.complexValue);
 }
 
 public final function JObject GetObject(string name)
 {
-    local int index;
-    index = GetPropertyIndex(name);
-    if (index < 0)                                      return none;
-    if (properties[index].value.type != JSON_Object)    return none;
-
-    return JObject(properties[index].value.complexValue);
+    local JProperty property;
+    FindProperty(name, property);
+    if (property.value.type != JSON_Object) return none;
+    return JObject(property.value.complexValue);
 }
 
 //      Following functions provide simple setters for boolean, string, number
@@ -150,65 +326,72 @@ public final function JObject GetObject(string name)
 //  `object.SetNumber("num1", 1).SetNumber("num2", 2);`.
 public final function JObject SetNumber(string name, float value)
 {
-    local int       index;
-    local JProperty newProperty;
-    index = GetPropertyIndex(name);
-    if (index < 0)
-    {
-        index = properties.length;
-    }
+    local JProperty property;
+    FindProperty(name, property);
+    property.value.type             = JSON_Number;
+    property.value.numberValue      = value;
+    property.value.numberValueAsInt = int(value);
+    property.value.complexValue     = none;
+    UpdateProperty(property);
+    return self;
+}
 
-    newProperty.name                = name;
-    newProperty.value.type          = JSON_Number;
-    newProperty.value.numberValue   = value;
-    properties[index] = newProperty;
+public final function JObject SetInteger(string name, int value)
+{
+    local JProperty property;
+    FindProperty(name, property);
+    property.value.type             = JSON_Number;
+    property.value.numberValue      = float(value);
+    property.value.numberValueAsInt = value;
+    property.value.complexValue     = none;
+    UpdateProperty(property);
     return self;
 }
 
 public final function JObject SetString(string name, string value)
 {
-    local int       index;
-    local JProperty newProperty;
-    index = GetPropertyIndex(name);
-    if (index < 0)
-    {
-        index = properties.length;
-    }
-    newProperty.name                = name;
-    newProperty.value.type          = JSON_String;
-    newProperty.value.stringValue   = value;
-    properties[index] = newProperty;
+    local JProperty property;
+    FindProperty(name, property);
+    property.value.type                     = JSON_String;
+    property.value.stringValue              = value;
+    property.value.stringValueAsClass       = none;
+    property.value.classLoadingWasAttempted = false;
+    property.value.complexValue             = none;
+    UpdateProperty(property);
+    return self;
+}
+
+public final function JObject SetClass(string name, class<Object> value)
+{
+    local JProperty property;
+    FindProperty(name, property);
+    property.value.type                     = JSON_String;
+    property.value.stringValue              = string(value);
+    property.value.stringValueAsClass       = value;
+    property.value.classLoadingWasAttempted = true;
+    property.value.complexValue             = none;
+    UpdateProperty(property);
     return self;
 }
 
 public final function JObject SetBoolean(string name, bool value)
 {
-    local int       index;
-    local JProperty newProperty;
-    index = GetPropertyIndex(name);
-    if (index < 0)
-    {
-        index = properties.length;
-    }
-    newProperty.name                = name;
-    newProperty.value.type          = JSON_Boolean;
-    newProperty.value.booleanValue  = value;
-    properties[index] = newProperty;
+    local JProperty property;
+    FindProperty(name, property);
+    property.value.type         = JSON_Boolean;
+    property.value.booleanValue = value;
+    property.value.complexValue = none;
+    UpdateProperty(property);
     return self;
 }
 
 public final function JObject SetNull(string name)
 {
-    local int       index;
-    local JProperty newProperty;
-    index = GetPropertyIndex(name);
-    if (index < 0)
-    {
-        index = properties.length;
-    }
-    newProperty.name        = name;
-    newProperty.value.type  = JSON_Null;
-    properties[index] = newProperty;
+    local JProperty property;
+    FindProperty(name, property);
+    property.value.type         = JSON_Null;
+    property.value.complexValue = none;
+    UpdateProperty(property);
     return self;
 }
 
@@ -218,48 +401,59 @@ public final function JObject SetNull(string name)
 //  `object.CreateObject("folded object").CreateArray("names list");`.
 public final function JObject CreateArray(string name)
 {
-    local int       index;
-    local JProperty newProperty;
-    index = GetPropertyIndex(name);
-    if (index < 0)
-    {
-        index = properties.length;
+    local JProperty property;
+    FindProperty(name, property);
+    if (property.value.complexValue != none) {
+        property.value.complexValue.Destroy();
     }
-    newProperty.name                = name;
-    newProperty.value.type          = JSON_Array;
-    newProperty.value.complexValue  = _.json.newArray();
-    properties[index] = newProperty;
+    property.value.type          = JSON_Array;
+    property.value.complexValue  = _.json.NewArray();
+    UpdateProperty(property);
     return self;
 }
 
 public final function JObject CreateObject(string name)
 {
-    local int       index;
-    local JProperty newProperty;
-    index = GetPropertyIndex(name);
-    if (index < 0)
-    {
-        index = properties.length;
+    local JProperty property;
+    FindProperty(name, property);
+    if (property.value.complexValue != none) {
+        property.value.complexValue.Destroy();
     }
-    newProperty.name                = name;
-    newProperty.value.type          = JSON_Object;
-    newProperty.value.complexValue  = _.json.newObject();
-    properties[index] = newProperty;
+    property.value.type          = JSON_Object;
+    property.value.complexValue  = _.json.NewObject();
+    UpdateProperty(property);
     return self;
 }
 
 //  Removes values with a given name.
 //  Returns `true` if value was actually removed and `false` if it didn't exist.
-public final function bool RemoveValue(string name)
+public final function JObject RemoveValue(string name)
 {
-    local int index;
-    index = GetPropertyIndex(name);
-    if (index < 0) return false;
+    RemoveProperty(name);
+    return self;
+}
 
-    properties.Remove(index, 1);
-    return true;
+public final function array<string> GetKeys()
+{
+    local int               i, j;
+    local array<string>     result;
+    local array<JProperty>  nextProperties;
+    for (i = 0; i < hashTable.length; i += 1)
+    {
+        nextProperties = hashTable[i].properties;
+        for (j = 0; j < nextProperties.length; j += 1) {
+            result[result.length] = nextProperties[j].name;
+        }
+    }
+    return result;
 }
 
 defaultproperties
 {
+    ABSOLUTE_LOWER_CAPACITY_LIMIT       = 10
+    MINIMUM_CAPACITY                    = 50
+    MAXIMUM_CAPACITY                    = 100000
+    MINIMUM_DENSITY                     = 0.25
+    MAXIMUM_DENSITY                     = 0.75
+    MINIMUM_DIFFERENCE_FOR_REALLOCATION = 50
 }

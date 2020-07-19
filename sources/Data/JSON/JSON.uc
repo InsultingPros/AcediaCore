@@ -58,27 +58,24 @@ struct JStorageAtom
 {
     //  What type is stored exactly?
     //  Depending on that, uses one of the other fields as a storage.
-    var protected JType     type;
-    var protected float     numberValue;
-    var protected string    stringValue;
-    var protected bool      booleanValue;
+    var protected JType         type;
+    var protected float         numberValue;
+    var protected string        stringValue;
+    var protected bool          booleanValue;
     //  Used for storing both JSON objects and arrays.
-    var protected JSON      complexValue;
+    var protected JSON          complexValue;
+    //  Numeric value might not fit into a `float` very well, so we will store
+    //  them as both `float` and `integer` and allow user to request any version
+    //  of them
+    var protected int           numberValueAsInt;
+    //  Some `string` values might be actually used to represent classes,
+    //  so we will give users an ability to request `string` value as a class.
+    var protected class<Object> stringValueAsClass;
+    //  To avoid several unsuccessful attempts to load `class` object from
+    //  a `string`, we will record whether we've already tied that.
+    var protected bool          classLoadingWasAttempted;
 };
 
-//  TODO:   Rewrite JSON object to use more efficient storage data structures
-//          that will support subtypes:
-//              ~ Number: byte, int, float
-//              ~ String: string, class
-//          (maybe move to auto generated code?).
-//  TODO:   Add cleanup queue to efficiently and without crashes clean up
-//          removed objects.
-//  TODO:   Add `JValue` - a reference type for number / string / boolean / null
-//  TODO:   Add accessors for last values.
-//  TODO:   Add path-getters.
-//  TODO:   Add iterators.
-//  TODO:   Add parsing/printing.
-//  TODO:   Add functions for deep copy.
 defaultproperties
 {
 }

@@ -26,6 +26,7 @@ protected static function TESTS()
     local JObject jsonData;
     jsonData = _().json.newObject();
     Test_ObjectGetSetRemove();
+    Test_ObjectKeys();
     Test_ArrayGetSetRemove();
 }
 
@@ -33,8 +34,12 @@ protected static function Test_ObjectGetSetRemove()
 {
     SubTest_Undefined();
     SubTest_StringGetSetRemove();
+    SubTest_ClassGetSetRemove();
+    SubTest_StringAsClass();
     SubTest_BooleanGetSetRemove();
     SubTest_NumberGetSetRemove();
+    SubTest_IntegerGetSetRemove();
+    SubTest_FloatAndInteger();
     SubTest_NullGetSetRemove();
     SubTest_MultipleVariablesGetSet();
     SubTest_Object();
@@ -141,6 +146,72 @@ protected static function SubTest_StringGetSetRemove()
     TEST_ExpectTrue(testJSON.GetString("some_string", "other") == "other");
 }
 
+protected static function SubTest_ClassGetSetRemove()
+{
+    local JObject testJSON;
+    testJSON = _().json.newObject();
+    testJSON.SetClass("info_class", class'Info');
+
+    Context("Testing `JObject`'s get/set/remove functions for" @
+            "class variables");
+    Issue("String type isn't properly set by `SetClass`");
+    TEST_ExpectTrue(testJSON.GetTypeOf("info_class") == JSON_String);
+
+    Issue("Value is incorrectly assigned by `SetClass`");
+    TEST_ExpectTrue(testJSON.GetClass("info_class") == class'Info');
+
+    Issue(  "Providing default variable value makes 'GetClass'" @
+            "return wrong value");
+    TEST_ExpectTrue(    testJSON.GetClass("info_class", class'Actor')
+                    ==  class'Info');
+
+    Issue("Variable value isn't correctly reassigned by `SetClass`");
+    testJSON.SetClass("info_class", class'ReplicationInfo');
+    TEST_ExpectTrue(testJSON.GetClass("info_class") == class'ReplicationInfo');
+
+    Issue(  "Getting class variable as a wrong type" @
+            "doesn't yield default value");
+    TEST_ExpectTrue(testJSON.GetBoolean("info_class", true) == true);
+
+    Issue("Class variable isn't being properly removed");
+    testJSON.RemoveValue("info_class");
+    TEST_ExpectTrue(testJSON.GetTypeOf("info_class") == JSON_Undefined);
+
+    Issue(  "Getters don't return default value for missing key that" @
+            "previously stored class value, but got removed");
+    TEST_ExpectTrue(    testJSON.GetClass("info_class", class'Actor')
+                    ==  class'Actor');
+}
+
+protected static function SubTest_StringAsClass()
+{
+    local JObject testJSON;
+    testJSON = _().json.newObject();
+    testJSON.SetString("SetString", "Engine.Actor");
+    testJSON.SetString("SetStringIncorrect", "blahblahblah");
+    testJSON.SetClass("SetClass", class'Info');
+    testJSON.SetClass("none", none);
+
+    Context("Testing how `JObject` treats mixed string and"
+        @ "class setters/getters.");
+    Issue("Incorrect result of `SetClass().GetString()` sequence.");
+    TEST_ExpectTrue(testJSON.GetString("SetClass") == "Engine.Info");
+    TEST_ExpectTrue(testJSON.GetString("none") == "None");
+    TEST_ExpectTrue(testJSON.GetString("none", "alternative") == "None");
+
+    Issue("Incorrect result of `SetString().GetClass()` sequence for"
+        @ "correct value in `SetString()`.");
+    TEST_ExpectTrue(testJSON.GetClass("SetString") == class'Actor');
+    TEST_ExpectTrue(    testJSON.GetClass("SetString", class'Object')
+                    ==  class'Actor');
+
+    Issue("Incorrect result of `SetString().GetClass()` sequence for"
+        @ "incorrect value in `SetString()`.");
+    TEST_ExpectTrue(testJSON.GetClass("SetStringIncorrect") == none);
+    TEST_ExpectTrue(    testJSON.GetClass("SetStringIncorrect", class'Object')
+                    ==  class'Object');
+}
+
 protected static function SubTest_NumberGetSetRemove()
 {
     local JObject testJSON;
@@ -148,7 +219,7 @@ protected static function SubTest_NumberGetSetRemove()
     testJSON.SetNumber("some_number", 3.5);
 
     Context("Testing `JObject`'s get/set/remove functions for" @
-            "number variables");
+            "number variables as floats");
     Issue("Number type isn't properly set by `SetNumber`");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_number") == JSON_Number);
 
@@ -174,6 +245,64 @@ protected static function SubTest_NumberGetSetRemove()
     Issue(  "Getters don't return default value for missing key that" @
             "previously stored number value, that got removed");
     TEST_ExpectTrue(testJSON.GetNumber("some_number", 13) == 13);
+}
+
+protected static function SubTest_IntegerGetSetRemove()
+{
+    local JObject testJSON;
+    testJSON = _().json.newObject();
+    testJSON.SetInteger("some_number", 33653);
+
+    Context("Testing `JObject`'s get/set/remove functions for" @
+            "number variables as integers");
+    Issue("Number type isn't properly set by `SetInteger`");
+    TEST_ExpectTrue(testJSON.GetTypeOf("some_number") == JSON_Number);
+
+    Issue("Value is incorrectly assigned by `SetInteger`");
+    TEST_ExpectTrue(testJSON.GetInteger("some_number") == 33653);
+
+    Issue(  "Providing default variable value makes 'GetInteger'" @
+            "return wrong value");
+    TEST_ExpectTrue(testJSON.GetInteger("some_number", 5) == 33653);
+
+    Issue("Variable value isn't correctly reassigned by `SetInteger`");
+    testJSON.SetInteger("some_number", MaxInt);
+    TEST_ExpectTrue(testJSON.GetInteger("some_number") == MaxInt);
+
+    Issue(  "Getting number variable as a wrong type" @
+            "doesn't yield default value.");
+    TEST_ExpectTrue(testJSON.GetString("some_number", "default") == "default");
+
+    Issue("Number type isn't being properly removed");
+    testJSON.RemoveValue("some_number");
+    TEST_ExpectTrue(testJSON.GetTypeOf("some_number") == JSON_Undefined);
+
+    Issue(  "Getters don't return default value for missing key that" @
+            "previously stored number value, that got removed");
+    TEST_ExpectTrue(testJSON.GetInteger("some_number", -235) == -235);
+}
+
+protected static function SubTest_FloatAndInteger()
+{
+    local JObject testJSON;
+    testJSON = _().json.newObject();
+    testJSON.SetNumber("SetNumber", 6.70087);
+    testJSON.SetInteger("SetInteger", 62478623874);
+
+    Context("Testing how `JObject` treats mixed float and"
+        @ "integer setters/getters.");
+    Issue("Incorrect result of `SetNumber().GetInteger()` sequence.");
+    TEST_ExpectTrue(testJSON.GetInteger("SetNumber") == 6);
+
+    testJSON.SetInteger("SetNumber", 11);
+    testJSON.SetNumber("SetInteger", 0.43);
+    Issue("SetNumber().SetInteger() for same variable name does not overwrite"
+        @ "initial number value.");
+    TEST_ExpectTrue(testJSON.GetNumber("SetNumber") == 11);
+
+    Issue("SetInteger().SetNumber() for same variable name does not overwrite"
+        @ "initial integer value.");
+    TEST_ExpectTrue(testJSON.GetInteger("SetInteger") == 0);
 }
 
 protected static function SubTest_NullGetSetRemove()
@@ -282,6 +411,46 @@ protected static function SubTest_Object()
     Issue("Addressing plain variables in folded (twice) object doesn't work");
     TEST_ExpectTrue(testObject.GetObject("folded").GetObject("folded")
         .GetString("in", "default") == "string inside");
+}
+
+protected static function Test_ObjectKeys()
+{
+    local int           i;
+    local bool          varFound, clsFound, objFound;
+    local JObject       testObject;
+    local array<string> keys;
+    testObject = _().json.newObject();
+    Context("Testing getting list of keys from the `JObject`.");
+    Issue("Just created `JObject` returns non-empty key list.");
+    TEST_ExpectTrue(testObject.GetKeys().length == 0);
+
+    Issue("`JObject` returns incorrect key list.");
+    keys = testObject.SetInteger("var", 7).SetClass("cls", class'Actor')
+        .CreateObject("obj").GetKeys();
+    TEST_ExpectTrue(keys.length == 3);
+    for (i = 0; i < keys.length; i += 1)
+    {
+        if (keys[i] == "var") { varFound = true; }
+        if (keys[i] == "cls") { clsFound = true; }
+        if (keys[i] == "obj") { objFound = true; }
+    }
+    TEST_ExpectTrue(varFound && clsFound && objFound);
+
+    Issue("`JObject` returns incorrect key list after removing an element.");
+    keys = testObject.RemoveValue("cls").GetKeys();
+    TEST_ExpectTrue(keys.length == 2);
+    varFound = false;
+    objFound = false;
+    for (i = 0; i < keys.length; i += 1)
+    {
+        if (keys[i] == "var") { varFound = true; }
+        if (keys[i] == "obj") { objFound = true; }
+    }
+    TEST_ExpectTrue(varFound && objFound);
+
+    Issue("`JObject` returns incorrect key list after removing all elements.");
+    keys = testObject.RemoveValue("var").RemoveValue("obj").GetKeys();
+    TEST_ExpectTrue(keys.length == 0);
 }
 
 protected static function SubTest_ArrayUndefined()
