@@ -50,8 +50,12 @@ protected static function Test_ArrayGetSetRemove()
     Context("Testing get/set/remove functions for JSON arrays");
     SubTest_ArrayUndefined();
     SubTest_ArrayStringGetSetRemove();
+    SubTest_ArrayClassGetSetRemove();
+    SubTest_ArrayStringAsClass();
     SubTest_ArrayBooleanGetSetRemove();
     SubTest_ArrayNumberGetSetRemove();
+    SubTest_ArrayIntegerGetSetRemove();
+    SubTest_ArrayFloatAndInteger();
     SubTest_ArrayNullGetSetRemove();
     SubTest_ArrayMultipleVariablesStorage();
     SubTest_ArrayMultipleVariablesRemoval();
@@ -287,7 +291,6 @@ protected static function SubTest_FloatAndInteger()
     local JObject testJSON;
     testJSON = _().json.newObject();
     testJSON.SetNumber("SetNumber", 6.70087);
-    testJSON.SetInteger("SetInteger", 62478623874);
 
     Context("Testing how `JObject` treats mixed float and"
         @ "integer setters/getters.");
@@ -547,6 +550,68 @@ protected static function SubTest_ArrayStringGetSetRemove()
     TEST_ExpectTrue(testJSON.GetString(0, "other") == "other");
 }
 
+protected static function SubTest_ArrayClassGetSetRemove()
+{
+    local JArray testJSON;
+    testJSON = _().json.newArray();
+    testJSON.SetClass(0, class'Actor');
+
+    Context("Testing `JArray`'s get/set/remove functions for" @
+            "class variables");
+    Issue("Class type isn't properly set by `SetClass`");
+    TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_String);
+
+    Issue("Value is incorrectly assigned by `SetClass`");
+    TEST_ExpectTrue(testJSON.GetClass(0) == class'Actor');
+
+    Issue(  "Providing default variable value makes `GetClass`" @
+            "return incorrect value");
+    TEST_ExpectTrue(testJSON.GetClass(0, class'GameInfo') == class'Actor');
+
+    Issue("Variable value isn't correctly reassigned by `SetClass`");
+    testJSON.SetClass(0, class'Info');
+    TEST_ExpectTrue(testJSON.GetClass(0) == class'Info');
+
+    Issue(  "Getting class variable as a wrong type" @
+            "doesn't yield default value");
+    TEST_ExpectTrue(testJSON.GetBoolean(0, true) == true);
+
+    Issue("Boolean variable isn't being properly removed");
+    testJSON.RemoveValue(0);
+    TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Undefined);
+
+    Issue(  "Getters don't return default value for missing key that" @
+            "previously stored string value, but got removed");
+    TEST_ExpectTrue(testJSON.GetClass(0, class'Mutator') == class'Mutator');
+}
+
+protected static function SubTest_ArrayStringAsClass()
+{
+    local JArray testJSON;
+    testJSON = _().json.NewArray();
+    testJSON.SetString(0, "Engine.Actor");
+    testJSON.AddString("blahblahblah");
+    testJSON.AddClass(class'Info');
+    testJSON.SetClass(3, none);
+
+    Context("Testing how `JArray` treats mixed string and"
+        @ "class setters/getters.");
+    Issue("Incorrect result of `SetClass().GetString()` sequence.");
+    TEST_ExpectTrue(testJSON.GetString(2) == "Engine.Info");
+    TEST_ExpectTrue(testJSON.GetString(3) == "None");
+    TEST_ExpectTrue(testJSON.GetString(3, "alternative") == "None");
+
+    Issue("Incorrect result of `SetString().GetClass()` sequence for"
+        @ "correct value in `SetString()`.");
+    TEST_ExpectTrue(testJSON.GetClass(0) == class'Actor');
+    TEST_ExpectTrue(testJSON.GetClass(0, class'Object') ==  class'Actor');
+
+    Issue("Incorrect result of `SetString().GetClass()` sequence for"
+        @ "incorrect value in `SetString()`.");
+    TEST_ExpectTrue(testJSON.GetClass(1) == none);
+    TEST_ExpectTrue(testJSON.GetClass(1, class'Object') ==  class'Object');
+}
+
 protected static function SubTest_ArrayNumberGetSetRemove()
 {
     local JArray testJSON;
@@ -580,6 +645,63 @@ protected static function SubTest_ArrayNumberGetSetRemove()
     Issue(  "Getters don't return default value for missing key that" @
             "previously stored number value, but got removed");
     TEST_ExpectTrue(testJSON.GetNumber(0, 13) == 13);
+}
+
+protected static function SubTest_ArrayIntegerGetSetRemove()
+{
+    local JArray testJSON;
+    testJSON = _().json.newArray();
+    testJSON.SetInteger(0, 19);
+
+    Context("Testing `JArray`'s get/set/remove functions for" @
+            "integer variables");
+    Issue("Integer type isn't properly set by `SetInteger`");
+    TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Number);
+
+    Issue("Value is incorrectly assigned by `SetInteger`");
+    TEST_ExpectTrue(testJSON.GetInteger(0) == 19);
+
+    Issue(  "Providing default variable value makes `GetInteger`" @
+            "return incorrect value");
+    TEST_ExpectTrue(testJSON.GetInteger(0, 5) == 19);
+
+    Issue("Variable value isn't correctly reassigned by `SetInteger`");
+    testJSON.SetInteger(0, MaxInt);
+    TEST_ExpectTrue(testJSON.GetInteger(0) == MaxInt);
+
+    Issue(  "Getting integer variable as a wrong type" @
+            "doesn't yield default value");
+    TEST_ExpectTrue(testJSON.GetString(0, "default") == "default");
+
+    Issue("Integer type isn't being properly removed");
+    testJSON.RemoveValue(0);
+    TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Undefined);
+
+    Issue(  "Getters don't return default value for missing key that" @
+            "previously stored integer value, but got removed");
+    TEST_ExpectTrue(testJSON.GetInteger(0, 13) == 13);
+}
+
+protected static function SubTest_ArrayFloatAndInteger()
+{
+    local JArray testJSON;
+    testJSON = _().json.NewArray();
+    testJSON.SetNumber(0, 6.70087);
+
+    Context("Testing how `JArray` treats mixed float and"
+        @ "integer setters/getters.");
+    Issue("Incorrect result of `SetNumber().GetInteger()` sequence.");
+    TEST_ExpectTrue(testJSON.GetInteger(0) == 6);
+
+    testJSON.SetInteger(0, 11);
+    testJSON.SetNumber(1, 0.43);
+    Issue("SetNumber().SetInteger() for same variable name does not overwrite"
+        @ "initial number value.");
+    TEST_ExpectTrue(testJSON.GetNumber(0) == 11);
+
+    Issue("SetInteger().SetNumber() for same variable name does not overwrite"
+        @ "initial integer value.");
+    TEST_ExpectTrue(testJSON.GetInteger(1) == 0);
 }
 
 protected static function SubTest_ArrayNullGetSetRemove()

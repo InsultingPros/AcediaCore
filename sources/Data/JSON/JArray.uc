@@ -79,6 +79,15 @@ public final function float GetNumber(int index, optional float defaultValue)
     return data[index].numberValue;
 }
 
+public final function float GetInteger(int index, optional float defaultValue)
+{
+    if (index < 0)                          return defaultValue;
+    if (index >= data.length)               return defaultValue;
+    if (data[index].type != JSON_Number)    return defaultValue;
+
+    return data[index].numberValueAsInt;
+}
+
 public final function string GetString(int index, optional string defaultValue)
 {
     if (index < 0)                          return defaultValue;
@@ -86,6 +95,21 @@ public final function string GetString(int index, optional string defaultValue)
     if (data[index].type != JSON_String)    return defaultValue;
 
     return data[index].stringValue;
+}
+
+public final function class<Object> GetClass(
+    int index,
+    optional class<Object> defaultValue)
+{
+    if (index < 0)                          return defaultValue;
+    if (index >= data.length)               return defaultValue;
+    if (data[index].type != JSON_String)    return defaultValue;
+
+    TryLoadingStringAsClass(data[index]);
+    if (data[index].stringValueAsClass != none) {
+        return data[index].stringValueAsClass;
+    }
+    return defaultValue;
 }
 
 public final function bool GetBoolean(int index, optional bool defaultValue)
@@ -132,8 +156,7 @@ public final function JObject GetObject(int index)
 //  `false` (nothing will be done in this case).
 //      They return object itself, allowing user to chain calls like this:
 //  `array.SetNumber("num1", 1).SetNumber("num2", 2);`.
-public final function JArray SetNumber
-(
+public final function JArray SetNumber(
     int index,
     float value,
     optional bool preventExpansion
@@ -153,8 +176,36 @@ public final function JArray SetNumber
             SetLength(index + 1);
         }
     }
-    newStorageValue.type        = JSON_Number;
-    newStorageValue.numberValue = value;
+    newStorageValue.type                = JSON_Number;
+    newStorageValue.numberValue         = value;
+    newStorageValue.numberValueAsInt    = int(value);
+    data[index] = newStorageValue;
+    return self;
+}
+
+public final function JArray SetInteger(
+    int index,
+    int value,
+    optional bool preventExpansion
+)
+{
+    local JStorageAtom newStorageValue;
+    if (index < 0) return self;
+
+    if (index >= data.length)
+    {
+        if (preventExpansion)
+        {
+            return self;
+        }
+        else
+        {
+            SetLength(index + 1);
+        }
+    }
+    newStorageValue.type                = JSON_Number;
+    newStorageValue.numberValue         = float(value);
+    newStorageValue.numberValueAsInt    = value;
     data[index] = newStorageValue;
     return self;
 }
@@ -182,6 +233,33 @@ public final function JArray SetString
     }
     newStorageValue.type        = JSON_String;
     newStorageValue.stringValue = value;
+    data[index] = newStorageValue;
+    return self;
+}
+
+public final function JArray SetClass(
+    int index,
+    class<Object> value,
+    optional bool preventExpansion
+)
+{
+    local JStorageAtom newStorageValue;
+    if (index < 0) return self;
+
+    if (index >= data.length)
+    {
+        if (preventExpansion)
+        {
+            return self;
+        }
+        else
+        {
+            SetLength(index + 1);
+        }
+    }
+    newStorageValue.type                = JSON_String;
+    newStorageValue.stringValue         = string(value);
+    newStorageValue.stringValueAsClass  = value;
     data[index] = newStorageValue;
     return self;
 }
@@ -306,9 +384,19 @@ public final function JArray AddNumber(float value)
     return SetNumber(data.length, value);
 }
 
+public final function JArray AddInteger(int value)
+{
+    return SetInteger(data.length, value);
+}
+
 public final function JArray AddString(string value)
 {
     return SetString(data.length, value);
+}
+
+public final function JArray AddClass(class<Object> value)
+{
+    return SetClass(data.length, value);
 }
 
 public final function JArray AddBoolean(bool value)

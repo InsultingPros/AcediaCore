@@ -76,6 +76,14 @@ struct JStorageAtom
     var protected bool          classLoadingWasAttempted;
 };
 
+protected final function TryLoadingStringAsClass(out JStorageAtom atom)
+{
+    if (atom.classLoadingWasAttempted) return;
+    atom.classLoadingWasAttempted = true;
+    atom.stringValueAsClass =
+        class<Object>(DynamicLoadObject(atom.stringValue, class'Class', true));
+}
+
 defaultproperties
 {
 }

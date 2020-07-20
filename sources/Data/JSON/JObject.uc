@@ -272,13 +272,7 @@ public final function class<Object> GetClass(
     if (property.value.type != JSON_String) {
         return defaultValue;
     }
-    if (!property.value.classLoadingWasAttempted)
-    {
-        property.value.classLoadingWasAttempted = true;
-        property.value.stringValueAsClass =
-            class<Object>(DynamicLoadObject(    property.value.stringValue,
-                                                class'Class', true));
-    }
+    TryLoadingStringAsClass(property.value);
     if (property.value.stringValueAsClass != none) {
         return property.value.stringValueAsClass;
     }
