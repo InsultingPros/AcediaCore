@@ -28,6 +28,7 @@ protected static function TESTS()
     Test_ObjectGetSetRemove();
     Test_ObjectKeys();
     Test_ArrayGetSetRemove();
+    Test_JSONComparison();
 }
 
 protected static function Test_ObjectGetSetRemove()
@@ -994,6 +995,118 @@ protected static function SubSubTest_ArraySetBooleanExpansions()
     TEST_ExpectTrue(testArray.GetBoolean(6) == false);
     TEST_ExpectTrue(testArray.GetTypeOf(5) == JSON_Undefined);
     TEST_ExpectTrue(testArray.GetTypeOf(6) == JSON_Undefined);
+}
+
+protected static function JObject Prepare_FoldedObject()
+{
+    local JObject testObject;
+    testObject = _().json.NewObject();
+    testObject.SetNumber("some_var", 7.32);
+    testObject.SetString("another_var", "aye!");
+    testObject.CreateObject("innerObject");
+    testObject.GetObject("innerObject").SetBoolean("my_bool", true)
+        .SetInteger("my_int", 9823452).CreateArray("array");
+    testObject.GetObject("innerObject").GetArray("array").AddClass(class'Actor')
+        .AddBoolean(false).AddNull().AddObject().AddNumber(56.6);
+    testObject.GetObject("innerObject").GetArray("array").GetObject(3)
+        .SetString("something here", "yes").SetNumber("maybe", 0.003);
+    testObject.GetObject("innerObject").CreateObject("one more");
+    testObject.GetObject("innerObject").GetObject("one more")
+        .SetString("o rly?", "ya rly").SetBoolean("whatever", false)
+        .SetNumber("nope", 324532);
+    return testObject;
+}
+
+protected static function Test_JSONComparison()
+{
+    Context("Testing comparison of JSON objects");
+    SubTest_JSONIsEqual();
+    SubTest_JSONIsSubsetOf();
+    SubTest_JSONCompare();
+}
+
+protected static function SubTest_JSONIsEqual()
+{
+    local JObject test1, test2, empty;
+    test1 = Prepare_FoldedObject();
+    test2 = Prepare_FoldedObject();
+    empty = _().json.NewObject();
+
+    Issue("`IsEqual()` does not recognize identical JSON objects as equal.");
+    TEST_ExpectTrue(test1.IsEqual(test1));
+    TEST_ExpectTrue(test1.IsEqual(test2));
+    TEST_ExpectTrue(empty.IsEqual(empty));
+
+    Issue("`IsEqual()` reports non-empty JSON object as equal to"
+        @ "an empty one.");
+    TEST_ExpectFalse(test1.IsEqual(empty));
+
+    Issue("`IsEqual()` reports JSON objects with identical variable names,"
+        @ "but different values as equal.");
+    test2.GetObject("innerObject").GetObject("one more").SetNumber("nope", 2);
+    TEST_ExpectFalse(test1.IsEqual(test2));
+    test2 = Prepare_FoldedObject();
+    test2.GetObject("innerObject").GetArray("array").SetBoolean(1, true);
+    TEST_ExpectFalse(test1.IsEqual(test2));
+
+    Issue("`IsEqual()` reports JSON objects with different"
+        @ "structure as equal.");
+    test2 = Prepare_FoldedObject();
+    test2.GetObject("innerObject").SetNumber("ahaha", 8);
+    TEST_ExpectFalse(test1.IsEqual(test2));
+    test2 = Prepare_FoldedObject();
+    test2.GetObject("innerObject").GetArray("array").AddNull();
+    TEST_ExpectFalse(test1.IsEqual(test2));
+}
+
+protected static function SubTest_JSONIsSubsetOf()
+{
+    local JObject test1, test2, empty;
+    test1 = Prepare_FoldedObject();
+    test2 = Prepare_FoldedObject();
+    empty = _().json.NewObject();
+
+    Issue("`IsSubsetOf()` incorrectly handles equal objects.");
+    TEST_ExpectTrue(test1.IsSubsetOf(test1));
+    TEST_ExpectTrue(test1.IsSubsetOf(test2));
+    TEST_ExpectTrue(empty.IsSubsetOf(empty));
+
+    Issue("`IsSubsetOf()` incorrectly handles object subsets.");
+    test1.SetNumber("Garage", 234);
+    TEST_ExpectTrue(test2.IsSubsetOf(test1));
+    TEST_ExpectFalse(test1.IsSubsetOf(test2));
+    TEST_ExpectTrue(empty.IsSubsetOf(test1));
+    TEST_ExpectFalse(test1.IsSubsetOf(empty));
+
+    Issue("`IsSubsetOf()` incorrectly handles objects that cannot be compared.");
+    test2.GetObject("innerObject").GetArray("array").SetNull(1);
+    TEST_ExpectFalse(test1.IsSubsetOf(test2));
+    TEST_ExpectFalse(test2.IsSubsetOf(test1));
+}
+
+protected static function SubTest_JSONCompare()
+{
+    local JObject test1, test2, empty;
+    test1 = Prepare_FoldedObject();
+    test2 = Prepare_FoldedObject();
+    empty = _().json.NewObject();
+
+    Issue("`Compare()` incorrectly handles equal objects.");
+    TEST_ExpectTrue(test1.Compare(test1) == JCR_Equal);
+    TEST_ExpectTrue(test1.Compare(test2) == JCR_Equal);
+    TEST_ExpectTrue(empty.Compare(empty) == JCR_Equal);
+
+    Issue("`Compare()` incorrectly handles object subsets.");
+    test1.SetNumber("Garage", 234);
+    TEST_ExpectTrue(test2.Compare(test1) == JCR_SubSet);
+    TEST_ExpectTrue(test1.Compare(test2) == JCR_Overset);
+    TEST_ExpectTrue(empty.Compare(test1) == JCR_SubSet);
+    TEST_ExpectTrue(test1.Compare(empty) == JCR_Overset);
+
+    Issue("`Compare()` incorrectly handles objects that cannot be compared.");
+    test2.GetObject("innerObject").GetArray("array").AddNull();
+    TEST_ExpectTrue(test1.Compare(test2) == JCR_Incomparable);
+    TEST_ExpectTrue(test2.Compare(test1) == JCR_Incomparable);
 }
 
 defaultproperties

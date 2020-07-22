@@ -434,6 +434,24 @@ public final function bool RemoveValue(int index, optional int amount)
     return true;
 }
 
+public function bool IsSubsetOf(JSON rightValue)
+{
+    local int                   i;
+    local JArray                rightArray;
+    local array<JStorageAtom>   rightAtomArray;
+    rightArray = JArray(rightValue);
+    if (rightArray == none)                     return false;
+    if (data.length > rightArray.data.length)   return false;
+    rightAtomArray = rightArray.data;
+    for (i = 0; i < data.length; i += 1)
+    {
+        if (!AreAtomsEqual(data[i], rightAtomArray[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 defaultproperties
 {
 }

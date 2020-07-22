@@ -442,6 +442,30 @@ public final function array<string> GetKeys()
     return result;
 }
 
+public function bool IsSubsetOf(JSON rightJSON)
+{
+    local int               i, j;
+    local JObject           rightObject;
+    local JProperty         rightProperty;
+    local array<JProperty>  nextProperties;
+    rightObject = JObject(rightJSON);
+    if (rightObject == none) return false;
+    for (i = 0; i < hashTable.length; i += 1)
+    {
+        nextProperties = hashTable[i].properties;
+        for (j = 0; j < nextProperties.length; j += 1) {
+            rightObject.FindProperty(nextProperties[j].name, rightProperty);
+            if (rightProperty.value.type == JSON_Undefined) {
+                return false;
+            }
+            if (!AreAtomsEqual(nextProperties[j].value, rightProperty.value)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 defaultproperties
 {
     ABSOLUTE_LOWER_CAPACITY_LIMIT       = 10

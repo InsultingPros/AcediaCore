@@ -76,6 +76,75 @@ struct JStorageAtom
     var protected bool          classLoadingWasAttempted;
 };
 
+enum JComparisonResult
+{
+    JCR_Incomparable,
+    JCR_SubSet,
+    JCR_Overset,
+    JCR_Equal
+};
+
+public function bool IsSubsetOf(JSON rightJSON)
+{
+    return false;
+}
+
+public final function JComparisonResult Compare(JSON rightJSON)
+{
+    local bool firstIsSubset, secondIsSubset;
+    if (rightJSON == none) return JCR_Incomparable;
+    firstIsSubset   = IsSubsetOf(rightJSON);
+    secondIsSubset  = rightJSON.IsSubsetOf(self);
+    if (firstIsSubset)
+    {
+        if (secondIsSubset) {
+            return JCR_Equal;
+        }
+        else {
+            return JCR_SubSet;
+        }
+    }
+    else {
+        if (secondIsSubset) {
+            return JCR_Overset;
+        }
+        else {
+            return JCR_Incomparable;
+        }
+    }
+}
+
+public final function bool IsEqual(JSON rightJSON)
+{
+    return (Compare(rightJSON) == JCR_Equal);
+}
+
+protected final function bool AreAtomsEqual(
+    JStorageAtom atom1,
+    JStorageAtom atom2)
+{
+    if (atom1.type != atom2.type)       return false;
+    if (atom1.type == JSON_Undefined)   return true;
+    if (atom1.type == JSON_Null)        return true;
+    if (atom1.type == JSON_Number) {
+        return (    atom1.numberValue       == atom2.numberValue
+                &&  atom1.numberValueAsInt  == atom2.numberValueAsInt);
+    }
+    if (atom1.type == JSON_Boolean) {
+        return (atom1.booleanValue == atom2.booleanValue);
+    }
+    if (atom1.type == JSON_String) {
+        return (atom1.stringValue == atom2.stringValue);
+    }
+    if (atom1.complexValue == none && atom2.complexValue == none) {
+        return true;
+    }
+    if (atom1.complexValue == none || atom2.complexValue == none) {
+        return false;
+    }
+    return atom1.complexValue.IsEqual(atom2.complexValue);
+}
+
 protected final function TryLoadingStringAsClass(out JStorageAtom atom)
 {
     if (atom.classLoadingWasAttempted) return;
