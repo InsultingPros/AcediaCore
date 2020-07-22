@@ -84,6 +84,11 @@ enum JComparisonResult
     JCR_Equal
 };
 
+public function JSON Clone()
+{
+    return none;
+}
+
 public function bool IsSubsetOf(JSON rightJSON)
 {
     return false;

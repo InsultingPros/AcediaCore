@@ -29,6 +29,8 @@ protected static function TESTS()
     Test_ObjectKeys();
     Test_ArrayGetSetRemove();
     Test_JSONComparison();
+    Test_JSONCloning();
+    Test_JSONSetComplexValues();
 }
 
 protected static function Test_ObjectGetSetRemove()
@@ -1107,6 +1109,56 @@ protected static function SubTest_JSONCompare()
     test2.GetObject("innerObject").GetArray("array").AddNull();
     TEST_ExpectTrue(test1.Compare(test2) == JCR_Incomparable);
     TEST_ExpectTrue(test2.Compare(test1) == JCR_Incomparable);
+}
+
+protected static function Test_JSONCloning()
+{
+    local JObject original, clone;
+    original = Prepare_FoldedObject();
+    clone = JObject(original.Clone());
+    Context("Testing cloning functionality of JSON data.");
+    Issue("JSON data is cloned incorrectly.");
+    TEST_ExpectTrue(original.IsEqual(clone));
+
+    Issue("`Clone()` produces only a shallow copy.");
+    TEST_ExpectTrue(original != clone);
+    TEST_ExpectTrue(    original.GetObject("innerObject")
+                    !=  clone.GetObject("innerObject"));
+    TEST_ExpectTrue(    original.GetObject("innerObject").GetArray("array")
+                    !=  clone.GetObject("innerObject").GetArray("array"));
+    TEST_ExpectTrue(    original.GetObject("innerObject").GetObject("one more")
+                    !=  clone.GetObject("innerObject").GetObject("one more"));
+    TEST_ExpectTrue(
+            original.GetObject("innerObject").GetArray("array").GetObject(3)
+        !=  clone.GetObject("innerObject").GetArray("array").GetObject(3));
+}
+
+protected static function Test_JSONSetComplexValues()
+{
+    local JObject   testObject, original;
+    local JArray    testArray;
+    Context("Testing `Set...()` operation for `JObject` / `JArray`.");
+    original = Prepare_FoldedObject();
+    testObject = Prepare_FoldedObject();
+    testArray =
+        JArray(testObject.GetObject("innerObject").GetArray("array").Clone());
+    testObject.SetObject("newObjectCopy", testObject);
+    testObject.SetArray("newArrayCopy", testArray);
+    testArray.SetObject(0, testObject);
+    testArray.SetArray(1, testArray);
+    Issue("`Set() for `JObject` / `JArray` does not produce correct copy.");
+    Test_ExpectTrue(testObject.GetObject("newObjectCopy").IsEqual(original));
+    Test_ExpectTrue(testObject.GetArray("newArrayCopy")
+        .IsEqual(original.GetObject("innerObject").GetArray("array")));
+    Test_ExpectTrue(testArray.GetObject(0).IsEqual(testObject));
+
+    Issue("`Set() for `JObject` / `JArray` produces a shallow copy.");
+    Test_ExpectTrue(testObject.GetObject("newObjectCopy") != original);
+    Test_ExpectTrue(    testObject.GetObject("newArrayCopy")
+                    !=  original.GetObject("innerObject").GetArray("array"));
+    Test_ExpectTrue(testArray.GetObject(0) != original);
+    Test_ExpectTrue(    testArray.GetArray(1)
+                    !=  original.GetObject("innerObject").GetArray("array"));
 }
 
 defaultproperties

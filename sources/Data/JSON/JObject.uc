@@ -389,6 +389,34 @@ public final function JObject SetNull(string name)
     return self;
 }
 
+public final function JObject SetArray(string name, JArray template)
+{
+    local JProperty property;
+    if (template == none) return self;
+    FindProperty(name, property);
+    if (property.value.complexValue != none) {
+        property.value.complexValue.Destroy();
+    }
+    property.value.type         = JSON_Array;
+    property.value.complexValue = template.Clone();
+    UpdateProperty(property);
+    return self;
+}
+
+public final function JObject SetObject(string name, JObject template)
+{
+    local JProperty property;
+    if (template == none) return self;
+    FindProperty(name, property);
+    if (property.value.complexValue != none) {
+        property.value.complexValue.Destroy();
+    }
+    property.value.type = JSON_Object;
+    property.value.complexValue = template.Clone();
+    UpdateProperty(property);
+    return self;
+}
+
 //      JSON array and object types don't have setters, but instead have
 //  functions to create a new, empty array/object under a certain name.
 //      They return object itself, allowing user to chain calls like this:
@@ -400,8 +428,8 @@ public final function JObject CreateArray(string name)
     if (property.value.complexValue != none) {
         property.value.complexValue.Destroy();
     }
-    property.value.type          = JSON_Array;
-    property.value.complexValue  = _.json.NewArray();
+    property.value.type         = JSON_Array;
+    property.value.complexValue = _.json.NewArray();
     UpdateProperty(property);
     return self;
 }
@@ -413,8 +441,8 @@ public final function JObject CreateObject(string name)
     if (property.value.complexValue != none) {
         property.value.complexValue.Destroy();
     }
-    property.value.type          = JSON_Object;
-    property.value.complexValue  = _.json.NewObject();
+    property.value.type         = JSON_Object;
+    property.value.complexValue = _.json.NewObject();
     UpdateProperty(property);
     return self;
 }
@@ -464,6 +492,39 @@ public function bool IsSubsetOf(JSON rightJSON)
         }
     }
     return true;
+}
+
+public function JSON Clone()
+{
+    local int                   i, j;
+    local JObject               clonedObject;
+    local array<PropertyBucket> clonedHashTable;
+    local array<JProperty>      nextProperties;
+    clonedObject = _.json.NewObject();
+    if (clonedObject == none)
+    {
+        _.logger.Failure("Cannot clone `JObject`: cannot spawn a"
+            @ "new instance.");
+        return none;
+    }
+    clonedHashTable = hashTable;
+    for (i = 0; i < clonedHashTable.length; i += 1)
+    {
+        nextProperties = clonedHashTable[i].properties;
+        for (j = 0; j < nextProperties.length; j += 1)
+        {
+            if (nextProperties[j].value.complexValue == none) continue;
+            if (    nextProperties[j].value.type != JSON_Array
+                &&  nextProperties[j].value.type != JSON_Object) {
+                continue;
+            }
+            nextProperties[j].value.complexValue =
+                nextProperties[j].value.complexValue.Clone();
+        }
+        clonedHashTable[i].properties = nextProperties;
+    }
+    clonedObject.hashTable = clonedHashTable;
+    return clonedObject;
 }
 
 defaultproperties

@@ -316,6 +316,60 @@ public final function JArray SetNull
     return self;
 }
 
+public final function JArray SetArray(
+    int index,
+    JArray template,
+    optional bool preventExpansion
+)
+{
+    local JStorageAtom newStorageValue;
+    if (index < 0) return self;
+    if (template == none) return self;
+
+    if (index >= data.length)
+    {
+        if (preventExpansion)
+        {
+            return self;
+        }
+        else
+        {
+            SetLength(index + 1);
+        }
+    }
+    newStorageValue.type            = JSON_Array;
+    newStorageValue.complexValue    = template.Clone();
+    data[index] = newStorageValue;
+    return self;
+}
+
+public final function JArray SetObject(
+    int index,
+    JObject template,
+    optional bool preventExpansion
+)
+{
+    local JStorageAtom newStorageValue;
+    if (index < 0) return self;
+    if (template == none) return self;
+
+    if (index >= data.length)
+    {
+        if (preventExpansion)
+        {
+            return self;
+        }
+        else
+        {
+            SetLength(index + 1);
+        }
+    }
+    newStorageValue.type            = JSON_Object;
+    newStorageValue.complexValue    = template.Clone();
+    data[index] = newStorageValue;
+    return self;
+}
+
 //      JSON array and object types don't have setters, but instead have
 //  functions to create a new, empty array/object under a certain name.
 //      If passed index is negative - does nothing.
@@ -450,6 +504,31 @@ public function bool IsSubsetOf(JSON rightValue)
         }
     }
     return true;
+}
+
+public function JSON Clone()
+{
+    local int                   i;
+    local JArray                clonedArray;
+    local array<JStorageAtom>   clonedData;
+    clonedArray = _.json.NewArray();
+    if (clonedArray == none)
+    {
+        _.logger.Failure("Cannot clone `JArray`: cannot spawn a new instance.");
+        return none;
+    }
+    clonedData = data;
+    for (i = 0; i < clonedData.length; i += 1)
+    {
+        if (clonedData[i].complexValue == none) continue;
+        if (    clonedData[i].type != JSON_Array
+            &&  clonedData[i].type != JSON_Object) {
+            continue;
+        }
+        clonedData[i].complexValue = clonedData[i].complexValue.Clone();
+    }
+    clonedArray.data = clonedData;
+    return clonedArray;
 }
 
 defaultproperties
