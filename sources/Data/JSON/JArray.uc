@@ -179,6 +179,7 @@ public final function JArray SetNumber(
     newStorageValue.type                = JSON_Number;
     newStorageValue.numberValue         = value;
     newStorageValue.numberValueAsInt    = int(value);
+    newStorageValue.preferIntegerValue  = false;
     data[index] = newStorageValue;
     return self;
 }
@@ -206,6 +207,7 @@ public final function JArray SetInteger(
     newStorageValue.type                = JSON_Number;
     newStorageValue.numberValue         = float(value);
     newStorageValue.numberValueAsInt    = value;
+    newStorageValue.preferIntegerValue  = true;
     data[index] = newStorageValue;
     return self;
 }
@@ -529,6 +531,45 @@ public function JSON Clone()
     }
     clonedArray.data = clonedData;
     return clonedArray;
+}
+
+public function string DisplayWith(JSONDisplaySettings displaySettings)
+{
+    local int                   i;
+    local bool                  isntFirstElement;
+    local string                contents;
+    local string                openingBraces, closingBraces;
+    local string                elementsSeparator;
+    local JSONDisplaySettings   innerSettings;
+    if (displaySettings.stackIndentation) {
+        innerSettings = IndentSettings(displaySettings, true);
+    }
+    else {
+        innerSettings = displaySettings;
+    }
+    //      Prepare delimiters using appropriate indentation rules
+    //      We only use inner settings for the part right after '[',
+    //  as the rest is supposed to be aligned with outer objects
+    openingBraces = displaySettings.beforeArrayOpening
+        $ "[" $ innerSettings.afterArrayOpening;
+    closingBraces = displaySettings.beforeArrayEnding
+        $ "]" $ displaySettings.afterArrayEnding;
+    elementsSeparator = "," $ innerSettings.afterArrayComma;
+    if (innerSettings.colored) {
+        elementsSeparator = "{$json_comma" $ elementsSeparator $ "}";
+        openingBraces = "{$json_arrayBraces" $ openingBraces $ "}";
+        closingBraces = "{$json_arrayBraces" $ closingBraces $ "}";
+    }
+    //  Display inner properties
+    for (i = 0; i < data.length; i += 1)
+    {
+        if (isntFirstElement) {
+            contents $= elementsSeparator;
+        }
+        contents $= DisplayAtom(data[i], innerSettings);
+        isntFirstElement = true;
+    }
+    return openingBraces $ contents $ closingBraces;
 }
 
 defaultproperties

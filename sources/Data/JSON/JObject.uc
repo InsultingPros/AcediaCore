@@ -322,10 +322,11 @@ public final function JObject SetNumber(string name, float value)
 {
     local JProperty property;
     FindProperty(name, property);
-    property.value.type             = JSON_Number;
-    property.value.numberValue      = value;
-    property.value.numberValueAsInt = int(value);
-    property.value.complexValue     = none;
+    property.value.type                 = JSON_Number;
+    property.value.numberValue          = value;
+    property.value.numberValueAsInt     = int(value);
+    property.value.complexValue         = none;
+    property.value.preferIntegerValue   = false;
     UpdateProperty(property);
     return self;
 }
@@ -334,10 +335,11 @@ public final function JObject SetInteger(string name, int value)
 {
     local JProperty property;
     FindProperty(name, property);
-    property.value.type             = JSON_Number;
-    property.value.numberValue      = float(value);
-    property.value.numberValueAsInt = value;
-    property.value.complexValue     = none;
+    property.value.type                 = JSON_Number;
+    property.value.numberValue          = float(value);
+    property.value.numberValueAsInt     = value;
+    property.value.complexValue         = none;
+    property.value.preferIntegerValue   = true;
     UpdateProperty(property);
     return self;
 }
@@ -525,6 +527,69 @@ public function JSON Clone()
     }
     clonedObject.hashTable = clonedHashTable;
     return clonedObject;
+}
+
+public function string DisplayWith(JSONDisplaySettings displaySettings)
+{
+    local int                   i, j;
+    local bool                  isntFirstProperty;
+    local string                contents;
+    local string                openingBraces, closingBraces;
+    local string                propertiesSeparator;
+    local array<JProperty>      nextProperties;
+    local JSONDisplaySettings   innerSettings;
+    if (displaySettings.stackIndentation) {
+        innerSettings = IndentSettings(displaySettings);
+    }
+    else {
+        innerSettings = displaySettings;
+    }
+    //      Prepare delimiters using appropriate indentation rules
+    //      We only use inner settings for the part right after '{',
+    //  as the rest is supposed to be aligned with outer objects
+    openingBraces = displaySettings.beforeObjectOpening
+        $ "{" $ innerSettings.afterObjectOpening;
+    closingBraces = displaySettings.beforeObjectEnding
+        $ "}" $ displaySettings.afterObjectEnding;
+    propertiesSeparator = "," $ innerSettings.afterObjectComma;
+    if (innerSettings.colored) {
+        propertiesSeparator = "{$json_comma" @ propertiesSeparator $ "}";
+        openingBraces = "{$json_objectBraces &" $ openingBraces $ "}";
+        closingBraces = "{$json_objectBraces &" $ closingBraces $ "}";
+    }
+    //  Display inner properties
+    for (i = 0; i < hashTable.length; i += 1)
+    {
+        nextProperties = hashTable[i].properties;
+        for (j = 0; j < nextProperties.length; j += 1)
+        {
+            if (isntFirstProperty) {
+                contents $= propertiesSeparator;
+            }
+            contents $= DisplayProperty(nextProperties[j], innerSettings);
+            isntFirstProperty = true;
+        }
+    }
+    return openingBraces $ contents $ closingBraces;
+}
+
+protected function string DisplayProperty(
+    JProperty           toDisplay,
+    JSONDisplaySettings displaySettings)
+{
+    local string result;
+    result = displaySettings.beforePropertyName
+        $ DisplayJSONString(toDisplay.name)
+        $ displaySettings.afterPropertyName;
+    if (displaySettings.colored) {
+        result = "{$json_propertyName" @ result $ "}{$json_colon :}";
+    }
+    else {
+        result $= ":";
+    }
+    return (result $ displaySettings.beforePropertyValue
+        $ DisplayAtom(toDisplay.value, displaySettings)
+        $ displaySettings.afterPropertyValue);
 }
 
 defaultproperties

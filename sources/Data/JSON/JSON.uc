@@ -68,6 +68,7 @@ struct JStorageAtom
     //  them as both `float` and `integer` and allow user to request any version
     //  of them
     var protected int           numberValueAsInt;
+    var protected bool          preferIntegerValue;
     //  Some `string` values might be actually used to represent classes,
     //  so we will give users an ability to request `string` value as a class.
     var protected class<Object> stringValueAsClass;
@@ -82,6 +83,22 @@ enum JComparisonResult
     JCR_SubSet,
     JCR_Overset,
     JCR_Equal
+};
+
+struct JSONDisplaySettings
+{
+    var bool    colored;
+    var bool    stackIndentation;
+    var string  subObjectIndentation, subArrayIndentation;
+    var string  beforeObjectOpening, afterObjectOpening;
+    var string  beforeObjectEnding, afterObjectEnding;
+    var string  beforePropertyName, afterPropertyName;
+    var string  beforePropertyValue, afterPropertyValue;
+    var string  afterObjectComma;
+    var string  beforeArrayOpening, afterArrayOpening;
+    var string  beforeArrayEnding, afterArrayEnding;
+    var string  beforeElement, afterElement;
+    var string  afterArrayComma;
 };
 
 public function JSON Clone()
@@ -158,6 +175,182 @@ protected final function TryLoadingStringAsClass(out JStorageAtom atom)
         class<Object>(DynamicLoadObject(atom.stringValue, class'Class', true));
 }
 
+public final function string Display(
+    optional bool fancyPrinting,
+    optional bool colorSettings)
+{
+    local JSONDisplaySettings settingsToUse;
+    //  Settings are minimal by default
+    if (fancyPrinting) {
+        settingsToUse = GetFancySettings();
+    }
+    if (colorSettings) {
+        settingsToUse.colored = true;
+    }
+    return DisplayWith(settingsToUse);
+}
+
+public function string DisplayWith(JSONDisplaySettings displaySettings)
+{
+    return "";
+}
+
+protected final function string DisplayAtom(
+    JStorageAtom        atom,
+    JSONDisplaySettings displaySettings)
+{
+    local string colorTag;
+    local string result;
+    if (    atom.complexValue != none
+        &&  (atom.type == JSON_Object || atom.type == JSON_Array) ) {
+        return atom.complexValue.DisplayWith(displaySettings);
+    }
+    if (atom.type == JSON_Null) {
+        result = "null";
+        colorTag = "$json_null";
+    }
+    else if (atom.type == JSON_Number) {
+        if (atom.preferIntegerValue) {
+            result = string(atom.numberValueAsInt);
+        }
+        else {
+            result = DisplayFloat(atom.numberValue);
+        }
+        colorTag = "$json_number";
+    }
+    else if (atom.type == JSON_String) {
+        result = DisplayJSONString(atom.stringValue);
+        colorTag = "$json_string";
+    }
+    else if (atom.type == JSON_Boolean) {
+        if (atom.booleanValue) {
+            result = "true";
+        }
+        else {
+            result = "false";
+        }
+        colorTag = "$json_boolean";
+    }
+    if (displaySettings.colored) {
+        return "{" $ colorTag @ result $ "}";
+    }
+    return result;
+}
+
+protected final function string DisplayFloat(float number)
+{
+    local int       integerPart, fractionalPart;
+    local int       precision;
+    local int       howManyZeroes;
+    local string    zeroes;
+    local string    result;
+    precision = Clamp(MAX_FLOAT_PRECISION, 0, 10);
+    if (number < 0) {
+        number *= -1;
+        result = "-";
+    }
+    integerPart = number;
+    result $= string(integerPart);
+    number = (number - integerPart);
+    fractionalPart = Round(number * (10 ** precision));
+    if (fractionalPart <= 0) {
+        return result;
+    }
+    result $= ".";
+    howManyZeroes = precision - CountDigits(fractionalPart);
+    while (fractionalPart > 0 && fractionalPart % 10 == 0) {
+        fractionalPart /= 10;
+    }
+    while (howManyZeroes > 0) {
+        zeroes $= "0";
+        howManyZeroes -= 1;
+    }
+    return result $ zeroes $ string(fractionalPart);
+}
+
+protected final function int CountDigits(int number)
+{
+    local int digitCounter;
+    while (number > 0)
+    {
+        number -= (number % 10);
+        number /= 10;
+        digitCounter += 1;
+    }
+    return digitCounter;
+}
+
+protected final function JSONDisplaySettings GetFancySettings()
+{
+    local string                lineFeed;
+    local JSONDisplaySettings   fancySettings;
+    lineFeed = Chr(10);
+    fancySettings.stackIndentation      = true;
+    fancySettings.subObjectIndentation  = "    ";
+    fancySettings.subArrayIndentation   = "";
+    fancySettings.afterObjectOpening    = lineFeed;
+    fancySettings.beforeObjectEnding    = lineFeed;
+    fancySettings.beforePropertyValue   = " ";
+    fancySettings.afterObjectComma      = lineFeed;
+    fancySettings.beforeElement         = " ";
+    fancySettings.afterArrayComma       = " ";
+    return fancySettings;
+}
+
+protected final function string DisplayJSONString(string input)
+{
+    //  Convert control characters (+ other, specified by JSON)
+    //  into escaped sequences
+    ReplaceText(input, "\"", "\\\"");
+    ReplaceText(input, "/", "\\/");
+    ReplaceText(input, "\\", "\\\\");
+    ReplaceText(input, Chr(0x08), "\\b");
+    ReplaceText(input, Chr(0x0c), "\\f");
+    ReplaceText(input, Chr(0x0a), "\\n");
+    ReplaceText(input, Chr(0x0d), "\\r");
+    ReplaceText(input, Chr(0x09), "\\t");
+    //  TODO: test if there are control characters and render them as "\u...."
+    return ("\"" $ input $ "\"");
+}
+
+protected final function JSONDisplaySettings IndentSettings(
+    JSONDisplaySettings inputSettings,
+    optional bool       indentingArray)
+{
+    local string                lineFeed;
+    local string                lineFeedIndent;
+    local JSONDisplaySettings   indentedSettings;
+    indentedSettings = inputSettings;
+    lineFeed = Chr(0x0a);
+    if (indentingArray) {
+        lineFeedIndent = lineFeed $ inputSettings.subArrayIndentation;
+    }
+    else {
+        lineFeedIndent = lineFeed $ inputSettings.subObjectIndentation;
+    }
+    if (lineFeedIndent == lineFeed) {
+        return indentedSettings;
+    }
+    ReplaceText(indentedSettings.afterObjectEnding, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.afterPropertyName, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.afterObjectComma, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.afterArrayOpening, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.beforeArrayEnding, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.afterArrayEnding, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.beforeElement, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.afterElement, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.afterArrayComma, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.beforeObjectOpening, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.beforePropertyValue, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.afterObjectOpening, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.beforeObjectEnding, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.beforeArrayOpening, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.afterPropertyValue, lineFeed, lineFeedIndent);
+    ReplaceText(indentedSettings.beforePropertyName, lineFeed, lineFeedIndent);
+    return indentedSettings;
+}
+
 defaultproperties
 {
+    MAX_FLOAT_PRECISION = 4
 }

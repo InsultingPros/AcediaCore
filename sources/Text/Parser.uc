@@ -598,10 +598,10 @@ public final function Parser MUnsignedInteger
  *
  *  A Unicode code point can also be directly entered with either of the two
  *  commands:
- *      \U0056
- *      \u56
- *  The difference is that `\U` allows you to enter two-byte code point, while
- *  `\u` only allows to define code points that fit into 1 byte,
+ *      \u0056
+ *      \U56
+ *  The difference is that `\u` allows you to enter two-byte code point, while
+ *  `\U` only allows to define code points that fit into 1 byte,
  *  but is more compact.
  *
  *  @param  denotedCodePoint    If parsing is successful, parameter will contain
@@ -633,11 +633,11 @@ public final function Parser MEscapedSequence
         }
     }
     //  Escaped character denotes declaration of arbitrary Unicode code point
-    if (denotedCharacter.codePoint == CODEPOINT_ULARGE)
+    if (denotedCharacter.codePoint == CODEPOINT_USMALL)
     {
         MUnsignedInteger(denotedCharacter.codePoint, 16, 4);
     }
-    else if (denotedCharacter.codePoint == CODEPOINT_USMALL)
+    else if (denotedCharacter.codePoint == CODEPOINT_ULARGE)
     {
         MUnsignedInteger(denotedCharacter.codePoint, 16, 2);
     }
