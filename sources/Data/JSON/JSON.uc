@@ -58,23 +58,23 @@ struct JStorageAtom
 {
     //  What type is stored exactly?
     //  Depending on that, uses one of the other fields as a storage.
-    var protected JType         type;
-    var protected float         numberValue;
-    var protected string        stringValue;
-    var protected bool          booleanValue;
+    var JType         type;
+    var float         numberValue;
+    var string        stringValue;
+    var bool          booleanValue;
     //  Used for storing both JSON objects and arrays.
-    var protected JSON          complexValue;
+    var JSON          complexValue;
     //  Numeric value might not fit into a `float` very well, so we will store
     //  them as both `float` and `integer` and allow user to request any version
     //  of them
-    var protected int           numberValueAsInt;
-    var protected bool          preferIntegerValue;
+    var int           numberValueAsInt;
+    var bool          preferIntegerValue;
     //  Some `string` values might be actually used to represent classes,
     //  so we will give users an ability to request `string` value as a class.
-    var protected class<Object> stringValueAsClass;
+    var class<Object> stringValueAsClass;
     //  To avoid several unsuccessful attempts to load `class` object from
     //  a `string`, we will record whether we've already tied that.
-    var protected bool          classLoadingWasAttempted;
+    var bool          classLoadingWasAttempted;
 };
 
 enum JComparisonResult
@@ -100,6 +100,8 @@ struct JSONDisplaySettings
     var string  beforeElement, afterElement;
     var string  afterArrayComma;
 };
+
+var private const int MAX_FLOAT_PRECISION;
 
 public function JSON Clone()
 {
@@ -348,6 +350,135 @@ protected final function JSONDisplaySettings IndentSettings(
     ReplaceText(indentedSettings.afterPropertyValue, lineFeed, lineFeedIndent);
     ReplaceText(indentedSettings.beforePropertyName, lineFeed, lineFeedIndent);
     return indentedSettings;
+}
+
+public function bool ParseIntoSelfWith(Parser parser)
+{
+    return false;
+}
+
+public final function bool ParseIntoSelf(Text source)
+{
+    local bool      successfullyParsed;
+    local Parser    jsonParser;
+    jsonParser = _.text.Parse(source);
+    successfullyParsed = ParseIntoSelfWith(jsonParser);
+    _.memory.Free(jsonParser);
+    return successfullyParsed;
+}
+
+public final function bool ParseIntoSelfString(string source)
+{
+    local bool      successfullyParsed;
+    local Parser    jsonParser;
+    jsonParser = _.text.ParseString(source);
+    successfullyParsed = ParseIntoSelfWith(jsonParser);
+    _.memory.Free(jsonParser);
+    return successfullyParsed;
+}
+
+public final function bool ParseIntoSelfRaw(array<Text.Character> rawSource)
+{
+    local bool      successfullyParsed;
+    local Parser    jsonParser;
+    jsonParser = _.text.ParseRaw(rawSource);
+    successfullyParsed = ParseIntoSelfWith(jsonParser);
+    _.memory.Free(jsonParser);
+    return successfullyParsed;
+}
+
+protected final function JStorageAtom ParseAtom(Parser parser)
+{
+    local Parser.ParserState    initState;
+    local JStorageAtom          newAtom;
+    if (parser == none) return newAtom;
+    if (!parser.Ok())   return newAtom;
+    initState = parser.GetCurrentState();
+    parser.Skip().Confirm();
+    if (parser.MStringLiteral(newAtom.stringValue).Ok())
+    {
+        newAtom.type = JSON_String;
+        return newAtom;
+    }
+    newAtom = ParseLiteral(parser.R());
+    if (newAtom.type != JSON_Undefined) {
+        return newAtom;
+    }
+    newAtom = ParseComplex(parser.R());
+    if (newAtom.type != JSON_Undefined) {
+        return newAtom;
+    }
+    newAtom = ParseNumber(parser.R());
+    if (newAtom.type == JSON_Undefined) {
+        parser.RestoreState(initState);
+    }
+    return newAtom;
+}
+
+protected final function JStorageAtom ParseLiteral(Parser parser)
+{
+    local JStorageAtom newAtom;
+    if (parser.Match("null", true).Ok())
+    {
+        newAtom.type = JSON_Null;
+        return newAtom;
+    }
+    if (parser.R().Match("false", true).Ok())
+    {
+        newAtom.type = JSON_Boolean;
+        return newAtom;
+    }
+    if (parser.R().Match("true", true).Ok())
+    {
+        newAtom.type = JSON_Boolean;
+        newAtom.booleanValue = true;
+        return newAtom;
+    }
+}
+
+protected final function JStorageAtom ParseComplex(Parser parser)
+{
+    local JStorageAtom newAtom;
+    if (parser.Match("{").Ok())
+    {
+        newAtom.complexValue = _.json.NewObject();
+        newAtom.type = JSON_Object;
+    }
+    else if (parser.R().Match("[").Ok())
+    {
+        newAtom.complexValue = _.json.NewArray();
+        newAtom.type = JSON_Array;
+    }
+    if (    newAtom.complexValue != none
+        &&  newAtom.complexValue.ParseIntoSelfWith(parser.R())) {
+        return newAtom;
+    }
+    newAtom.type = JSON_Undefined;
+    newAtom.complexValue = none;
+    return newAtom;
+}
+
+protected final function JStorageAtom ParseNumber(Parser parser)
+{
+    local JStorageAtom          newAtom;
+    local Parser.ParserState    integerParsedState;
+    if (!parser.MInteger(newAtom.numberValueAsInt).Ok()) {
+        return newAtom;
+    }
+    newAtom.type        = JSON_Number;
+    integerParsedState  = parser.GetCurrentState();
+    //  For a number check if it is recorded as a float specifically.
+    //  If not - prefer integer for storage.
+    if (    parser.Match(".").Ok()
+        ||  parser.RestoreState(integerParsedState).Match("e", true).Ok())
+    {
+        parser.R().MNumber(newAtom.numberValue);
+        return newAtom;
+    }
+    parser.RestoreState(integerParsedState);
+    newAtom.numberValue         = newAtom.numberValueAsInt;
+    newAtom.preferIntegerValue  = true;
+    return newAtom;
 }
 
 defaultproperties

@@ -529,6 +529,54 @@ public function JSON Clone()
     return clonedObject;
 }
 
+public function bool ParseIntoSelfWith(Parser parser)
+{
+    local int                   i;
+    local bool                  parsingSucceeded;
+    local Parser.ParserState    initState;
+    local JProperty             nextProperty;
+    local array<JProperty>      parsedProperties;
+    if (parser == none) return false;
+    initState = parser.GetCurrentState();
+    parser.Skip().Match("{").Confirm();
+    if (!parser.Ok())
+    {
+        parser.RestoreState(initState);
+        return false;
+    }
+    while (parser.Ok() && !parser.HasFinished())
+    {
+        parser.Skip().Confirm();
+        if (parser.Match("}").Ok()) {
+            parsingSucceeded = true;
+            break;
+        }
+        if (parsedProperties.length > 0 && !parser.R().Match(",").Skip().Ok()) {
+            break;
+        }
+        else {
+            parser.Confirm();
+        }
+        parser.R().Skip().MStringLiteral(nextProperty.name).Skip().Match(":");
+        nextProperty.value = ParseAtom(parser.Skip());
+        if (!parser.Ok() || nextProperty.value.type == JSON_Undefined) {
+            break;
+        }
+        parsedProperties[parsedProperties.length] = nextProperty;
+        parser.Confirm();
+    }
+    if (parsingSucceeded)
+    {
+        for (i = 0; i < parsedProperties.length; i += 1) {
+            UpdateProperty(parsedProperties[i]);
+        }
+    }
+    else {
+        parser.RestoreState(initState);
+    }
+    return parsingSucceeded;
+}
+
 public function string DisplayWith(JSONDisplaySettings displaySettings)
 {
     local int                   i, j;

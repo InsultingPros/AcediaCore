@@ -33,6 +33,126 @@ public function JArray newArray()
     return newArray;
 }
 
+public function JObject ParseObjectWith(Parser jsonParser)
+{
+    local JObject result;
+    result = NewObject();
+    if (result == none) {
+        return none;
+    }
+    if (!result.ParseIntoSelfWith(jsonParser))
+    {
+        result.Destroy();
+        return none;
+    }
+    return result;
+}
+
+public function JObject ParseObject(Text source)
+{
+    local JObject result;
+    result = NewObject();
+    if (result == none) {
+        return none;
+    }
+    if (!result.ParseIntoSelf(source))
+    {
+        result.Destroy();
+        return none;
+    }
+    return result;
+}
+
+public function JObject ParseObjectString(string source)
+{
+    local JObject result;
+    result = NewObject();
+    if (result == none) {
+        return none;
+    }
+    if (!result.ParseIntoSelfString(source))
+    {
+        result.Destroy();
+        return none;
+    }
+    return result;
+}
+
+public function JObject ParseObjectRaw(array<Text.Character> source)
+{
+    local JObject result;
+    result = NewObject();
+    if (result == none) {
+        return none;
+    }
+    if (!result.ParseIntoSelfRaw(source))
+    {
+        result.Destroy();
+        return none;
+    }
+    return result;
+}
+
+public function JArray ParseArrayWith(Parser jsonParser)
+{
+    local JArray result;
+    result = NewArray();
+    if (result == none) {
+        return none;
+    }
+    if (!result.ParseIntoSelfWith(jsonParser))
+    {
+        result.Destroy();
+        return none;
+    }
+    return result;
+}
+
+public function JArray ParseArray(Text source)
+{
+    local JArray result;
+    result = NewArray();
+    if (result == none) {
+        return none;
+    }
+    if (!result.ParseIntoSelf(source))
+    {
+        result.Destroy();
+        return none;
+    }
+    return result;
+}
+
+public function JArray ParseArrayString(string source)
+{
+    local JArray result;
+    result = NewArray();
+    if (result == none) {
+        return none;
+    }
+    if (!result.ParseIntoSelfString(source))
+    {
+        result.Destroy();
+        return none;
+    }
+    return result;
+}
+
+public function JArray ParseArrayRaw(array<Text.Character> source)
+{
+    local JArray result;
+    result = NewArray();
+    if (result == none) {
+        return none;
+    }
+    if (!result.ParseIntoSelfRaw(source))
+    {
+        result.Destroy();
+        return none;
+    }
+    return result;
+}
+
 defaultproperties
 {
 }

@@ -21,6 +21,8 @@
 class TEST_JSON extends TestCase
     abstract;
 
+var string preparedJObjectString;
+
 protected static function TESTS()
 {
     local JObject jsonData;
@@ -31,6 +33,7 @@ protected static function TESTS()
     Test_JSONComparison();
     Test_JSONCloning();
     Test_JSONSetComplexValues();
+    Test_JSONParsing();
 }
 
 protected static function Test_ObjectGetSetRemove()
@@ -1003,11 +1006,11 @@ protected static function JObject Prepare_FoldedObject()
 {
     local JObject testObject;
     testObject = _().json.NewObject();
-    testObject.SetNumber("some_var", 7.32);
+    testObject.SetNumber("some_var", -7.32);
     testObject.SetString("another_var", "aye!");
     testObject.CreateObject("innerObject");
     testObject.GetObject("innerObject").SetBoolean("my_bool", true)
-        .SetInteger("my_int", 9823452).CreateArray("array");
+        .SetInteger("my_int", -9823452).CreateArray("array");
     testObject.GetObject("innerObject").GetArray("array").AddClass(class'Actor')
         .AddBoolean(false).AddNull().AddObject().AddNumber(56.6);
     testObject.GetObject("innerObject").GetArray("array").GetObject(3)
@@ -1161,7 +1164,279 @@ protected static function Test_JSONSetComplexValues()
                     !=  original.GetObject("innerObject").GetArray("array"));
 }
 
+protected static function Test_JSONParsing()
+{
+    Context("Testing parsing JSON data.");
+    SubTest_JSONObjectParsingWithParser();
+    SubTest_JSONArrayParsingWithParser();
+    SubTest_JSONObjectParsingText();
+    SubTest_JSONArrayParsingText();
+    SubTest_JSONObjectParsingRaw();
+    SubTest_JSONArrayParsingRaw();
+    SubTest_JSONObjectParsingString();
+    SubTest_JSONArrayParsingString();
+
+    Issue("Complex JSON object is incorrectly parsed.");
+    Test_ExpectTrue(Prepare_FoldedObject().IsEqual(_().json.ParseObjectWith(
+        _().text.ParseString(default.preparedJObjectString))));
+    Test_ExpectTrue(Prepare_FoldedObject().IsEqual(_().json.ParseObject(
+        _().text.FromString(default.preparedJObjectString))));
+    Test_ExpectTrue(Prepare_FoldedObject().IsEqual(_().json.ParseObjectRaw(
+        _().text.StringToRaw(default.preparedJObjectString))));
+    Test_ExpectTrue(Prepare_FoldedObject().IsEqual(
+        _().json.ParseObjectString(default.preparedJObjectString)));
+}
+
+protected static function SubTest_JSONObjectParsingWithParser()
+{
+    local JObject parsedObject;
+    Issue("`ParseObjectWith()` cannot parse empty JSON object.");
+    parsedObject = _().json.ParseObjectWith(_().text.ParseString("{}"));
+    TEST_ExpectNotNone(parsedObject);
+    TEST_ExpectTrue(parsedObject.GetKeys().length == 0);
+
+    Issue("`ParseObjectWith()` doesn't report error when parsing an incorrect"
+        @ "object.");
+    parsedObject = _().json.ParseObjectWith(_().text.ParseString("{}"));
+    TEST_ExpectNone(_().json.ParseObjectWith(_().text.ParseString("")));
+    TEST_ExpectNone(_().json.ParseObjectWith(
+        _().text.ParseString("{\"var\": 89")));
+    TEST_ExpectNone(_().json.ParseObjectWith(
+        _().text.ParseString("\"var\": 89}")));
+    TEST_ExpectNone(_().json.ParseObjectWith(
+        _().text.ParseString("{var:false}")));
+
+    Issue("`ParseObjectWith()` cannot parse simple JSON object.");
+    parsedObject = _().json.ParseObjectWith(
+        _().text.ParseString("{\"var\":7 ,\"str\":\"aye!~\"}"));
+    TEST_ExpectNotNone(parsedObject);
+    TEST_ExpectTrue(parsedObject.GetNumber("var") == 7);
+    TEST_ExpectTrue(parsedObject.GetString("str") == "aye!~");
+
+    Issue("`JObject.ParseIntoSelfWith()` cannot add new properties.");
+    TEST_ExpectTrue(parsedObject.ParseIntoSelfWith(
+        _().text.ParseString("{\"newVar\": true}")));
+    TEST_ExpectTrue(parsedObject.GetBoolean("newVar"));
+}
+
+protected static function SubTest_JSONArrayParsingWithParser()
+{
+    local JArray parsedArray;
+    Issue("`ParseArrayWith()` cannot parse empty JSON array.");
+    parsedArray = _().json.ParseArrayWith(_().text.ParseString("[]"));
+    TEST_ExpectNotNone(parsedArray);
+    TEST_ExpectTrue(parsedArray.GetLength() == 0);
+
+    Issue("`ParseArrayWith()` doesn't report error when parsing an incorrect"
+        @ "object.");
+    parsedArray = _().json.ParseArrayWith(_().text.ParseString("[]"));
+    TEST_ExpectNone(_().json.ParseArrayWith(_().text.ParseString("")));
+    TEST_ExpectNone(_().json.ParseArrayWith(_().text.ParseString("[89")));
+    TEST_ExpectNone(_().json.ParseArrayWith(_().text.ParseString("89]")));
+    TEST_ExpectNone(_().json.ParseArrayWith(
+        _().text.ParseString("[false null]")));
+
+    Issue("`ParseArrayWith()` cannot parse simple JSON array.");
+    parsedArray = _().json.ParseArrayWith(
+        _().text.ParseString("[null, 67.349e2, \"what\"  , {}]"));
+    TEST_ExpectNotNone(parsedArray);
+    TEST_ExpectTrue(parsedArray.IsNull(0));
+    TEST_ExpectTrue(parsedArray.GetNumber(1) == 6734.9);
+    TEST_ExpectTrue(parsedArray.GetString(2) == "what");
+    TEST_ExpectTrue(parsedArray.GetObject(3).GetKeys().length == 0);
+
+    Issue("`JArray.ParseIntoSelfWith()` cannot add new elements.");
+    TEST_ExpectTrue(parsedArray.ParseIntoSelfWith(
+        _().text.ParseString("[\"huh\", Null]")));
+    TEST_ExpectTrue(parsedArray.GetString(4) == "huh");
+    TEST_ExpectTrue(parsedArray.IsNull(5));
+}
+
+protected static function SubTest_JSONObjectParsingText()
+{
+    local JObject parsedObject;
+    Issue("`ParseObject()` cannot parse empty JSON object.");
+    parsedObject = _().json.ParseObject(_().text.FromString("{}"));
+    TEST_ExpectNotNone(parsedObject);
+    TEST_ExpectTrue(parsedObject.GetKeys().length == 0);
+
+    Issue("`ParseObject()` doesn't report error when parsing an incorrect"
+        @ "object.");
+    parsedObject = _().json.ParseObject(_().text.FromString("{}"));
+    TEST_ExpectNone(_().json.ParseObject(_().text.FromString("")));
+    TEST_ExpectNone(_().json.ParseObject(_().text.FromString("{\"var\": 89")));
+    TEST_ExpectNone(_().json.ParseObject(_().text.FromString("\"var\": 89}")));
+    TEST_ExpectNone(_().json.ParseObject(_().text.FromString("{var:false}")));
+
+    Issue("`ParseObject()` cannot parse simple JSON object.");
+    parsedObject = _().json.ParseObject(
+        _().text.FromString("{\"var\":7 ,\"str\":\"aye!~\"}"));
+    TEST_ExpectNotNone(parsedObject);
+    TEST_ExpectTrue(parsedObject.GetNumber("var") == 7);
+    TEST_ExpectTrue(parsedObject.GetString("str") == "aye!~");
+
+    Issue("`JObject.ParseIntoSelf()` cannot add new properties.");
+    TEST_ExpectTrue(parsedObject.ParseIntoSelf(
+        _().text.FromString("{\"newVar\": true}")));
+    TEST_ExpectTrue(parsedObject.GetBoolean("newVar"));
+}
+
+protected static function SubTest_JSONArrayParsingText()
+{
+    local JArray parsedArray;
+    Issue("`ParseArray()` cannot parse empty JSON array.");
+    parsedArray = _().json.ParseArray(_().text.FromString("[]"));
+    TEST_ExpectNotNone(parsedArray);
+    TEST_ExpectTrue(parsedArray.GetLength() == 0);
+
+    Issue("`ParseArray()` doesn't report error when parsing an incorrect"
+        @ "object.");
+    parsedArray = _().json.ParseArray(_().text.FromString("[]"));
+    TEST_ExpectNone(_().json.ParseArray(_().text.FromString("")));
+    TEST_ExpectNone(_().json.ParseArray(_().text.FromString("[89")));
+    TEST_ExpectNone(_().json.ParseArray(_().text.FromString("89]")));
+    TEST_ExpectNone(_().json.ParseArray(_().text.FromString("[false null]")));
+
+    Issue("`ParseArray()` cannot parse simple JSON array.");
+    parsedArray = _().json.ParseArray(
+        _().text.FromString("[null, 67.349e2, \"what\"  , {}]"));
+    TEST_ExpectNotNone(parsedArray);
+    TEST_ExpectTrue(parsedArray.IsNull(0));
+    TEST_ExpectTrue(parsedArray.GetNumber(1) == 6734.9);
+    TEST_ExpectTrue(parsedArray.GetString(2) == "what");
+    TEST_ExpectTrue(parsedArray.GetObject(3).GetKeys().length == 0);
+
+    Issue("`JArray.ParseIntoSelf()` cannot add new elements.");
+    TEST_ExpectTrue(parsedArray.ParseIntoSelf(
+        _().text.FromString("[\"huh\", Null]")));
+    TEST_ExpectTrue(parsedArray.GetString(4) == "huh");
+    TEST_ExpectTrue(parsedArray.IsNull(5));
+}
+
+protected static function SubTest_JSONObjectParsingRaw()
+{
+    local JObject parsedObject;
+    Issue("`ParseObjectRaw()` cannot parse empty JSON object.");
+    parsedObject = _().json.ParseObjectRaw(_().text.StringToRaw("{}"));
+    TEST_ExpectNotNone(parsedObject);
+    TEST_ExpectTrue(parsedObject.GetKeys().length == 0);
+
+    Issue("`ParseObjectRaw()` doesn't report error when parsing an incorrect"
+        @ "object.");
+    parsedObject = _().json.ParseObjectRaw(_().text.StringToRaw("{}"));
+    TEST_ExpectNone(_().json.ParseObjectRaw(_().text.StringToRaw("")));
+    TEST_ExpectNone(_().json.ParseObjectRaw(
+        _().text.StringToRaw("{\"var\": 89")));
+    TEST_ExpectNone(_().json.ParseObjectRaw(
+        _().text.StringToRaw("\"var\": 89}")));
+    TEST_ExpectNone(_().json.ParseObjectRaw(
+        _().text.StringToRaw("{var:false}")));
+
+    Issue("`ParseObjectRaw()` cannot parse simple JSON object.");
+    parsedObject = _().json.ParseObjectRaw(
+        _().text.StringToRaw("{\"var\":7 ,\"str\":\"aye!~\"}"));
+    TEST_ExpectNotNone(parsedObject);
+    TEST_ExpectTrue(parsedObject.GetNumber("var") == 7);
+    TEST_ExpectTrue(parsedObject.GetString("str") == "aye!~");
+
+    Issue("`JObject.ParseIntoSelfRaw()` cannot add new properties.");
+    TEST_ExpectTrue(parsedObject.ParseIntoSelfRaw(
+        _().text.StringToRaw("{\"newVar\": true}")));
+    TEST_ExpectTrue(parsedObject.GetBoolean("newVar"));
+}
+
+protected static function SubTest_JSONArrayParsingRaw()
+{
+    local JArray parsedArray;
+    Issue("`ParseArrayRaw()` cannot parse empty JSON array.");
+    parsedArray = _().json.ParseArrayRaw(_().text.StringToRaw("[]"));
+    TEST_ExpectNotNone(parsedArray);
+    TEST_ExpectTrue(parsedArray.GetLength() == 0);
+
+    Issue("`ParseArrayRaw()` doesn't report error when parsing an incorrect"
+        @ "object.");
+    parsedArray = _().json.ParseArrayRaw(_().text.StringToRaw("[]"));
+    TEST_ExpectNone(_().json.ParseArrayRaw(_().text.StringToRaw("")));
+    TEST_ExpectNone(_().json.ParseArrayRaw(_().text.StringToRaw("[89")));
+    TEST_ExpectNone(_().json.ParseArrayRaw(_().text.StringToRaw("89]")));
+    TEST_ExpectNone(_().json.ParseArrayRaw(
+        _().text.StringToRaw("[false null]")));
+
+    Issue("`ParseArrayRaw()` cannot parse simple JSON array.");
+    parsedArray = _().json.ParseArrayRaw(
+        _().text.StringToRaw("[null, 67.349e2, \"what\"  , {}]"));
+    TEST_ExpectNotNone(parsedArray);
+    TEST_ExpectTrue(parsedArray.IsNull(0));
+    TEST_ExpectTrue(parsedArray.GetNumber(1) == 6734.9);
+    TEST_ExpectTrue(parsedArray.GetString(2) == "what");
+    TEST_ExpectTrue(parsedArray.GetObject(3).GetKeys().length == 0);
+
+    Issue("`JArray.ParseIntoSelfRaw()` cannot add new elements.");
+    TEST_ExpectTrue(parsedArray.ParseIntoSelfRaw(
+        _().text.StringToRaw("[\"huh\", Null]")));
+    TEST_ExpectTrue(parsedArray.GetString(4) == "huh");
+    TEST_ExpectTrue(parsedArray.IsNull(5));
+}
+
+protected static function SubTest_JSONObjectParsingString()
+{
+    local JObject parsedObject;
+    Issue("`ParseObjectString()` cannot parse empty JSON object.");
+    parsedObject = _().json.ParseObjectString("{}");
+    TEST_ExpectNotNone(parsedObject);
+    TEST_ExpectTrue(parsedObject.GetKeys().length == 0);
+
+    Issue("`ParseObjectString()` doesn't report error when parsing an incorrect"
+        @ "object.");
+    parsedObject = _().json.ParseObjectString("{}");
+    TEST_ExpectNone(_().json.ParseObjectString(""));
+    TEST_ExpectNone(_().json.ParseObjectString("{\"var\": 89"));
+    TEST_ExpectNone(_().json.ParseObjectString("\"var\": 89}"));
+    TEST_ExpectNone(_().json.ParseObjectString("{var:false}"));
+
+    Issue("`ParseObjectString()` cannot parse simple JSON object.");
+    parsedObject = _().json.ParseObjectString("{\"var\":7 ,\"str\":\"aye!~\"}");
+    TEST_ExpectNotNone(parsedObject);
+    TEST_ExpectTrue(parsedObject.GetNumber("var") == 7);
+    TEST_ExpectTrue(parsedObject.GetString("str") == "aye!~");
+
+    Issue("`JObject.ParseIntoSelfString()` cannot add new properties.");
+    TEST_ExpectTrue(parsedObject.ParseIntoSelfString("{\"newVar\": true}"));
+    TEST_ExpectTrue(parsedObject.GetBoolean("newVar"));
+}
+
+protected static function SubTest_JSONArrayParsingString()
+{
+    local JArray parsedArray;
+    Issue("`ParseArrayString()` cannot parse empty JSON array.");
+    parsedArray = _().json.ParseArrayString("[]");
+    TEST_ExpectNotNone(parsedArray);
+    TEST_ExpectTrue(parsedArray.GetLength() == 0);
+
+    Issue("`ParseArrayString()` doesn't report error when parsing an incorrect"
+        @ "object.");
+    parsedArray = _().json.ParseArrayString("[]");
+    TEST_ExpectNone(_().json.ParseArrayString(""));
+    TEST_ExpectNone(_().json.ParseArrayString("[89"));
+    TEST_ExpectNone(_().json.ParseArrayString("89]"));
+    TEST_ExpectNone(_().json.ParseArrayString("[false null]"));
+
+    Issue("`ParseArrayString()` cannot parse simple JSON array.");
+    parsedArray = _().json.ParseArrayString("[null, 67.349e2, \"what\"  , {}]");
+    TEST_ExpectNotNone(parsedArray);
+    TEST_ExpectTrue(parsedArray.IsNull(0));
+    TEST_ExpectTrue(parsedArray.GetNumber(1) == 6734.9);
+    TEST_ExpectTrue(parsedArray.GetString(2) == "what");
+    TEST_ExpectTrue(parsedArray.GetObject(3).GetKeys().length == 0);
+
+    Issue("`JArray.ParseIntoSelfString()` cannot add new elements.");
+    TEST_ExpectTrue(parsedArray.ParseIntoSelfString("[\"huh\", Null]"));
+    TEST_ExpectTrue(parsedArray.GetString(4) == "huh");
+    TEST_ExpectTrue(parsedArray.IsNull(5));
+}
+
 defaultproperties
 {
     caseName = "JSON"
+    preparedJObjectString = "{\"innerObject\":{\"my_bool\":true,\"array\":[\"Engine.Actor\",false,null,{\"something here\":\"yes\",\"maybe\":0.003},56.6],\"one more\":{\"nope\":324532,\"whatever\":false,\"o rly?\":\"ya rly\"},\"my_int\":-9823452},\"some_var\":-7.32,\"another_var\":\"aye!\"}"
 }
