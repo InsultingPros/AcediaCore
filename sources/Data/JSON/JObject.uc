@@ -148,12 +148,17 @@ private final function UpdateProperty(JProperty newProperty)
 //  Returns `true` if something was actually removed.
 private final function bool RemoveProperty(string propertyName)
 {
-    local int bucketIndex, propertyIndex;
+    local JProperty propertyToRemove;
+    local int       bucketIndex, propertyIndex;
     //  Ensure has table was initialized before any updates
     if (hashTable.length <= 0) {
         UpdateHashTableCapacity();
     }
     if (FindPropertyIndices(propertyName, bucketIndex, propertyIndex)) {
+        propertyToRemove = hashTable[bucketIndex].properties[propertyIndex];
+        if (propertyToRemove.value.complexValue != none) {
+            propertyToRemove.value.complexValue.Destroy();
+        }
         hashTable[bucketIndex].properties.Remove(propertyIndex, 1);
         storedElementCount = Max(0, storedElementCount - 1);
         UpdateHashTableCapacity();
@@ -638,6 +643,21 @@ protected function string DisplayProperty(
     return (result $ displaySettings.beforePropertyValue
         $ DisplayAtom(toDisplay.value, displaySettings)
         $ displaySettings.afterPropertyValue);
+}
+
+public function Clear()
+{
+    local int               i, j;
+    local array<JProperty>  nextProperties;
+    for (i = 0; i < hashTable.length; i += 1)
+    {
+        nextProperties = hashTable[i].properties;
+        for (j = 0; j < nextProperties.length; j += 1)
+        {
+            if (nextProperties[j].value.complexValue == none) continue;
+            nextProperties[j].value.complexValue.Destroy();
+        }
+    }
 }
 
 defaultproperties

@@ -481,13 +481,25 @@ public final function JArray AddObject()
 //  Returns `true` if value was actually removed and `false` if it didn't exist.
 public final function bool RemoveValue(int index, optional int amount)
 {
+    local int i;
     if (index < 0)              return false;
     if (index >= data.length)   return false;
 
     amount = Max(amount, 1);
     amount = Min(amount, data.length - index);
+    for (i = index; i < index + amount; i += 1)
+    {
+        if (data[index].complexValue != none) {
+            data[index].complexValue.Destroy();
+        }
+    }
     data.Remove(index, amount);
     return true;
+}
+
+public function Clear()
+{
+    RemoveValue(0, data.length);
 }
 
 public function bool IsSubsetOf(JSON rightValue)

@@ -103,6 +103,8 @@ struct JSONDisplaySettings
 
 var private const int MAX_FLOAT_PRECISION;
 
+public function Clear(){}
+
 public function JSON Clone()
 {
     return none;
@@ -479,6 +481,12 @@ protected final function JStorageAtom ParseNumber(Parser parser)
     newAtom.numberValue         = newAtom.numberValueAsInt;
     newAtom.preferIntegerValue  = true;
     return newAtom;
+}
+
+event Destroyed()
+{
+    super.Destroyed();
+    Clear();
 }
 
 defaultproperties
