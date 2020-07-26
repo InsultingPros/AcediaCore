@@ -629,7 +629,7 @@ public final function bool ParseString(
  *      If parsed color did not specify alpha component - 255 will be used.
  *  @return `true` if parsing was successful and false otherwise.
  */
-public final function bool ParseText(
+public final function bool Parse(
     Text        textWithColor,
     out Color   resultingColor)
 {

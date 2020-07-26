@@ -431,37 +431,37 @@ protected static function SubTest_ParseText()
 {
     local Color expectedColor, resultColor;
     expectedColor = _().color.RGBA(154, 255, 0, 187);
-    Issue("`ParseText()` cannot parse hex colors.");
-    TEST_ExpectTrue(_().color.ParseText(_().text.FromString("#9aff00"),
+    Issue("`Parse()` cannot parse hex colors.");
+    TEST_ExpectTrue(_().color.Parse(_().text.FromString("#9aff00"),
                                         resultColor));
     TEST_ExpectTrue(_().color.AreEqual(resultColor, expectedColor));
 
-    Issue("`ParseText()` cannot parse rgb colors.");
-    TEST_ExpectTrue(_().color.ParseText(_().text.FromString("rgb(154,255,0)"),
+    Issue("`Parse()` cannot parse rgb colors.");
+    TEST_ExpectTrue(_().color.Parse(_().text.FromString("rgb(154,255,0)"),
                                         resultColor));
     TEST_ExpectTrue(_().color.AreEqual(resultColor, expectedColor));
 
-    Issue("`ParseText()` cannot parse rgba colors.");
-    TEST_ExpectTrue(_().color.ParseText(
+    Issue("`Parse()` cannot parse rgba colors.");
+    TEST_ExpectTrue(_().color.Parse(
         _().text.FromString("rgba(154,255,0,187)"),
         resultColor));
     TEST_ExpectTrue(_().color.AreEqualWithAlpha(resultColor, expectedColor));
 
-    Issue("`ParseText()` cannot parse rgb colors with tags.");
-    TEST_ExpectTrue(_().color.ParseText(
+    Issue("`Parse()` cannot parse rgb colors with tags.");
+    TEST_ExpectTrue(_().color.Parse(
         _().text.FromString("rgb(r=154,g=255,b=0)"),
         resultColor));
     TEST_ExpectTrue(_().color.AreEqual(resultColor, expectedColor));
 
-    Issue("`ParseText()` cannot parse rgba colors with tags.");
-    TEST_ExpectTrue(_().color.ParseText(
+    Issue("`Parse()` cannot parse rgba colors with tags.");
+    TEST_ExpectTrue(_().color.Parse(
         _().text.FromString("rgba(r=154,g=255,b=0,a=187)"),
         resultColor));
     TEST_ExpectTrue(_().color.AreEqualWithAlpha(resultColor, expectedColor));
 
-    Issue("`ParseText()` reports success when parsing invalid color string.");
-    TEST_ExpectFalse(_().color.ParseText(   _().text.FromString("#9aff0g"),
-                                            resultColor));
+    Issue("`Parse()` reports success when parsing invalid color string.");
+    TEST_ExpectFalse(_().color.Parse(   _().text.FromString("#9aff0g"),
+                                        resultColor));
 }
 
 protected static function SubTest_ParseRaw()
