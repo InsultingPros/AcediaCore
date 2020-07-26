@@ -547,7 +547,6 @@ public function JSON Clone()
 
 public function bool ParseIntoSelfWith(Parser parser)
 {
-    local int                   i;
     local bool                  parsingSucceeded;
     local Parser.ParserState    initState;
     local JStorageAtom          nextAtom;
@@ -578,18 +577,32 @@ public function bool ParseIntoSelfWith(Parser parser)
             break;
         }
         parsedAtoms[parsedAtoms.length] = nextAtom;
-        parser.Confirm();
     }
+    HandleParsedAtoms(parsedAtoms, parsingSucceeded);
+    if (!parsingSucceeded) {
+        parser.RestoreState(initState);
+    }
+    return parsingSucceeded;
+}
+
+private function HandleParsedAtoms(
+    array<JStorageAtom> parsedAtoms,
+    bool                parsingSucceeded)
+{
+    local int i;
     if (parsingSucceeded)
     {
         for (i = 0; i < parsedAtoms.length; i += 1) {
             data[data.length] = parsedAtoms[i];
         }
+        return;
     }
-    else {
-        parser.RestoreState(initState);
+    for (i = 0; i < parsedAtoms.length; i += 1)
+    {
+        if (parsedAtoms[i].complexValue != none) {
+            parsedAtoms[i].complexValue.Destroy();
+        }
     }
-    return parsingSucceeded;
 }
 
 public function string DisplayWith(JSONDisplaySettings displaySettings)

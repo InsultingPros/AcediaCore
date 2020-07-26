@@ -536,7 +536,6 @@ public function JSON Clone()
 
 public function bool ParseIntoSelfWith(Parser parser)
 {
-    local int                   i;
     local bool                  parsingSucceeded;
     local Parser.ParserState    initState;
     local JProperty             nextProperty;
@@ -552,7 +551,8 @@ public function bool ParseIntoSelfWith(Parser parser)
     while (parser.Ok() && !parser.HasFinished())
     {
         parser.Skip().Confirm();
-        if (parser.Match("}").Ok()) {
+        if (parser.Match("}").Ok())
+        {
             parsingSucceeded = true;
             break;
         }
@@ -568,18 +568,32 @@ public function bool ParseIntoSelfWith(Parser parser)
             break;
         }
         parsedProperties[parsedProperties.length] = nextProperty;
-        parser.Confirm();
     }
+    HandleParsedProperties(parsedProperties, parsingSucceeded);
+    if (!parsingSucceeded) {
+        parser.RestoreState(initState);
+    }
+    return parsingSucceeded;
+}
+
+private function HandleParsedProperties(
+    array<JProperty>    parsedProperties,
+    bool                parsingSucceeded)
+{
+    local int i;
     if (parsingSucceeded)
     {
         for (i = 0; i < parsedProperties.length; i += 1) {
             UpdateProperty(parsedProperties[i]);
         }
+        return;
     }
-    else {
-        parser.RestoreState(initState);
+    for (i = 0; i < parsedProperties.length; i += 1)
+    {
+        if (parsedProperties[i].value.complexValue != none) {
+            parsedProperties[i].value.complexValue.Destroy();
+        }
     }
-    return parsingSucceeded;
 }
 
 public function string DisplayWith(JSONDisplaySettings displaySettings)
