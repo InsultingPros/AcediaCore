@@ -444,7 +444,9 @@ public final function Parser Skip(optional out int whitespacesAmount)
     {
         whitespacesAmount += 1;
     }
-    ShiftPointer(whitespacesAmount);
+    if (whitespacesAmount > 0) {
+        ShiftPointer(whitespacesAmount);
+    }
     return self;
 }
 
@@ -610,8 +612,7 @@ public final function Parser MUnsignedInteger
  *      Any passed value is discarded.
  *  @return Returns the calling object, to allow for function chaining.
  */
-public final function Parser MEscapedSequence
-(
+public final function Parser MEscapedSequence(
     out Text.Character denotedCharacter
 )
 {
