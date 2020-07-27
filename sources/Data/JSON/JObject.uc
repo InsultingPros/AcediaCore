@@ -616,10 +616,16 @@ public function string DisplayWith(JSONDisplaySettings displaySettings)
     //      Prepare delimiters using appropriate indentation rules
     //      We only use inner settings for the part right after '{',
     //  as the rest is supposed to be aligned with outer objects
+    openingBraces = "{";
+    closingBraces = "}";
+    if (innerSettings.colored) {
+        openingBraces = "&" $ openingBraces;
+        closingBraces = "&" $ closingBraces;
+    }
     openingBraces = displaySettings.beforeObjectOpening
-        $ "{" $ innerSettings.afterObjectOpening;
+        $ openingBraces $ innerSettings.afterObjectOpening;
     closingBraces = displaySettings.beforeObjectEnding
-        $ "}" $ displaySettings.afterObjectEnding;
+        $ closingBraces $ displaySettings.afterObjectEnding;
     propertiesSeparator = "," $ innerSettings.afterObjectComma;
     if (innerSettings.colored) {
         propertiesSeparator = "{$json_comma" @ propertiesSeparator $ "}";
