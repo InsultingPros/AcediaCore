@@ -537,12 +537,12 @@ public function JSON Clone()
 public function bool ParseIntoSelfWith(Parser parser)
 {
     local bool                  parsingSucceeded;
-    local Parser.ParserState    initState;
+    local Parser.ParserState    initState, confirmedState;
     local JProperty             nextProperty;
     local array<JProperty>      parsedProperties;
     if (parser == none) return false;
     initState = parser.GetCurrentState();
-    parser.Skip().Match("{").Confirm();
+    confirmedState = parser.Skip().Match("{").GetCurrentState();
     if (!parser.Ok())
     {
         parser.RestoreState(initState);
@@ -550,19 +550,21 @@ public function bool ParseIntoSelfWith(Parser parser)
     }
     while (parser.Ok() && !parser.HasFinished())
     {
-        parser.Skip().Confirm();
+        confirmedState = parser.Skip().GetCurrentState();
         if (parser.Match("}").Ok())
         {
             parsingSucceeded = true;
             break;
         }
-        if (parsedProperties.length > 0 && !parser.R().Match(",").Skip().Ok()) {
+        if (    parsedProperties.length > 0
+            &&  !parser.RestoreState(confirmedState).Match(",").Skip().Ok()) {
             break;
         }
-        else {
-            parser.Confirm();
+        else if (parser.Ok()) {
+            confirmedState = parser.GetCurrentState();
         }
-        parser.R().Skip().MStringLiteral(nextProperty.name).Skip().Match(":");
+        parser.RestoreState(confirmedState).Skip();
+        parser.MStringLiteral(nextProperty.name).Skip().Match(":");
         nextProperty.value = ParseAtom(parser.Skip());
         if (!parser.Ok() || nextProperty.value.type == JSON_Undefined) {
             break;
