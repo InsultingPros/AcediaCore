@@ -28,7 +28,7 @@ protected static function TESTS()
     local JObject jsonData;
     jsonData = _().json.newObject();
     Test_ObjectGetSetRemove();
-    Test_ObjectKeys();
+    Test_ObjectPropertyNames();
     Test_ArrayGetSetRemove();
     Test_JSONComparison();
     Test_JSONCloning();
@@ -53,7 +53,7 @@ protected static function Test_ObjectGetSetRemove()
 
 protected static function Test_ArrayGetSetRemove()
 {
-    Context("Testing get/set/remove functions for JSON arrays");
+    Context("Testing get/set/remove functions for JSON arrays.");
     SubTest_ArrayUndefined();
     SubTest_ArrayStringGetSetRemove();
     SubTest_ArrayClassGetSetRemove();
@@ -74,7 +74,7 @@ protected static function SubTest_Undefined()
     local JObject testJSON;
     testJSON = _().json.newObject();
 
-    Context("Testing how `JObject` handles undefined values");
+    Context("Testing how `JObject` handles undefined values.");
     Issue("Undefined variable doesn't have proper type.");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_var") == JSON_Undefined);
 
@@ -96,27 +96,27 @@ protected static function SubTest_BooleanGetSetRemove()
     testJSON.SetBoolean("some_boolean", true);
 
     Context("Testing `JObject`'s get/set/remove functions for" @
-            "boolean variables");
-    Issue("Boolean type isn't properly set by `SetBoolean`");
+            "boolean variables.");
+    Issue("Boolean type isn't properly set by `SetBoolean()`.");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_boolean") == JSON_Boolean);
 
-    Issue("Variable value is incorrectly assigned by `SetBoolean`");
+    Issue("Variable value is incorrectly assigned by `SetBoolean()`.");
     TEST_ExpectTrue(testJSON.GetBoolean("some_boolean") == true);
 
-    Issue("Variable value isn't correctly reassigned by `SetBoolean`");
+    Issue("Variable value isn't correctly reassigned by `SetBoolean()`.");
     testJSON.SetBoolean("some_boolean", false);
     TEST_ExpectTrue(testJSON.GetBoolean("some_boolean") == false);
 
     Issue(  "Getting boolean variable as a wrong type" @
-            "doesn't yield default value");
+            "doesn't yield default value.");
     TEST_ExpectTrue(testJSON.GetNumber("some_boolean", 7) == 7);
 
-    Issue("Boolean variable isn't being properly removed");
+    Issue("Boolean variable isn't being properly removed.");
     testJSON.RemoveValue("some_boolean");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_boolean") == JSON_Undefined);
 
     Issue(  "Getters don't return default value for missing key that" @
-            "previously stored boolean value, that got removed");
+            "previously stored boolean value, that got removed.");
     TEST_ExpectTrue(testJSON.GetBoolean("some_boolean", true) == true);
 }
 
@@ -127,32 +127,32 @@ protected static function SubTest_StringGetSetRemove()
     testJSON.SetString("some_string", "first string");
 
     Context("Testing `JObject`'s get/set/remove functions for" @
-            "string variables");
-    Issue("String type isn't properly set by `SetString`");
+            "string variables.");
+    Issue("String type isn't properly set by `SetString()`.");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_string") == JSON_String);
 
-    Issue("Value is incorrectly assigned by `SetString`");
+    Issue("Value is incorrectly assigned by `SetString()`.");
     TEST_ExpectTrue(testJSON.GetString("some_string") == "first string");
 
     Issue(  "Providing default variable value makes 'GetString'" @
-            "return wrong value");
+            "return wrong value.");
     TEST_ExpectTrue(    testJSON.GetString("some_string", "alternative")
                     ==  "first string");
 
-    Issue("Variable value isn't correctly reassigned by `SetString`");
+    Issue("Variable value isn't correctly reassigned by `SetString()`.");
     testJSON.SetString("some_string", "new string!~");
     TEST_ExpectTrue(testJSON.GetString("some_string") == "new string!~");
 
     Issue(  "Getting string variable as a wrong type" @
-            "doesn't yield default value");
+            "doesn't yield default value.");
     TEST_ExpectTrue(testJSON.GetBoolean("some_string", true) == true);
 
-    Issue("String variable isn't being properly removed");
+    Issue("String variable isn't being properly removed.");
     testJSON.RemoveValue("some_string");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_string") == JSON_Undefined);
 
     Issue(  "Getters don't return default value for missing key that" @
-            "previously stored string value, but got removed");
+            "previously stored string value, but got removed.");
     TEST_ExpectTrue(testJSON.GetString("some_string", "other") == "other");
 }
 
@@ -163,32 +163,32 @@ protected static function SubTest_ClassGetSetRemove()
     testJSON.SetClass("info_class", class'Info');
 
     Context("Testing `JObject`'s get/set/remove functions for" @
-            "class variables");
-    Issue("String type isn't properly set by `SetClass`");
+            "class variables.");
+    Issue("String type isn't properly set by `SetClass()`.");
     TEST_ExpectTrue(testJSON.GetTypeOf("info_class") == JSON_String);
 
-    Issue("Value is incorrectly assigned by `SetClass`");
+    Issue("Value is incorrectly assigned by `SetClass()`.");
     TEST_ExpectTrue(testJSON.GetClass("info_class") == class'Info');
 
-    Issue(  "Providing default variable value makes 'GetClass'" @
-            "return wrong value");
+    Issue(  "Providing default variable value makes 'GetClass()'" @
+            "return wrong value.");
     TEST_ExpectTrue(    testJSON.GetClass("info_class", class'Actor')
                     ==  class'Info');
 
-    Issue("Variable value isn't correctly reassigned by `SetClass`");
+    Issue("Variable value isn't correctly reassigned by `SetClass`.");
     testJSON.SetClass("info_class", class'ReplicationInfo');
     TEST_ExpectTrue(testJSON.GetClass("info_class") == class'ReplicationInfo');
 
     Issue(  "Getting class variable as a wrong type" @
-            "doesn't yield default value");
+            "doesn't yield default value.");
     TEST_ExpectTrue(testJSON.GetBoolean("info_class", true) == true);
 
-    Issue("Class variable isn't being properly removed");
+    Issue("Class variable isn't being properly removed.");
     testJSON.RemoveValue("info_class");
     TEST_ExpectTrue(testJSON.GetTypeOf("info_class") == JSON_Undefined);
 
     Issue(  "Getters don't return default value for missing key that" @
-            "previously stored class value, but got removed");
+            "previously stored class value, but got removed.");
     TEST_ExpectTrue(    testJSON.GetClass("info_class", class'Actor')
                     ==  class'Actor');
 }
@@ -229,18 +229,18 @@ protected static function SubTest_NumberGetSetRemove()
     testJSON.SetNumber("some_number", 3.5);
 
     Context("Testing `JObject`'s get/set/remove functions for" @
-            "number variables as floats");
-    Issue("Number type isn't properly set by `SetNumber`");
+            "number variables as floats.");
+    Issue("Number type isn't properly set by `SetNumber()`.");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_number") == JSON_Number);
 
-    Issue("Value is incorrectly assigned by `SetNumber`");
+    Issue("Value is incorrectly assigned by `SetNumber()`.");
     TEST_ExpectTrue(testJSON.GetNumber("some_number") == 3.5);
 
-    Issue(  "Providing default variable value makes 'GetNumber'" @
-            "return wrong value");
+    Issue(  "Providing default variable value makes 'GetNumber()'" @
+            "return wrong value.");
     TEST_ExpectTrue(testJSON.GetNumber("some_number", 5) == 3.5);
 
-    Issue("Variable value isn't correctly reassigned by `SetNumber`");
+    Issue("Variable value isn't correctly reassigned by `SetNumber()`.");
     testJSON.SetNumber("some_number", 7);
     TEST_ExpectTrue(testJSON.GetNumber("some_number") == 7);
 
@@ -248,12 +248,12 @@ protected static function SubTest_NumberGetSetRemove()
             "doesn't yield default value.");
     TEST_ExpectTrue(testJSON.GetString("some_number", "default") == "default");
 
-    Issue("Number type isn't being properly removed");
+    Issue("Number type isn't being properly removed.");
     testJSON.RemoveValue("some_number");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_number") == JSON_Undefined);
 
     Issue(  "Getters don't return default value for missing key that" @
-            "previously stored number value, that got removed");
+            "previously stored number value, that got removed.");
     TEST_ExpectTrue(testJSON.GetNumber("some_number", 13) == 13);
 }
 
@@ -264,18 +264,18 @@ protected static function SubTest_IntegerGetSetRemove()
     testJSON.SetInteger("some_number", 33653);
 
     Context("Testing `JObject`'s get/set/remove functions for" @
-            "number variables as integers");
-    Issue("Number type isn't properly set by `SetInteger`");
+            "number variables as integers.");
+    Issue("Number type isn't properly set by `SetInteger`.");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_number") == JSON_Number);
 
-    Issue("Value is incorrectly assigned by `SetInteger`");
+    Issue("Value is incorrectly assigned by `SetInteger()`.");
     TEST_ExpectTrue(testJSON.GetInteger("some_number") == 33653);
 
-    Issue(  "Providing default variable value makes 'GetInteger'" @
-            "return wrong value");
+    Issue(  "Providing default variable value makes 'GetInteger()'" @
+            "return wrong value.");
     TEST_ExpectTrue(testJSON.GetInteger("some_number", 5) == 33653);
 
-    Issue("Variable value isn't correctly reassigned by `SetInteger`");
+    Issue("Variable value isn't correctly reassigned by `SetInteger()`.");
     testJSON.SetInteger("some_number", MaxInt);
     TEST_ExpectTrue(testJSON.GetInteger("some_number") == MaxInt);
 
@@ -283,12 +283,12 @@ protected static function SubTest_IntegerGetSetRemove()
             "doesn't yield default value.");
     TEST_ExpectTrue(testJSON.GetString("some_number", "default") == "default");
 
-    Issue("Number type isn't being properly removed");
+    Issue("Number type isn't being properly removed.");
     testJSON.RemoveValue("some_number");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_number") == JSON_Undefined);
 
     Issue(  "Getters don't return default value for missing key that" @
-            "previously stored number value, that got removed");
+            "previously stored number value, that got removed.");
     TEST_ExpectTrue(testJSON.GetInteger("some_number", -235) == -235);
 }
 
@@ -320,27 +320,27 @@ protected static function SubTest_NullGetSetRemove()
     testJSON = _().json.newObject();
 
     Context("Testing `JObject`'s get/set/remove functions for" @
-            "null values");
-    Issue("Undefined variable is incorrectly considered `null`");
+            "null values.");
+    Issue("Undefined variable is incorrectly considered null.");
     TEST_ExpectFalse(testJSON.IsNull("some_var"));
 
-    Issue("Number variable is incorrectly considered `null`");
+    Issue("Number variable is incorrectly considered null.");
     testJSON.SetNumber("some_var", 4);
     TEST_ExpectFalse(testJSON.IsNull("some_var"));
 
-    Issue("Boolean variable is incorrectly considered `null`");
+    Issue("Boolean variable is incorrectly considered null.");
     testJSON.SetBoolean("some_var", true);
     TEST_ExpectFalse(testJSON.IsNull("some_var"));
 
-    Issue("String variable is incorrectly considered `null`");
+    Issue("String variable is incorrectly considered null.");
     testJSON.SetString("some_var", "string");
     TEST_ExpectFalse(testJSON.IsNull("some_var"));
     
-    Issue("Null value is incorrectly assigned");
+    Issue("Null value is incorrectly assigned.");
     testJSON.SetNull("some_var");
     TEST_ExpectTrue(testJSON.IsNull("some_var"));
 
-    Issue("Null type isn't properly set by `SetNumber`");
+    Issue("Null type isn't properly set by `SetNumber`.");
     TEST_ExpectTrue(testJSON.GetTypeOf("some_var") == JSON_Null);
 
     Issue("Null value isn't being properly removed.");
@@ -355,17 +355,14 @@ protected static function SubTest_MultipleVariablesGetSet()
     local JObject    testJSON;
     testJSON = _().json.newObject();
     Context("Testing how `JObject` handles addition, change and removal" @
-            "of relatively large (hundreds) number of variables");
-    for (i = 0; i < 2000; i += 1)
-    {
+            "of relatively large (hundreds) number of variables.");
+    for (i = 0; i < 2000; i += 1) {
         testJSON.SetNumber("num" $ string(i), 4 * i*i - 2.6 * i + 0.75);
     }
-    for (i = 0; i < 500; i += 1)
-    {
+    for (i = 0; i < 500; i += 1) {
         testJSON.SetString("num" $ string(i), "str" $ string(Sin(i)));
     }
-    for (i = 1500; i < 2000; i += 1)
-    {
+    for (i = 1500; i < 2000; i += 1) {
         testJSON.RemoveValue("num" $ string(i));
     }
     allValuesCorrect = true;
@@ -375,19 +372,19 @@ protected static function SubTest_MultipleVariablesGetSet()
         {
             correctValue = (    testJSON.GetString("num" $ string(i))
                             ==  ("str" $ string(Sin(i))) );
-            Issue("Variables are incorrectly overwritten");
+            Issue("Variables are incorrectly overwritten.");
         }
         else if(i < 1500)
         {
             correctValue = (    testJSON.GetNumber("num" $ string(i))
                             ==  4 * i*i - 2.6 * i + 0.75);
-            Issue("Variables are lost");
+            Issue("Variables are lost.");
         }
         else
         {
             correctValue = (    testJSON.GetTypeOf("num" $ string(i))
                             ==  JSON_Undefined);
-            Issue("Variables aren't removed");
+            Issue("Variables aren't removed.");
         }
         if (!correctValue)
         {
@@ -401,7 +398,7 @@ protected static function SubTest_MultipleVariablesGetSet()
 protected static function SubTest_Object()
 {
     local JObject testObject;
-    Context("Testing setters and getters for folded objects");
+    Context("Testing setters and getters for folded objects.");
     testObject = _().json.newObject();
     testObject.CreateObject("folded");
     testObject.GetObject("folded").CreateObject("folded");
@@ -411,72 +408,73 @@ protected static function SubTest_Object()
         .GetObject("folded")
         .SetString("in", "string inside");
 
-    Issue("Addressing variables in root object doesn't work");
+    Issue("Addressing variables in root object doesn't work.");
     TEST_ExpectTrue(testObject.GetString("out", "default") == "string outside");
 
-    Issue("Addressing variables in folded object doesn't work");
+    Issue("Addressing variables in folded object doesn't work.");
     TEST_ExpectTrue(testObject.GetObject("folded").GetNumber("mid", 1) == 8);
 
-    Issue("Addressing plain variables in folded (twice) object doesn't work");
+    Issue("Addressing plain variables in folded (twice) object doesn't work.");
     TEST_ExpectTrue(testObject.GetObject("folded").GetObject("folded")
         .GetString("in", "default") == "string inside");
 }
 
-protected static function Test_ObjectKeys()
+protected static function Test_ObjectPropertynames()
 {
     local int           i;
     local bool          varFound, clsFound, objFound;
     local JObject       testObject;
-    local array<string> keys;
+    local array<string> names;
     testObject = _().json.newObject();
-    Context("Testing getting list of keys from the `JObject`.");
-    Issue("Just created `JObject` returns non-empty key list.");
-    TEST_ExpectTrue(testObject.GetKeys().length == 0);
+    Context("Testing getting list of property names from the `JObject`.");
+    Issue("Just created `JObject` returns non-empty names list.");
+    TEST_ExpectTrue(testObject.GetPropertyNames().length == 0);
 
-    Issue("`JObject` returns incorrect key list.");
-    keys = testObject.SetInteger("var", 7).SetClass("cls", class'Actor')
-        .CreateObject("obj").GetKeys();
-    TEST_ExpectTrue(keys.length == 3);
-    for (i = 0; i < keys.length; i += 1)
+    Issue("`JObject` returns incorrect names list.");
+    names = testObject.SetInteger("var", 7).SetClass("cls", class'Actor')
+        .CreateObject("obj").GetPropertyNames();
+    TEST_ExpectTrue(names.length == 3);
+    for (i = 0; i < names.length; i += 1)
     {
-        if (keys[i] == "var") { varFound = true; }
-        if (keys[i] == "cls") { clsFound = true; }
-        if (keys[i] == "obj") { objFound = true; }
+        if (names[i] == "var") { varFound = true; }
+        if (names[i] == "cls") { clsFound = true; }
+        if (names[i] == "obj") { objFound = true; }
     }
     TEST_ExpectTrue(varFound && clsFound && objFound);
 
-    Issue("`JObject` returns incorrect key list after removing an element.");
-    keys = testObject.RemoveValue("cls").GetKeys();
-    TEST_ExpectTrue(keys.length == 2);
+    Issue("`JObject` returns incorrect names list after removing an element.");
+    names = testObject.RemoveValue("cls").GetPropertyNames();
+    TEST_ExpectTrue(names.length == 2);
     varFound = false;
     objFound = false;
-    for (i = 0; i < keys.length; i += 1)
+    for (i = 0; i < names.length; i += 1)
     {
-        if (keys[i] == "var") { varFound = true; }
-        if (keys[i] == "obj") { objFound = true; }
+        if (names[i] == "var") { varFound = true; }
+        if (names[i] == "obj") { objFound = true; }
     }
     TEST_ExpectTrue(varFound && objFound);
 
-    Issue("`JObject` returns incorrect key list after removing all elements.");
-    keys = testObject.RemoveValue("var").RemoveValue("obj").GetKeys();
-    TEST_ExpectTrue(keys.length == 0);
+    Issue("`JObject` returns incorrect names list after removing"
+        @ "all elements.");
+    names = testObject.RemoveValue("var").RemoveValue("obj").GetPropertyNames();
+    TEST_ExpectTrue(names.length == 0);
 }
 
 protected static function SubTest_ArrayUndefined()
 {
     local JArray testJSON;
     testJSON = _().json.newArray();
-    Context("Testing how `JArray` handles undefined values");
-    Issue("Undefined variable doesn't have `JSON_Undefined` type");
+    Context("Testing how `JArray` handles undefined values.");
+    Issue("Undefined variable doesn't have `JSON_Undefined` type.");
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Undefined);
 
-    Issue("There is a variable in an empty object after `GetTypeOf` call");
+    Issue("There is a variable in an empty object after `GetTypeOf` call.");
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Undefined);
 
-    Issue("Negative index refers to a defined value");
+    Issue("Negative index refers to a defined value.");
     TEST_ExpectTrue(testJSON.GetTypeOf(-1) == JSON_Undefined);
 
-    Issue("Getters don't return default values for undefined variables");
+    Issue("Getters don't return default values for undefined variables.");
     TEST_ExpectTrue(testJSON.GetNumber(0, 0) == 0);
     TEST_ExpectTrue(testJSON.GetString(0, "") == "");
     TEST_ExpectTrue(testJSON.GetBoolean(0, false) == false);
@@ -484,7 +482,7 @@ protected static function SubTest_ArrayUndefined()
     TEST_ExpectNone(testJSON.GetArray(0));
 
     Issue(  "Getters don't return user-defined default values for" @
-            "undefined variables");
+            "undefined variables.");
     TEST_ExpectTrue(testJSON.GetNumber(0, 10) == 10);
     TEST_ExpectTrue(testJSON.GetString(0, "test") == "test");
     TEST_ExpectTrue(testJSON.GetBoolean(0, true) == true);
@@ -497,27 +495,27 @@ protected static function SubTest_ArrayBooleanGetSetRemove()
     testJSON.SetBoolean(0, true);
 
     Context("Testing `JArray`'s get/set/remove functions for" @
-            "boolean variables");
-    Issue("Boolean type isn't properly set by `SetBoolean`");
+            "boolean variables.");
+    Issue("Boolean type isn't properly set by `SetBoolean()`.");
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Boolean);
 
-    Issue("Value is incorrectly assigned by `SetBoolean`");
+    Issue("Value is incorrectly assigned by `SetBoolean()`.");
     TEST_ExpectTrue(testJSON.GetBoolean(0) == true);
     testJSON.SetBoolean(0, false);
 
-    Issue("Variable value isn't correctly reassigned by `SetBoolean`");
+    Issue("Variable value isn't correctly reassigned by `SetBoolean()`.");
     TEST_ExpectTrue(testJSON.GetBoolean(0) == false);
 
     Issue(  "Getting boolean variable as a wrong type" @
-            "doesn't yield default value");
+            "doesn't yield default value.");
     TEST_ExpectTrue(testJSON.GetNumber(0, 7) == 7);
 
-    Issue("Boolean variable isn't being properly removed");
+    Issue("Boolean variable isn't being properly removed.");
     testJSON.RemoveValue(0);
     TEST_ExpectTrue( testJSON.GetTypeOf(0) == JSON_Undefined);
 
     Issue(  "Getters don't return default value for missing key that" @
-            "previously stored boolean value, but got removed");
+            "previously stored boolean value, but got removed.");
     TEST_ExpectTrue(testJSON.GetBoolean(0, true) == true);
 }
 
@@ -528,31 +526,31 @@ protected static function SubTest_ArrayStringGetSetRemove()
     testJSON.SetString(0, "first string");
 
     Context("Testing `JArray`'s get/set/remove functions for" @
-            "string variables");
-    Issue("String type isn't properly set by `SetString`");
+            "string variables.");
+    Issue("String type isn't properly set by `SetString()`.");
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_String);
 
-    Issue("Value is incorrectly assigned by `SetString`");
+    Issue("Value is incorrectly assigned by `SetString()`.");
     TEST_ExpectTrue(testJSON.GetString(0) == "first string");
 
-    Issue(  "Providing default variable value makes 'GetString'" @
-            "return incorrect value");
+    Issue(  "Providing default variable value makes 'GetString()'" @
+            "return incorrect value.");
     TEST_ExpectTrue(testJSON.GetString(0, "alternative") == "first string");
 
-    Issue("Variable value isn't correctly reassigned by `SetString`");
+    Issue("Variable value isn't correctly reassigned by `SetString()`.");
     testJSON.SetString(0, "new string!~");
     TEST_ExpectTrue(testJSON.GetString(0) == "new string!~");
 
     Issue(  "Getting string variable as a wrong type" @
-            "doesn't yield default value");
+            "doesn't yield default value.");
     TEST_ExpectTrue(testJSON.GetBoolean(0, true) == true);
 
-    Issue("Boolean variable isn't being properly removed");
+    Issue("Boolean variable isn't being properly removed.");
     testJSON.RemoveValue(0);
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Undefined);
 
     Issue(  "Getters don't return default value for missing key that" @
-            "previously stored string value, but got removed");
+            "previously stored string value, but got removed.");
     TEST_ExpectTrue(testJSON.GetString(0, "other") == "other");
 }
 
@@ -563,31 +561,31 @@ protected static function SubTest_ArrayClassGetSetRemove()
     testJSON.SetClass(0, class'Actor');
 
     Context("Testing `JArray`'s get/set/remove functions for" @
-            "class variables");
-    Issue("Class type isn't properly set by `SetClass`");
+            "class variables.");
+    Issue("Class type isn't properly set by `SetClass()`.");
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_String);
 
-    Issue("Value is incorrectly assigned by `SetClass`");
+    Issue("Value is incorrectly assigned by `SetClass()`.");
     TEST_ExpectTrue(testJSON.GetClass(0) == class'Actor');
 
-    Issue(  "Providing default variable value makes `GetClass`" @
-            "return incorrect value");
+    Issue(  "Providing default variable value makes `GetClass()`" @
+            "return incorrect value.");
     TEST_ExpectTrue(testJSON.GetClass(0, class'GameInfo') == class'Actor');
 
-    Issue("Variable value isn't correctly reassigned by `SetClass`");
+    Issue("Variable value isn't correctly reassigned by `SetClass()`.");
     testJSON.SetClass(0, class'Info');
     TEST_ExpectTrue(testJSON.GetClass(0) == class'Info');
 
     Issue(  "Getting class variable as a wrong type" @
-            "doesn't yield default value");
+            "doesn't yield default value.");
     TEST_ExpectTrue(testJSON.GetBoolean(0, true) == true);
 
-    Issue("Boolean variable isn't being properly removed");
+    Issue("Boolean variable isn't being properly removed.");
     testJSON.RemoveValue(0);
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Undefined);
 
     Issue(  "Getters don't return default value for missing key that" @
-            "previously stored string value, but got removed");
+            "previously stored string value, but got removed.");
     TEST_ExpectTrue(testJSON.GetClass(0, class'Mutator') == class'Mutator');
 }
 
@@ -625,31 +623,31 @@ protected static function SubTest_ArrayNumberGetSetRemove()
     testJSON.SetNumber(0, 3.5);
 
     Context("Testing `JArray`'s get/set/remove functions for" @
-            "number variables");
-    Issue("Number type isn't properly set by `SetNumber`");
+            "number variables.");
+    Issue("Number type isn't properly set by `SetNumber()`.");
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Number);
 
-    Issue("Value is incorrectly assigned by `SetNumber`");
+    Issue("Value is incorrectly assigned by `SetNumber()`.");
     TEST_ExpectTrue(testJSON.GetNumber(0) == 3.5);
 
-    Issue(  "Providing default variable value makes 'GetNumber'" @
-            "return incorrect value");
+    Issue(  "Providing default variable value makes 'GetNumber()'" @
+            "return incorrect value.");
     TEST_ExpectTrue(testJSON.GetNumber(0, 5) == 3.5);
 
-    Issue("Variable value isn't correctly reassigned by `SetNumber`");
+    Issue("Variable value isn't correctly reassigned by `SetNumber()`.");
     testJSON.SetNumber(0, 7);
     TEST_ExpectTrue(testJSON.GetNumber(0) == 7);
 
     Issue(  "Getting number variable as a wrong type" @
-            "doesn't yield default value");
+            "doesn't yield default value.");
     TEST_ExpectTrue(testJSON.GetString(0, "default") == "default");
 
-    Issue("Number type isn't being properly removed");
+    Issue("Number type isn't being properly removed.");
     testJSON.RemoveValue(0);
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Undefined);
 
     Issue(  "Getters don't return default value for missing key that" @
-            "previously stored number value, but got removed");
+            "previously stored number value, but got removed.");
     TEST_ExpectTrue(testJSON.GetNumber(0, 13) == 13);
 }
 
@@ -660,31 +658,31 @@ protected static function SubTest_ArrayIntegerGetSetRemove()
     testJSON.SetInteger(0, 19);
 
     Context("Testing `JArray`'s get/set/remove functions for" @
-            "integer variables");
-    Issue("Integer type isn't properly set by `SetInteger`");
+            "integer variables.");
+    Issue("Integer type isn't properly set by `SetInteger()`.");
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Number);
 
-    Issue("Value is incorrectly assigned by `SetInteger`");
+    Issue("Value is incorrectly assigned by `SetInteger()`.");
     TEST_ExpectTrue(testJSON.GetInteger(0) == 19);
 
-    Issue(  "Providing default variable value makes `GetInteger`" @
-            "return incorrect value");
+    Issue(  "Providing default variable value makes `GetInteger()`" @
+            "return incorrect value.");
     TEST_ExpectTrue(testJSON.GetInteger(0, 5) == 19);
 
-    Issue("Variable value isn't correctly reassigned by `SetInteger`");
+    Issue("Variable value isn't correctly reassigned by `SetInteger()`.");
     testJSON.SetInteger(0, MaxInt);
     TEST_ExpectTrue(testJSON.GetInteger(0) == MaxInt);
 
     Issue(  "Getting integer variable as a wrong type" @
-            "doesn't yield default value");
+            "doesn't yield default value.");
     TEST_ExpectTrue(testJSON.GetString(0, "default") == "default");
 
-    Issue("Integer type isn't being properly removed");
+    Issue("Integer type isn't being properly removed.");
     testJSON.RemoveValue(0);
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Undefined);
 
     Issue(  "Getters don't return default value for missing key that" @
-            "previously stored integer value, but got removed");
+            "previously stored integer value, but got removed.");
     TEST_ExpectTrue(testJSON.GetInteger(0, 13) == 13);
 }
 
@@ -716,22 +714,22 @@ protected static function SubTest_ArrayNullGetSetRemove()
     testJSON = _().json.newArray();
 
     Context("Testing `JArray`'s get/set/remove functions for" @
-            "null values");
+            "null values.");
     
-    Issue("Undefined variable is incorrectly considered `null`");
+    Issue("Undefined variable is incorrectly considered null.");
     TEST_ExpectFalse(testJSON.IsNull(0));
     TEST_ExpectFalse(testJSON.IsNull(2));
     TEST_ExpectFalse(testJSON.IsNull(-1));
 
-    Issue("Number variable is incorrectly considered `null`");
+    Issue("Number variable is incorrectly considered null.");
     testJSON.SetNumber(0, 4);
     TEST_ExpectFalse(testJSON.IsNull(0));
 
-    Issue("Boolean variable is incorrectly considered `null`");
+    Issue("Boolean variable is incorrectly considered null.");
     testJSON.SetBoolean(0, true);
     TEST_ExpectFalse(testJSON.IsNull(0));
     
-    Issue("String variable is incorrectly considered `null`");
+    Issue("String variable is incorrectly considered null.");
     testJSON.SetString(0, "string");
     TEST_ExpectFalse(testJSON.IsNull(0));
 
@@ -739,10 +737,10 @@ protected static function SubTest_ArrayNullGetSetRemove()
     testJSON.SetNull(0);
     TEST_ExpectTrue(testJSON.IsNull(0));
 
-    Issue("Null type isn't properly set by `SetNumber`");
+    Issue("Null type isn't properly set by `SetNumber`.");
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Null);
 
-    Issue("Null value isn't being properly removed");
+    Issue("Null value isn't being properly removed.");
     testJSON.RemoveValue(0);
     TEST_ExpectTrue(testJSON.GetTypeOf(0) == JSON_Undefined);
 }
@@ -769,7 +767,7 @@ protected static function SubTest_ArrayMultipleVariablesStorage()
     testArray = Prepare_Array();
 
     Context("Testing how `JArray` handles adding and" @
-            "changing several variables");
+            "changing several variables.");
     Issue("Stored values are compromised.");
     TEST_ExpectTrue(testArray.GetNumber(0) == 10.0f);
     TEST_ExpectTrue(testArray.GetString(1) == "test string");
@@ -784,7 +782,7 @@ protected static function SubTest_ArrayMultipleVariablesStorage()
 
     Issue(  "After overwriting boolean value with a different type," @
             "attempting go get it as a boolean gives old value," @
-            "instead of default");
+            "instead of default.");
     TEST_ExpectTrue(testArray.GetBoolean(3, false) == false);
 
     Issue("Type of the variable is incorrectly changed.");
@@ -800,18 +798,18 @@ protected static function SubTest_ArrayMultipleVariablesRemoval()
     //  [10.0, "test string", "another string", true, 0.0, {"var": 7.0}]
 
     Context("Testing how `JArray` handles adding and" @
-            "removing several variables");
-    Issue("Values are incorrectly removed");
+            "removing several variables.");
+    Issue("Values are incorrectly removed.");
     testArray.RemoveValue(2);
     //  [10.0, "test string", true, 0.0, {"var": 7.0}]
-    Issue("Values are incorrectly removed");
+    Issue("Values are incorrectly removed.");
     TEST_ExpectTrue(testArray.GetNumber(0) == 10.0);
     TEST_ExpectTrue(testArray.GetString(1) == "test string");
     TEST_ExpectTrue(testArray.GetBoolean(2) == true);
     TEST_ExpectTrue(testArray.GetNumber(3) == 0.0f);
     TEST_ExpectTrue(testArray.GetTypeOf(4) == JSON_Object);
 
-    Issue("First element incorrectly removed");
+    Issue("First element incorrectly removed.");
     testArray.RemoveValue(0);
     //  ["test string", true, 0.0, {"var": 7.0}]
     TEST_ExpectTrue(testArray.GetString(0) == "test string");
@@ -820,7 +818,7 @@ protected static function SubTest_ArrayMultipleVariablesRemoval()
     TEST_ExpectTrue(testArray.GetTypeOf(3) == JSON_Object);
     TEST_ExpectTrue(testArray.GetObject(3).GetNumber("var") == 7.0);
 
-    Issue("Last element incorrectly removed");
+    Issue("Last element incorrectly removed.");
     testArray.RemoveValue(3);
     //  ["test string", true, 0.0]
     TEST_ExpectTrue(testArray.GetLength() == 3);
@@ -828,7 +826,7 @@ protected static function SubTest_ArrayMultipleVariablesRemoval()
     TEST_ExpectTrue(testArray.GetBoolean(1) == true);
     TEST_ExpectTrue(testArray.GetNumber(2) == 0.0f);
 
-    Issue("Removing all elements is handled incorrectly");
+    Issue("Removing all elements is handled incorrectly.");
     testArray.RemoveValue(0);
     testArray.RemoveValue(0);
     testArray.RemoveValue(0);
@@ -846,8 +844,8 @@ protected static function SubTest_ArrayRemovingMultipleVariablesAtOnce()
         .AddNumber(7.0);
 
     Context("Testing how `JArray`' handles removing" @
-            "multiple elements at once");
-    Issue("Multiple values are incorrectly removed");
+            "multiple elements at once.");
+    Issue("Multiple values are incorrectly removed.");
     testArray.RemoveValue(1, 2);
     TEST_ExpectTrue(testArray.GetLength() == 2);
     TEST_ExpectTrue(testArray.GetNumber(1) == 7.0);
@@ -859,20 +857,20 @@ protected static function SubTest_ArrayRemovingMultipleVariablesAtOnce()
 
     //  Current array:
     //  [10.0, 7.0, 4.0, "test string", "another string", 8.0]
-    Issue("Last value is incorrectly removed");
+    Issue("Last value is incorrectly removed.");
     testArray.RemoveValue(5, 1);
     TEST_ExpectTrue(testArray.GetLength() == 5);
     TEST_ExpectTrue(testArray.GetString(4) == "another string");
 
     //  Current array:
     //  [10.0, 7.0, 4.0, "test string", "another string"]
-    Issue("Tail elements are incorrectly removed");
+    Issue("Tail elements are incorrectly removed.");
     testArray.RemoveValue(3, 4);
     TEST_ExpectTrue(testArray.GetLength() == 3);
     TEST_ExpectTrue(testArray.GetNumber(0) == 10.0);
     TEST_ExpectTrue(testArray.GetNumber(2) == 4.0);
 
-    Issue("Array empties incorrectly");
+    Issue("Array empties incorrectly.");
     testArray.RemoveValue(0, testArray.GetLength());
     TEST_ExpectTrue(testArray.GetLength() == 0);
     TEST_ExpectTrue(testArray.GetTypeOf(0) == JSON_Undefined);
@@ -884,15 +882,14 @@ protected static function SubTest_ArrayExpansions()
     local JArray testArray;
     testArray = _().json.newArray();
 
-    Context("Testing how `JArray`' handles expansions/shrinking " @
-            "via `SetLength()`");
-    Issue("`SetLength()` doesn't properly expand empty array");
+    Context("Testing how `JArray`' handles expansions/shrinking.");
+    Issue("`SetLength()` doesn't properly expand empty array.");
     testArray.SetLength(2);
     TEST_ExpectTrue(testArray.GetLength() == 2);
     TEST_ExpectTrue(testArray.GetTypeOf(0) == JSON_Null);
     TEST_ExpectTrue(testArray.GetTypeOf(1) == JSON_Null);
 
-    Issue("`SetLength()` doesn't properly expand non-empty array");
+    Issue("`SetLength()` doesn't properly expand non-empty array.");
     testArray.AddNumber(1);
     testArray.SetLength(4);
     TEST_ExpectTrue(testArray.GetLength() == 4);
@@ -912,14 +909,14 @@ protected static function SubSubTest_ArraySetNumberExpansions()
     testArray = _().json.newArray();
 
     Context("Testing how `JArray`' handles expansions via" @
-            "`SetNumber()` function");
-    Issue("Setters don't create correct first element");
+            "`SetNumber()` method.");
+    Issue("Setters don't create correct first element.");
     testArray.SetNumber(0, 1);
     TEST_ExpectTrue(testArray.GetLength() == 1);
     TEST_ExpectTrue(testArray.GetNumber(0) == 1);
 
     Issue(  "`SetNumber()` doesn't properly define array when setting" @
-            "value out-of-bounds");
+            "value out-of-bounds.");
     testArray = _().json.newArray();
     testArray.AddNumber(1);
     testArray.SetNumber(4, 2);
@@ -929,13 +926,6 @@ protected static function SubSubTest_ArraySetNumberExpansions()
     TEST_ExpectTrue(testArray.GetTypeOf(2) == JSON_Null);
     TEST_ExpectTrue(testArray.GetTypeOf(3) == JSON_Null);
     TEST_ExpectTrue(testArray.GetNumber(4) == 2);
-
-    Issue("`SetNumber()` expands array even when it told not to");
-    testArray.SetNumber(6, 7, true);
-    TEST_ExpectTrue(testArray.GetLength() == 5);
-    TEST_ExpectTrue(testArray.GetNumber(6) == 0);
-    TEST_ExpectTrue(testArray.GetTypeOf(5) == JSON_Undefined);
-    TEST_ExpectTrue(testArray.GetTypeOf(6) == JSON_Undefined);
 }
 
 protected static function SubSubTest_ArraySetStringExpansions()
@@ -944,14 +934,14 @@ protected static function SubSubTest_ArraySetStringExpansions()
     testArray = _().json.newArray();
 
     Context("Testing how `JArray`' handles expansions via" @
-            "`SetString()` function");
-    Issue("Setters don't create correct first element");
+            "`SetString()` method.");
+    Issue("Setters don't create correct first element.");
     testArray.SetString(0, "str");
     TEST_ExpectTrue(testArray.GetLength() == 1);
     TEST_ExpectTrue(testArray.GetString(0) == "str");
 
     Issue(  "`SetString()` doesn't properly define array when setting" @
-            "value out-of-bounds");
+            "value out-of-bounds.");
     testArray = _().json.newArray();
     testArray.AddString("str");
     testArray.SetString(4, "str2");
@@ -961,13 +951,6 @@ protected static function SubSubTest_ArraySetStringExpansions()
     TEST_ExpectTrue(testArray.GetTypeOf(2) == JSON_Null);
     TEST_ExpectTrue(testArray.GetTypeOf(3) == JSON_Null);
     TEST_ExpectTrue(testArray.GetString(4) == "str2");
-
-    Issue("`SetString()` expands array even when it told not to");
-    testArray.SetString(6, "new string", true);
-    TEST_ExpectTrue(testArray.GetLength() == 5);
-    TEST_ExpectTrue(testArray.GetString(6) == "");
-    TEST_ExpectTrue(testArray.GetTypeOf(5) == JSON_Undefined);
-    TEST_ExpectTrue(testArray.GetTypeOf(6) == JSON_Undefined);
 }
 
 protected static function SubSubTest_ArraySetBooleanExpansions()
@@ -976,14 +959,14 @@ protected static function SubSubTest_ArraySetBooleanExpansions()
     testArray = _().json.newArray();
 
     Context("Testing how `JArray`' handles expansions via" @
-            "`SetBoolean()` function");
-    Issue("Setters don't create correct first element");
+            "`SetBoolean()` method.");
+    Issue("Setters don't create correct first element.");
     testArray.SetBoolean(0, false);
     TEST_ExpectTrue(testArray.GetLength() == 1);
     TEST_ExpectTrue(testArray.GetBoolean(0) == false);
 
     Issue(  "`SetBoolean()` doesn't properly define array when setting" @
-            "value out-of-bounds");
+            "value out-of-bounds.");
     testArray = _().json.newArray();
     testArray.AddBoolean(true);
     testArray.SetBoolean(4, true);
@@ -993,13 +976,6 @@ protected static function SubSubTest_ArraySetBooleanExpansions()
     TEST_ExpectTrue(testArray.GetTypeOf(2) == JSON_Null);
     TEST_ExpectTrue(testArray.GetTypeOf(3) == JSON_Null);
     TEST_ExpectTrue(testArray.GetBoolean(4) == true);
-
-    Issue("`SetBoolean()` expands array even when it told not to");
-    testArray.SetBoolean(6, true, true);
-    TEST_ExpectTrue(testArray.GetLength() == 5);
-    TEST_ExpectTrue(testArray.GetBoolean(6) == false);
-    TEST_ExpectTrue(testArray.GetTypeOf(5) == JSON_Undefined);
-    TEST_ExpectTrue(testArray.GetTypeOf(6) == JSON_Undefined);
 }
 
 protected static function JObject Prepare_FoldedObject()
@@ -1024,7 +1000,7 @@ protected static function JObject Prepare_FoldedObject()
 
 protected static function Test_JSONComparison()
 {
-    Context("Testing comparison of JSON objects");
+    Context("Testing comparison of JSON objects.");
     SubTest_JSONIsEqual();
     SubTest_JSONIsSubsetOf();
     SubTest_JSONCompare();
@@ -1083,7 +1059,8 @@ protected static function SubTest_JSONIsSubsetOf()
     TEST_ExpectTrue(empty.IsSubsetOf(test1));
     TEST_ExpectFalse(test1.IsSubsetOf(empty));
 
-    Issue("`IsSubsetOf()` incorrectly handles objects that cannot be compared.");
+    Issue("`IsSubsetOf()` incorrectly handles objects that cannot be" 
+        @ "compared.");
     test2.GetObject("innerObject").GetArray("array").SetNull(1);
     TEST_ExpectFalse(test1.IsSubsetOf(test2));
     TEST_ExpectFalse(test2.IsSubsetOf(test1));
@@ -1193,7 +1170,7 @@ protected static function SubTest_JSONObjectParsingWithParser()
     Issue("`ParseObjectWith()` cannot parse empty JSON object.");
     parsedObject = _().json.ParseObjectWith(_().text.ParseString("{}"));
     TEST_ExpectNotNone(parsedObject);
-    TEST_ExpectTrue(parsedObject.GetKeys().length == 0);
+    TEST_ExpectTrue(parsedObject.GetPropertyNames().length == 0);
 
     Issue("`ParseObjectWith()` doesn't report error when parsing an incorrect"
         @ "object.");
@@ -1243,7 +1220,7 @@ protected static function SubTest_JSONArrayParsingWithParser()
     TEST_ExpectTrue(parsedArray.IsNull(0));
     TEST_ExpectTrue(parsedArray.GetNumber(1) == 6734.9);
     TEST_ExpectTrue(parsedArray.GetString(2) == "what");
-    TEST_ExpectTrue(parsedArray.GetObject(3).GetKeys().length == 0);
+    TEST_ExpectTrue(parsedArray.GetObject(3).GetPropertyNames().length == 0);
 
     Issue("`JArray.ParseIntoSelfWith()` cannot add new elements.");
     TEST_ExpectTrue(parsedArray.ParseIntoSelfWith(
@@ -1258,7 +1235,7 @@ protected static function SubTest_JSONObjectParsingText()
     Issue("`ParseObject()` cannot parse empty JSON object.");
     parsedObject = _().json.ParseObject(_().text.FromString("{}"));
     TEST_ExpectNotNone(parsedObject);
-    TEST_ExpectTrue(parsedObject.GetKeys().length == 0);
+    TEST_ExpectTrue(parsedObject.GetPropertyNames().length == 0);
 
     Issue("`ParseObject()` doesn't report error when parsing an incorrect"
         @ "object.");
@@ -1304,7 +1281,7 @@ protected static function SubTest_JSONArrayParsingText()
     TEST_ExpectTrue(parsedArray.IsNull(0));
     TEST_ExpectTrue(parsedArray.GetNumber(1) == 6734.9);
     TEST_ExpectTrue(parsedArray.GetString(2) == "what");
-    TEST_ExpectTrue(parsedArray.GetObject(3).GetKeys().length == 0);
+    TEST_ExpectTrue(parsedArray.GetObject(3).GetPropertyNames().length == 0);
 
     Issue("`JArray.ParseIntoSelf()` cannot add new elements.");
     TEST_ExpectTrue(parsedArray.ParseIntoSelf(
@@ -1319,7 +1296,7 @@ protected static function SubTest_JSONObjectParsingRaw()
     Issue("`ParseObjectRaw()` cannot parse empty JSON object.");
     parsedObject = _().json.ParseObjectRaw(_().text.StringToRaw("{}"));
     TEST_ExpectNotNone(parsedObject);
-    TEST_ExpectTrue(parsedObject.GetKeys().length == 0);
+    TEST_ExpectTrue(parsedObject.GetPropertyNames().length == 0);
 
     Issue("`ParseObjectRaw()` doesn't report error when parsing an incorrect"
         @ "object.");
@@ -1369,7 +1346,7 @@ protected static function SubTest_JSONArrayParsingRaw()
     TEST_ExpectTrue(parsedArray.IsNull(0));
     TEST_ExpectTrue(parsedArray.GetNumber(1) == 6734.9);
     TEST_ExpectTrue(parsedArray.GetString(2) == "what");
-    TEST_ExpectTrue(parsedArray.GetObject(3).GetKeys().length == 0);
+    TEST_ExpectTrue(parsedArray.GetObject(3).GetPropertyNames().length == 0);
 
     Issue("`JArray.ParseIntoSelfRaw()` cannot add new elements.");
     TEST_ExpectTrue(parsedArray.ParseIntoSelfRaw(
@@ -1384,7 +1361,7 @@ protected static function SubTest_JSONObjectParsingString()
     Issue("`ParseObjectString()` cannot parse empty JSON object.");
     parsedObject = _().json.ParseObjectString("{}");
     TEST_ExpectNotNone(parsedObject);
-    TEST_ExpectTrue(parsedObject.GetKeys().length == 0);
+    TEST_ExpectTrue(parsedObject.GetPropertyNames().length == 0);
 
     Issue("`ParseObjectString()` doesn't report error when parsing an incorrect"
         @ "object.");
@@ -1427,7 +1404,7 @@ protected static function SubTest_JSONArrayParsingString()
     TEST_ExpectTrue(parsedArray.IsNull(0));
     TEST_ExpectTrue(parsedArray.GetNumber(1) == 6734.9);
     TEST_ExpectTrue(parsedArray.GetString(2) == "what");
-    TEST_ExpectTrue(parsedArray.GetObject(3).GetKeys().length == 0);
+    TEST_ExpectTrue(parsedArray.GetObject(3).GetPropertyNames().length == 0);
 
     Issue("`JArray.ParseIntoSelfString()` cannot add new elements.");
     TEST_ExpectTrue(parsedArray.ParseIntoSelfString("[\"huh\", Null]"));

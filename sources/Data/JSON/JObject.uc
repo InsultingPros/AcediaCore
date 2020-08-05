@@ -1,22 +1,19 @@
 /**
  *      This class implements JSON object storage capabilities.
- *      Whenever one wants to store JSON data, they need to define such object.
  *  It stores name-value pairs, where names are strings and values can be:
  *      ~ Boolean, string, null or number (float in this implementation) data;
  *      ~ Other JSON objects;
  *      ~ JSON Arrays (see `JArray` class).
  *
- *      This implementation provides getters and setters for boolean, string,
- *  null or number types that allow to freely set and fetch their values
- *  by name.
+ *      This implementation provides a variety of functionality,
+ *  including parsing, displaying, getters and setters for JSON types that
+ *  allow to freely set and fetch their values by name.
  *      JSON objects and arrays can be fetched by getters, but you cannot
- *  add existing object or array to another object. Instead one has to create
- *  a new, empty object with a certain name and then fill it with data.
- *  This allows to avoid loop situations, where object is contained in itself.
- *      Functions to remove existing values are also provided and are applicable
- *  to all variable types.
- *      Setters can also be used to overwrite any value by a different value,
- *  even of a different type.
+ *  add existing object or array to another object. Instead one has to either
+ *  clone existing object or create an empty one and then manually fill
+ *  with data.
+ *      This allows to avoid loop situations, where object is
+ *  contained in itself.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -54,9 +51,19 @@ var private int                     storedElementCount;
 //  that will be enforced if user requires something outside those bounds
 var private config const int MINIMUM_CAPACITY;
 var private config const int MAXIMUM_CAPACITY;
+//      Minimum and maximum allowed density of elements
+//  (`storedElementCount / hashTable.length`).
+//      If density falls outside this range, - we have to resize hash table to
+//  get into (MINIMUM_DENSITY; MAXIMUM_DENSITY) bounds,
+//  as long as it does not violate other restrictions.
 var private config const float MINIMUM_DENSITY;
 var private config const float MAXIMUM_DENSITY;
+//  Only ever reallocate hash table if new size will differ by
+//  at least that much, regardless of other restrictions.
 var private config const int MINIMUM_DIFFERENCE_FOR_REALLOCATION;
+//  Never use any hash table capacity below this limit,
+//  regardless of other variables
+//  (like `MINIMUM_CAPACITY` or `MINIMUM_DENSITY`).
 var private config const int ABSOLUTE_LOWER_CAPACITY_LIMIT;
 
 //      Helper method that is needed as a replacement for `%`, since it is
@@ -213,10 +220,17 @@ private final function ResizeHashTable(int newCapacity)
     }
 }
 
-//      Returns `JType` of a variable with a given name in our properties.
-//      This function can be used to check if certain variable exists
-//  in this object, since if such variable does not exist -
-//  function will return `JSON_Undefined`.
+/**
+ *  Returns `JType` of a property with a given name in our collection.
+ *
+ *  This function can be used to check if certain variable exists
+ *  in this object, since if such variable does not exist -
+ *  function will return `JSON_Undefined`.
+ *
+ *  @param  name    Name of the property to get the type of.
+ *  @return Type of the property by the name `name`.
+ *      `JSON_Undefined` iff property with that name does not exist.
+ */
 public final function JType GetTypeOf(string name)
 {
     local JProperty property;
@@ -226,14 +240,23 @@ public final function JType GetTypeOf(string name)
     return property.value.type;
 }
 
-//      Following functions are getters for various types of variables.
-//      Getter for null value simply checks if it's null
-//  and returns true/false as a result.
-//      Getters for simple types (number, string, boolean) can have optional
-//  default value specified, that will be returned if requested variable
-//  doesn't exist or has a different type.
-//      Getters for object and array types don't take default values and
-//  will simply return `none`.
+/**
+ *  Gets the value (as a `float`) of a property by the name `name`,
+ *  assuming it has `JSON_Number` type.
+ *
+ *      Forms a pair with `GetInteger()` method. JSON allows to specify
+ *  arbitrary precision for the number variables, but UnrealScript can only
+ *  store a limited range of numeric value.
+ *      To alleviate this problem we store numeric JSON values as both
+ *  `float` and `int` and can return either of the requested versions.
+ *
+ *  @param  name            Name of the property to return a value of.
+ *  @param  defaultValue    Value to return if property does not exist or
+ *      has a different type (can be checked by `GetTypeOf()`).
+ *  @return Number value of the property under name `name`,
+ *      if it exists and has `JSON_Number` type.
+ *      Otherwise returns passed `defaultValue`.
+ */
 public final function float GetNumber(string name, optional float defaultValue)
 {
     local JProperty property;
@@ -244,6 +267,23 @@ public final function float GetNumber(string name, optional float defaultValue)
     return property.value.numberValue;
 }
 
+/**
+ *  Gets the value (as an `int`) of a property by the name `name`,
+ *  assuming it has `JSON_Number` type.
+ *
+ *      Forms a pair with `GetNumber()` method. JSON allows to specify
+ *  arbitrary precision for the number variables, but UnrealScript can only
+ *  store a limited range of numeric value.
+ *      To alleviate this problem we store numeric JSON values as both
+ *  `float` and `int` and can return either of the requested versions.
+ *
+ *  @param  name            Name of the property to return a value of.
+ *  @param  defaultValue    Value to return if property does not exist or
+ *      has a different type (can be checked by `GetTypeOf()`).
+ *  @return Number value of the property under name `name`,
+ *      if it exists and has `JSON_Number` type.
+ *      Otherwise returns passed `defaultValue`.
+ */
 public final function int GetInteger(string name, optional int defaultValue)
 {
     local JProperty property;
@@ -254,6 +294,19 @@ public final function int GetInteger(string name, optional int defaultValue)
     return property.value.numberValueAsInt;
 }
 
+/**
+ *  Gets the value of a property by the name `name`,
+ *  assuming it has `JSON_String` type.
+ *
+ *  See also `GetClass()` method.
+ *
+ *  @param  name            Name of the property to return a value of.
+ *  @param  defaultValue    Value to return if property does not exist or
+ *      has a different type (can be checked by `GetTypeOf()`).
+ *  @return String value of the property under name `name`,
+ *      if it exists and has `JSON_String` type.
+ *      Otherwise returns passed `defaultValue`.
+ */
 public final function string GetString(
     string          name,
     optional string defaultValue
@@ -267,6 +320,23 @@ public final function string GetString(
     return property.value.stringValue;
 }
 
+/**
+ *  Gets the value of a property by the name `name` as a `class`,
+ *  assuming it has `JSON_String` type.
+ *
+ *  JSON does not support to store class data type, but we can use string type
+ *  for that. This method attempts to load a class object from it's full name,
+ *  (like `Engine.Actor`) recorded inside an appropriate string value.
+ *
+ *  @param  name            Name of the property to return a value of.
+ *  @param  defaultValue    Value to return if property does not exist,
+ *      has a different type (can be checked by `GetTypeOf()`) or not
+ *      a valid class name.
+ *  @return Class value of the property under name `name`,
+ *      if it exists, has `JSON_String` type and it represents
+ *      a full name of some class.
+ *      Otherwise returns passed `defaultValue`.
+ */
 public final function class<Object> GetClass(
     string                  name,
     optional class<Object>  defaultValue
@@ -284,6 +354,17 @@ public final function class<Object> GetClass(
     return defaultValue;
 }
 
+/**
+ *  Gets the value of a property by the name `name`,
+ *  assuming it has `JSON_Boolean` type.
+ *
+ *  @param  name            Name of the property to return a value of.
+ *  @param  defaultValue    Value to return if property does not exist or
+ *      has a different type (can be checked by `GetTypeOf()`).
+ *  @return Boolean value of the property under name `name`,
+ *      if it exists and has `JSON_Boolean` type.
+ *      Otherwise returns passed `defaultValue`.
+ */
 public final function bool GetBoolean(string name, optional bool defaultValue)
 {
     local JProperty property;
@@ -294,6 +375,15 @@ public final function bool GetBoolean(string name, optional bool defaultValue)
     return property.value.booleanValue;
 }
 
+/**
+ *  Checks if a property by the name `name` has `JSON_Null` type.
+ *
+ *  Alternatively consider using `GetType()` method.
+ *
+ *  @param  name    Name of the property to check for being `null`.
+ *  @return `true` if property under given name `name` exists and
+ *      has type `JSON_Null`; `false` otherwise.
+ */
 public final function bool IsNull(string name)
 {
     local JProperty property;
@@ -301,6 +391,15 @@ public final function bool IsNull(string name)
     return (property.value.type == JSON_Null);
 }
 
+/**
+ *  Gets the value of a property by the name `name`,
+ *  assuming it has `JSON_Array` type.
+ *
+ *  @param  name            Name of the property to return a value of.
+ *  @return `JArray` object value of the property under name `name`,
+ *      if it exists and has `JSON_Array` type.
+ *      Otherwise returns `none`.
+ */
 public final function JArray GetArray(string name)
 {
     local JProperty property;
@@ -311,6 +410,15 @@ public final function JArray GetArray(string name)
     return JArray(property.value.complexValue);
 }
 
+/**
+ *  Gets the value of a property by the name `name`,
+ *  assuming it has `JSON_Object` type.
+ *
+ *  @param  name            Name of the property to return a value of.
+ *  @return `JObject` object value of the property under name `name`,
+ *      if it exists and has `JSON_Object` type.
+ *      Otherwise returns `none`.
+ */
 public final function JObject GetObject(string name)
 {
     local JProperty property;
@@ -319,10 +427,25 @@ public final function JObject GetObject(string name)
     return JObject(property.value.complexValue);
 }
 
-//      Following functions provide simple setters for boolean, string, number
-//  and null values.
-//      They return object itself, allowing user to chain calls like this:
-//  `object.SetNumber("num1", 1).SetNumber("num2", 2);`.
+/**
+ *  Sets the number value (as `float`) of a property by the name `name`,
+ *  erasing previous value (if it was recorded).
+ *
+ *  Property in question will have `JSON_Number` type.
+ *
+ *      Forms a pair with `SetInteger()` method.
+ *      While JSON standard allows to store numbers with arbitrary precision,
+ *  UnrealScript's types have a limited range.
+ *      To alleviate this problem we store numbers in both `float`- and
+ *  `int`-type variables to extended supported range of values.
+ *  So if you need to store a number with fractional part, you should
+ *  prefer `SetNumber()` and for integer values `SetInteger()` is preferable.
+ *  Both will create a property of type `JSON_Number`.
+ *
+ *  @param  name    Name of the property to set a value of.
+ *  @param  value   Value to set to a property under a given name `name`.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject SetNumber(string name, float value)
 {
     local JProperty property;
@@ -336,6 +459,25 @@ public final function JObject SetNumber(string name, float value)
     return self;
 }
 
+/**
+ *  Sets the number value (as `int`) of a property by the name `name`,
+ *  erasing previous value (if it was recorded).
+ *
+ *  Property in question will have `JSON_Number` type.
+ *
+ *      Forms a pair with `SetNumber()` method.
+ *      While JSON standard allows to store numbers with arbitrary precision,
+ *  UnrealScript's types have a limited range.
+ *      To alleviate this problem we store numbers in both `float`- and
+ *  `int`-type variables to extended supported range of values.
+ *  So if you need to store a number with fractional part, you should
+ *  prefer `SetNumber()` and for integer values `SetInteger()` is preferable.
+ *  Both will create a property of type `JSON_Number`.
+ *
+ *  @param  name    Name of the property to set a value of.
+ *  @param  value   Value to set to a property under a given name `name`.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject SetInteger(string name, int value)
 {
     local JProperty property;
@@ -349,6 +491,18 @@ public final function JObject SetInteger(string name, int value)
     return self;
 }
 
+/**
+ *  Sets the string value of a property by the name `name`,
+ *  erasing previous value (if it was recorded).
+ *
+ *  Property in question will have `JSON_String` type.
+ *
+ *  Also see `SetClass()` method.
+ *
+ *  @param  name    Name of the property to set a value of.
+ *  @param  value   Value to set to a property under a given name `name`.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject SetString(string name, string value)
 {
     local JProperty property;
@@ -362,6 +516,22 @@ public final function JObject SetString(string name, string value)
     return self;
 }
 
+/**
+ *  Sets the string value, corresponding to a given class `value`,
+ *  of a property by the name `name`, erasing previous value
+ *  (if it was recorded).
+ *
+ *  Property in question will have `JSON_String` type.
+ *
+ *      We want to allow storing `class` data in our JSON containers, but JSON
+ *  standard does not support such a type, so we have to use string type
+ *  to store `class`' name instead.
+ *      Also see `GetClass()` method`.
+ *
+ *  @param  name    Name of the property to set a value of.
+ *  @param  value   Value to set to a property under a given name `name`.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject SetClass(string name, class<Object> value)
 {
     local JProperty property;
@@ -375,6 +545,16 @@ public final function JObject SetClass(string name, class<Object> value)
     return self;
 }
 
+/**
+ *  Sets the boolean value of a property by the name `name`,
+ *  erasing previous value (if it was recorded).
+ *
+ *  Property in question will have `JSON_Boolean` type.
+ *
+ *  @param  name    Name of the property to set a value of.
+ *  @param  value   Value to set to a property under a given name `name`.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject SetBoolean(string name, bool value)
 {
     local JProperty property;
@@ -386,6 +566,15 @@ public final function JObject SetBoolean(string name, bool value)
     return self;
 }
 
+/**
+ *  Sets the value of a property by the name `name` to be "null" (`JSON_Null`),
+ *  erasing previous value (if it was recorded).
+ *
+ *  Property in question will have `JSON_Null` type.
+ *
+ *  @param  name    Name of the property to set a "null" value to.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject SetNull(string name)
 {
     local JProperty property;
@@ -396,6 +585,20 @@ public final function JObject SetNull(string name)
     return self;
 }
 
+/**
+ *  Sets the value of a property by the name `name` to store `JArray` object
+ *  (JSON array type).
+ *
+ *      NOTE: This method DOES NOT make caller `JObject` store a
+ *  given reference, instead it clones it (see `Clone()`) into a new copy and
+ *  stores that. This is made this way to ensure you can not, say, store
+ *  an object in itself or it's children.
+ *      See also `CreateArray()` method.
+ *
+ *  @param  name        Name of the property to return a value of.
+ *  @param  template    Template `JArray` to clone into property.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject SetArray(string name, JArray template)
 {
     local JProperty property;
@@ -410,6 +613,20 @@ public final function JObject SetArray(string name, JArray template)
     return self;
 }
 
+/**
+ *  Sets the value of a property by the name `name` to store `JObject` object
+ *  (JSON object type).
+ *
+ *      NOTE: This method DOES NOT make caller `JObject` store a
+ *  given reference, instead it clones it (see `Clone()`) into a new copy and
+ *  stores that. This is made this way to ensure you can not, say, store
+ *  an object in itself or it's children.
+ *      See also `CreateArray()` method.
+ *
+ *  @param  name        Name of the property to return a value of.
+ *  @param  template    Template `JObject` to clone into property.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject SetObject(string name, JObject template)
 {
     local JProperty property;
@@ -424,10 +641,15 @@ public final function JObject SetObject(string name, JObject template)
     return self;
 }
 
-//      JSON array and object types don't have setters, but instead have
-//  functions to create a new, empty array/object under a certain name.
-//      They return object itself, allowing user to chain calls like this:
-//  `object.CreateObject("folded object").CreateArray("names list");`.
+/**
+ *  Sets the value of a property by the name `name` to store a new
+ *  `JArray` object (JSON array type).
+ *
+ *  See also `SetArray()` method.
+ *
+ *  @param  name    Name of the property to store the new `JArray` value.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject CreateArray(string name)
 {
     local JProperty property;
@@ -441,6 +663,15 @@ public final function JObject CreateArray(string name)
     return self;
 }
 
+/**
+ *  Sets the value of a property by the name `name` to store a new
+ *  `JObject` object (JSON array type).
+ *
+ *  See also `SetArray()` method.
+ *
+ *  @param  name    Name of the property to store the new `JObject` value.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject CreateObject(string name)
 {
     local JProperty property;
@@ -454,15 +685,44 @@ public final function JObject CreateObject(string name)
     return self;
 }
 
-//  Removes values with a given name.
-//  Returns `true` if value was actually removed and `false` if it didn't exist.
+/**
+ *  Removes a property with a given name.
+ *
+ *  Does nothing if property with a given name does not exist.
+ *
+ *  @param  name    Name of the property to remove.
+ *  @return Reference to the caller object, to allow for function chaining.
+ */
 public final function JObject RemoveValue(string name)
 {
     RemoveProperty(name);
     return self;
 }
 
-public final function array<string> GetKeys()
+/**
+ *  Completely clears caller `JObject` of all stored properties.
+ */
+public function Clear()
+{
+    local int               i, j;
+    local array<JProperty>  nextProperties;
+    for (i = 0; i < hashTable.length; i += 1)
+    {
+        nextProperties = hashTable[i].properties;
+        for (j = 0; j < nextProperties.length; j += 1)
+        {
+            if (nextProperties[j].value.complexValue == none) continue;
+            nextProperties[j].value.complexValue.Destroy();
+        }
+    }
+}
+
+/**
+ *  Returns names of all properties inside caller `JObject`.
+ *
+ *  @return Array of all the caller object's property names as `string`s.
+ */
+public final function array<string> GetPropertyNames()
 {
     local int               i, j;
     local array<string>     result;
@@ -477,6 +737,13 @@ public final function array<string> GetKeys()
     return result;
 }
 
+/**
+ *  Checks if caller JSON container's values form a subset of
+ *  `rightJSON`'s values.
+ *
+ *  @return `true` if caller ("left") object is a subset of `rightJSON`
+ *      and `false` otherwise.
+ */
 public function bool IsSubsetOf(JSON rightJSON)
 {
     local int               i, j;
@@ -501,6 +768,12 @@ public function bool IsSubsetOf(JSON rightJSON)
     return true;
 }
 
+/**
+ *  Makes an exact copy of the caller `JObject`
+ *
+ *  @return Copy of the caller `JObject`. Guaranteed to be `JObject`
+ *      (or `none`, if appropriate object could not be created).
+ */
 public function JSON Clone()
 {
     local int                   i, j;
@@ -534,6 +807,32 @@ public function JSON Clone()
     return clonedObject;
 }
 
+/**
+ *  Uses given parser to parse a new set of properties inside
+ *  the caller `JObject`.
+ *
+ *  Only adds new properties if parsing the whole object was successful,
+ *  otherwise even successfully parsed properties will be discarded.
+ *
+ *      `parser` must point at the text describing a JSON object in
+ *  a valid notation. Then it parses that container inside memory, but
+ *  instead of creating it as a separate entity, adds it's values to
+ *  the caller container.
+ *      Everything that comes after parsed `JObject` is discarded.
+ *
+ *      This method does not try to validate passed JSON and can accept invalid
+ *  JSON by making some assumptions, but it is an undefined behavior and
+ *  one should not expect it.
+ *      Method is only guaranteed to work on valid JSON.
+ *
+ *  @param  parser  Parser that method would use to parse `JObject` from
+ *      wherever it left. It's confirmed will not be changed, but if parsing
+ *      was successful, - it will point at the next available character.
+ *      Do not treat `parser` being in a non-failed state as a confirmation of
+ *      successful parsing: JSON parsing might fail regardless.
+ *      Check return value for that.
+ *  @return `true` if parsing was successful and `false` otherwise.
+ */
 public function bool ParseIntoSelfWith(Parser parser)
 {
     local bool                  parsingSucceeded;
@@ -542,6 +841,7 @@ public function bool ParseIntoSelfWith(Parser parser)
     local array<JProperty>      parsedProperties;
     if (parser == none) return false;
     initState = parser.GetCurrentState();
+    //  Ensure that parser starts pointing at what looks like a JSON object
     confirmedState = parser.Skip().Match("{").GetCurrentState();
     if (!parser.Ok())
     {
@@ -551,6 +851,8 @@ public function bool ParseIntoSelfWith(Parser parser)
     while (parser.Ok() && !parser.HasFinished())
     {
         confirmedState = parser.Skip().GetCurrentState();
+        //  Check for JSON object ending and ONLY THEN declare parsing
+        //  is successful, not encountering '}' implies bad JSON format.
         if (parser.Match("}").Ok())
         {
             parsingSucceeded = true;
@@ -560,9 +862,12 @@ public function bool ParseIntoSelfWith(Parser parser)
             &&  !parser.RestoreState(confirmedState).Match(",").Skip().Ok()) {
             break;
         }
+        //  Recover after failed `Match("}")` on the first cycle
+        //  (`parsedProperties.length == 0`)
         else if (parser.Ok()) {
             confirmedState = parser.GetCurrentState();
         }
+        //  Parse property
         parser.RestoreState(confirmedState).Skip();
         parser.MStringLiteral(nextProperty.name).Skip().Match(":");
         nextProperty.value = ParseAtom(parser.Skip());
@@ -578,6 +883,8 @@ public function bool ParseIntoSelfWith(Parser parser)
     return parsingSucceeded;
 }
 
+//  Either cleans up or adds a list of parsed properties,
+//  depending on whether parsing was successful or not.
 private function HandleParsedProperties(
     array<JProperty>    parsedProperties,
     bool                parsingSucceeded)
@@ -598,6 +905,16 @@ private function HandleParsedProperties(
     }
 }
 
+/**
+ *  Displays caller `JObject` with a provided preset.
+ *
+ *  See `Display()` for a simpler to use method.
+ *
+ *  @param  displaySettings   Struct that describes precisely how to display
+ *      caller `JObject`. Can be used to emulate `Display()` call.
+ *  @return String representation of caller JSON container in format defined by
+ *      `displaySettings`.
+ */
 public function string DisplayWith(JSONDisplaySettings displaySettings)
 {
     local int                   i, j;
@@ -613,19 +930,7 @@ public function string DisplayWith(JSONDisplaySettings displaySettings)
     else {
         innerSettings = displaySettings;
     }
-    //      Prepare delimiters using appropriate indentation rules
-    //      We only use inner settings for the part right after '{',
-    //  as the rest is supposed to be aligned with outer objects
-    openingBraces = "{";
-    closingBraces = "}";
-    if (innerSettings.colored) {
-        openingBraces = "&" $ openingBraces;
-        closingBraces = "&" $ closingBraces;
-    }
-    openingBraces = displaySettings.beforeObjectOpening
-        $ openingBraces $ innerSettings.afterObjectOpening;
-    closingBraces = displaySettings.beforeObjectEnding
-        $ closingBraces $ displaySettings.afterObjectEnding;
+    GetBraces(openingBraces, closingBraces, displaySettings, innerSettings);
     propertiesSeparator = "," $ innerSettings.afterObjectComma;
     if (innerSettings.colored) {
         propertiesSeparator = "{$json_comma" @ propertiesSeparator $ "}";
@@ -648,6 +953,49 @@ public function string DisplayWith(JSONDisplaySettings displaySettings)
     return openingBraces $ contents $ closingBraces;
 }
 
+/**
+ *  Helper function that generates `string`s to be used for opening and
+ *  closing braces for text representation of the caller `JObject`.
+ *
+ *  Cannot fail.
+ *
+ *  @param  openingBraces   `string` for opening braces will be recorded here.
+ *  @param  closingBraces   `string` for closing braces will be recorded here.
+ *  @param  outerSettings   Settings that were passed to tell us how to display
+ *      a caller object.
+ *  @param  innerSettings   Settings that were generated from `outerSettings` by
+ *      indenting them (`IndentSettings()`) to use to display it's
+ *      inner properties.
+ */
+protected function GetBraces(
+    out string          openingBraces,
+    out string          closingBraces,
+    JSONDisplaySettings outerSettings,
+    JSONDisplaySettings innerSettings)
+{
+    openingBraces = "{";
+    closingBraces = "}";
+    if (innerSettings.colored) {
+        openingBraces = "&" $ openingBraces;
+        closingBraces = "&" $ closingBraces;
+    }
+    //      We only use inner settings for the part right after '{',
+    //  as the rest is supposed to be aligned with outer objects
+    openingBraces = outerSettings.beforeObjectOpening
+        $ openingBraces $ innerSettings.afterObjectOpening;
+    closingBraces = outerSettings.beforeObjectEnding
+        $ closingBraces $ outerSettings.afterObjectEnding;
+}
+
+/**
+ *  Helper method to convert a JSON object's property into it's
+ *  text representation.
+ *
+ *  @param  toDisplay       Property to display as a `string`.
+ *  @param  displaySettings Settings that tells us how to display it.
+ *  @return `string` representation of a given property `toDisplay`,
+ *      created according to the settings `displaySettings`.
+ */
 protected function string DisplayProperty(
     JProperty           toDisplay,
     JSONDisplaySettings displaySettings)
@@ -665,21 +1013,6 @@ protected function string DisplayProperty(
     return (result $ displaySettings.beforePropertyValue
         $ DisplayAtom(toDisplay.value, displaySettings)
         $ displaySettings.afterPropertyValue);
-}
-
-public function Clear()
-{
-    local int               i, j;
-    local array<JProperty>  nextProperties;
-    for (i = 0; i < hashTable.length; i += 1)
-    {
-        nextProperties = hashTable[i].properties;
-        for (j = 0; j < nextProperties.length; j += 1)
-        {
-            if (nextProperties[j].value.complexValue == none) continue;
-            nextProperties[j].value.complexValue.Destroy();
-        }
-    }
 }
 
 defaultproperties

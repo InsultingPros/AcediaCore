@@ -3,9 +3,8 @@
  *  that uses human-readable text to store and transmit data objects
  *  consisting of name–value pairs and array data types.
  *      For more information refer to https://en.wikipedia.org/wiki/JSON
- *      This is a base class for implementation of JSON data storage for Acedia.
- *      It does not implement parsing and printing from/into human-readable
- *  text representation, just provides means to store such information.
+ *      This is a base class for implementation of JSON objects and arrays
+ *  for Acedia.
  *
  *      JSON data is stored as an object (represented via `JSONObject`) that
  *  contains a set of name-value pairs, where value can be
@@ -29,9 +28,12 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class JSON extends AcediaActor
-    abstract;
+    abstract
+    config(AcediaSystem);
 
-//  Enumeration for possible types of JSON values.
+/**
+ *  Enumeration for possible types of JSON values.
+ */
 enum JType
 {
     //  Technical type, used to indicate that requested value is missing.
@@ -53,7 +55,9 @@ enum JType
     JSON_Object
 };
 
-//  Stores a single JSON value
+/**
+ *  Represents a single JSON value.
+ */
 struct JStorageAtom
 {
     //  What type is stored exactly?
@@ -77,44 +81,96 @@ struct JStorageAtom
     var bool          classLoadingWasAttempted;
 };
 
+/**
+ *      Enumeration of possible result of comparing two JSON containers
+ *  (objects or arrays).
+ *      Containers are compared as sets of stored variables.
+ */
 enum JComparisonResult
 {
+    //  Containers contain different sets of values and
+    //  neither can be considered a subset of another.
     JCR_Incomparable,
+    //  "Left" container is a subset of the "right" one.
     JCR_SubSet,
+    //  "Right" container is a subset of the "left" one.
     JCR_Overset,
+    //  Both objects are identical.
     JCR_Equal
 };
 
+/**
+ *  Describes how JSON containers are supposed to be displayed.
+ */
 struct JSONDisplaySettings
 {
+    //  Should it be displayed as a formatted string, with added color tags?
     var bool    colored;
+    //  Should we "stack" indentation of folded objects?
     var bool    stackIndentation;
+    //  Indentation for elements in object/array
     var string  subObjectIndentation, subArrayIndentation;
+    //  Strings to put immediately before and after object opening: '{'
     var string  beforeObjectOpening, afterObjectOpening;
+    //  Strings to put immediately before and after object closing: '}'
     var string  beforeObjectEnding, afterObjectEnding;
+    //  {<beforePropertyName>"name"<afterPropertyName>:value}
     var string  beforePropertyName, afterPropertyName;
+    //  {"name":<beforePropertyValue>value<afterPropertyValue>}
     var string  beforePropertyValue, afterPropertyValue;
+    //  String to put immediately after comma inside object,
+    //  can be used to break line after each property record
     var string  afterObjectComma;
+    //  Strings to put immediately before and after array opening: '['
     var string  beforeArrayOpening, afterArrayOpening;
+    //  Strings to put immediately before and after array closing: ']'
     var string  beforeArrayEnding, afterArrayEnding;
+    //  [<beforeElement>element1<afterElement>,<afterArrayComma>...]
     var string  beforeElement, afterElement;
+    //  Can be used to break line after each property record
     var string  afterArrayComma;
 };
 
-var private const int MAX_FLOAT_PRECISION;
+//  Max precision that will be used when outputting JSON values as a string.
+//  Hardcoded to force this value between 0 and 10, inclusively.
+var private const config int MAX_FLOAT_PRECISION;
 
+/**
+ *  Completely clears caller JSON container of all stored data.
+ */
 public function Clear(){}
 
+/**
+ *  Makes an exact copy of the caller JSON container.
+ *
+ *  @return Copy of the caller JSON container object.
+ */
 public function JSON Clone()
 {
     return none;
 }
 
+/**
+ *  Checks if caller JSON container's values form a subset of
+ *  `rightJSON`'s values.
+ *
+ *  @return `true` if caller ("left") object is a subset of `rightJSON`
+ *      and `false` otherwise.
+ */
 public function bool IsSubsetOf(JSON rightJSON)
 {
     return false;
 }
 
+/**
+ *  Compares caller JSON container ("left container")
+ *  to `rightJSON` ("right container").
+ *
+ *  @param  rightJSON   Value to compare caller object to.
+ *  @return `JComparisonResult` describing comparison of caller `JSON` container
+ *      to `rightJSON`.
+ *      Always returns `false` if compared objects are of different types.
+ */
 public final function JComparisonResult Compare(JSON rightJSON)
 {
     local bool firstIsSubset, secondIsSubset;
@@ -140,11 +196,201 @@ public final function JComparisonResult Compare(JSON rightJSON)
     }
 }
 
+/**
+ *  Checks if two objects are equal.
+ *
+ *  A shortcut for `Compare(rightJSON) == JCR_Equal`.
+ *
+ *  @param  rightJSON   Value to compare caller object to.
+ *  @return `true` if caller and `rightJSON` store exactly same set of values
+ *      (under the same names for `JObject`) and `false` otherwise.
+ */
 public final function bool IsEqual(JSON rightJSON)
 {
     return (Compare(rightJSON) == JCR_Equal);
 }
 
+/**
+ *  Displays caller JSON container with one of the presets.
+ *
+ *  Default compact preset displays JSON in as little characters as possible,
+ *  fancy preset tries to make it human-readable with appropriate spacing and
+ *  indentation for sub objects.
+ *
+ *  See `DisplayWith()` for a more tweakable method.
+ *
+ *  @param  fancyPrinting   Leave empty of `false` for a compact display and
+ *      `true` to display it with a fancy preset.
+ *  @param  colorSettings   Display JSON container as a formatted string,
+ *      adding color tags to JSON syntax.
+ *  @return String representation of caller JSON container,
+ *      in plain format if `colorSettings == false` and
+ *      as a formatted string if `colorSettings == true`.
+ */
+public final function string Display(
+    optional bool fancyPrinting,
+    optional bool colorSettings)
+{
+    local JSONDisplaySettings settingsToUse;
+    //  Settings are minimal by default
+    if (fancyPrinting) {
+        settingsToUse = GetFancySettings();
+    }
+    if (colorSettings) {
+        settingsToUse.colored = true;
+    }
+    return DisplayWith(settingsToUse);
+}
+
+/**
+ *  Displays caller JSON container with a provided preset.
+ *
+ *  See `Display()` for a simpler to use method.
+ *
+ *  @param  displaySettings   Struct that describes precisely how to display
+ *      caller JSON container. Can be used to emulate `Display()` call.
+ *  @return String representation of caller JSON container in format defined by
+ *      `displaySettings`.
+ */
+public function string DisplayWith(JSONDisplaySettings displaySettings)
+{
+    return "";
+}
+
+/**
+ *  Uses given parser to parse a new set of properties inside
+ *  the caller JSON container.
+ *
+ *  Only adds new properties if parsing the whole object was successful,
+ *  otherwise even successfully parsed properties will be discarded.
+ *
+ *      `parser` must point at the text describing a JSON object or an array
+ *  (depending on whether a caller object is `JObject` or `JArray`) in
+ *  a valid notation. Then it parses that container inside memory, but
+ *  instead of creating it as a separate entity, adds it's values to
+ *  the caller container.
+ *      Everything that comes after parsed JSON container is discarded.
+ *
+ *      This method does not try to validate passed JSON and can accept invalid
+ *  JSON by making some assumptions, but it is an undefined behavior and
+ *  one should not expect it.
+ *      Method is only guaranteed to work on valid JSON.
+ *
+ *  @param  parser  Parser that method would use to parse JSON container from
+ *      wherever it left. It's confirmed will not be changed, but if parsing
+ *      was successful, - it will point at the next available character.
+ *      Do not treat `parser` being in a non-failed state as a confirmation of
+ *      successful parsing: JSON parsing might fail regardless.
+ *      Check return value for that.
+ *  @return `true` if parsing was successful and `false` otherwise.
+ */
+public function bool ParseIntoSelfWith(Parser parser)
+{
+    return false;
+}
+
+/**
+ *  Parse a new set of properties inside the caller JSON container from
+ *  a given `Text`.
+ *
+ *  Only adds new properties if parsing the whole object was successful,
+ *  otherwise even successfully parsed properties will be discarded.
+ *
+ *      JSON container is parsed from a given `Text`, but instead of creating
+ *  new object as a separate entity, method adds it's values to
+ *  the caller container.
+ *      Everything that comes after parsed JSON container is discarded.
+ *
+ *      This method does not try to validate passed JSON and can accept invalid
+ *  JSON by making some assumptions, but it is an undefined behavior and
+ *  one should not expect it.
+ *      Method is only guaranteed to work on valid JSON.
+ *
+ *  @param  source  `Text` to get JSON container definition from.
+ *  @return `true` if parsing was successful and `false` otherwise.
+ */
+public final function bool ParseIntoSelf(Text source)
+{
+    local bool      successfullyParsed;
+    local Parser    jsonParser;
+    jsonParser = _.text.Parse(source);
+    successfullyParsed = ParseIntoSelfWith(jsonParser);
+    _.memory.Free(jsonParser);
+    return successfullyParsed;
+}
+
+/**
+ *  Parse a new set of properties inside the caller JSON container from
+ *  a given `string`.
+ *
+ *  Only adds new properties if parsing the whole object was successful,
+ *  otherwise even successfully parsed properties will be discarded.
+ *
+ *      JSON container is parsed from a given `string`, but instead of creating
+ *  new object as a separate entity, method adds it's values to
+ *  the caller container.
+ *      Everything that comes after parsed JSON container is discarded.
+ *
+ *      This method does not try to validate passed JSON and can accept invalid
+ *  JSON by making some assumptions, but it is an undefined behavior and
+ *  one should not expect it.
+ *      Method is only guaranteed to work on valid JSON.
+ *
+ *  @param  source  `string` to get JSON container definition from.
+ *  @return `true` if parsing was successful and `false` otherwise.
+ */
+public final function bool ParseIntoSelfString(
+    string                      source,
+    optional Text.StringType    stringType)
+{
+    local bool      successfullyParsed;
+    local Parser    jsonParser;
+    jsonParser = _.text.ParseString(source, stringType);
+    successfullyParsed = ParseIntoSelfWith(jsonParser);
+    _.memory.Free(jsonParser);
+    return successfullyParsed;
+}
+
+/**
+ *  Parse a new set of properties inside the caller JSON container from
+ *  a given raw data.
+ *
+ *  Only adds new properties if parsing the whole object was successful,
+ *  otherwise even successfully parsed properties will be discarded.
+ *
+ *      JSON container is parsed from a given raw data, but instead of creating
+ *  new object as a separate entity, method adds it's values to
+ *  the caller container.
+ *      Everything that comes after parsed JSON container is discarded.
+ *
+ *      This method does not try to validate passed JSON and can accept invalid
+ *  JSON by making some assumptions, but it is an undefined behavior and
+ *  one should not expect it.
+ *      Method is only guaranteed to work on valid JSON.
+ *
+ *  @param  source  Raw data *array of `Text.Character`) to get JSON container
+ *      definition from.
+ *  @return `true` if parsing was successful and `false` otherwise.
+ */
+public final function bool ParseIntoSelfRaw(array<Text.Character> rawSource)
+{
+    local bool      successfullyParsed;
+    local Parser    jsonParser;
+    jsonParser = _.text.ParseRaw(rawSource);
+    successfullyParsed = ParseIntoSelfWith(jsonParser);
+    _.memory.Free(jsonParser);
+    return successfullyParsed;
+}
+
+/**
+ *  Checks if two `JStorageAtom` values represent the same values.
+ *
+ *  Atoms storing the same value does not necessarily mean that they are equal
+ *  as structs because they contain several different container members and
+ *  unused ones can differ.
+ *
+ *  @return `true` if atoms stores the same value, `false` otherwise.
+ */
 protected final function bool AreAtomsEqual(
     JStorageAtom atom1,
     JStorageAtom atom2)
@@ -171,6 +417,11 @@ protected final function bool AreAtomsEqual(
     return atom1.complexValue.IsEqual(atom2.complexValue);
 }
 
+/**
+ *  Tries to load class variable into an atom, based on it's `stringValue`.
+ *
+ *  @param  atom    Result will be recorded in the field of the argument itself.
+ */
 protected final function TryLoadingStringAsClass(out JStorageAtom atom)
 {
     if (atom.classLoadingWasAttempted) return;
@@ -179,26 +430,18 @@ protected final function TryLoadingStringAsClass(out JStorageAtom atom)
         class<Object>(DynamicLoadObject(atom.stringValue, class'Class', true));
 }
 
-public final function string Display(
-    optional bool fancyPrinting,
-    optional bool colorSettings)
-{
-    local JSONDisplaySettings settingsToUse;
-    //  Settings are minimal by default
-    if (fancyPrinting) {
-        settingsToUse = GetFancySettings();
-    }
-    if (colorSettings) {
-        settingsToUse.colored = true;
-    }
-    return DisplayWith(settingsToUse);
-}
-
-public function string DisplayWith(JSONDisplaySettings displaySettings)
-{
-    return "";
-}
-
+/**
+ *  Displays a `JStorageAtom` in it's appropriate text JSON representation.
+ *
+ *  That's a representation that can be pasted inside JSON array as-is
+ *  (with different values separated by commas).
+ *
+ *  @param  atom            Atom to display.
+ *  @param  displaySettings Display settings, according to which to
+ *      display the atom.
+ *  @return Text representation of the passed `atom`, empty if it's of
+ *      the type `JSON_Undefined`.
+ */
 protected final function string DisplayAtom(
     JStorageAtom        atom,
     JSONDisplaySettings displaySettings)
@@ -241,7 +484,9 @@ protected final function string DisplayAtom(
     return result;
 }
 
-protected final function string DisplayFloat(float number)
+//  Helper function for printing float with a given max precision
+//  (`MAX_FLOAT_PRECISION`).
+private final function string DisplayFloat(float number)
 {
     local int       integerPart, fractionalPart;
     local int       precision;
@@ -256,23 +501,29 @@ protected final function string DisplayFloat(float number)
     integerPart = number;
     result $= string(integerPart);
     number = (number - integerPart);
+    //  We try to perform minimal amount of operations to extract fractional
+    //  part as integer in order to avoid accumulating too much of an error.
     fractionalPart = Round(number * (10 ** precision));
     if (fractionalPart <= 0) {
         return result;
     }
     result $= ".";
+    //  Pad necessary zeroes in front
     howManyZeroes = precision - CountDigits(fractionalPart);
-    while (fractionalPart > 0 && fractionalPart % 10 == 0) {
-        fractionalPart /= 10;
-    }
     while (howManyZeroes > 0) {
         zeroes $= "0";
         howManyZeroes -= 1;
     }
+    //  Cut off trailing zeroes and 
+    while (fractionalPart > 0 && fractionalPart % 10 == 0) {
+        fractionalPart /= 10;
+    }
     return result $ zeroes $ string(fractionalPart);
 }
 
-protected final function int CountDigits(int number)
+//  Helper function that counts amount of digits in decimal representation
+//  of `number`.
+private final function int CountDigits(int number)
 {
     local int digitCounter;
     while (number > 0)
@@ -284,23 +535,15 @@ protected final function int CountDigits(int number)
     return digitCounter;
 }
 
-protected final function JSONDisplaySettings GetFancySettings()
-{
-    local string                lineFeed;
-    local JSONDisplaySettings   fancySettings;
-    lineFeed = Chr(10);
-    fancySettings.stackIndentation      = true;
-    fancySettings.subObjectIndentation  = "    ";
-    fancySettings.subArrayIndentation   = "";
-    fancySettings.afterObjectOpening    = lineFeed;
-    fancySettings.beforeObjectEnding    = lineFeed;
-    fancySettings.beforePropertyValue   = " ";
-    fancySettings.afterObjectComma      = lineFeed;
-    fancySettings.beforeElement         = " ";
-    fancySettings.afterArrayComma       = " ";
-    return fancySettings;
-}
-
+/**
+ *  Prepares a `string` to be displayed as textual JSON representation by
+ *  replacing certain characters with their escaped sequences.
+ *
+ *  @param  input   String value to display inside a text representation of
+ *      a JSON data.
+ *  @result Representation of an `input` that can be included in text form of
+ *      JSON data.
+ */
 protected final function string DisplayJSONString(string input)
 {
     //  Convert control characters (+ other, specified by JSON)
@@ -317,6 +560,36 @@ protected final function string DisplayJSONString(string input)
     return ("\"" $ input $ "\"");
 }
 
+//  helper function to prepare fancy display settings, because it is a bitch to
+//  include a `string` with new line symbol in `defaultproperties`.
+private final function JSONDisplaySettings GetFancySettings()
+{
+    local string                lineFeed;
+    local JSONDisplaySettings   fancySettings;
+    lineFeed = Chr(10);
+    fancySettings.stackIndentation      = true;
+    fancySettings.subObjectIndentation  = "    ";
+    fancySettings.subArrayIndentation   = "";
+    fancySettings.afterObjectOpening    = lineFeed;
+    fancySettings.beforeObjectEnding    = lineFeed;
+    fancySettings.beforePropertyValue   = " ";
+    fancySettings.afterObjectComma      = lineFeed;
+    fancySettings.beforeElement         = " ";
+    fancySettings.afterArrayComma       = " ";
+    return fancySettings;
+}
+
+/**
+ *  Helper function that prepares `JSONDisplaySettings` to be used for
+ *  a folded object / array to make it more human-readable thanks to
+ *  sub-object/-arrays indentation.
+ *
+ *  @param  inputSettings   Settings to modify, passed variable will
+ *      remain unchanged.
+ *  @param  indentingArray  True if we need to modify settings for
+ *      a folded array and `false` if for the object.
+ *  @return Modified `inputSettings`, with added indentation.
+ */
 protected final function JSONDisplaySettings IndentSettings(
     JSONDisplaySettings inputSettings,
     optional bool       indentingArray)
@@ -354,41 +627,19 @@ protected final function JSONDisplaySettings IndentSettings(
     return indentedSettings;
 }
 
-public function bool ParseIntoSelfWith(Parser parser)
-{
-    return false;
-}
-
-public final function bool ParseIntoSelf(Text source)
-{
-    local bool      successfullyParsed;
-    local Parser    jsonParser;
-    jsonParser = _.text.Parse(source);
-    successfullyParsed = ParseIntoSelfWith(jsonParser);
-    _.memory.Free(jsonParser);
-    return successfullyParsed;
-}
-
-public final function bool ParseIntoSelfString(string source)
-{
-    local bool      successfullyParsed;
-    local Parser    jsonParser;
-    jsonParser = _.text.ParseString(source);
-    successfullyParsed = ParseIntoSelfWith(jsonParser);
-    _.memory.Free(jsonParser);
-    return successfullyParsed;
-}
-
-public final function bool ParseIntoSelfRaw(array<Text.Character> rawSource)
-{
-    local bool      successfullyParsed;
-    local Parser    jsonParser;
-    jsonParser = _.text.ParseRaw(rawSource);
-    successfullyParsed = ParseIntoSelfWith(jsonParser);
-    _.memory.Free(jsonParser);
-    return successfullyParsed;
-}
-
+/**
+ *  Uses given parser to parse a single (possibly complex like JSON object
+ *  or array) JSON value.
+ *
+ *  @param  parser  Parser that method would use to parse JSON value from
+ *      wherever it left. It's confirmed will not be changed, but if parsing
+ *      was successful, - it will point at the next available character.
+ *      Do not treat `parser` being in a non-failed state as a confirmation of
+ *      successful parsing: JSON parsing might fail regardless.
+ *      Check return value for that.
+ *  @return Parsed JSON value as `JStorageAtom`.
+ *      If parsing has failed it will have the `JSON_Undefined` type.
+ */
 protected final function JStorageAtom ParseAtom(Parser parser)
 {
     local Parser.ParserState    initState;
@@ -396,41 +647,55 @@ protected final function JStorageAtom ParseAtom(Parser parser)
     if (parser == none) return newAtom;
     if (!parser.Ok())   return newAtom;
     initState = parser.GetCurrentState();
-    parser.Skip().Confirm();
     if (parser.MStringLiteral(newAtom.stringValue).Ok())
     {
         newAtom.type = JSON_String;
         return newAtom;
     }
-    newAtom = ParseLiteral(parser.R());
+    newAtom = ParseLiteral(parser.RestoreState(initState));
     if (newAtom.type != JSON_Undefined) {
         return newAtom;
     }
-    newAtom = ParseComplex(parser.R());
+    newAtom = ParseComplex(parser.RestoreState(initState));
     if (newAtom.type != JSON_Undefined) {
         return newAtom;
     }
-    newAtom = ParseNumber(parser.R());
+    newAtom = ParseNumber(parser.RestoreState(initState));
     if (newAtom.type == JSON_Undefined) {
         parser.RestoreState(initState);
     }
     return newAtom;
 }
 
+/**
+ *  Uses given parser to parse a "literal" JSON value:
+ *      "true", "false" or "null".
+ *
+ *  @param  parser  Parser that method would use to parse JSON value from
+ *      wherever it left. It's confirmed will not be changed, but if parsing
+ *      was successful, - it will point at the next available character.
+ *      Do not treat `parser` being in a non-failed state as a confirmation of
+ *      successful parsing: JSON parsing might fail regardless.
+ *      Check return value for that.
+ *  @return Parsed JSON value as `JStorageAtom`.
+ *      If parsing has failed it will have the `JSON_Undefined` type.
+ */
 protected final function JStorageAtom ParseLiteral(Parser parser)
 {
-    local JStorageAtom newAtom;
+    local JStorageAtom          newAtom;
+    local Parser.ParserState    initState;
+    initState = parser.GetCurrentState();
     if (parser.Match("null", true).Ok())
     {
         newAtom.type = JSON_Null;
         return newAtom;
     }
-    if (parser.R().Match("false", true).Ok())
+    if (parser.RestoreState(initState).Match("false", true).Ok())
     {
         newAtom.type = JSON_Boolean;
         return newAtom;
     }
-    if (parser.R().Match("true", true).Ok())
+    if (parser.RestoreState(initState).Match("true", true).Ok())
     {
         newAtom.type = JSON_Boolean;
         newAtom.booleanValue = true;
@@ -438,21 +703,36 @@ protected final function JStorageAtom ParseLiteral(Parser parser)
     }
 }
 
+/**
+ *  Uses given parser to parse a complex JSON value: JSON object or array.
+ *
+ *  @param  parser  Parser that method would use to parse JSON value from
+ *      wherever it left. It's confirmed will not be changed, but if parsing
+ *      was successful, - it will point at the next available character.
+ *      Do not treat `parser` being in a non-failed state as a confirmation of
+ *      successful parsing: JSON parsing might fail regardless.
+ *      Check return value for that.
+ *  @return Parsed JSON value as `JStorageAtom`.
+ *      If parsing has failed it will have the `JSON_Undefined` type.
+ */
 protected final function JStorageAtom ParseComplex(Parser parser)
 {
-    local JStorageAtom newAtom;
+    local JStorageAtom          newAtom;
+    local Parser.ParserState    initState;
+    initState = parser.GetCurrentState();
     if (parser.Match("{").Ok())
     {
         newAtom.complexValue = _.json.NewObject();
         newAtom.type = JSON_Object;
     }
-    else if (parser.R().Match("[").Ok())
+    else if (parser.RestoreState(initState).Match("[").Ok())
     {
         newAtom.complexValue = _.json.NewArray();
         newAtom.type = JSON_Array;
     }
+    parser.RestoreState(initState);
     if (    newAtom.complexValue != none
-        &&  newAtom.complexValue.ParseIntoSelfWith(parser.R())) {
+        &&  newAtom.complexValue.ParseIntoSelfWith(parser)) {
         return newAtom;
     }
     newAtom.type = JSON_Undefined;
@@ -460,10 +740,23 @@ protected final function JStorageAtom ParseComplex(Parser parser)
     return newAtom;
 }
 
+/**
+ *  Uses given parser to parse a numeric JSON value.
+ *
+ *  @param  parser  Parser that method would use to parse JSON value from
+ *      wherever it left. It's confirmed will not be changed, but if parsing
+ *      was successful, - it will point at the next available character.
+ *      Do not treat `parser` being in a non-failed state as a confirmation of
+ *      successful parsing: JSON parsing might fail regardless.
+ *      Check return value for that.
+ *  @return Parsed JSON value as `JStorageAtom`.
+ *      If parsing has failed it will have the `JSON_Undefined` type.
+ */
 protected final function JStorageAtom ParseNumber(Parser parser)
 {
     local JStorageAtom          newAtom;
-    local Parser.ParserState    integerParsedState;
+    local Parser.ParserState    initState, integerParsedState;
+    initState = parser.GetCurrentState();
     if (!parser.MInteger(newAtom.numberValueAsInt).Ok()) {
         return newAtom;
     }
@@ -474,7 +767,7 @@ protected final function JStorageAtom ParseNumber(Parser parser)
     if (    parser.Match(".").Ok()
         ||  parser.RestoreState(integerParsedState).Match("e", true).Ok())
     {
-        parser.R().MNumber(newAtom.numberValue);
+        parser.RestoreState(initState).MNumber(newAtom.numberValue);
         return newAtom;
     }
     parser.RestoreState(integerParsedState);
