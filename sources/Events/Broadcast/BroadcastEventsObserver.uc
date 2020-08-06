@@ -19,10 +19,32 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-// TODO: make it work from any place in the chain.
-class BroadcastHandler extends Engine.BroadcastHandler
-    dependson(BroadcastEvents);
+class BroadcastEventsObserver extends Engine.BroadcastHandler
+    dependson(BroadcastEvents)
+    config(AcediaSystem);
 
+/**
+ *      Forcing Acedia's own `BroadcastHandler` is rather invasive and might be
+ *  undesired, since it can lead to incompatibilities with some mutators.
+ *      To alleviate this issue Acedia allows server admins to control how it's
+ *  `BroadcastHandler` is injected. Do note however that anything other than
+ *  `BHIJ_Root` can lead to issues with Acedia's features.
+ */
+enum InjectionLevel
+{
+    //  `BroadcastEventsObserver` will not be added at all, which will
+    //  effectively disable `BroadcastEvents`.
+    BHIJ_None,
+    //   `BroadcastEventsObserver` will be places in the broadcast handlers'
+    //  chain as a normal `BroadcastHandler`, which can lead to incorrect
+    //  handling of `HandleText` and `HandleLocalized` events.
+    BHIJ_Registered,
+    //      `BroadcastEventsObserver` will be injected at the very beginning of
+    //  the broadcast handlers' chain.
+    //      This provides full Acedia's functionality.
+    BHIJ_Root
+};
+var public config const InjectionLevel usedInjectionLevel;
 //      The way vanilla 'BroadcastHandler' works - it can check if broadcast is
 //  possible for any actor, but for actually sending the text messages it will
 //  try to extract player's data from it
@@ -193,5 +215,6 @@ function bool AcceptBroadcastLocalized
 
 defaultproperties
 {
-    blockAllowsBroadcast = false
+    blockAllowsBroadcast    = false
+    usedInjectionLevel      = BHIJ_Root
 }
