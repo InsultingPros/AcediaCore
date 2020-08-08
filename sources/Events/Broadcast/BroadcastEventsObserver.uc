@@ -40,7 +40,7 @@ enum InjectionLevel
     //   `BroadcastEventsObserver` will be places in the broadcast handlers'
     //  chain as a normal `BroadcastHandler`
     //  (through `RegisterBroadcastHandler()` call), which can lead to incorrect
-    //  handling of `HandleText` and `HandleLocalized` events.
+    //  handling of `HandleText()` and `HandleLocalized()` events.
     BHIJ_Registered,
     //      `BroadcastEventsObserver` will be injected at the very beginning of
     //  the broadcast handlers' chain.

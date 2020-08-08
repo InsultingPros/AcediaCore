@@ -1,8 +1,8 @@
 /**
  *      Event generator for events, related to broadcasting messages
  *  through standard Unreal Script means:
- *  1. text messages, typed by a player;
- *  2. localized messages, identified by a LocalMessage class and id.
+ *      1. text messages, typed by a player;
+ *      2. localized messages, identified by a LocalMessage class and id.
  *  Allows to make decisions whether or not to propagate certain messages.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
@@ -56,12 +56,10 @@ static function bool CallCanBroadcast(Actor broadcaster, int recentSentTextSize)
     return true;
 }
 
-static function bool CallHandleText
-(
+static function bool CallHandleText(
     Actor       sender,
     out string  message,
-    name        messageType
-)
+    name        messageType)
 {
     local int   i;
     local bool  result;
@@ -76,13 +74,11 @@ static function bool CallHandleText
     return true;
 }
 
-static function bool CallHandleTextFor
-(
+static function bool CallHandleTextFor(
     PlayerController    receiver,
     Actor               sender,
     out string          message,
-    name                messageType
-)
+    name                messageType)
 {
     local int   i;
     local bool  result;
@@ -97,11 +93,9 @@ static function bool CallHandleTextFor
     return true;
 }
 
-static function bool CallHandleLocalized
-(
+static function bool CallHandleLocalized(
     Actor               sender,
-    LocalizedMessage    message
-)
+    LocalizedMessage    message)
 {
     local int   i;
     local bool  result;
@@ -116,12 +110,10 @@ static function bool CallHandleLocalized
     return true;
 }
 
-static function bool CallHandleLocalizedFor
-(
+static function bool CallHandleLocalizedFor(
     PlayerController    receiver,
     Actor               sender,
-    LocalizedMessage    message
-)
+    LocalizedMessage    message)
 {
     local int   i;
     local bool  result;
