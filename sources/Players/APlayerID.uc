@@ -37,8 +37,11 @@ struct SteamData
     //  32 lowest bits of SteadID64.
     //  Corresponds to a combination of "Y" and "Z" in "STEAM_X:Y:Z".
     var public int  steamID32;
-    //  Other 4 fields fully define a SteamID and `steamID64` can be generated
-    //  from them, but it is easier to simply cache it in a separate variable.
+    //      Other 4 fields fully define a SteamID and `steamID64` can be
+    //  generated from them, but it is easier to simply cache it in
+    //  a separate variable.
+    //      `SteamData` is considered valid iff `steamID64` is equal to
+    //  Steam64 ID that can be generated from other variables.
     var string      steamID64;
 };
 var protected SteamData initializedData;
@@ -50,7 +53,7 @@ var protected bool      initialized;
 //  (425327 <-> [4, 2, 5, 3, 2, 7])
 //  return given number mod 2 and
 //  divide that number by two (record result in that same array)
-private final function int DivideDigitArrayByTwo(out array<int> digits)
+private static final function int DivideDigitArrayByTwo(out array<int> digits)
 {
     local int i;
     local int wasOdd;
@@ -76,7 +79,7 @@ private final function int DivideDigitArrayByTwo(out array<int> digits)
 //  Given a number in form of array (`digits`) of it's digits
 //  (425327 <-> [4, 2, 5, 3, 2, 7])
 //  extracts `bitsToRead` of lower bits from it and returns them as an `int`.
-private final function int ReadBitsFromDigitArray(
+private static final function int ReadBitsFromDigitArray(
     out array<int>  digits,
     int             bitsToRead)
 {
@@ -121,6 +124,43 @@ private final function string GetSteamAccountTypeCharacter()
 }
 
 /**
+ *  Helper function that generates `SteamData` structure from
+ *  a given Steam64 ID.
+ *
+ *  In case invalid ID is given this method will not raise any warning and
+ *  returned value should be considered undefined.
+ *
+ *  @param  steamID64   Steam64 ID's decimal representation in a plain string.
+ *  @return `SteamData` generated from a given Steam64 ID `steamID64`.
+ */
+public static final function SteamData GetSteamDataFromSteamID64(
+    string steamID64)
+{
+    local int                   i;
+    local SteamData             newSteamData;
+    local array<Text.Character> characters;
+    local array<int>            digits;
+
+    characters = _().text.StringToRaw(steamID64);
+    for (i = 0; i < characters.length; i += 1) {
+        digits[digits.length] = _().text.CharacterToInt(characters[i]);
+    }
+    newSteamData.steamID64 = steamID64;
+    //  Refer to https://developer.valvesoftware.com/wiki/SteamID
+    //  The lowest bit represents Y.
+    //  The next 31 bits represents the account number.
+    //      ^ these two can be combined into a "SteamID32".
+    newSteamData.steamID32      = ReadBitsFromDigitArray(digits, 32);
+    //  The next 20 bits represents the instance of the account.
+    newSteamData.instance       = ReadBitsFromDigitArray(digits, 20);
+    //  The next 4 bits represents the type of account.
+    newSteamData.accountType    = ReadBitsFromDigitArray(digits, 4);
+    //  The next 8 bits represents the "Universe" the steam account belongs to.
+    newSteamData.universe       = ReadBitsFromDigitArray(digits, 8);
+    return newSteamData;
+}
+
+/**
  *  Initializes caller `APlayerID` from a given `string` ID.
  *
  *  Each `APLayerID` can only be initialized once and becomes immutable
@@ -135,28 +175,12 @@ private final function string GetSteamAccountTypeCharacter()
  */
 public final function bool Initialize(string steamID64)
 {
-    local int                   i;
-    local array<Text.Character> characters;
-    local array<int>            digits;
-    if (initialized) return false;
-
-    characters = _().text.StringToRaw(steamID64);
-    for (i = 0; i < characters.length; i += 1) {
-        digits[digits.length] = _().text.CharacterToInt(characters[i]);
+    if (initialized) {
+        return false;
     }
-    initializedData.steamID64 = steamID64;
-    //  Refer to https://developer.valvesoftware.com/wiki/SteamID
-    //  The lowest bit represents Y.
-    //  The next 31 bits represents the account number.
-    //      ^ these two can be combined into a "SteamID32".
-    initializedData.steamID32   = ReadBitsFromDigitArray(digits, 32);
-    //  The next 20 bits represents the instance of the account.
-    initializedData.instance    = ReadBitsFromDigitArray(digits, 20);
-    //  The next 4 bits represents the type of account.
-    initializedData.accountType = ReadBitsFromDigitArray(digits, 4);
-    //  The next 8 bits represents the "Universe" the steam account belongs to.
-    initializedData.universe    = ReadBitsFromDigitArray(digits, 8);
-    initialized = true;
+
+    initializedData = GetSteamDataFromSteamID64(steamID64);
+    initialized     = true;
     return true;
 }
 
@@ -198,6 +222,27 @@ public final function bool IsEqual(APlayerID otherID)
     if (!IsInitialized())           return false;
     if (!otherID.IsInitialized())   return false;
     return (initializedData.steamID32 == otherID.initializedData.steamID32);
+}
+
+/**
+ *  Checks if caller `APlayerID`s is the same as what's described by
+ *  given `SteamData`.
+ *
+ *  NOTE: only part of the `otherSteamData` might be used for comparison.
+ *  It is up to user to ensure that given `otherSteamData` is valid.
+ *
+ *  @param  otherSteamData  `SteamData` to compare caller `APlayerID` to.
+ *  @return `true` if caller `APlayerID` is identical to ID described by
+ *      `otherSteamData` and `false` otherwise.
+ *      If caller `APlayerID` is uninitialized, the result will be `false`.
+ */
+public final function bool IsEqualToSteamData(SteamData otherSteamData)
+{
+    if (!IsInitialized()) {
+        return false;
+    }
+
+    return (initializedData.steamID32 == otherSteamData.steamID32);
 }
 
 /**

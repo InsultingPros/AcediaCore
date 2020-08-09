@@ -50,8 +50,8 @@ protected static function Test_PlayerID()
     testID3 = APlayerID(_().memory.Allocate(class'APlayerID'));
     testID2.Initialize("76561198025127722");
     testID3.Initialize("76561198044316328");
-    TEST_ExpectTrue(testID.IsEqual(testID));
     TEST_ExpectTrue(testID.IsEqual(testID2));
+    TEST_ExpectTrue(testID.IsEqualToSteamData(testID2.GetSteamData()));
     TEST_ExpectFalse(testID3.IsEqual(testID));
 
     Issue("Steam data returned by `APlayerID` is incorrect.");
