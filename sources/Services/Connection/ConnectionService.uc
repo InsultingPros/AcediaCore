@@ -38,6 +38,22 @@ var private array<Connection> activeConnections;
 //  class'ConnectionEvents' every time.
 var const class<ConnectionEvents> events;
 
+//  Find all players manually on launch
+protected function OnLaunch()
+{
+    local Controller        nextController;
+    local PlayerController  nextPlayerController;
+    nextController = level.controllerList;
+    while (nextController != none)
+    {
+        nextPlayerController = PlayerController(nextController);
+        if (nextPlayerController != none) {
+            RegisterConnection(nextPlayerController);
+        }
+        nextController = nextController.nextController;
+    }
+}
+
 //      Returning 'true' guarantees that 'controllerToCheck != none'
 //  and either 'controllerToCheck.playerReplicationInfo != none'
 //  or 'auxiliaryRepInfo != none'.
@@ -123,6 +139,9 @@ public final function bool RegisterConnection(PlayerController player)
     newConnection.networkAddress = player.GetPlayerNetworkAddress();
     newConnection.steamID = player.GetPlayerIDHash();
     activeConnections[activeConnections.length] = newConnection;
+    //  Remember recorded connections in case someone decides to
+    //  nuke this service
+    default.activeConnections = activeConnections;
     events.static.CallPlayerConnected(newConnection);
     return true;
 }
