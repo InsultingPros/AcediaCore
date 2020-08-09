@@ -21,15 +21,15 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class APlayerID extends AcediaObject;
+class UserID extends AcediaObject;
 
 /**
- *  Stead data corresponding to a SteamID that relevant `APlayerID` was
+ *  Stead data corresponding to a SteamID that relevant `UserID` was
  *  initialized with.
  *
  *  For more info read: https://developer.valvesoftware.com/wiki/SteamID
  */
-struct SteamData
+struct SteamID
 {
     var public byte accountType;
     var public byte universe;
@@ -40,12 +40,12 @@ struct SteamData
     //      Other 4 fields fully define a SteamID and `steamID64` can be
     //  generated from them, but it is easier to simply cache it in
     //  a separate variable.
-    //      `SteamData` is considered valid iff `steamID64` is equal to
+    //      `SteamID` is considered valid iff `steamID64` is equal to
     //  Steam64 ID that can be generated from other variables.
     var string      steamID64;
 };
-var protected SteamData initializedData;
-//  To make it safe to pass `APlayerID` to users, prevent any modifications
+var protected SteamID   initializedData;
+//  To make it safe to pass `UserID` to users, prevent any modifications
 //  after `initialized` is set to `true`.
 var protected bool      initialized;
 
@@ -124,20 +124,20 @@ private final function string GetSteamAccountTypeCharacter()
 }
 
 /**
- *  Helper function that generates `SteamData` structure from
+ *  Helper function that generates `SteamID` structure from
  *  a given Steam64 ID.
  *
  *  In case invalid ID is given this method will not raise any warning and
  *  returned value should be considered undefined.
  *
  *  @param  steamID64   Steam64 ID's decimal representation in a plain string.
- *  @return `SteamData` generated from a given Steam64 ID `steamID64`.
+ *  @return `SteamID` generated from a given Steam64 ID `steamID64`.
  */
-public static final function SteamData GetSteamDataFromSteamID64(
+public static final function SteamID GetSteamIDFromSteamID64(
     string steamID64)
 {
     local int                   i;
-    local SteamData             newSteamData;
+    local SteamID               newSteamID;
     local array<Text.Character> characters;
     local array<int>            digits;
 
@@ -145,25 +145,25 @@ public static final function SteamData GetSteamDataFromSteamID64(
     for (i = 0; i < characters.length; i += 1) {
         digits[digits.length] = _().text.CharacterToInt(characters[i]);
     }
-    newSteamData.steamID64 = steamID64;
+    newSteamID.steamID64 = steamID64;
     //  Refer to https://developer.valvesoftware.com/wiki/SteamID
     //  The lowest bit represents Y.
     //  The next 31 bits represents the account number.
     //      ^ these two can be combined into a "SteamID32".
-    newSteamData.steamID32      = ReadBitsFromDigitArray(digits, 32);
+    newSteamID.steamID32    = ReadBitsFromDigitArray(digits, 32);
     //  The next 20 bits represents the instance of the account.
-    newSteamData.instance       = ReadBitsFromDigitArray(digits, 20);
+    newSteamID.instance     = ReadBitsFromDigitArray(digits, 20);
     //  The next 4 bits represents the type of account.
-    newSteamData.accountType    = ReadBitsFromDigitArray(digits, 4);
+    newSteamID.accountType  = ReadBitsFromDigitArray(digits, 4);
     //  The next 8 bits represents the "Universe" the steam account belongs to.
-    newSteamData.universe       = ReadBitsFromDigitArray(digits, 8);
-    return newSteamData;
+    newSteamID.universe     = ReadBitsFromDigitArray(digits, 8);
+    return newSteamID;
 }
 
 /**
- *  Initializes caller `APlayerID` from a given `string` ID.
+ *  Initializes caller `UserID` from a given `string` ID.
  *
- *  Each `APLayerID` can only be initialized once and becomes immutable
+ *  Each `UserID` can only be initialized once and becomes immutable
  *  afterwards.
  *
  *  @param  steamID64   `string` with unique ID, provided by the game
@@ -171,7 +171,7 @@ public static final function SteamData GetSteamDataFromSteamID64(
  *      like http://steamcommunity.com/profiles/76561198025127722)
  *
  *  @return `true` if initialization was successful and `false` otherwise
- *      (can only happen if caller `APlayerID` was already initialized).
+ *      (can only happen if caller `UserID` was already initialized).
  */
 public final function bool Initialize(string steamID64)
 {
@@ -179,13 +179,13 @@ public final function bool Initialize(string steamID64)
         return false;
     }
 
-    initializedData = GetSteamDataFromSteamID64(steamID64);
+    initializedData = GetSteamIDFromSteamID64(steamID64);
     initialized     = true;
     return true;
 }
 
 /**
- *  Checks if caller `APlayerID` was already initialized
+ *  Checks if caller `UserID` was already initialized
  *  (and is, therefore, immutable).
  *
  *  @return `true` if it was initialized and `false` otherwise.
@@ -196,28 +196,28 @@ public final function bool IsInitialized()
 }
 
 /**
- *  Returns steam data (see `APlayerID.SteamData`) of the caller `APlayerData`.
+ *  Returns steam data (see `UserID.SteamID`) of the caller `APlayerData`.
  *
  *  Only returns a valid value if caller `APLayerData` was already initialized.
  *
- *  @return `APlayerID.SteamData` of a caller `APlayerID`;
- *      structure will be filled with default values if caller `APlayerID`
+ *  @return `UserID.SteamID` of a caller `UserID`;
+ *      structure will be filled with default values if caller `UserID`
  *      was not initialized.
  */
-public final function SteamData GetSteamData()
+public final function SteamID GetSteamID()
 {
     return initializedData;
 }
 
 /**
- *  Checks if two `APlayerID`s are the same.
+ *  Checks if two `UserID`s are the same.
  *
- *  @param  otherID `APlayerID` to compare caller object to.
- *  @return `true` if caller `APlayerID` is identical to `otherID` and
- *      `false` otherwise. If at least one of the `APlayerID`s being compared is
+ *  @param  otherID `UserID` to compare caller object to.
+ *  @return `true` if caller `UserID` is identical to `otherID` and
+ *      `false` otherwise. If at least one of the `UserID`s being compared is
  *      uninitialized, the result will be `false`.
  */
-public final function bool IsEqual(APlayerID otherID)
+public final function bool IsEqual(UserID otherID)
 {
     if (!IsInitialized())           return false;
     if (!otherID.IsInitialized())   return false;
@@ -225,24 +225,24 @@ public final function bool IsEqual(APlayerID otherID)
 }
 
 /**
- *  Checks if caller `APlayerID`s is the same as what's described by
- *  given `SteamData`.
+ *  Checks if caller `UserID`s is the same as what's described by
+ *  given `SteamID`.
  *
- *  NOTE: only part of the `otherSteamData` might be used for comparison.
- *  It is up to user to ensure that given `otherSteamData` is valid.
+ *  NOTE: only part of the `otherSteamID` might be used for comparison.
+ *  It is up to user to ensure that given `otherSteamID` is valid.
  *
- *  @param  otherSteamData  `SteamData` to compare caller `APlayerID` to.
- *  @return `true` if caller `APlayerID` is identical to ID described by
- *      `otherSteamData` and `false` otherwise.
- *      If caller `APlayerID` is uninitialized, the result will be `false`.
+ *  @param  otherSteamID  `SteamID` to compare caller `UserID` to.
+ *  @return `true` if caller `UserID` is identical to ID described by
+ *      `otherSteamID` and `false` otherwise.
+ *      If caller `UserID` is uninitialized, the result will be `false`.
  */
-public final function bool IsEqualToSteamData(SteamData otherSteamData)
+public final function bool IsEqualToSteamID(SteamID otherSteamID)
 {
     if (!IsInitialized()) {
         return false;
     }
 
-    return (initializedData.steamID32 == otherSteamData.steamID32);
+    return (initializedData.steamID32 == otherSteamID.steamID32);
 }
 
 /**

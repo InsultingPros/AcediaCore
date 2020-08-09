@@ -22,45 +22,45 @@ class TEST_Player extends TestCase
 
 protected static function TESTS()
 {
-    Test_PlayerID();
+    Test_UserID();
 }
 
 
-protected static function Test_PlayerID()
+protected static function Test_UserID()
 {
-    local APlayerID.SteamData   steamData;
-    local APlayerID             testID, testID2, testID3;
-    testID = APlayerID(_().memory.Allocate(class'APlayerID'));
-    Context("Testing Acedia's player ID (`APlayerID`).");
-    Issue("`APlayerID` initialization works incorrectly.");
+    local UserID.SteamID    SteamID;
+    local UserID            testID, testID2, testID3;
+    testID = UserID(_().memory.Allocate(class'UserID'));
+    Context("Testing Acedia's player ID (`UserID`).");
+    Issue("`UserID` initialization works incorrectly.");
     TEST_ExpectFalse(testID.IsInitialized());
     TEST_ExpectTrue(testID.Initialize("76561198025127722"));
     TEST_ExpectTrue(testID.IsInitialized());
     TEST_ExpectFalse(testID.Initialize("76561198044316328"));
 
-    Issue("`APlayerID` incorrectly handles SteamID.");
+    Issue("`UserID` incorrectly handles SteamID.");
     TEST_ExpectTrue(testID.GetUniqueID() == "76561198025127722");
     TEST_ExpectTrue(testID.GetSteamID() == "STEAM_1:0:32430997");
     TEST_ExpectTrue(testID.GetSteamID3() == "U:1:64861994");
     TEST_ExpectTrue(testID.GetSteamID32() == 64861994);
     TEST_ExpectTrue(testID.GetSteamID64() == "76561198025127722");
 
-    Issue("Two `APlayerID` equality check is incorrect.");
-    testID2 = APlayerID(_().memory.Allocate(class'APlayerID'));
-    testID3 = APlayerID(_().memory.Allocate(class'APlayerID'));
+    Issue("Two `UserID` equality check is incorrect.");
+    testID2 = UserID(_().memory.Allocate(class'UserID'));
+    testID3 = UserID(_().memory.Allocate(class'UserID'));
     testID2.Initialize("76561198025127722");
     testID3.Initialize("76561198044316328");
     TEST_ExpectTrue(testID.IsEqual(testID2));
-    TEST_ExpectTrue(testID.IsEqualToSteamData(testID2.GetSteamData()));
+    TEST_ExpectTrue(testID.IsEqualToSteamID(testID2.GetSteamID()));
     TEST_ExpectFalse(testID3.IsEqual(testID));
 
-    Issue("Steam data returned by `APlayerID` is incorrect.");
-    steamData = testID3.GetSteamData();
-    TEST_ExpectTrue(steamData.accountType == 1);
-    TEST_ExpectTrue(steamData.universe == 1);
-    TEST_ExpectTrue(steamData.instance == 1);
-    TEST_ExpectTrue(steamData.steamID32 == 84050600);
-    TEST_ExpectTrue(steamData.steamID64 == "76561198044316328");
+    Issue("Steam data returned by `UserID` is incorrect.");
+    SteamID = testID3.GetSteamID();
+    TEST_ExpectTrue(SteamID.accountType == 1);
+    TEST_ExpectTrue(SteamID.universe == 1);
+    TEST_ExpectTrue(SteamID.instance == 1);
+    TEST_ExpectTrue(SteamID.steamID32 == 84050600);
+    TEST_ExpectTrue(SteamID.steamID64 == "76561198044316328");
 }
 
 defaultproperties
