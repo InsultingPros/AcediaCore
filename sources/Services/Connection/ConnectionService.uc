@@ -27,15 +27,15 @@ struct Connection
     var public  string                  networkAddress;
     var public  string                  steamID;
     var public  PlayerController        controllerReference;
-    //  Reference to 'AcediaReplicationInfo' for this client,
+    //  Reference to `AcediaReplicationInfo` for this client,
     //  in case it was created.
     var private AcediaReplicationInfo   acediaRI;
 };
 
 var private array<Connection> activeConnections;
 
-//  Shortcut to 'ConnectionEvents', so that we don't have to write
-//  class'ConnectionEvents' every time.
+//  Shortcut to `ConnectionEvents`, so that we don't have to write
+//  `class'ConnectionEvents'` every time.
 var const class<ConnectionEvents> events;
 
 //  Find all players manually on launch
@@ -54,15 +54,14 @@ protected function OnLaunch()
     }
 }
 
-//      Returning 'true' guarantees that 'controllerToCheck != none'
-//  and either 'controllerToCheck.playerReplicationInfo != none'
-//  or 'auxiliaryRepInfo != none'.
+//      Returning `true` guarantees that `controllerToCheck != none`
+//  and `controllerToCheck.playerReplicationInfo != none`.
 private function bool IsHumanController(PlayerController controllerToCheck)
 {
     local PlayerReplicationInfo replicationInfo;
     if (controllerToCheck == none)                      return false;
     if (!controllerToCheck.bIsPlayer)                   return false;
-    //  Is this a WebAdmin that didn't yet set 'bIsPlayer = false'
+    //  Is this a WebAdmin that did not yet set `bIsPlayer = false`?
     if (MessagingSpectator(controllerToCheck) != none)  return false;
     //  Check replication info
     replicationInfo = controllerToCheck.playerReplicationInfo;
@@ -72,23 +71,22 @@ private function bool IsHumanController(PlayerController controllerToCheck)
 }
 
 //  Returns index of the connection corresponding to the given controller.
-//  Returns '-1' if no connection correspond to the given controller.
-//  Returns '-1' if given controller is equal to 'none'.
+//  Returns `-1` if no connection correspond to the given controller.
+//  Returns `-1` if given controller is equal to `none`.
 private function int GetConnectionIndex(PlayerController controllerToCheck)
 {
     local int i;
     if (controllerToCheck == none) return -1;
     for (i = 0; i < activeConnections.length; i += 1)
     {
-        if (activeConnections[i].controllerReference == controllerToCheck)
-        {
+        if (activeConnections[i].controllerReference == controllerToCheck) {
             return i;
         }
     }
     return -1;
 }
 
-//  Remove connections with now invalid ('none') player controller reference.
+//  Remove connections with now invalid (`none`) player controller reference.
 private function RemoveBrokenConnections()
 {
     local int i;
@@ -97,21 +95,31 @@ private function RemoveBrokenConnections()
     {
         if (activeConnections[i].controllerReference == none)
         {
-            if (activeConnections[i].acediaRI != none)
-            {
+            if (activeConnections[i].acediaRI != none) {
                 activeConnections[i].acediaRI.Destroy();
             }
             events.static.CallPlayerDisconnected(activeConnections[i]);
             activeConnections.Remove(i, 1);
         }
-        else
-        {
+        else {
             i += 1;
         }
     }
 }
 
 //  Return connection, corresponding to a given player controller.
+/**
+ *  Returns connection corresponding to a given player controller.
+ *
+ *  @param  player  `PlayerController` for which this method will return
+ *      a connection.
+ *  @return `Connection` structure for the given `player`.
+ *      For `none` returns an "empty connection" structure that has all it's
+ *      variables set to their default values. Can also potentially return
+ *      "empty connection" for a valid `PlayerController` if this method was
+ *      called before `ConnectionService` had the change to register
+ *      a connection for the given `PlayerController`.
+ */
 public final function Connection GetConnection(PlayerController player)
 {
     local int           connectionIndex;
@@ -121,9 +129,12 @@ public final function Connection GetConnection(PlayerController player)
     return activeConnections[connectionIndex];
 }
 
-//  Attempts to register a connection for this player controller.
-//  Shouldn't be used outside of 'ConnectionService' module.
-//  Returns 'true' if connection is registered (even if it was already added).
+/**
+ *  Attempts to register a connection for this player controller.
+ *  IMPORTANT: Should not be used outside of `ConnectionService` module.
+ *
+ *  @return `true` if connection is registered (even if it was already added).
+ */
 public final function bool RegisterConnection(PlayerController player)
 {
     local Connection newConnection;
@@ -146,6 +157,21 @@ public final function bool RegisterConnection(PlayerController player)
     return true;
 }
 
+/**
+ *  Returns list of currently active connections.
+ *
+ *      By default can return connections with already disconnected player
+ *  (can happen if player disconnected during this tick and `ConnectionService`
+ *  has not yet had an opportunity to handle it as a player disconnecting).
+ *      This behavior can be changed via `removeBroken` parameter.
+ *
+ *  @param  removeBroken    Setting this to `true` will cause
+ *      `ConnectionService` to first try and detect broken connections.
+ *      Doing so might change the state of `ConnectionService` and might
+ *      trigger disconnect events. It is recommended to leave this as `false`
+ *      and manually check if `PlayerController`s are not `none`.
+ *  @return Array that contains all current connection records.
+ */
 public final function array<Connection> GetActiveConnections(
     optional bool removeBroken)
 {
@@ -155,6 +181,8 @@ public final function array<Connection> GetActiveConnections(
     return activeConnections;
 }
 
+//  Check if connections are still active every tick.
+//  Should not take any noticeable time when no players are disconnecting.
 event Tick(float delta)
 {
     RemoveBrokenConnections();

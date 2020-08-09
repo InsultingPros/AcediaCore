@@ -25,17 +25,17 @@ static function bool CheckReplacement(Actor other, out byte isSuperRelevant)
     local KFSteamStatsAndAchievements   playerSteamStatsAndAchievements;
     local PlayerController              player;
     local ConnectionService             service;
-    //      We are looking for 'KFSteamStatsAndAchievements' instead of
-    //  'PlayerController' because, by the time they it's created,
-    //  controller should have a valid reference to 'PlayerReplicationInfo',
+    //      We are looking for `KFSteamStatsAndAchievements` instead of
+    //  `PlayerController` because, by the time they it's created,
+    //  controller should have a valid reference to `PlayerReplicationInfo`,
     //  as well as valid network address and IDHash (steam id).
     //      However, neither of those are properly initialized at the point when
-    //  'CheckReplacement' is called for 'PlayerController'.
+    //  `CheckReplacement` is called for `PlayerController`.
     //
-    //      Since 'KFSteamStatsAndAchievements'
+    //      Since `KFSteamStatsAndAchievements`
     //  is created soon after (at the same tick)
     //  for each new `PlayerController`,
-    //  we'll be detecting new users right after server
+    //  we will be detecting new users right after server
     //  detected and properly initialized them.
     playerSteamStatsAndAchievements = KFSteamStatsAndAchievements(other);
     if (playerSteamStatsAndAchievements == none)    return true;

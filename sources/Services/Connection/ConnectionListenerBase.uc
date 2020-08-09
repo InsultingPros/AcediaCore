@@ -21,10 +21,10 @@ class ConnectionListenerBase extends Listener
     dependson(ConnectionService)
     abstract;
 
-//  'PlayerConnected' is called the moment we detect a new player on a server.
+//  `PlayerConnected` is called the moment we detect a new player on a server.
 static function PlayerConnected(ConnectionService.Connection connection);
 
-//      'PlayerDisconnected' is called the moment we
+//      `PlayerDisconnected` is called the moment we
 //  detect a player leaving the server.
 static function PlayerDisconnected(ConnectionService.Connection connection);
 
