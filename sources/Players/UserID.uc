@@ -1,5 +1,5 @@
 /**
- *      Acedia's class for storing player's ID.
+ *      Acedia's class for storing user's ID.
  *      This class is inherently linked to steam and it's SteamIDs, since
  *  Killing Floor 1 is all but guaranteed to be steam-exclusive.
  *  Still, if you wish to use it in a portable manner, limit yourself to
@@ -196,9 +196,9 @@ public final function bool IsInitialized()
 }
 
 /**
- *  Returns steam data (see `UserID.SteamID`) of the caller `APlayerData`.
+ *  Returns steam data (see `UserID.SteamID`) of the caller `UserID`.
  *
- *  Only returns a valid value if caller `APLayerData` was already initialized.
+ *  Only returns a valid value if caller `UserID` was already initialized.
  *
  *  @return `UserID.SteamID` of a caller `UserID`;
  *      structure will be filled with default values if caller `UserID`
@@ -246,11 +246,11 @@ public final function bool IsEqualToSteamID(SteamID otherSteamID)
 }
 
 /**
- *  Returns unique string representation of the caller `APlayerData`.
+ *  Returns unique string representation of the caller `UserID`.
  *
- *  Only returns a valid value if caller `APLayerData` was already initialized.
+ *  Only returns a valid value if caller `UserID` was already initialized.
  *
- *  @return Unique string representation of the caller `APlayerData`
+ *  @return Unique string representation of the caller `UserID`
  *      if it was initialized and `false` otherwise.
  */
 public final function string GetUniqueID()
@@ -260,12 +260,12 @@ public final function string GetUniqueID()
 }
 
 /**
- *  Returns string representation of the caller `APlayerData` in
+ *  Returns string representation of the caller `UserID` in
  *  following format: "STEAM_X:Y:Z".
  *
- *  Only returns a valid value if caller `APLayerData` was already initialized.
+ *  Only returns a valid value if caller `UserID` was already initialized.
  *
- *  @return String representation of the caller `APlayerData` in
+ *  @return String representation of the caller `UserID` in
  *      form "STEAM_X:Y:Z" if it was initialized and empty `string` otherwise.
  */
 public final function string GetSteamID()
@@ -283,15 +283,15 @@ public final function string GetSteamID()
 }
 
 /**
- *      Returns string representation of the caller `APlayerData` in
+ *      Returns string representation of the caller `UserID` in
  *  following format: "C:U:A", where
  *      C is character representation of Account Type;
  *      U is "Universe" steam account belongs to;
  *      A is account ID.
  *
- *  Only returns a valid value if caller `APLayerData` was already initialized.
+ *  Only returns a valid value if caller `UserID` was already initialized.
  *
- *  @return String representation of the caller `APlayerData` in
+ *  @return String representation of the caller `UserID` in
  *      form "C:U:A" if it was initialized and empty `string` otherwise.
  */
 public final function string GetSteamID3()
@@ -302,12 +302,12 @@ public final function string GetSteamID3()
 }
 
 /**
- *  Returns Steam32 ID for the caller `APlayerData`. It is a lowest 32 bits of
+ *  Returns Steam32 ID for the caller `UserID`. It is a lowest 32 bits of
  *  the full Steam64 ID.
  *
- *  Only returns a valid value if caller `APLayerData` was already initialized.
+ *  Only returns a valid value if caller `UserID` was already initialized.
  *
- *  @return Unique `int` representation of the caller `APlayerData`
+ *  @return Unique `int` representation of the caller `UserID`
  *      if it was initialized and `-1` otherwise.
  */
 public final function int GetSteamID32()
@@ -317,16 +317,16 @@ public final function int GetSteamID32()
 }
 
 /**
- *  Returns Steam64 ID for the caller `APlayerData`.
+ *  Returns Steam64 ID for the caller `UserID`.
  *
- *  Only returns a valid value if caller `APLayerData` was already initialized.
+ *  Only returns a valid value if caller `UserID` was already initialized.
  *
  *  Since UnrealEngine 2 does not support 64-bit integer values, it is returned
  *  simply as a decimal representation of a whole Steam64 ID
  *  (Steam64 ID used in profile permalink,
  *  like http://steamcommunity.com/profiles/76561198025127722).
  *
- *  @return String representation of the Steam64 ID of the caller `APlayerData`
+ *  @return String representation of the Steam64 ID of the caller `UserID`
  *      if it was initialized and empty `string` otherwise.
  */
 public final function string GetSteamID64()
