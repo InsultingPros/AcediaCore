@@ -1,5 +1,7 @@
 /**
- *      Manifest is meant to describe contents of the Acedia's package.
+ *      Main and only Acedia mutator used for loading Acedia packages
+ *  and providing access to mutator events' calls.
+ *      Name is chosen to make config files more readable.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,19 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
- class Manifest extends _manifest
-    abstract;
+class APlayer extends AcediaObject;
 
 defaultproperties
 {
-    aliasSources(0) = class'AliasSource'
-    aliasSources(1) = class'WeaponAliasSource'
-    aliasSources(2) = class'ColorAliasSource'
-    testCases(0) = class'TEST_Aliases'
-    testCases(1) = class'TEST_ColorAPI'
-    testCases(2) = class'TEST_JSON'
-    testCases(3) = class'TEST_Text'
-    testCases(4) = class'TEST_TextAPI'
-    testCases(5) = class'TEST_Parser'
-    testCases(6) = class'TEST_Player'
 }
