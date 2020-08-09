@@ -146,8 +146,12 @@ public final function bool RegisterConnection(PlayerController player)
     return true;
 }
 
-public final function array<Connection> GetActiveConnections()
+public final function array<Connection> GetActiveConnections(
+    optional bool removeBroken)
 {
+    if (removeBroken) {
+        RemoveBrokenConnections();
+    }
     return activeConnections;
 }
 
