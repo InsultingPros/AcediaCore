@@ -30,6 +30,9 @@ var public const array< class<Feature> >        features;
 //  List of test cases in this manifest's package.
 var public const array< class<TestCase> >       testCases;
 
+//  List of required services.
+var public const array< class<Service> >        services;
+
 defaultproperties
 {
 }
