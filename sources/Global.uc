@@ -28,6 +28,7 @@ var public TextAPI      text;
 var public MemoryAPI    memory;
 var public ConsoleAPI   console;
 var public ColorAPI     color;
+var public UserAPI      users;
 
 //  TODO: APIs must be `remoteRole = ROLE_None`
 protected function OnCreated()
@@ -46,4 +47,6 @@ protected function OnCreated()
     console = ConsoleAPI(class'ConsoleAPI'.static.GetInstance());
     Spawn(class'ColorAPI');
     color   = ColorAPI(class'ColorAPI'.static.GetInstance());
+    Spawn(class'UserAPI');
+    users   = UserAPI(class'UserAPI'.static.GetInstance());
 }

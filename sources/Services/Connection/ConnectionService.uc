@@ -25,7 +25,7 @@ class ConnectionService extends Service;
 struct Connection
 {
     var public  string                  networkAddress;
-    var public  string                  steamID;
+    var public  string                  idHash;
     var public  PlayerController        controllerReference;
     //  Reference to `AcediaReplicationInfo` for this client,
     //  in case it was created.
@@ -38,11 +38,12 @@ var private array<Connection> activeConnections;
 //  `class'ConnectionEvents'` every time.
 var const class<ConnectionEvents> events;
 
-//  Find all players manually on launch
+//  Clean disconnected and manually find all new players on launch
 protected function OnLaunch()
 {
     local Controller        nextController;
     local PlayerController  nextPlayerController;
+    RemoveBrokenConnections();
     nextController = level.controllerList;
     while (nextController != none)
     {
@@ -98,7 +99,7 @@ private function RemoveBrokenConnections()
             if (activeConnections[i].acediaRI != none) {
                 activeConnections[i].acediaRI.Destroy();
             }
-            events.static.CallPlayerDisconnected(activeConnections[i]);
+            events.static.CallConnectionLost(activeConnections[i]);
             activeConnections.Remove(i, 1);
         }
         else {
@@ -147,13 +148,13 @@ public final function bool RegisterConnection(PlayerController player)
         newConnection.acediaRI = Spawn(class'AcediaReplicationInfo', player);
         newConnection.acediaRI.linkOwner = player;
     }*/
+    newConnection.idHash = player.GetPlayerIDHash();
     newConnection.networkAddress = player.GetPlayerNetworkAddress();
-    newConnection.steamID = player.GetPlayerIDHash();
     activeConnections[activeConnections.length] = newConnection;
     //  Remember recorded connections in case someone decides to
     //  nuke this service
     default.activeConnections = activeConnections;
-    events.static.CallPlayerConnected(newConnection);
+    events.static.CallConnectionEstablished(newConnection);
     return true;
 }
 

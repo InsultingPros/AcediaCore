@@ -17,37 +17,35 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ConnectionEvents extends Events
-    dependson(ConnectionService)
+class PlayerEvents extends Events
     abstract;
 
-static function CallConnectionEstablished(
-    ConnectionService.Connection connection)
+static function CallPlayerConnected(APlayer newPlayer)
 {
     local int i;
     local array< class<Listener> > listeners;
     listeners = GetListeners();
     for (i = 0; i < listeners.length; i += 1)
     {
-        class<ConnectionListenerBase>(listeners[i])
-            .static.ConnectionEstablished(connection);
+        class<PlayerListenerBase>(listeners[i])
+            .static.PlayerConnected(newPlayer);
     }
 }
 
-static function CallConnectionLost(ConnectionService.Connection connection)
+static function CallPlayerDisconnected(APlayer lostPlayer)
 {
     local int i;
     local array< class<Listener> > listeners;
     listeners = GetListeners();
     for (i = 0; i < listeners.length; i += 1)
     {
-        class<ConnectionListenerBase>(listeners[i])
-            .static.ConnectionLost(connection);
+        class<PlayerListenerBase>(listeners[i])
+            .static.PlayerDisconnected(lostPlayer);
     }
 }
 
 defaultproperties
 {
-    relatedListener = class'ConnectionListenerBase'
-    connectedServiceClass = class'ConnectionService'
+    relatedListener = class'PlayerListenerBase'
+    connectedServiceClass = class'PlayerService'
 }

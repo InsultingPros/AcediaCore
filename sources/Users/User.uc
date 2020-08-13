@@ -1,5 +1,9 @@
 /**
- *      Manifest is meant to describe contents of the Acedia's package.
+ *      Objects of this class are meant to represent a "server user":
+ *  not a particular `PlayerController`, but an entity that server would
+ *  recognize to be the same person even after reconnections.
+ *      It is supposed to store and recognize various stats and
+ *  server privileges.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,19 +21,27 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
- class Manifest extends _manifest
-    abstract;
+class User extends AcediaObject;
+
+var private UserID  id;
+var private int     key;
+
+public final function Initialize(UserID initID, int initKey)
+{
+    id  = initID;
+    key = initKey;
+}
+
+public final function UserID GetID()
+{
+    return id;
+}
+
+public final function int GetKey()
+{
+    return key;
+}
 
 defaultproperties
 {
-    aliasSources(0) = class'AliasSource'
-    aliasSources(1) = class'WeaponAliasSource'
-    aliasSources(2) = class'ColorAliasSource'
-    testCases(0) = class'TEST_Aliases'
-    testCases(1) = class'TEST_ColorAPI'
-    testCases(2) = class'TEST_JSON'
-    testCases(3) = class'TEST_Text'
-    testCases(4) = class'TEST_TextAPI'
-    testCases(5) = class'TEST_Parser'
-    testCases(6) = class'TEST_User'
 }

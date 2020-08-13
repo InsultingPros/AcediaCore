@@ -17,7 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class TEST_Player extends TestCase
+class TEST_User extends TestCase
+    dependson(UserID)
     abstract;
 
 protected static function TESTS()
@@ -40,19 +41,19 @@ protected static function Test_UserID()
 
     Issue("`UserID` incorrectly handles SteamID.");
     TEST_ExpectTrue(testID.GetUniqueID() == "76561198025127722");
-    TEST_ExpectTrue(testID.GetSteamID() == "STEAM_1:0:32430997");
-    TEST_ExpectTrue(testID.GetSteamID3() == "U:1:64861994");
-    TEST_ExpectTrue(testID.GetSteamID32() == 64861994);
-    TEST_ExpectTrue(testID.GetSteamID64() == "76561198025127722");
+    TEST_ExpectTrue(testID.GetSteamIDString() == "STEAM_1:0:32430997");
+    TEST_ExpectTrue(testID.GetSteamID3String() == "U:1:64861994");
+    TEST_ExpectTrue(testID.GetSteamID32String() == 64861994);
+    TEST_ExpectTrue(testID.GetSteamID64String() == "76561198025127722");
 
     Issue("Two `UserID` equality check is incorrect.");
     testID2 = UserID(_().memory.Allocate(class'UserID'));
     testID3 = UserID(_().memory.Allocate(class'UserID'));
     testID2.Initialize("76561198025127722");
     testID3.Initialize("76561198044316328");
-    TEST_ExpectTrue(testID.IsEqual(testID2));
+    TEST_ExpectTrue(testID.IsEqualTo(testID2));
     TEST_ExpectTrue(testID.IsEqualToSteamID(testID2.GetSteamID()));
-    TEST_ExpectFalse(testID3.IsEqual(testID));
+    TEST_ExpectFalse(testID3.IsEqualTo(testID));
 
     Issue("Steam data returned by `UserID` is incorrect.");
     SteamID = testID3.GetSteamID();
@@ -65,5 +66,5 @@ protected static function Test_UserID()
 
 defaultproperties
 {
-    caseName = "Player"
+    caseName = "User"
 }

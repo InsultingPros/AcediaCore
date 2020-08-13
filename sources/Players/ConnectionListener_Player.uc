@@ -17,16 +17,34 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ConnectionListenerBase extends Listener
-    dependson(ConnectionService)
-    abstract;
+class ConnectionListener_Player extends ConnectionListenerBase;
 
 //  `PlayerConnected` is called the moment we detect a new player on a server.
-static function ConnectionEstablished(ConnectionService.Connection connection);
+static function ConnectionEstablished(ConnectionService.Connection connection)
+{
+    local PlayerService service;
+    service = PlayerService(class'PlayerService'.static.Require());
+    if (service == none) {
+        _().logger.Fatal("Cannot start `PlayerService` service"
+            @ "Acedia will not properly work from now on.");
+        return;
+    }
+    service.RegisterPlayer(connection.controllerReference);
+}
 
 //      `PlayerDisconnected` is called the moment we
 //  detect a player leaving the server.
-static function ConnectionLost(ConnectionService.Connection connection);
+static function ConnectionLost(ConnectionService.Connection connection)
+{
+    local PlayerService service;
+    service = PlayerService(class'PlayerService'.static.Require());
+    if (service == none) {
+        _().logger.Fatal("Cannot start `PlayerService` service"
+            @ "Acedia will not properly work from now on.");
+        return;
+    }
+    service.UpdateAllPlayers();
+}
 
 defaultproperties
 {
