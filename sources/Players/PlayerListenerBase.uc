@@ -20,11 +20,21 @@
 class PlayerListenerBase extends Listener
     abstract;
 
-//  `PlayerConnected` is called the moment we detect a new player on a server.
+/**
+ *  `PlayerConnected` is called the moment we detect a new player on a server.
+ *
+ *  @param  newPlayer   Player that just connected.
+ */
 static function PlayerConnected(APlayer newPlayer);
 
 //      `PlayerDisconnected` is called the moment we
 //  detect a player leaving the server.
+/**
+ *  `PlayerDisconnected` is called the moment we detect a player leaving
+ *  the server.
+ *
+ *  @param  lostPlayer  Player that just disconnected.
+ */
 static function PlayerDisconnected(APlayer lostPlayer);
 
 defaultproperties

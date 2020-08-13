@@ -1,9 +1,11 @@
 /**
- *      Objects of this class are meant to represent a "server user":
- *  not a particular `PlayerController`, but an entity that server would
- *  recognize to be the same person even after reconnections.
- *      It is supposed to store and recognize various stats and
- *  server privileges.
+ *      Represents a connected player connection and serves to provide access to
+ *  both it's server data and in-game pawn representation.
+ *      Unlike `User`, - changes when player reconnects the server.
+ *      This object SHOULD NOT be created manually, please rely on
+ *  `AcediaCore` for that.
+ *      Killing floor 1 note: inherently linked to
+ *  a particular `PlayerController`.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -23,25 +25,50 @@
  */
 class APlayer extends AcediaActor;
 
+//  How this `APlayer` is identified by the server
 var private User                identity;
+//  Controller 
 var private PlayerController    ownerController;
 
 //  Shortcut to `ConnectionEvents`, so that we don't have to write
 //  `class'ConnectionEvents'` every time.
 var const class<PlayerEvents> events;
 
-public final function Initialize(PlayerController initOwnerController)
+/**
+ *  Initializes caller `APlayer`. Should be called right after `APlayer`
+ *  was spawned.
+ *
+ *      Initialization should (and can) only be done once.
+ *      Before a `Initialize()` call, any other method calls on such `User`
+ *  must be considerate to have undefined behavior.
+ *
+ *  @param  newController   Controller that caller `APLayer` will correspond to.
+ */
+public final function Initialize(PlayerController newController)
 {
     ownerController = initOwnerController;
     identity = _.users.FetchByIDHash(initOwnerController.GetPlayerIDHash());
     events.static.CallPlayerConnected(self);
 }
 
+/**
+ *  Returns associated controller.
+ *
+ *  @return Controller that caller `APLayer` corresponds to.
+ */
 public final function PlayerController GetController()
 {
     return ownerController;
 }
 
+/**
+ *  IMPORTANT: this is a helper function that is not supposed to be
+ *  called manually.
+ *
+ *  Causes `APlayer` to update it's inner state and should be triggered by
+ *  various outside events. A necessary work-around, since we cannot make
+ *  an event to trigger a protected function.
+ */
 public final function Update()
 {
     if (ownerController == none) {
@@ -50,6 +77,8 @@ public final function Update()
     }
 }
 
+//  This is one of the most important objects for `Acedia` and should be kept
+//  up-to-date as much as possible.
 event Tick(float delta)
 {
     Update();

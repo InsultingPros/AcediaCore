@@ -1,5 +1,5 @@
 /**
- *  Set of tests for `APlayer` and related classes.
+ *  Set of tests for `User` and related classes.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.

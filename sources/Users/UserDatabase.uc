@@ -1,5 +1,6 @@
 /**
  *  Simple user database for Acedia.
+ *  Only stores data for a session, map or server restarts will clear it.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -21,10 +22,25 @@ class UserDatabase extends AcediaObject
     config(Acedia)
     abstract;
 
+//  This is used as a global variable only (`default.activeDatabase`) to store
+//  a reference to main database for persistent data, used by Acedia.
 var private UserDatabase    activeDatabase;
+//  `User` records that were stored this session
 var private array<User>     sessionUsers;
+//  `UserID`s generated during this session.
+//  Instead of constantly creating new ones - just reuse already created.
+//  This array should not grow too huge under normal circumstances.
 var private array<UserID>   storedUserIDs;
 
+/**
+ *  Provides a reference to the database of user records that Acedia was
+ *  set up to use.
+ *
+ *  Provided reference is guaranteed to not change during one session.
+ *
+ *  @return reference to the database of user records that Acedia was
+ *      set up to use.
+ */
 public final static function UserDatabase GetInstance()
 {
     if (default.activeDatabase == none)
@@ -35,6 +51,12 @@ public final static function UserDatabase GetInstance()
     return default.activeDatabase;
 }
 
+/**
+ *  Converts `string` representation of someone's id into appropriate
+ *  `UserID` object.
+ *
+ *  Always returns the same object for the same `idHash`.
+ */
 public final function UserID FetchUserID(string idHash)
 {
     local int               i;
@@ -53,6 +75,14 @@ public final function UserID FetchUserID(string idHash)
     return newUserID;
 }
 
+/**
+ *  Fetches `User` object that stores persistent data for a given `userID`.
+ *
+ *  @param  userID  ID for which to fetch a persistent data storage.
+ *  @return `User` object for a given `UserID`. Guaranteed to be a valid
+ *      non-`none` reference if passed `userID` is not `none` and initialized
+ *      (which is guaranteed unless you manually created it).
+ */
 public final function User FetchUser(UserID userID)
 {
     local int   i;
@@ -69,6 +99,14 @@ public final function User FetchUser(UserID userID)
     return newUser;
 }
 
+/**
+ *  Fetches appropriate `User` object for a player, given his session key.
+ *
+ *  @param  userKey Key corresponding to a `User` method must to get.
+ *  @return Corresponding `User` object. Guaranteed to be a valid non-`none`
+ *      reference if `userKey` was actually assigned to any `User` during
+ *      current playing session; `none` otherwise.
+ */
 public final function User FetchUserByKey(int userKey)
 {
     local int i;

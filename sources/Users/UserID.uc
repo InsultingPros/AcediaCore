@@ -1,9 +1,5 @@
 /**
  *      Acedia's class for storing user's ID.
- *      This class is inherently linked to steam and it's SteamIDs, since
- *  Killing Floor 1 is all but guaranteed to be steam-exclusive.
- *  Still, if you wish to use it in a portable manner, limit yourself to
- *  `Initialize()`, `IsInitialized()`, `IsEqual()` and `GetUniqueID()`.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.

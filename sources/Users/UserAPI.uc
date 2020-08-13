@@ -1,10 +1,5 @@
 /**
- *      API that provides functions for managing objects and actors by providing
- *  easy and general means to create and destroy them, that allow to make use of
- *  temporary `Object`s in a more efficient way.
- *      This is a low-level API that most users of Acedia, most likely,
- *  would not have to use, since creation of most objects would use their own
- *  wrapper functions around this API.
+ *      API that allows easy access to `User` persistent data and `UserID`s.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -24,16 +19,38 @@
  */
 class UserAPI extends Singleton;
 
+/**
+ *  Returns reference to the database of user records that Acedia was
+ *  set up to use.
+ *
+ *  @return Main `UserDatabase` that Acedia currently uses to load and
+ *      store user information. Guaranteed to be a valid non-`none` reference.
+ */
 public final function UserDatabase GetDatabase()
 {
     return class'UserDatabase'.static.GetInstance();
 }
 
+/**
+ *  Fetches `User` object that stores persistent data for a given `userID`.
+ *
+ *  @param  userID  ID for which to fetch a persistent data storage.
+ *  @return `User` object for a given `UserID`. Guaranteed to be a valid
+ *      non-`none` reference if passed `userID` is not `none` and initialized
+ *      (which is guaranteed unless you manually created it).
+ */
 public final function User Fetch(UserID userID)
 {
     return class'UserDatabase'.static.GetInstance().FetchUser(userID);
 }
 
+/**
+ *  Fetches appropriate `User` object for a player, given his id as a `string`.
+ *
+ *  @param  idHash  `string` representation of someone's id.
+ *  @return Corresponding `User` object. Guaranteed to be a valid non-`none`
+ *      reference.
+ */
 public final function User FetchByIDHash(string idHash)
 {
     local UserID        userID;
@@ -43,6 +60,14 @@ public final function User FetchByIDHash(string idHash)
     return userDB.FetchUser(userID);
 }
 
+/**
+ *  Fetches appropriate `User` object for a player, given his session key.
+ *
+ *  @param  userKey Key corresponding to a `User` method must to get.
+ *  @return Corresponding `User` object. Guaranteed to be a valid non-`none`
+ *      reference if `userKey` was actually assigned to any `User` during
+ *      current playing session; `none` otherwise.
+ */
 public final function User FetchByKey(int userKey)
 {
     return class'UserDatabase'.static.GetInstance().FetchUserByKey(userKey);

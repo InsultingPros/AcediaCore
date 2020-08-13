@@ -70,7 +70,7 @@ var private array< class<Listener> > listeners;
 
 var public const class<Listener> relatedListener;
 
-//  Even class can also auto-spawn a `Service`,
+//  Event class can also auto-spawn a `Service`,
 //  in case it's require to generate events
 var public const class<Service> connectedServiceClass;
 //  Set this to `true`if you want `connectedServiceClass` service to also

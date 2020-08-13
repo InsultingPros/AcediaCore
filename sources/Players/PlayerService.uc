@@ -1,7 +1,5 @@
 /**
  *      Service for tracking currently connected players.
- *      Besides simply storing all players it also separately stores (caches)
- *  players belonging to specific groups to make appropriate getters faster.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -21,8 +19,11 @@
  */
 class PlayerService extends Service;
 
+//  Record of all current players
 var private array<APlayer> allPlayers;
 
+//  Cleans all our player records just in case something caused certain
+//  `APlayer` to get destroyed.
 private final function RemoveNonePlayers()
 {
     local int i;
@@ -37,6 +38,17 @@ private final function RemoveNonePlayers()
     }
 }
 
+/**
+ *  Creates a new `APlayer` instance for a given `newPlayerController`
+ *  controller.
+ *
+ *  If given controller is `none` or it's `APLayer` was already created,
+ *  - does nothing.
+ *
+ *  @param  newPlayerController Controller for which we must
+ *      create new `APlayer`.
+ *  @return `true` if new `APlayer` was created and `false` otherwise.
+ */
 public final function bool RegisterPlayer(PlayerController newPlayerController)
 {
     local int       i;
@@ -63,12 +75,25 @@ public final function bool RegisterPlayer(PlayerController newPlayerController)
     return true;
 }
 
+/**
+ *  Fetches current array of all player (registered `APLayer`s).
+ *
+ *  @return Current array of all player (registered `APLayer`s). Guaranteed to
+ *      not contain `none` values.
+ */
 public final function array<APlayer> GetAllPlayers()
 {
     RemoveNonePlayers();
     return allPlayers;
 }
 
+/**
+ *  IMPORTANT: this is a helper function that is not supposed to be
+ *  called manually.
+ *
+ *  Causes status of all players to update.
+ *  See `APlayer.Update()` for details.
+ */
 public final function UpdateAllPlayers()
 {
     local int i;
