@@ -21,11 +21,20 @@ class ConnectionListenerBase extends Listener
     dependson(ConnectionService)
     abstract;
 
-//  `PlayerConnected` is called the moment we detect a new player on a server.
+/**
+ *  Called the moment we detect new "established" connection:
+ *  connection for player with already created `PlayerController` and defined
+ *  steam data/id.
+ *
+ *  @param  connection  Structure, describing new connection.
+ */
 static function ConnectionEstablished(ConnectionService.Connection connection);
 
-//      `PlayerDisconnected` is called the moment we
-//  detect a player leaving the server.
+/**
+ *  Called the moment we detect a lost connection.
+ *
+ *  @param  connection  Structure, describing now dead connection.
+ */
 static function ConnectionLost(ConnectionService.Connection connection);
 
 defaultproperties

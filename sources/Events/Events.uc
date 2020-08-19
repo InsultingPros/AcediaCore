@@ -1,17 +1,17 @@
 /**
  *  One of the two classes that make up a core of event system in Acedia.
  *  
- *      'Events' (or it's child) class shouldn't be instantiated.
+ *      `Events` (or it's child) class shouldn't be instantiated.
  *      Usually module would provide '...Events' class that defines
  *  certain set of static functions that can generate event calls to
  *  all it's active listeners.
  *      If you're simply using modules someone made, -
  *  you don't need to bother yourself with further specifics.
  *      If you wish to create your own event generator,
- *  then first create a '...ListenerBase' object
- *  (more about it in the description of 'Listener' class)
- *  and set 'relatedListener' variable to point to it's class.
- *  Then for each event create a caller function in your 'Event' class,
+ *  then first create a `...ListenerBase` object
+ *  (more about it in the description of `Listener` class)
+ *  and set `relatedListener` variable to point to it's class.
+ *  Then for each event create a caller function in your `Event` class,
  *  following this template:
  *  ____________________________________________________________________________
  *  |   static function CallEVENT_NAME(<ARGUMENTS>)
@@ -45,7 +45,7 @@
  *  |   }
  *  |___________________________________________________________________________
  *      For concrete example look at
- *  'MutatorEvents' and 'MutatorListenerBase'.
+ *  `MutatorEvents` and `MutatorListenerBase`.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -68,6 +68,8 @@ class Events extends AcediaObject
 
 var private array< class<Listener> > listeners;
 
+//  Reference to the base class of listeners that are allowed to listen to
+//  these events
 var public const class<Listener> relatedListener;
 
 //  Event class can also auto-spawn a `Service`,

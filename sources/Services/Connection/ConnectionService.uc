@@ -108,7 +108,6 @@ private function RemoveBrokenConnections()
     }
 }
 
-//  Return connection, corresponding to a given player controller.
 /**
  *  Returns connection corresponding to a given player controller.
  *
@@ -134,6 +133,8 @@ public final function Connection GetConnection(PlayerController player)
  *  Attempts to register a connection for this player controller.
  *  IMPORTANT: Should not be used outside of `ConnectionService` module.
  *
+ *  @param  player          `PlayerController` for which caller service will
+ *      have to track a connection.
  *  @return `true` if connection is registered (even if it was already added).
  */
 public final function bool RegisterConnection(PlayerController player)

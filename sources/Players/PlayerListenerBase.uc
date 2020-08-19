@@ -27,8 +27,6 @@ class PlayerListenerBase extends Listener
  */
 static function PlayerConnected(APlayer newPlayer);
 
-//      `PlayerDisconnected` is called the moment we
-//  detect a player leaving the server.
 /**
  *  `PlayerDisconnected` is called the moment we detect a player leaving
  *  the server.
