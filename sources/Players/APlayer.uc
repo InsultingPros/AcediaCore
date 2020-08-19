@@ -46,8 +46,8 @@ var const class<PlayerEvents> events;
  */
 public final function Initialize(PlayerController newController)
 {
-    ownerController = initOwnerController;
-    identity = _.users.FetchByIDHash(initOwnerController.GetPlayerIDHash());
+    ownerController = newController;
+    identity = _.users.FetchByIDHash(newController.GetPlayerIDHash());
     events.static.CallPlayerConnected(self);
 }
 
