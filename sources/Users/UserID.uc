@@ -1,6 +1,6 @@
 /**
  *      Acedia's class for storing user's ID.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -38,7 +38,7 @@ struct SteamID
     //  a separate variable.
     //      `SteamID` is considered valid iff `steamID64` is equal to
     //  Steam64 ID that can be generated from other variables.
-    var string      steamID64;
+    var Text        steamID64;
 };
 var protected SteamID   initializedData;
 //  To make it safe to pass `UserID` to users, prevent any modifications
@@ -126,22 +126,22 @@ private final function string GetSteamAccountTypeCharacter()
  *  In case invalid ID is given this method will not raise any warning and
  *  returned value should be considered undefined.
  *
- *  @param  steamID64   Steam64 ID's decimal representation in a plain string.
+ *  @param  steamID64   Steam64 ID's decimal representation.
  *  @return `SteamID` generated from a given Steam64 ID `steamID64`.
  */
-public static final function SteamID GetSteamIDFromIDHash(
-    string steamID64)
+public static final function SteamID GetSteamIDFromIDHash(Text steamID64)
 {
-    local int                   i;
-    local SteamID               newSteamID;
-    local array<Text.Character> characters;
-    local array<int>            digits;
+    local int           i;
+    local SteamID       newSteamID;
+    local array<int>    digits;
+    if (steamID64 == none) return newSteamID;
 
-    characters = _().text.StringToRaw(steamID64);
-    for (i = 0; i < characters.length; i += 1) {
-        digits[digits.length] = _().text.CharacterToInt(characters[i]);
+    for (i = 0; i < steamID64.GetLength(); i += 1)
+    {
+        digits[digits.length] =
+            __().text.CharacterToInt(steamID64.GetCharacter(i));
     }
-    newSteamID.steamID64 = steamID64;
+    newSteamID.steamID64 = steamID64.Copy();
     //  Refer to https://developer.valvesoftware.com/wiki/SteamID
     //  The lowest bit represents Y.
     //  The next 31 bits represents the account number.
@@ -157,23 +157,24 @@ public static final function SteamID GetSteamIDFromIDHash(
 }
 
 /**
- *  Initializes caller `UserID` from a given `string` ID.
+ *  Initializes caller `UserID` from an ID given as `Text`.
  *
  *  Each `UserID` can only be initialized once and becomes immutable
  *  afterwards.
  *
- *  @param  steamID64   `string` with unique ID, provided by the game
+ *  @param  steamID64   `Text` with unique ID, provided by the game
  *      (Steam64 ID used in profile permalink,
  *      like http://steamcommunity.com/profiles/76561198025127722)
  *
  *  @return `true` if initialization was successful and `false` otherwise
- *      (can only happen if caller `UserID` was already initialized).
+ *      (can happen if caller `UserID` was already initialized
+ *      or `steamID64 == none`).
  */
-public final function bool Initialize(string steamID64)
+public final function bool Initialize(Text steamID64)
 {
-    if (initialized) {
-        return false;
-    }
+    if (initialized)        return false;
+    if (steamID64 == none)  return false;
+
     initializedData = GetSteamIDFromIDHash(steamID64);
     initialized     = true;
     return true;
@@ -186,16 +187,14 @@ public final function bool Initialize(string steamID64)
  *  afterwards.
  *
  *  @param  steamID Valid `SteamID` structure that caller `UserID` will
- *      represent.
- *
+ *      represent. Deallocation of any objects in passed `steamID` will be
+ *      managed by the caller `UserID`.
  *  @return `true` if initialization was successful and `false` otherwise
  *      (can only happen if caller `UserID` was already initialized).
  */
 public final function bool InitializeWithSteamID(SteamID steamID)
 {
-    if (initialized) {
-        return false;
-    }
+    if (initialized) return false;
     initializedData = steamID;
     initialized     = true;
     return true;
@@ -219,10 +218,18 @@ public final function bool IsInitialized()
  *
  *  @return `UserID.SteamID` of a caller `UserID`;
  *      structure will be filled with default values if caller `UserID`
- *      was not initialized.
+ *      was not initialized. Any objects contained in returned structure
+ *      (`steamID64`) would not be managed by the caller `UserID` and should be
+ *      manually deallocated.
  */
 public final function SteamID GetSteamID()
 {
+    local SteamID steamIDCopy;
+    if (steamIDCopy.steamID64 == none) {
+        return initializedData;
+    }
+    steamIDCopy = initializedData;
+    steamIDCopy.steamID64 = steamIDCopy.steamID64.Copy();
     return initializedData;
 }
 
@@ -258,34 +265,35 @@ public final function bool IsEqualToSteamID(SteamID otherSteamID)
     if (!IsInitialized()) {
         return false;
     }
-
     return (initializedData.steamID32 == otherSteamID.steamID32);
 }
 
 /**
- *  Returns unique string representation of the caller `UserID`.
+ *  Returns unique `Text` representation of the caller `UserID`.
  *
  *  Only returns a valid value if caller `UserID` was already initialized.
  *
- *  @return Unique string representation of the caller `UserID`
- *      if it was initialized and `false` otherwise.
+ *  @return Unique `Text` representation of the caller `UserID`
+ *      if it was initialized and `none` otherwise. Returned object isn't
+ *      managed by caller `UserID` and must be deallocated.
  */
-public final function string GetUniqueID()
+public final function Text GetUniqueID()
 {
-    if (!IsInitialized()) return "";
-    return initializedData.steamID64;
+    return GetSteamID64String();
 }
 
 /**
- *  Returns string representation of the caller `UserID` in
- *  following format: "STEAM_X:Y:Z".
+ *  Returns `Text` representation of the caller `UserID` in following format:
+ *  "STEAM_X:Y:Z".
  *
  *  Only returns a valid value if caller `UserID` was already initialized.
  *
- *  @return String representation of the caller `UserID` in
- *      form "STEAM_X:Y:Z" if it was initialized and empty `string` otherwise.
+ *  @return `Text` representation of the caller `UserID` in
+ *      form "STEAM_X:Y:Z" if it was initialized and `none` otherwise.
+ *      Returned object is not managed by the caller `UserID` and should be
+ *      manually deallocated.
  */
-public final function string GetSteamIDString()
+public final function Text GetSteamIDString()
 {
     local int Y, Z;
     Y = 0;
@@ -296,11 +304,12 @@ public final function string GetSteamIDString()
         Z -= 1;
     }
     Z = Z / 2;
-    return ("STEAM_" $ initializedData.universe $ ":" $ Y $ ":" $ Z);
+    return _.text.FromString("STEAM_" $ initializedData.universe
+        $ ":" $ Y $ ":" $ Z);
 }
 
 /**
- *      Returns string representation of the caller `UserID` in
+ *      Returns `Text` representation of the caller `UserID` in
  *  following format: "C:U:A", where
  *      C is character representation of Account Type;
  *      U is "Universe" steam account belongs to;
@@ -308,12 +317,14 @@ public final function string GetSteamIDString()
  *
  *  Only returns a valid value if caller `UserID` was already initialized.
  *
- *  @return String representation of the caller `UserID` in
- *      form "C:U:A" if it was initialized and empty `string` otherwise.
+ *  @return `Text` representation of the caller `UserID` in
+ *      form "C:U:A" if it was initialized and `none` otherwise. Returned object
+ *      is not managed by the caller `UserID` and should be
+ *      manually deallocated.
  */
-public final function string GetSteamID3String()
+public final function Text GetSteamID3String()
 {
-    return (GetSteamAccountTypeCharacter()
+    return _.text.FromString(GetSteamAccountTypeCharacter()
         $ ":" $ initializedData.universe
         $ ":" $ initializedData.steamID32);
 }
@@ -327,7 +338,7 @@ public final function string GetSteamID3String()
  *  @return Unique `int` representation of the caller `UserID`
  *      if it was initialized and `-1` otherwise.
  */
-public final function int GetSteamID32String()
+public final function int GetSteamID32()
 {
     if (!IsInitialized()) return -1;
     return initializedData.steamID32;
@@ -343,13 +354,15 @@ public final function int GetSteamID32String()
  *  (Steam64 ID used in profile permalink,
  *  like http://steamcommunity.com/profiles/76561198025127722).
  *
- *  @return String representation of the Steam64 ID of the caller `UserID`
- *      if it was initialized and empty `string` otherwise.
+ *  @return `Text` representation of the Steam64 ID of the caller `UserID`
+ *      if it was initialized and `none` otherwise. Returned object isn't
+ *      managed by caller `UserID` and must be deallocated.
  */
-public final function string GetSteamID64String()
+public final function Text GetSteamID64String()
 {
-    if (!IsInitialized()) return "";
-    return initializedData.steamID64;
+    if (!IsInitialized())                   return none;
+    if (initializedData.steamID64 == none)  return none;
+    return initializedData.steamID64.Copy();
 }
 
 defaultproperties

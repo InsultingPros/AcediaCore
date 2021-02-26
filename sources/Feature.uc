@@ -61,7 +61,7 @@ public static final function Feature EnableMe()
     }
     default.blockSpawning = false;
     //  TODO: code duplication with `Service`?
-    newInstance = __().Spawn(default.class);
+    newInstance = Feature(__().memory.Allocate(default.class));
     default.blockSpawning = true;
     return newInstance;
 }

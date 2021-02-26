@@ -1,6 +1,6 @@
 /**
  *      Manifest is meant to describe contents of the Acedia's package.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -22,14 +22,30 @@
 
 defaultproperties
 {
+    features(0)     = class'Commands'
+    commands(0)     = class'ACommandHelp'
+    commands(1)     = class'ACommandDosh'
+    commands(2)     = class'ACommandNick'
+    services(0)     = class'ConnectionService'
+    services(1)     = class'PlayerService'
     aliasSources(0) = class'AliasSource'
     aliasSources(1) = class'WeaponAliasSource'
     aliasSources(2) = class'ColorAliasSource'
-    testCases(0) = class'TEST_Aliases'
-    testCases(1) = class'TEST_ColorAPI'
-    testCases(2) = class'TEST_JSON'
-    testCases(3) = class'TEST_Text'
-    testCases(4) = class'TEST_TextAPI'
-    testCases(5) = class'TEST_Parser'
-    testCases(6) = class'TEST_User'
+    testCases(0)    = class'TEST_Base'
+    testCases(1)    = class'TEST_Boxes'
+    testCases(2)    = class'TEST_Refs'
+    testCases(3)    = class'TEST_Aliases'
+    testCases(4)    = class'TEST_ColorAPI'
+    testCases(5)    = class'TEST_Text'
+    testCases(6)    = class'TEST_TextAPI'
+    testCases(7)    = class'TEST_Parser'
+    testCases(8)    = class'TEST_JSON'
+    testCases(9)    = class'TEST_TextCache'
+    testCases(10)   = class'TEST_User'
+    testCases(11)   = class'TEST_Memory'
+    testCases(12)   = class'TEST_DynamicArray'
+    testCases(13)   = class'TEST_AssociativeArray'
+    testCases(14)   = class'TEST_Iterator'
+    testCases(15)   = class'TEST_Command'
+    testCases(16)   = class'TEST_CommandDataBuilder'
 }

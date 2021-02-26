@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class UserAPI extends Singleton;
+class UserAPI extends AcediaObject;
 
 /**
  *  Returns reference to the database of user records that Acedia was
@@ -45,13 +45,13 @@ public final function User Fetch(UserID userID)
 }
 
 /**
- *  Fetches appropriate `User` object for a player, given his id as a `string`.
+ *  Fetches appropriate `User` object for a player, given his id as a `Text`.
  *
- *  @param  idHash  `string` representation of someone's id.
+ *  @param  idHash  `Text` representation of someone's id.
  *  @return Corresponding `User` object. Guaranteed to be a valid non-`none`
  *      reference.
  */
-public final function User FetchByIDHash(string idHash)
+public final function User FetchByIDHash(Text idHash)
 {
     local UserID        userID;
     local UserDatabase  userDB;

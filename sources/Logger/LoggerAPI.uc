@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class LoggerAPI extends Singleton;
+class LoggerAPI extends AcediaObject;
 
 var private LoggerService logService;
 

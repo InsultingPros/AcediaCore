@@ -3,7 +3,7 @@
  *  that allows for only one instance of it to exist.
  *      To make sure your child class properly works, either don't overload
  *  'PreBeginPlay' or make sure to call it's parent's version.
- *      Copyright 2019 Anton Tarasenko
+ *      Copyright 2019 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -41,7 +41,7 @@ public final static function Singleton GetInstance(optional bool spawnIfMissing)
         return default.activeInstance;
     }
     if (spawnIfMissing) {
-        return __().Spawn(default.class);
+        return Singleton(__().memory.Allocate(default.class));
     }
     return none;
 }
@@ -70,16 +70,13 @@ protected function OnDestroyed(){}
 //  |___________________________________________________________________________
 event PreBeginPlay()
 {
-    super.PreBeginPlay();
-    if (default.blockSpawning || GetInstance() != none)
-    {
+    if (default.blockSpawning || GetInstance() != none) {
         Destroy();
+        return;
     }
-    else
-    {
-        default.activeInstance = self;
-        OnCreated();
-    }
+    default.activeInstance = self;
+    super.PreBeginPlay();
+    OnCreated();
 }
 
 //  Make sure only one instance of 'Singleton' exists at any point in time.

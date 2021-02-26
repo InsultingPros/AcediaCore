@@ -1,6 +1,6 @@
 /**
  *  Per-object-configuration intended for weapon aliases.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -23,5 +23,6 @@ class WeaponAliases extends Aliases
 
 defaultproperties
 {
+    configName  = "AcediaAliases_Weapons"
     sourceClass = class'WeaponAliasSource'
 }

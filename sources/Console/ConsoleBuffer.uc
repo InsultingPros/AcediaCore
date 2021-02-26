@@ -28,6 +28,15 @@ class ConsoleBuffer extends AcediaObject
  *  `ConsoleBuffer` works by breaking it's input into words, counting how much
  *  space they take up and only then deciding to which line to append them
  *  (new or the next, new one).
+ *
+ *  It is implemented making heavier use of `string`s instead of `Text`.
+ *  This is because:
+ *      1. `string`s that are passed to console are broken into lines,
+ *          that need to be specifically prepared anyway;
+ *      2. It was coded before I the switch to mostly using `Text`,
+ *          when a lot of methods were also accepting `string`s
+ *          and `array<Character>` types as parameters.
+ *          And i really do not want to have to reimplement it.
  */
 
 var private int CODEPOINT_ESCAPE;
@@ -43,7 +52,8 @@ var private ConsoleAPI.ConsoleDisplaySettings displaySettings;
  */
 struct LineRecord
 {
-    //  Contents of the line, in `STRING_Colored` format
+    //  Contents of the line, as a colored `string`.
+    //  Not a `Text`, because it has to be prepared exactly how we want it.
     var string  contents;
     //      Is this a wrapped line?
     //  `true` means that this line was supposed to be part part of another,
@@ -66,9 +76,13 @@ var private array<LineRecord> completedLines;
 
 //  Line we are currently building
 var private LineRecord              currentLine;
-//  Word we are currently building, colors of it's characters will be
+//      Word we are currently building, colors of it's characters will be
 //  automatically converted into `STRCOLOR_Struct`, according to the default
 //  color setting at the time of their addition.
+//      We are using array of `Character`s instead of `MutableText` since
+//  we want to have a more directly control over how it is converted into
+//  a colored string anyway and otherwise only need an ability to
+//  append `Character`s to it.
 var private array<Text.Character>   wordBuffer;
 //  Amount of color swaps inside `wordBuffer`
 var private int                     colorSwapsInWordBuffer;
@@ -108,7 +122,7 @@ public final function ConsoleBuffer SetSettings(
  *      "Completed line" means that nothing else will be added to it.
  *      So negative (`false`) response does not mean that the buffer is empty, -
  *  it can still contain an uncompleted and non-empty line that can still be
- *  expanded with `InsertString()`. If you want to completely empty the buffer -
+ *  expanded with `Insert()`. If you want to completely empty the buffer -
  *  call the `Flush()` method.
  *      Also see `IsEmpty()`.
  *
@@ -158,43 +172,44 @@ public final function ConsoleBuffer Clear()
  *  the line after the `input`, call `Flush()` or add line feed symbol "\n"
  *  at the end of the `input` if you want that.
  *
- *  @param  input       `string` to be added to the current line in caller
+ *  @param  input       `Text` to be added to the current line in caller
  *      `ConsoleBuffer`.
  *  @param  inputType   How to treat given `string` regarding coloring.
  *  @return Returns caller `ConsoleBuffer` to allow method chaining.
  */
-public final function ConsoleBuffer InsertString(
-    string          input,
-    Text.StringType inputType)
+public final function ConsoleBuffer Insert(Text input)
 {
-    local int                   inputConsumed;
-    local array<Text.Character> rawInput;
-    rawInput = _().text.StringToRaw(input, inputType);
-    while (rawInput.length > 0)
+    local int               inputConsumed;
+    local Text.Character    nextCharacter;
+    //  Regular symbols and whitespaces are treated differently when
+    //  breaking input into lines, so alternate between adding them,
+    //  switching the logic appropriately
+    while (inputConsumed < input.GetLength())
     {
-        //  Fill word buffer, remove consumed input from `rawInput`
-        inputConsumed = 0;
-        while (inputConsumed < rawInput.length)
+        while (inputConsumed < input.GetLength())
         {
-            if (_().text.IsWhitespace(rawInput[inputConsumed])) break;
-            InsertIntoWordBuffer(rawInput[inputConsumed]);
+            nextCharacter = input.GetCharacter(inputConsumed);
+            if (_.text.IsWhitespace(nextCharacter)) {
+                break;
+            }
+            InsertIntoWordBuffer(input.GetCharacter(inputConsumed));
             inputConsumed += 1;
         }
-        rawInput.Remove(0, inputConsumed);
         //  If we didn't encounter any whitespace symbols - bail
-        if (rawInput.length <= 0) {
+        if (inputConsumed >= input.GetLength()) {
             return self;
         }
         FlushWordBuffer();
         //  Dump whitespaces into lines
-        inputConsumed = 0;
-        while (inputConsumed < rawInput.length)
+        while (inputConsumed < input.GetLength())
         {
-            if (!_().text.IsWhitespace(rawInput[inputConsumed])) break;
-            AppendWhitespaceToCurrentLine(rawInput[inputConsumed]);
+            nextCharacter = input.GetCharacter(inputConsumed);
+            if (!_.text.IsWhitespace(nextCharacter)) {
+                break;
+            }
+            AppendWhitespaceToCurrentLine(nextCharacter);
             inputConsumed += 1;
         }
-        rawInput.Remove(0, inputConsumed);
     }
     return self;
 }
@@ -233,20 +248,25 @@ public final function ConsoleBuffer Flush()
 //  responsibility to check is on the one calling this method.
 private final function InsertIntoWordBuffer(Text.Character newCharacter)
 {
-    local int   newCharacterIndex;
-    local Color oldColor, newColor;
-    newCharacterIndex = wordBuffer.length;
+    local int               newCharacterIndex;
+    local Text.Formatting   newFormatting;
+    local Color             oldColor, newColor;
     //  Fix text color in the buffer to remember default color, if we use it.
-    newCharacter.color =
-        _().text.GetCharacterColor(newCharacter, displaySettings.defaultColor);
-    newCharacter.colorType = STRCOLOR_Struct;
+    newFormatting = _.text.GetCharacterFormatting(newCharacter);
+    newFormatting.color =
+        _.text.GetCharacterColor(newCharacter, displaySettings.defaultColor);
+    newFormatting.isColored = true;
+    newCharacter = _.text.SetFormatting(newCharacter, newFormatting);
+
+    //  Add new character and check if color swapped
+    newCharacterIndex = wordBuffer.length;
     wordBuffer[newCharacterIndex] = newCharacter;
     if (newCharacterIndex <= 0) {
         return;
     }
-    oldColor = wordBuffer[newCharacterIndex].color;
-    newColor = wordBuffer[newCharacterIndex - 1].color;
-    if (!_().color.AreEqual(oldColor, newColor, true)) {
+    newColor = newFormatting.color;
+    oldColor = _.text.GetCharacterColor(wordBuffer[newCharacterIndex - 1]);
+    if (!_.color.AreEqual(oldColor, newColor, true)) {
         colorSwapsInWordBuffer += 1;
     }
 }
@@ -264,10 +284,10 @@ private final function FlushWordBuffer()
         if (!CanAppendNonWhitespaceIntoLine(wordBuffer[i])) {
             BreakLine(true);
         }
-        newColor = wordBuffer[i].color;
+        newColor = _.text.GetCharacterColor(wordBuffer[i]);
         if (MustSwapColorsFor(newColor))
         {
-            currentLine.contents $= _().color.GetColorTag(newColor);
+            currentLine.contents $= _.color.GetColorTag(newColor);
             currentLine.totalSymbolsStored += COLOR_SEQUENCE_LENGTH;
             currentLine.colorInserted   = true;
             currentLine.endColor        = newColor;
@@ -293,7 +313,7 @@ private final function BreakLine(bool makeWrapped)
 private final function bool MustSwapColorsFor(Color newColor)
 {
     if (!currentLine.colorInserted) return true;
-    return !_().color.AreEqual(currentLine.endColor, newColor, true);
+    return !_.color.AreEqual(currentLine.endColor, newColor, true);
 }
 
 private final function bool CanAppendWhitespaceIntoLine()
@@ -324,7 +344,7 @@ private final function bool CanAppendNonWhitespaceIntoLine(
     if (!CanAppendWhitespaceIntoLine()) {
         return false;
     }
-    if (!MustSwapColorsFor(nextCharacter.color)) {
+    if (!MustSwapColorsFor(_.text.GetCharacterColor(nextCharacter))) {
         return true;
     }
     //  Can we fit character + color swap sequence?
@@ -336,8 +356,8 @@ private final function bool CanAppendNonWhitespaceIntoLine(
 //  the burden of checking is on the caller.
 private final function AppendWhitespaceToCurrentLine(Text.Character whitespace)
 {
-    if (_().text.IsCodePoint(whitespace, CODEPOINT_NEWLINE)) {
-        BreakLine(true);
+    if (_.text.IsCodePoint(whitespace, CODEPOINT_NEWLINE)) {
+        BreakLine(false);
         return;
     }
     if (!CanAppendWhitespaceIntoLine()) {
@@ -378,7 +398,7 @@ private final function bool WordCanFitInCurrentLine()
     //  Total symbols check
     totalCharactersInWord = wordBuffer.length
         + colorSwapsInWordBuffer * COLOR_SEQUENCE_LENGTH;
-    if (MustSwapColorsFor(wordBuffer[0].color)) {
+    if (MustSwapColorsFor(_.text.GetCharacterColor(wordBuffer[0]))) {
         totalCharactersInWord += COLOR_SEQUENCE_LENGTH;
     }
     return (totalCharactersInWord <= totalLimit);

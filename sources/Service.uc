@@ -1,7 +1,7 @@
 /**
  *  Parent class for all services used in Acedia.
  *  Currently simply makes itself server-only.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -33,7 +33,7 @@ public static final function Service Require()
         return Service(GetInstance());
     }
     default.blockSpawning = false;
-    newInstance = __().Spawn(default.class);
+    newInstance = Service(__().memory.Allocate(default.class));
     default.blockSpawning = true;
     return newInstance;
 }

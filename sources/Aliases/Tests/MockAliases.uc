@@ -23,5 +23,6 @@ class MockAliases extends Aliases
 
 defaultproperties
 {
+    configName  = "AcediaAliases_Tests"
     sourceClass = class'MockAliasSource'
 }

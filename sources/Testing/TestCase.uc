@@ -201,7 +201,7 @@ public final static function string GetGroup()
 public final static function bool PerformTests()
 {
     default.finishedTests   = false;
-    _().memory.Free(default.currentSummary);
+    __().memory.Free(default.currentSummary);
     default.currentSummary  = new class'TestCaseSummary';
     default.currentSummary.Initialize(default.class);
     TESTS();

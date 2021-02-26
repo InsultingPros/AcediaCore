@@ -1,6 +1,6 @@
 /**
  *  Source intended for weapon aliases.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -22,6 +22,5 @@ class WeaponAliasSource extends AliasSource
 
 defaultproperties
 {
-    configName = "AcediaAliases_Weapons"
     aliasesClass = class'WeaponAliases'
 }

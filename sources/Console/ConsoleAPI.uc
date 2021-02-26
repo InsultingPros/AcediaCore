@@ -23,7 +23,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ConsoleAPI extends Singleton
+class ConsoleAPI extends AcediaObject
     config(AcediaSystem);
 
 /**
@@ -191,54 +191,15 @@ public final function SetDefaultColor(Color newDefaultColor)
 }
 
 /**
- *  Returns borrowed `ConsoleWriter` instance that will write into
- *  consoles of all players.
- *
- *  @return ConsoleWriter   Borrowed `ConsoleWriter` instance, configured to
- *      write into consoles of all players.
- *      Never `none`.
- */
-public final function ConsoleWriter ForAll()
-{
-    local ConsoleDisplaySettings globalSettings;
-    globalSettings.defaultColor         = defaultColor;
-    globalSettings.maxTotalLineWidth    = maxTotalLineWidth;
-    globalSettings.maxVisibleLineWidth  = maxVisibleLineWidth;
-    return ConsoleWriter(_.memory.Claim(class'ConsoleWriter'))
-        .Initialize(globalSettings).ForAll();
-}
-
-/**
- *  Returns borrowed `ConsoleWriter` instance that will write into
- *  console of the player with a given controller.
- *
- *  @param  targetController    Player, to whom console we want to write.
- *      If `none` - returned `ConsoleWriter` would be configured to
- *      throw messages away.
- *  @return Borrowed `ConsoleWriter` instance, configured to
- *      write into consoles of all players.
- *      Never `none`.
- */
-public final function ConsoleWriter For(PlayerController targetController)
-{
-    local ConsoleDisplaySettings globalSettings;
-    globalSettings.defaultColor         = defaultColor;
-    globalSettings.maxTotalLineWidth    = maxTotalLineWidth;
-    globalSettings.maxVisibleLineWidth  = maxVisibleLineWidth;
-    return ConsoleWriter(_.memory.Claim(class'ConsoleWriter'))
-        .Initialize(globalSettings).ForController(targetController);
-}
-
-/**
  *      Returns new `ConsoleWriter` instance that will write into
  *  consoles of all players.
  *      Should be freed after use.
  *
  *  @return ConsoleWriter   New `ConsoleWriter` instance, configured to
  *      write into consoles of all players.
- *      Never `none`.
+ *      Guaranteed to not be `none`.
  */
-public final function ConsoleWriter MakeForAll()
+public final function ConsoleWriter ForAll()
 {
     local ConsoleDisplaySettings globalSettings;
     globalSettings.defaultColor         = defaultColor;
@@ -258,9 +219,9 @@ public final function ConsoleWriter MakeForAll()
  *      throw messages away.
  *  @return New `ConsoleWriter` instance, configured to
  *      write into consoles of all players.
- *      Never `none`.
+ *      Guaranteed to not be `none`.
  */
-public final function ConsoleWriter MakeFor(PlayerController targetController)
+public final function ConsoleWriter For(PlayerController targetController)
 {
     local ConsoleDisplaySettings globalSettings;
     globalSettings.defaultColor         = defaultColor;

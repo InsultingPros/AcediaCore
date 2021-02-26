@@ -9,7 +9,7 @@
  *  which is necessary to allow storing aliases for class names via
  *  these objects (since UnrealScript's cannot handle '.'s in object's names
  *  in it's configs).
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2019 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -30,6 +30,10 @@ class Aliases extends AcediaObject
     perObjectConfig
     config(AcediaAliases);
 
+//  Name of the configurational file (without extension) where
+//  this `AliasSource`'s data will be stored.
+var protected const string configName;
+
 //  Link to the `AliasSource` that uses `Aliases` objects of this class.
 //  To ensure that any `Aliases` sub-class only belongs to one `AliasSource`.
 var public const class<AliasSource> sourceClass;
@@ -38,17 +42,68 @@ var public const class<AliasSource> sourceClass;
 //  defined by this object's name `string(self.name)`.
 var protected config array<string> alias;
 
-//  Since '.'s in values are converted into ':' for storage purposes,
-//  we need methods to convert between "storage" and "actual" value version.
+//  Since:
+//      1. '.'s in values are converted into ':' for storage purposes;
+//      2. We have to store values in `string` to make use of config files.
+//  we need methods to convert between "storage" (`string`)
+//  and "actual" (`Text`) value version.
 //  `ToStorageVersion()` and `ToActualVersion()` do that.
-private final function string ToStorageVersion(string actualValue)
+private final static function string ToStorageVersion(Text actualValue)
 {
-    return Repl(actualValue, ".", ":");
+    return Repl(actualValue.ToPlainString(), ".", ":");
 }
 
-private final function string ToActualVersion(string storageValue)
+//  See comment to `ToStorageVersion()`.
+private final static function Text ToActualVersion(string storageValue)
 {
-    return Repl(storageValue, ":", ".");
+    return __().text.FromString(Repl(storageValue, ":", "."));
+}
+
+/**
+ *  Loads all `Aliases` objects from their config file
+ *  (defined in paired `AliasSource` class).
+ *
+ *  @return Array of all `Aliases` objects, loaded from their config file.
+ */
+public static final function array<Aliases> LoadAllObjects()
+{
+    local int               i;
+    local array<string>     objectNames;
+    local array<Aliases>    loadedAliasObjects;
+    objectNames = GetPerObjectNames(default.configName,
+                                    string(default.class.name), MaxInt);
+    for (i = 0; i < objectNames.length; i += 1) {
+        loadedAliasObjects[i] = LoadObjectByName(objectNames[i]);
+    }
+    return loadedAliasObjects;
+}
+
+//  Loads a new `Aliases` object by it's given name (`objectName`).
+private static final function Aliases LoadObjectByName(string objectName)
+{
+    local Aliases result;
+    //  Since `MemoryAPI` for now does not support specifying names
+    //  to created objects - do some manual dark magic and
+    //  initialize this shit ourselves
+    result = new(none, objectName) default.class;
+    result._constructor();
+    return result;
+}
+
+/**
+ *  Loads a new `Aliases` object based on the value (`aliasesValue`)
+ *  of it's aliases.
+ *
+ *  @param  aliasesValue    Value that aliases in this `Aliases` object will
+ *      correspond to.
+ *  @return Instance of `Aliases` object with a given name.
+ */
+public static final function Aliases LoadObject(Text aliasesValue)
+{
+    if (aliasesValue != none) {
+        return LoadObjectByName(ToStorageVersion(aliasesValue));
+    }
+    return none;
 }
 
 /**
@@ -56,7 +111,7 @@ private final function string ToActualVersion(string storageValue)
  *
  *  @return Value, stored by this object.
  */
-public final function string GetValue()
+public final function Text GetValue()
 {
     return ToActualVersion(string(self.name));
 }
@@ -66,27 +121,37 @@ public final function string GetValue()
  *
  *  @return Array of all aliases, stored by caller `Aliases` object.
  */
-public final function array<string> GetAliases()
+public final function array<Text> GetAliases()
 {
-    return alias;
+    local int           i;
+    local array<Text>   textAliases;
+    for (i = 0; i < alias.length; i += 1) {
+        textAliases[i] = _.text.FromString(alias[i]);
+    }
+    return textAliases;
 }
 
 /**
  *  [For inner use by `AliasSource`] Adds new alias to this object.
  *
  *  Does no duplicates checks through for it's `AliasSource` and
- *  neither it updates relevant `AliasHash`,
+ *  neither does it update relevant `AliasHash`,
  *  but will prevent adding duplicate records inside it's own storage.
  *
  *  @param  aliasToAdd  Alias to add to caller `Aliases` object.
+ *      If `none`, method will do nothing.
  */
-public final function AddAlias(string aliasToAdd)
+public final function AddAlias(Text aliasToAdd)
 {
     local int i;
-    for (i = 0; i < alias.length; i += 1) {
-        if (alias[i] ~= aliasToAdd) return;
+    if (aliasToAdd == none) return;
+    for (i = 0; i < alias.length; i += 1)
+    {
+        if (aliasToAdd.CompareToPlainString(alias[i], SCASE_INSENSITIVE)) {
+            return;
+        }
     }
-    alias[alias.length] = ToStorageVersion(aliasToAdd);
+    alias[alias.length] = aliasToAdd.ToPlainString();
     AliasService(class'AliasService'.static.Require())
         .PendingSaveObject(self);
 }
@@ -100,13 +165,14 @@ public final function AddAlias(string aliasToAdd)
  *
  *  @param  aliasToRemove   Alias to remove from caller `Aliases` object.
  */
-public final function RemoveAlias(string aliasToRemove)
+public final function RemoveAlias(Text aliasToRemove)
 {
     local int   i;
     local bool  removedAlias;
+    if (aliasToRemove == none) return;
     while (i < alias.length)
     {
-        if (alias[i] ~= aliasToRemove)
+        if (aliasToRemove.CompareToPlainString(alias[i], SCASE_INSENSITIVE))
         {
             alias.Remove(i, 1);
             removedAlias = true;
@@ -139,4 +205,5 @@ public final function SaveOrClear()
 defaultproperties
 {
     sourceClass = class'AliasSource'
+    configName  = "AcediaAliases"
 }

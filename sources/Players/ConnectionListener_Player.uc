@@ -24,7 +24,7 @@ static function ConnectionEstablished(ConnectionService.Connection connection)
     local PlayerService service;
     service = PlayerService(class'PlayerService'.static.Require());
     if (service == none) {
-        _().logger.Fatal("Cannot start `PlayerService` service"
+        __().logger.Fatal("Cannot start `PlayerService` service"
             @ "Acedia will not properly work from now on.");
         return;
     }
@@ -36,7 +36,7 @@ static function ConnectionLost(ConnectionService.Connection connection)
     local PlayerService service;
     service = PlayerService(class'PlayerService'.static.Require());
     if (service == none) {
-        _().logger.Fatal("Cannot start `PlayerService` service"
+        __().logger.Fatal("Cannot start `PlayerService` service"
             @ "Acedia will not properly work from now on.");
         return;
     }

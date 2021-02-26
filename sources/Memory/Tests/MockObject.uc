@@ -1,8 +1,6 @@
 /**
- *      Actor base class to be used to Acedia instead of an `Actor`.
- *  The only difference is defined `_` member that provides convenient access to
- *  Acedia's API.
- *      It isn't guaranteed that `default._` will be defined for `AcediaActor`s.
+ *  Mock object class for testing `MemoryAPI` and
+ *  it's object allocation/deallocation.
  *      Copyright 2020 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -20,31 +18,21 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class AcediaActor extends Actor
-    abstract;
+class MockObject extends AcediaObject;
 
-var protected Global _;
+var public int objectCount;
 
-public final function Text T(string string)
+protected function Constructor()
 {
-    return _.text.FromString(string);
+    default.objectCount += 1;
 }
 
-public static final function Global __()
+protected function Finalizer()
 {
-    return Global(class'Global'.static.GetInstance());
-}
-
-event PreBeginPlay()
-{
-    super.PreBeginPlay();
-    if (_ == none)
-    {
-        _ = Global(class'Global'.static.GetInstance());
-        default._ = _;
-    }
+    default.objectCount -= 1;
 }
 
 defaultproperties
 {
+    objectCount = 0
 }

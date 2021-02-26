@@ -1,7 +1,7 @@
 /**
  *  Implements a simple `Parser` with built-in functions to parse simple
  *  UnrealScript's types and support for saving / restoring parser states.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -22,18 +22,21 @@ class Parser extends AcediaObject
     dependson(Text)
     dependson(UnicodeData);
 
+//  Max value of a byte
 var public int BYTE_MAX;
+//  Code points of symbols with important meaning in parsing.
 var public int CODEPOINT_BACKSLASH;
 var public int CODEPOINT_USMALL;
 var public int CODEPOINT_ULARGE;
 
-//  The sequence of Unicode code points that this `Parser` is supposed to parse.
-var private array<Text.Character> content;
+//  Text object wit content that this `Parser` is supposed to parse
+//  (only copies of any `Text` passed to us are stored here).
+var private Text    content;
 //      Incremented each time `Parser` is reinitialized with new `content`.
 //      Can be used to make `Parser` object completely independent from
-//  it's past, necessary since garbage collection is extra expensive in UE2
-//  and we want to reuse created objects as much as possible.
-var private int         version;
+//  it's past after each re-initialization.
+//      This helps to avoid needless reallocations.
+var private int     version;
 
 //      Describes current state of the `Parser`, instance of this struct
 //  can be used to revert parser back to this state.
@@ -67,18 +70,15 @@ enum ParsedSign
     SIGN_Minus
 };
 
-/**
- *      Initializes `Parser` with new data from a raw data
- *  (sequence of Unicode code points). Never fails.
- *  
- *  Any data from before this call is lost, any checkpoints are invalidated.
- *
- *  @param  source  Sequence of Unicode code points that represents
- *      a string `Parser` will need to parse.
- *  @return Returns the calling object, to allow for function chaining.
- */
-public final function Parser InitializeRaw(array<Text.Character> source)
+//  TODO: add finalizer
+
+//      Common logic for parser initialization.
+//      Uses `source` as is, without copying, so public initialization method
+//  must do it itself.
+private final function Parser _initialize(Text source)
 {
+    if (source == none) return self;
+
     content = source;
     version += 1;
     currentState.ownerObject    = self;
@@ -90,38 +90,35 @@ public final function Parser InitializeRaw(array<Text.Character> source)
 }
 
 /**
- *  Initializes `Parser` with new data from a `string`. Never fails.
- *  
- *  Any data from before this call is lost, any checkpoints are invalidated.
- *
- *  @param  source  String `Parser` will need to parse.
- *  @return Returns the calling object, to allow for function chaining.
- */
-public final function Parser Initialize
-(
-    string source,
-    optional Text.StringType sourceType
-)
-{
-    InitializeRaw(_().text.StringToRaw(source, sourceType));
-    return self;
-}
-
-/**
- *  Initializes `Parser` with new data from a `Test`.
- *
- *  Can fail if passed `none` as a parameter.
+ *  Initializes `Parser` with new data from a `Text`. Never fails.
  *  
  *  Any data from before this call is lost, any checkpoints are invalidated.
  *
  *  @param  source  `Text` object `Parser` will need to parse.
  *      If `none` is passed - parser won't be initialized.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser InitializeT(Text source)
+public final function Parser Initialize(Text source)
 {
-    if (source == none) return self;
-    InitializeRaw(source.ToRaw());
+    if (source == none) {
+        return self;
+    }
+    return _initialize(source.Copy());
+}
+
+/**
+ *  Initializes `Parser` with new data from a plain `string`.
+ *
+ *  Can fail if passed `none` as a parameter.
+ *  
+ *  Any data from before this call is lost, any checkpoints are invalidated.
+ *
+ *  @param  source  String `Parser` will need to parse.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
+ */
+public final function Parser InitializeS(string source)
+{
+    _initialize(_.text.FromString(source));
     return self;
 }
 
@@ -218,7 +215,7 @@ public final function bool IsStateOk(ParserState stateToCheck)
  *
  *  @param  stateToRestore  `ParserState` that this method will attempt
  *      to set for the caller `Parser`.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser RestoreState(ParserState stateToRestore)
 {
@@ -263,7 +260,7 @@ public final function bool Confirm()
  * `Confirm()` and `R()` are essentially convenience wrapper functions for
  * `GetCurrentState()` and `RestoreState()` calls + state storage variable.
  *
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser R()
 {
@@ -280,12 +277,15 @@ public final function Parser R()
  *  @param  shift   How much to shift parsing pointer?
  *      Values of zero and below are discarded and `1` is used instead
  *      (i.e. by default this method shifts pointer by `1` position).
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 protected final function Parser ShiftPointer(optional int shift)
 {
+    if (content == none) return self;
+
     shift = Max(1, shift);
-    currentState.pointer = Min(currentState.pointer + shift, content.length);
+    currentState.pointer = Min( currentState.pointer + shift,
+                                content.GetLength());
     return self;
 }
 
@@ -298,32 +298,34 @@ protected final function Parser ShiftPointer(optional int shift)
  *      Otherwise shifts that index `shift` code points, i.e.
  *      `1` to return next code point or `2` to return code point after
  *      the next one.
- *  @return Returns code point at a given shift. If `shift` is too small/large
- *      and does not fit `Parser`'s contents, returns `-1`.
- *      `GetCodePoint()` with default (`0`) parameter can also return `-1` if
- *      contents of the caller `Parser` are empty or it has already consumed
- *      all input.
+ *  @return Returns character at a given shift. If `shift` is too small/large
+ *      and does not fit `Parser`'s contents, returns invalid character.
+ *      `GetCodePoint()` with default (`0`) parameter can also return
+ *      invalid character if caller `Parser` was not initialized,
+ *      it's contents are empty or it has already consumed all input.
  */
 protected final function Text.Character GetCharacter(optional int shift)
 {
     local Text.Character    invalidCharacter;
     local int               absoluteAddress;
+    if (content == none) return _.text.GetInvalidCharacter();
+
     absoluteAddress = currentState.pointer + Max(0, shift);
-    if (absoluteAddress < 0 || absoluteAddress >= content.length)
+    if (absoluteAddress < 0 || absoluteAddress >= content.GetLength())
     {
         invalidCharacter.codePoint = -1;
         return invalidCharacter;
     }
-    return content[absoluteAddress];
+    return content.GetRawCharacter(absoluteAddress);
 }
 
 /**
  *  Forces caller `Parser` to enter a failed state.
  *
- *  @return Returns the calling object, to allow for a quick exit from
+ *  @return Returns the caller `Parser`, to allow for a quick exit from
  *      a parsing function by `return Fail();`.
  */
-protected final function Parser Fail()
+public final function Parser Fail()
 {
     currentState.failed = true;
     return self;
@@ -352,7 +354,10 @@ public final function int GetParsedLength()
  */
 public final function int GetRemainingLength()
 {
-    return Max(0, content.length - currentState.pointer);
+    if (content == none) {
+        return 0;
+    }
+    return Max(0, content.GetLength() - currentState.pointer);
 }
 
 /**
@@ -365,41 +370,10 @@ public final function int GetRemainingLength()
  */
 public final function bool HasFinished()
 {
-    return (currentState.pointer >= content.length);
-}
-
-/**
- *  Returns still unparsed part of caller `Parser`'s source as an array of
- *  Unicode code points.
- *
- *  @return Unparsed part of caller `Parser`'s source as an array of
- *      Unicode code points.
- */
-public final function array<Text.Character> GetRemainderRaw()
-{
-    local int                   i;
-    local array<Text.Character> result;
-    for (i = 0; i < GetRemainingLength(); i += 1)
-    {
-        result[result.length] = GetCharacter(i);
+    if (content == none) {
+        return true;
     }
-    return result;
-}
-
-/**
- *  Returns still unparsed part of caller `Parser`'s source as a `string`.
- *
- *  @return Unparsed part of caller `Parser`'s source as a `string`.
- */
-public final function string GetRemainder()
-{
-    local int                   i;
-    local array<Text.Character> rawResult;
-    for (i = 0; i < GetRemainingLength(); i += 1)
-    {
-        rawResult[rawResult.length] = GetCharacter(i);
-    }
-    return _().text.RawToString(rawResult, STRING_Plain);
+    return (currentState.pointer >= content.GetLength());
 }
 
 /**
@@ -407,15 +381,53 @@ public final function string GetRemainder()
  *
  *  @return Unparsed part of caller `Parser`'s source as `Text`.
  */
-public final function Text GetRemainderT()
+public final function Text GetRemainder()
 {
-    local int                   i;
-    local array<Text.Character> rawResult;
-    for (i = 0; i < GetRemainingLength(); i += 1)
-    {
-        rawResult[rawResult.length] = GetCharacter(i);
+    local int           i;
+    local MutableText   result;
+    result = _.text.Empty();
+    for (i = 0; i < GetRemainingLength(); i += 1) {
+        result.AppendCharacter(GetCharacter(i));
     }
-    return _().text.FromRaw(rawResult);
+    return result;
+}
+
+/**
+ *  Returns still unparsed part of caller `Parser`'s source as a plain `string`.
+ *
+ *  @return Unparsed part of caller `Parser`'s source as a plain `plain`.
+ */
+public final function string GetRemainderS()
+{
+    local int       i;
+    local string    result;
+    local TextAPI   api;
+    api = _.text;
+    for (i = 0; i < GetRemainingLength(); i += 1) {
+        result $= api.CharacterToString(GetCharacter(i));
+    }
+    return result;
+}
+
+/**
+ *  Auxiliary method for other methods that have to return resulting
+ *  `MutableText` instance.
+ *
+ *  If passed instance if `none` or not currently allocated - a new one is
+ *  created, otherwise existing one is emptied.
+ *
+ *  @param  result  `MutableText` instance to empty/create.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
+ */
+protected final function Parser ResetResultText(out MutableText result)
+{
+    if (result == none || !result.IsAllocated()) {
+        result = _.text.Empty();
+    }
+    else {
+        result.Clear();
+    }
+    return self;
 }
 
 /**
@@ -429,19 +441,18 @@ public final function Text GetRemainderT()
  *
  *  @param  whitespacesAmount   Returns how many whitespace symbols
  *      were skipped. Any given value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser Skip(optional out int whitespacesAmount)
 {
     local TextAPI api;
     if (!Ok()) return self;
 
-    api = _().text;
+    api = _.text;
     whitespacesAmount = 0;
     //  Cycle will end once we either reach a non-whitespace symbol or
     //  there's not more code points to get
-    while (api.IsWhitespace(GetCharacter(whitespacesAmount)))
-    {
+    while (api.IsWhitespace(GetCharacter(whitespacesAmount))) {
         whitespacesAmount += 1;
     }
     if (whitespacesAmount > 0) {
@@ -456,33 +467,35 @@ public final function Parser Skip(optional out int whitespacesAmount)
  *
  *  Does nothing if caller `Parser` was in failed state.
  *
- *  @param  data            Data that must be matched to the `Parser`'s
+ *  @param  word            `Text` that must be matched to the `Parser`'s
  *      contents, starting from where previous parsing function finished.
- *  @param  caseInsensitive If `false` the matching will have to be exact,
- *      using `true` will make this method to ignore the case,
- *      where it's applicable.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @param  caseSensitivity Specifies whether `Match()` should try and
+ *      ignore the difference in case, where applicable.
+ *      By default it does not ignore case difference.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MatchRaw
-(
-    array<Text.Character> data,
-    optional bool caseInsensitive
-)
+public final function Parser Match(
+    Text                            word,
+    optional Text.CaseSensitivity   caseSensitivity)
 {
     local int       i;
+    local int       wordLength;
     local TextAPI   api;
-    if (!Ok())                              return self;
-    if (data.length > GetRemainingLength()) return Fail();
+    if (word == none)                               return Fail();
+    if (!Ok())                                      return self;
+    if (word.GetLength() > GetRemainingLength())    return Fail();
 
-    api = _().text;
-    for (i = 0; i < data.length; i += 1)
+    api = _.text;
+    wordLength = word.GetLength();
+    for (i = 0; i < wordLength; i += 1)
     {
-        if (!api.AreEqual(data[i], GetCharacter(i), caseInsensitive))
+        if (!api.AreEqual(  word.GetCharacter(i), GetCharacter(i),
+                            caseSensitivity))
         {
             return Fail();
         }
     }
-    ShiftPointer(data.length);
+    ShiftPointer(wordLength);
     return self;
 }
 
@@ -492,37 +505,22 @@ public final function Parser MatchRaw
  *
  *  Does nothing if caller `Parser` was in failed state.
  *
- *  @param  word            String that must be matched to the `Parser`'s
+ *  @param  word            `string` that must be matched to the `Parser`'s
  *      contents, starting from where previous parsing function finished.
- *  @param  caseInsensitive If `false` the matching will have to be exact,
- *      using `true` will make this method to ignore the case,
- *      where it's applicable.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @param  caseSensitivity Specifies whether `Match()` should try and
+ *      ignore the difference in case, where applicable.
+ *      By default it does not ignore case difference.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser Match(string word, optional bool caseInsensitive)
+public final function Parser MatchS(
+    string                          word,
+    optional Text.CaseSensitivity   caseSensitivity)
 {
-    return MatchRaw(_().text.StringToRaw(word), caseInsensitive);
-}
-
-/**
- *  Function that tries to match given `Text`, starting from where
- *  previous parsing function finished.
- *
- *  Does nothing if caller `Parser` was in failed state.
- *
- *  @param  word            Text that must be matched to the `Parser`'s
- *      contents, starting from where previous parsing function finished.
- *  @param  caseInsensitive If `false` the matching will have to be exact,
- *      using `true` will make this method to ignore the case,
- *      where it's applicable.
- *  @return Returns the calling object, to allow for function chaining.
- */
-public final function Parser MatchT(Text word, optional bool caseInsensitive)
-{
-    if (!Ok())          return self;
-    if (word == none)   return Fail();
-
-    return MatchRaw(word.ToRaw(), caseInsensitive);
+    local Text wrapper;
+    wrapper = _.text.FromString(word);
+    Match(wrapper, caseSensitivity);
+    wrapper.FreeSelf();
+    return self;
 }
 
 /**
@@ -544,26 +542,22 @@ public final function Parser MatchT(Text word, optional bool caseInsensitive)
  *  @param consumedCodePoints   Amount of code point used (consumed) to parse
  *      this number; undefined, if parsing is unsuccessful.
  *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MUnsignedInteger
-(
-    out int result,
-    optional int base,
-    optional int numberLength,
-    optional out int consumedCodePoints
-)
+public final function Parser MUnsignedInteger(
+    out int             result,
+    optional int        base,
+    optional int        numberLength,
+    optional out int    consumedCodePoints)
 {
     local bool  parsingFixedLength;
     local int   nextPosition;
     numberLength        = Max(0, numberLength);
     parsingFixedLength  = (numberLength != 0);
-    if (base == 0)
-    {
+    if (base == 0) {
         base = 10;
     }
-    else if (base < 2 || base > 36)
-    {
+    else if (base < 2 || base > 36) {
         return Fail();
     }
     result = 0;
@@ -571,7 +565,7 @@ public final function Parser MUnsignedInteger
     while (!HasFinished())
     {
         if (parsingFixedLength && consumedCodePoints >= numberLength)   break;
-        nextPosition = _().text.CharacterToInt(GetCharacter(), base);
+        nextPosition = _.text.CharacterToInt(GetCharacter(), base);
         if (nextPosition < 0)                                           break;
 
         result = result * base + nextPosition;
@@ -610,11 +604,10 @@ public final function Parser MUnsignedInteger
  *      appropriate code point, denoted by a parsed escaped sequence;
  *      If parsing is unsuccessful, value is undefined.
  *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MEscapedSequence(
-    out Text.Character denotedCharacter
-)
+    out Text.Character denotedCharacter)
 {
     local int i;
     if (!Ok())                                              return self;
@@ -634,12 +627,10 @@ public final function Parser MEscapedSequence(
         }
     }
     //  Escaped character denotes declaration of arbitrary Unicode code point
-    if (denotedCharacter.codePoint == CODEPOINT_USMALL)
-    {
+    if (denotedCharacter.codePoint == CODEPOINT_USMALL) {
         MUnsignedInteger(denotedCharacter.codePoint, 16, 4);
     }
-    else if (denotedCharacter.codePoint == CODEPOINT_ULARGE)
-    {
+    else if (denotedCharacter.codePoint == CODEPOINT_ULARGE) {
         MUnsignedInteger(denotedCharacter.codePoint, 16, 2);
     }
     return self;
@@ -648,29 +639,33 @@ public final function Parser MEscapedSequence(
 /**
  *  Attempts to parse a string literal: a string enclosed in either of
  *  the following quotation marks: ", ', `.
+ *
  *  String literals can contain escaped sequences.
  *  String literals MUST end with closing quotation mark.
  *  @see `MEscapedSequence()`
  *
- *  @param  result  If parsing is successful, this array will contain the
- *      contents of string literal with resolved escaped sequences;
+ *  @param  result  If parsing is successful, this `MutableText` will contain
+ *      the contents of string literal with resolved escaped sequences;
  *      if parsing has failed, it's value is undefined.
  *      Any passed contents are simply discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *      If passed `MutableText` equals to `none`, new instance will be
+ *      automatically allocated. This will be done regardless of whether
+ *      parsing fails.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MStringLiteralRaw(out array<Text.Character> result)
+public final function Parser MStringLiteral(out MutableText result)
 {
     local TextAPI           api;
     local Text.Character    nextCharacter;
     local Text.Character    usedQuotationMark;
     local Text.Character    escapedCharacter;
-    if (!Ok())                                          return self;
+    ResetResultText(result);
+    if (!Ok())                                      return self;
     usedQuotationMark = GetCharacter();
-    if (!_().text.IsQuotationMark(usedQuotationMark))   return Fail();
+    if (!_.text.IsQuotationMark(usedQuotationMark)) return Fail();
 
     ShiftPointer(); //  Skip opening quotation mark
-    api = _().text;
-    result.length = 0;
+    api = _.text;
     while (!HasFinished())
     {
         nextCharacter = GetCharacter();
@@ -683,16 +678,15 @@ public final function Parser MStringLiteralRaw(out array<Text.Character> result)
         //  Escaped characters
         if (api.IsCodePoint(nextCharacter, CODEPOINT_BACKSLASH))
         {
-            if (!MEscapedSequence(escapedCharacter).Ok())
-            {
+            if (!MEscapedSequence(escapedCharacter).Ok()) {
                 return Fail();  //  Backslash MUST mean valid escape sequence
             }
-            result[result.length] = escapedCharacter;
+            result.AppendCharacter(escapedCharacter);
         }
         //  Any other code point
         else
         {
-            result[result.length] = nextCharacter;
+            result.AppendCharacter(nextCharacter);
             ShiftPointer();
         }
     }
@@ -703,6 +697,7 @@ public final function Parser MStringLiteralRaw(out array<Text.Character> result)
 /**
  *  Attempts to parse a string literal: a string enclosed in either of
  *  the following quotation marks: ", ', `.
+ *
  *  String literals can contain escaped sequences.
  *  String literals MUST end with closing quotation mark.
  *  @see `MEscapedSequence()`
@@ -711,42 +706,18 @@ public final function Parser MStringLiteralRaw(out array<Text.Character> result)
  *      contents of string literal with resolved escaped sequences;
  *      if parsing has failed, it's value is undefined.
  *      Any passed contents are simply discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MStringLiteral(out string result)
+public final function Parser MStringLiteralS(out string result)
 {
-    local array<Text.Character> rawResult;
+    local MutableText wrapper;
     if (!Ok()) return self;
 
-    if (MStringLiteralRaw(rawResult).Ok())
-    {
-        result = _().text.RawToString(rawResult, STRING_Plain);
+    wrapper = _.text.Empty();
+    if (MStringLiteral(wrapper).Ok()) {
+        result = wrapper.ToPlainString();
     }
-    return self;
-}
-
-/**
- *  Attempts to parse a string literal: a string enclosed in either of
- *  the following quotation marks: ", ', `.
- *  String literals can contain escaped sequences.
- *  String literals MUST end with closing quotation mark.
- *  @see `MEscapedSequence()`
- *
- *  @param  result  If parsing is successful, this `Text` will contain the
- *      contents of string literal with resolved escaped sequences;
- *      if parsing has failed, it's value is undefined.
- *      Any passed contents are simply discarded.
- *  @return Returns the calling object, to allow for function chaining.
- */
-public final function Parser MStringLiteralT(out Text result)
-{
-    local array<Text.Character> rawResult;
-    if (!Ok()) return self;
-
-    if (MStringLiteralRaw(rawResult).Ok())
-    {
-        result = _().text.FromRaw(rawResult);
-    }
+    wrapper.FreeSelf();
     return self;
 }
 
@@ -758,33 +729,33 @@ public final function Parser MStringLiteralT(out Text result)
  *  This method cannot fail.
  *
  *  @param  result              Any content before one of the break symbols
- *      will be recorded into this array as a sequence of Unicode code points.
+ *      will be recorded into this `MutableText`. If passed `MutableText` equals
+ *      to `none`, new instance will be automatically allocated. This will be
+ *      done regardless of whether parsing fails.
  *  @param  codePointBreak      Method will stop parsing upon encountering this
  *      code point (it will not be included in the `result`)
  *  @param  whitespacesBreak    `true` if you want to also treat any
  *      whitespace character as a break symbol
  *      (@see `TextAPI.IsWhitespace()` for what symbols are
- *      considered whitespaces)
+ *      considered whitespaces).
  *  @param  quotesBreak         `true` if you want to also treat any
  *      quotation mark character as a break symbol
  *      (@see `TextAPI.IsQuotation()` for what symbols are
  *      considered quotation marks).
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MUntilRaw
-(
-    out array<Text.Character> result,
+public final function Parser MUntil(
+    out MutableText         result,
     optional Text.Character characterBreak,
-    optional bool whitespacesBreak,
-    optional bool quotesBreak
-)
+    optional bool           whitespacesBreak,
+    optional bool           quotesBreak)
 {
     local Text.Character    nextCharacter;
     local TextAPI           api;
+    ResetResultText(result);
     if (!Ok()) return self;
 
-    api = _().text;
-    result.length = 0;
+    api = _.text;
     while (!HasFinished())
     {
         nextCharacter = GetCharacter();
@@ -792,7 +763,7 @@ public final function Parser MUntilRaw
         if (whitespacesBreak && api.IsWhitespace(nextCharacter))    break;
         if (quotesBreak && api.IsQuotationMark(nextCharacter))      break;
 
-        result[result.length] = nextCharacter;
+        result.AppendCharacter(nextCharacter);
         ShiftPointer();
     }
     return self;
@@ -812,63 +783,138 @@ public final function Parser MUntilRaw
  *  @param  whitespacesBreak    `true` if you want to also treat any
  *      whitespace character as a break symbol
  *      (@see `TextAPI.IsWhitespace()` for what symbols are
- *      considered whitespaces)
+ *      considered whitespaces).
  *  @param  quotesBreak         `true` if you want to also treat any
  *      quotation mark character as a break symbol
  *      (@see `TextAPI.IsQuotation()` for what symbols are
  *      considered quotation marks).
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MUntil
-(
+public final function Parser MUntilS(
     out string result,
     optional Text.Character characterBreak,
     optional bool whitespacesBreak,
-    optional bool quotesBreak
-)
+    optional bool quotesBreak)
 {
-    local array<Text.Character> rawResult;
+    local MutableText wrapper;
     if (!Ok()) return self;
 
-    MUntilRaw(rawResult, characterBreak, whitespacesBreak, quotesBreak);
-    result = _().text.RawToString(rawResult, STRING_Plain);
+    wrapper = _.text.Empty();
+    MUntil(wrapper, characterBreak, whitespacesBreak, quotesBreak);
+    result = wrapper.ToPlainString();
+    wrapper.FreeSelf();
     return self;
 }
 
 /**
- *  Matches everything until it finds one of the breaking symbols:
- *      1. a specified code point (by default `0`);
+ *  Matches everything until it finds one of the breaking sequences:
+ *      1. Any of the specified `separators`.
  *      2. (optionally) whitespace symbol (@see `TextAPI.IsWhitespace()`);
  *      3. (optionally) quotation symbol (@see `TextAPI.IsQuotation()`).
  *  This method cannot fail.
  *
- *  @param  result              Any content before one of the break symbols
- *      will be recorded into this `Text`.
- *  @param  codePointBreak      Method will stop parsing upon encountering this
- *      code point (it will not be included in the `result`)
+ *  @param  result              Any content before one of the breaking sequences
+ *      will be recorded into this `MutableText`. If passed `MutableText` equals
+ *      to `none`, new instance will be automatically allocated. This will be
+ *      done regardless of whether parsing fails.
+ *  @param  separators          Method will stop parsing upon encountering any
+ *      of these `Text`s (but they will not be included in the `result`).
  *  @param  whitespacesBreak    `true` if you want to also treat any
  *      whitespace character as a break symbol
  *      (@see `TextAPI.IsWhitespace()` for what symbols are
- *      considered whitespaces)
+ *      considered whitespaces).
  *  @param  quotesBreak         `true` if you want to also treat any
  *      quotation mark character as a break symbol
  *      (@see `TextAPI.IsQuotation()` for what symbols are
  *      considered quotation marks).
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MUntilT
-(
-    out Text result,
-    optional Text.Character characterBreak,
-    optional bool whitespacesBreak,
-    optional bool quotesBreak
-)
+public final function Parser MUntilMany(
+    out MutableText result,
+    array<Text>     separators,
+    optional bool   whitespacesBreak,
+    optional bool   quotesBreak)
 {
-    local array<Text.Character> rawResult;
+    local bool              foundEnd;
+    local int               i, pointerShift;
+    local array<int>        completions;
+    local Text.Character    nextCharacter, separatorCharacter;
+    ResetResultText(result);
     if (!Ok()) return self;
 
-    MUntilRaw(rawResult, characterBreak, whitespacesBreak, quotesBreak);
-    result = _().text.FromRaw(rawResult);
+    completions.length = separators.length;
+    while (pointerShift < GetRemainingLength())
+    {
+        nextCharacter = GetCharacter(pointerShift);
+        if (whitespacesBreak && _.text.IsWhitespace(nextCharacter)) break;
+        if (quotesBreak && _.text.IsQuotationMark(nextCharacter))   break;
+        for (i = 0; i < separators.length; i += 1)
+        {
+            if (separators[i] == none) continue;
+
+            separatorCharacter = separators[i].GetCharacter(completions[i]);
+            if (_.text.AreEqual(nextCharacter, separatorCharacter))
+            {
+                completions[i] += 1;
+                if (completions[i] == separators[i].GetLength())
+                {
+                    foundEnd = true;
+                    pointerShift -= completions[i] - 1;
+                    break;
+                }
+            }
+            else {
+                completions[i] = 0;
+            }
+        }
+        if (foundEnd) {
+            break;
+        }
+        pointerShift += 1;
+    }
+    for (i = 0; i < pointerShift; i += 1)
+    {
+        result.AppendCharacter(GetCharacter());
+        ShiftPointer();
+    }
+    return self;
+}
+
+/**
+ *  Matches everything until it finds one of the breaking sequences:
+ *      1. Any of the specified `separators`.
+ *      2. (optionally) whitespace symbol (@see `TextAPI.IsWhitespace()`);
+ *      3. (optionally) quotation symbol (@see `TextAPI.IsQuotation()`).
+ *  This method cannot fail.
+ *
+ *  @param  result              Any content before one of the breaking sequences
+ *      will be recorded into this `MutableText`. If passed `MutableText` equals
+ *      to `none`, new instance will be automatically allocated.
+ *  @param  separators          Method will stop parsing upon encountering any
+ *      of these `string`s (but they won't not be included in the `result`).
+ *  @param  whitespacesBreak    `true` if you want to also treat any
+ *      whitespace character as a break symbol
+ *      (@see `TextAPI.IsWhitespace()` for what symbols are
+ *      considered whitespaces).
+ *  @param  quotesBreak         `true` if you want to also treat any
+ *      quotation mark character as a break symbol
+ *      (@see `TextAPI.IsQuotation()` for what symbols are
+ *      considered quotation marks).
+ *  @return Returns the caller `Parser`, to allow for function chaining.
+ */
+public final function Parser MUntilManyS(
+    out string      result,
+    array<Text>     endWords,
+    optional bool   whitespacesBreak,
+    optional bool   quotesBreak)
+{
+    local MutableText wrapper;
+    if (!Ok()) return self;
+
+    wrapper = _.text.Empty();
+    MUntilMany(wrapper, endWords, whitespacesBreak, quotesBreak);
+    result = wrapper.ToPlainString();
+    wrapper.FreeSelf();
     return self;
 }
 
@@ -883,24 +929,24 @@ public final function Parser MUntilT
  *  at the corresponding closing (un-escaped) mark
  *  or when `Parser`'s input has been fully consumed.
  *      If string started with a quotation mark, this method will act exactly
- *  like `MStringLiteralRaw()`.
+ *  like `MStringLiteral()`.
  *
  *  @param  result  If parsing is successful - string's contents will be
  *      recorded here; if parsing has failed - value is undefined.
  *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *      If passed `MutableText` equals to `none`, new instance will be
+ *      automatically allocated.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MStringRaw(out array<Text.Character> result)
+public final function Parser MString(out MutableText result)
 {
     if (!Ok()) return self;
 
-    if (_().text.IsQuotationMark(GetCharacter()))
-    {
-        MStringLiteralRaw(result);
+    if (_.text.IsQuotationMark(GetCharacter())) {
+        MStringLiteral(result);
     }
-    else
-    {
-        MUntilRaw(result,, true, true);
+    else {
+        MUntil(result,, true, true);
     }
     return self;
 }
@@ -921,43 +967,17 @@ public final function Parser MStringRaw(out array<Text.Character> result)
  *  @param  result  If parsing is successful - string's contents will be
  *      recorded here; if parsing has failed - value is undefined.
  *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MString(out string result)
+public final function Parser MStringS(out string result)
 {
-    local array<Text.Character> rawResult;
+    local MutableText wrapper;
     if (!Ok()) return self;
 
-    MStringRaw(rawResult);
-    result = _().text.RawToString(rawResult, STRING_Plain);
-    return self;
-}
-
-/**
- *  Parses a string as either "simple" or "quoted".
- *  Not being able to read any symbols is not considered a failure.
- *
- *      Reading empty string (either to lack of further data or
- *  instantly encountering a break symbol) is not considered a failure.
- *
- *      Quoted string starts with quotation mark and ends either
- *  at the corresponding closing (un-escaped) mark
- *  or when `Parser`'s input has been fully consumed.
- *      If string started with a quotation mark, this method will act exactly
- *  like `MStringLiteralT()`.
- *
- *  @param  result  If parsing is successful - string's contents will be
- *      recorded here; if parsing has failed - value is undefined.
- *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
- */
-public final function Parser MStringT(out Text result)
-{
-    local array<Text.Character> rawResult;
-    if (!Ok()) return self;
-
-    MStringRaw(rawResult);
-    result = _().text.FromRaw(rawResult);
+    wrapper = _.text.Empty();
+    MString(wrapper);
+    result = wrapper.ToPlainString();
+    wrapper.FreeSelf();
     return self;
 }
 
@@ -966,24 +986,33 @@ public final function Parser MStringT(out Text result)
  *
  *  Cannot fail (not being able to read any input is not considered a failure).
  *
- *  @param  result  If parsing was successful - whitespaces' Unicode code points
- *      will be recorded in this array, otherwise - undefined.
+ *  @param  result  If parsing was successful - whitespaces will be recorded
+ *      into this `MutableText`, otherwise - undefined.
  *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *      If passed `MutableText` equals to `none`, new instance will be
+ *      automatically allocated.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MWhitespacesRaw(out array<Text.Character> result)
+public final function Parser MWhitespaces(out MutableText result)
 {
     local Text.Character    nextCharacter;
     local TextAPI           api;
-    if (!Ok()) return self;
+    if (!Ok())          return self;
 
-    api = _().text;
-    result.length = 0;
+    api = _.text;
+    if (result == none) {
+        result = api.Empty();
+    }
+    else {
+        result.Clear();
+    }
     while (!HasFinished())
     {
         nextCharacter = GetCharacter();
-        if (!api.IsWhitespace(nextCharacter)) break;
-        result[result.length] = nextCharacter;
+        if (!api.IsWhitespace(nextCharacter)) {
+            break;
+        }
+        result.AppendCharacter(nextCharacter);
         ShiftPointer();
     }
     return self;
@@ -997,35 +1026,17 @@ public final function Parser MWhitespacesRaw(out array<Text.Character> result)
  *  @param  result  If parsing was successful - whitespaces will be
  *      recorded here, otherwise - undefined.
  *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MWhitespaces(out string result)
+public final function Parser MWhitespacesS(out string result)
 {
-    local array<Text.Character> rawResult;
+    local MutableText wrapper;
     if (!Ok()) return self;
 
-    MWhitespacesRaw(rawResult);
-    result = _().text.RawToString(rawResult, STRING_Plain);
-    return self;
-}
-
-/**
- *  Matches a non-empty sequence of whitespace symbols.
- *
- *  Cannot fail (not being able to read any input is not considered a failure).
- *
- *  @param  result  If parsing was successful - whitespaces will be
- *      recorded here, otherwise - undefined.
- *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
- */
-public final function Parser MWhitespacesT(out Text result)
-{
-    local array<Text.Character> rawResult;
-    if (!Ok()) return self;
-
-    MWhitespacesRaw(rawResult);
-    result = _().text.FromRaw(rawResult);
+    wrapper = _.text.Empty();
+    MWhitespaces(wrapper);
+    result = wrapper.ToPlainString();
+    wrapper.FreeSelf();
     return self;
 }
 
@@ -1037,7 +1048,7 @@ public final function Parser MWhitespacesT(out Text result)
  *  @param  result  If parsing was successful - next Unicode code point,
  *      otherwise - value is undefined.
  *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MCharacter(out Text.Character result)
 {
@@ -1057,7 +1068,7 @@ public final function Parser MCharacter(out Text.Character result)
  *  @param  result  If parsing was successful - next Unicode code point as
  *      a byte, otherwise - value is undefined.
  *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MByte(out byte result)
 {
@@ -1087,10 +1098,9 @@ public final function Parser MByte(out byte result)
  *      `true` means that parsing will not fail even if there is not sign, -
  *      method will then consume in input and will return `SIGN_Missing`
  *      as a result.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MSign
-(
+public final function Parser MSign(
     out ParsedSign result,
     optional bool allowMissingSign
 )
@@ -1100,12 +1110,10 @@ public final function Parser MSign
 
     //  Read sign
     checkpoint = GetCurrentState();
-    if (Match("-").Ok())
-    {
+    if (MatchS("-").Ok()) {
         result = SIGN_Minus;
     }
-    else if (RestoreState(checkpoint).Match("+").Ok())
-    {
+    else if (RestoreState(checkpoint).MatchS("+").Ok()) {
         result = SIGN_Plus;
     }
     else if (allowMissingSign)
@@ -1128,7 +1136,7 @@ public final function Parser MSign
  *  
  *  Parser consumes appropriate prefix; nothing if decimal system is determined.
  *
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MBase(out int base)
 {
@@ -1136,16 +1144,13 @@ public final function Parser MBase(out int base)
     if (!Ok()) return self;
 
     checkpoint = GetCurrentState();
-    if (Match("0x").Ok())
-    {
+    if (MatchS("0x").Ok()) {
         base = 16;
     }
-    else if (RestoreState(checkpoint).Match("0b").Ok())
-    {
+    else if (RestoreState(checkpoint).MatchS("0b").Ok()) {
         base = 2;
     }
-    else if (RestoreState(checkpoint).Match("0o").Ok())
-    {
+    else if (RestoreState(checkpoint).MatchS("0o").Ok()) {
         base = 8;
     }
     else
@@ -1166,10 +1171,10 @@ public final function Parser MBase(out int base)
  *  @param result   If parsing is successful - parsed value will be
  *      recorded here; if parsing fails - value is undetermined.
  *      Any passed value is discarded.
- *  @param  base    base in which function must attempt to parse a number;
+ *  @param  base    Base in which function must attempt to parse a number;
  *      Default value (`0`) means function must auto-determine base,
  *      based on the prefix, otherwise must be between 2 and 36.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MInteger(out int result, optional int base)
 {
@@ -1177,13 +1182,11 @@ public final function Parser MInteger(out int result, optional int base)
     if (!Ok()) return self;
 
     MSign(integerSign, true);
-    if (base == 0)
-    {
+    if (base == 0) {
         MBase(base);
     }
     MUnsignedInteger(result, base);
-    if (integerSign == SIGN_Minus)
-    {
+    if (integerSign == SIGN_Minus) {
         result *= -1;
     }
     return self;
@@ -1201,7 +1204,7 @@ protected final function Parser MFractionalPart(out float result)
 
     result = 0.0;
     checkpoint = GetCurrentState();
-    if (!Match(".").Ok())
+    if (!MatchS(".").Ok())
     {
         RestoreState(checkpoint);
         return self;
@@ -1230,7 +1233,7 @@ protected final function Parser MExponentPart(out int result)
 
     //  Is there even an exponential part?
     checkpoint = GetCurrentState();
-    if (!Match("e", true).Ok())
+    if (!MatchS("e", SCASE_INSENSITIVE).Ok())
     {
         RestoreState(checkpoint);
         return self;
@@ -1255,7 +1258,7 @@ protected final function Parser MFloatSuffix()
     if (!Ok()) return self;
 
     checkpoint = GetCurrentState();
-    if (!Match("f", true).Ok())
+    if (!MatchS("f", SCASE_INSENSITIVE).Ok())
     {
         RestoreState(checkpoint);
     }
@@ -1269,7 +1272,7 @@ protected final function Parser MFloatSuffix()
  *  @param result   If parsing is successful - parsed value will be
  *      recorded here; if parsing fails - value is undetermined.
  *      Any passed value is discarded.
- *  @return Returns the calling object, to allow for function chaining.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MNumber(out float result)
 {
@@ -1283,14 +1286,12 @@ public final function Parser MNumber(out float result)
         .MFractionalPart(fractionalPart)
         .MExponentPart(exponentPart)
         .MFloatSuffix();
-    if (!Ok())
-    {
+    if (!Ok()) {
         return self;
     }
     result = float(integerPart) + fractionalPart;
     result *= 10.0 ** exponentPart;
-    if (sign == SIGN_Minus)
-    {
+    if (sign == SIGN_Minus) {
         result *= -1;
     }
     return self;

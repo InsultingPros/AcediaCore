@@ -19,8 +19,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class UserDatabase extends AcediaObject
-    config(Acedia)
-    abstract;
+    config(Acedia);
 
 //  This is used as a global variable only (`default.activeDatabase`) to store
 //  a reference to main database for persistent data, used by Acedia.
@@ -29,7 +28,7 @@ var private UserDatabase    activeDatabase;
 var private array<User>     sessionUsers;
 //  `UserID`s generated during this session.
 //  Instead of constantly creating new ones - just reuse already created.
-//  This array should not grow too huge under normal circumstances.
+//  This array should not grow too large under normal circumstances.
 var private array<UserID>   storedUserIDs;
 
 /**
@@ -46,33 +45,49 @@ public final static function UserDatabase GetInstance()
     if (default.activeDatabase == none)
     {
         default.activeDatabase =
-            UserDatabase(_().memory.Allocate(class'UserDatabase'));
+            UserDatabase(__().memory.Allocate(class'UserDatabase'));
     }
     return default.activeDatabase;
 }
 
 /**
- *  Converts `string` representation of someone's id into appropriate
+ *  Converts `Text` representation of someone's id into appropriate
  *  `UserID` object.
  *
- *  Always returns the same object for the same `idHash`.
+ *  @param  idHash  `Text` representation of id hash, associated with
+ *      a particular user.
+ *  @return `UserID` associated with given `idHash`. Always returns the same
+ *      object for the same `idHash`. Can return `none` if `UserID` cannot be
+ *      correctly initialized with given `idHash` (guaranteed not to happen for
+ *      any valid id hashes).
  */
-public final function UserID FetchUserID(string idHash)
+public final function UserID FetchUserID(Text idHash)
 {
     local int               i;
     local UserID.SteamID    steamID;
     local UserID            newUserID;
+    if (idHash == none) {
+        return none;
+    }
     steamID = class'UserID'.static.GetSteamIDFromIDHash(idHash);
     for (i = 0; i < storedUserIDs.length; i += 1)
     {
-        if (storedUserIDs[i].IsEqualToSteamID(steamID)) {
+        if (storedUserIDs[i].IsEqualToSteamID(steamID))
+        {
+            _.memory.Free(steamID.steamID64);
             return storedUserIDs[i];
         }
     }
-    newUserID = UserID(_().memory.Allocate(class'UserID'));
+    newUserID = UserID(_.memory.Allocate(class'UserID'));
     newUserID.InitializeWithSteamID(steamID);
-    storedUserIDs[storedUserIDs.length] = newUserID;
-    return newUserID;
+    if (newUserID.IsInitialized())
+    {
+        storedUserIDs[storedUserIDs.length] = newUserID;
+        return newUserID;
+    }
+    _.memory.Free(steamID.steamID64);
+    _.memory.Free(newUserID);
+    return none;
 }
 
 /**
@@ -93,7 +108,7 @@ public final function User FetchUser(UserID userID)
             return sessionUsers[i];
         }
     }
-    newUser = User(_().memory.Allocate(class'User'));
+    newUser = User(__().memory.Allocate(class'User'));
     newUser.Initialize(userID, sessionUsers.length + 1);
     sessionUsers[sessionUsers.length] = newUser;
     return newUser;

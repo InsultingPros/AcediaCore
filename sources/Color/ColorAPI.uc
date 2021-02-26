@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ColorAPI extends Singleton
+class ColorAPI extends AcediaObject
     dependson(Parser)
     config(AcediaSystem);
 
@@ -44,6 +44,29 @@ enum ColorDisplayType
 //      Some useful predefined color values.
 //      They are marked as `config` to allow server admins to mess about with
 //  colors if they want to.
+
+//  System colors for displaying text and variables
+var public config const Color TextDefault;
+var public config const Color TextSubtle;
+var public config const Color TextEmphasis;
+var public config const Color TextOk;
+var public config const Color TextWarning;
+var public config const Color TextFailure;
+var public config const Color TypeNumber;
+var public config const Color TypeBoolean;
+var public config const Color TypeString;
+var public config const Color TypeLiteral;
+var public config const Color TypeClass;
+//  Colors for displaying JSON values
+var public config const Color jPropertyName;
+var public config const Color jObjectBraces;
+var public config const Color jArrayBraces;
+var public config const Color jComma;
+var public config const Color jColon;
+var public config const Color jNumber;
+var public config const Color jBoolean;
+var public config const Color jString;
+var public config const Color jNull;
 //  Pink colors
 var public config const Color Pink;
 var public config const Color LightPink;
@@ -490,16 +513,20 @@ private final function Color ParseRGB(Parser parser)
     local int                   blueComponent;
     local Parser.ParserState    initialParserState;
     initialParserState = parser.GetCurrentState();
-    parser.Match("rgb(", true)
-        .MInteger(redComponent).Match(",")
-        .MInteger(greenComponent).Match(",")
-        .MInteger(blueComponent).Match(")");
+    parser.MatchS("rgb(", SCASE_INSENSITIVE)
+        .MInteger(redComponent).MatchS(",")
+        .MInteger(greenComponent).MatchS(",")
+        .MInteger(blueComponent).MatchS(")");
     if (!parser.Ok())
     {
-        parser.RestoreState(initialParserState).Match("rgb(", true)
-            .Match("r=", true).MInteger(redComponent).Match(",")
-            .Match("g=", true).MInteger(greenComponent).Match(",")
-            .Match("b=", true).MInteger(blueComponent).Match(")");
+        parser.RestoreState(initialParserState)
+            .MatchS("rgb(", SCASE_INSENSITIVE)
+            .MatchS("r=", SCASE_INSENSITIVE)
+            .MInteger(redComponent).MatchS(",")
+            .MatchS("g=", SCASE_INSENSITIVE)
+            .MInteger(greenComponent).MatchS(",")
+            .MatchS("b=", SCASE_INSENSITIVE)
+            .MInteger(blueComponent).MatchS(")");
     }
     return RGB(redComponent, greenComponent, blueComponent);
 }
@@ -513,18 +540,23 @@ private final function Color ParseRGBA(Parser parser)
     local int                   alphaComponent;
     local Parser.ParserState    initialParserState;
     initialParserState = parser.GetCurrentState();
-    parser.Match("rgba(", true)
-        .MInteger(redComponent).Match(",")
-        .MInteger(greenComponent).Match(",")
-        .MInteger(blueComponent).Match(",")
-        .MInteger(alphaComponent).Match(")");
+    parser.MatchS("rgba(", SCASE_INSENSITIVE)
+        .MInteger(redComponent).MatchS(",")
+        .MInteger(greenComponent).MatchS(",")
+        .MInteger(blueComponent).MatchS(",")
+        .MInteger(alphaComponent).MatchS(")");
     if (!parser.Ok())
     {
-        parser.RestoreState(initialParserState).Match("rgba(", true)
-            .Match("r=", true).MInteger(redComponent).Match(",")
-            .Match("g=", true).MInteger(greenComponent).Match(",")
-            .Match("b=", true).MInteger(blueComponent).Match(",")
-            .Match("a=", true).MInteger(alphaComponent).Match(")");
+        parser.RestoreState(initialParserState)
+            .MatchS("rgba(", SCASE_INSENSITIVE)
+            .MatchS("r=", SCASE_INSENSITIVE)
+            .MInteger(redComponent).MatchS(",")
+            .MatchS("g=", SCASE_INSENSITIVE)
+            .MInteger(greenComponent).MatchS(",")
+            .MatchS("b=", SCASE_INSENSITIVE)
+            .MInteger(blueComponent).MatchS(",")
+            .MatchS("a=", SCASE_INSENSITIVE)
+            .MInteger(alphaComponent).MatchS(")");
     }
     return RGBA(redComponent, greenComponent, blueComponent, alphaComponent);
 }
@@ -535,7 +567,7 @@ private final function Color ParseHexColor(Parser parser)
     local int redComponent;
     local int greenComponent;
     local int blueComponent;
-    parser.Match("#")
+    parser.MatchS("#")
         .MUnsignedInteger(redComponent, 16, 2)
         .MUnsignedInteger(greenComponent, 16, 2)
         .MUnsignedInteger(blueComponent, 16, 2);
@@ -559,21 +591,25 @@ private final function Color ParseHexColor(Parser parser)
 public final function bool ParseWith(Parser parser, out Color resultingColor)
 {
     local bool                  successfullyParsed;
-    local string                colorAlias;
+    local Text                  colorContent;
+    local MutableText           colorAlias;
     local Parser                colorParser;
     local Parser.ParserState    initialParserState;
     if (parser == none) return false;
     resultingColor.a    = 0xff;
     colorParser         = parser;
     initialParserState  = parser.GetCurrentState();
-    if (parser.Match("$").MUntil(colorAlias,, true).Ok())
+    if (parser.MatchS("$").MUntil(colorAlias,, true).Ok())
     {
-        colorParser = _.text.ParseString(_.alias.TryColor(colorAlias));
+        colorContent = _.alias.ResolveColor(colorAlias);
+        colorParser = _.text.Parse(colorContent);
         initialParserState = colorParser.GetCurrentState();
+        _.memory.Free(colorContent);
     }
     else {
         parser.RestoreState(initialParserState);
     }
+    colorAlias.FreeSelf();
     resultingColor = ParseRGB(colorParser);
     if (!colorParser.Ok())
     {
@@ -601,18 +637,15 @@ public final function bool ParseWith(Parser parser, out Color resultingColor)
  *  @param  resultingColor  Parsed color will be written here if parsing is
  *      successful, otherwise value is undefined.
  *      If parsed color did not specify alpha component - 255 will be used.
- *  @param  stringType      How to treat given `string`,
- *      see `StringType` for more details.
  *  @return `true` if parsing was successful and false otherwise.
  */
 public final function bool ParseString(
-    string                      stringWithColor,
-    out Color                   resultingColor,
-    optional Text.StringType    stringType)
+    string      stringWithColor,
+    out Color   resultingColor)
 {
     local bool      successfullyParsed;
     local Parser    colorParser;
-    colorParser = _.text.ParseString(stringWithColor, stringType);
+    colorParser = _.text.ParseString(stringWithColor);
     successfullyParsed = ParseWith(colorParser, resultingColor);
     _.memory.Free(colorParser);
     return successfullyParsed;
@@ -641,31 +674,28 @@ public final function bool Parse(
     return successfullyParsed;
 }
 
-/**
- *  Parses a color in any of the `ColorDisplayType` representations from the
- *  beginning of a given raw data.
- *
- *  @param  rawDataWithColor    Raw data, that contains color definition at
- *      the beginning. Anything after color definition is not used.
- *  @param  resultingColor      Parsed color will be written here if parsing is
- *      successful, otherwise value is undefined.
- *      If parsed color did not specify alpha component - 255 will be used.
- *  @return `true` if parsing was successful and false otherwise.
- */
-public final function bool ParseRaw(
-    array<Text.Character>   rawDataWithColor,
-    out Color               resultingColor)
-{
-    local bool      successfullyParsed;
-    local Parser    colorParser;
-    colorParser = _.text.ParseRaw(rawDataWithColor);
-    successfullyParsed = ParseWith(colorParser, resultingColor);
-    _.memory.Free(colorParser);
-    return successfullyParsed;
-}
-
 defaultproperties
 {
+    TextDefault=(R=255,G=255,B=255,A=255)
+    TextSubtle=(R=128,G=128,B=128,A=255)
+    TextEmphasis=(R=0,G=128,B=255,A=255)
+    TextOk=(R=0,G=255,B=0,A=255)
+    TextWarning=(R=255,G=128,B=0,A=255)
+    TextFailure=(R=255,G=0,B=0,A=255)
+    TypeNumber=(R=255,G=235,B=172,A=255)
+    TypeBoolean=(R=199,G=226,B=244,A=255)
+    TypeString=(R=243,G=204,B=223,A=255)
+    TypeLiteral=(R=194,G=239,B=235,A=255)
+    TypeClass=(R=218,G=219,B=240,A=255)
+    jPropertyName=(R=255,G=255,B=255,A=255)
+    jObjectBraces=(R=128,G=128,B=128,A=255)
+    jArrayBraces=(R=128,G=128,B=128,A=255)
+    jComma=(R=128,G=128,B=128,A=255)
+    jColon=(R=128,G=128,B=128,A=255)
+    jNumber=(R=181,G=137,B=0,A=255)
+    jBoolean=(R=38,G=139,B=210,A=255)
+    jString=(R=211,G=54,B=130,A=255)
+    jNull=(R=42,G=161,B=152,A=255)
     Pink=(R=255,G=192,B=203,A=255)
     LightPink=(R=255,G=182,B=193,A=255)
     HotPink=(R=255,G=105,B=180,A=255)

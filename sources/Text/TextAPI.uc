@@ -1,8 +1,7 @@
 /**
- *      API that provides functions for working with text data, including
- *  standard `string` and Acedia's `Text` and raw string format
- *  `array<Text.Character>`.
- *      Copyright 2020 Anton Tarasenko
+ *      API that provides functions for working with characters and for creating
+ *  `Text` and `Parser` instances.
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -19,388 +18,60 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class TextAPI extends Singleton
+class TextAPI extends AcediaObject
     dependson(Text);
 
-//  Escape code point is used to change output's color and is used in
-//  Unreal Engine's `string`s.
-var private const int CODEPOINT_ESCAPE;
-//  Opening and closing symbols for colored blocks in formatted strings.
-var private const int CODEPOINT_OPEN_FORMAT;
-var private const int CODEPOINT_CLOSE_FORMAT;
-//  Symbol to escape any character in formatted strings,
-//  including above mentioned opening and closing symbols.
-var private const int CODEPOINT_FORMAT_ESCAPE;
-
-//      Every formatted string essentially consists of multiple differently
-//  formatted (colored) parts. Such strings will be more convenient for us to
-//  work with if we separate them from each other.
-//      This structure represents one such block: maximum uninterrupted
-//  substring, every character of which has identical formatting.
-//      Do note that a single block does not define text formatting, -
-//  it is defined by the whole sequence of blocks before it
-//  (if `isOpening == false` you only know that you should change previous
-//  formatting, but you do not know to what).
-struct FormattedBlock
+/**
+ *  Creates a new `Formatting` structure that defines a default,
+ *  "empty formatting" (no specifics about how to format text)
+ *
+ *  Cannot fail.
+ *
+ *  @return Empty formatting object.
+ */
+public final function Text.Formatting EmptyFormatting()
 {
-    //  Did this block start by opening or closing formatted part?
-    //  Ignored for the very first block without any formatting.
-    var bool                    isOpening;
-    //  Full text inside the block, without any formatting
-    var array<Text.Character>   contents;
-    //  Formatting tag for this block
-    //  (ignored for `isOpening == false`)
-    var string          tag;
-    //  Whitespace symbol that separates tag from the `contents`;
-    //  For the purposes of reassembling a `string` broken into blocks.
-    var Text.Character  delimiter;
-};
-
-private final function FormattedBlock CreateFormattedBlock(bool isOpening)
-{
-    local FormattedBlock newBlock;
-    newBlock.isOpening = isOpening;
-    return newBlock;
-}
-
-//      Function that breaks formatted string into array of `FormattedBlock`s.
-//      Returned array is guaranteed to always have at least one block.
-//      First block in array always corresponds to part of the input string
-//  (`source`) without any formatting defined, even if it's empty.
-//  This is to avoid `FormattedBlock` having a third option besides two defined
-//  by `isOpening` variable.
-private final function array<FormattedBlock> DecomposeFormattedString(
-    string source)
-{
-    local Parser                parser;
-    local Text.Character        nextCharacter;
-    local FormattedBlock        nextBlock;
-    local array<FormattedBlock> result;
-    parser = ParseString(source, STRING_Plain);
-    while (!parser.HasFinished()) {
-        parser.MCharacter(nextCharacter);
-        //  New formatted block by "{<color>"
-        if (IsCodePoint(nextCharacter, CODEPOINT_OPEN_FORMAT))
-        {
-            result[result.length] = nextBlock;
-            nextBlock = CreateFormattedBlock(true);
-            parser.MUntil(nextBlock.tag,, true).MCharacter(nextBlock.delimiter);
-            if (!parser.Ok()) {
-                break;
-            }
-            continue;
-        }
-        //  New formatted block by "}"
-        if (IsCodePoint(nextCharacter, CODEPOINT_CLOSE_FORMAT))
-        {
-            result[result.length] = nextBlock;
-            nextBlock = CreateFormattedBlock(false);
-            continue;
-        }
-        //  Escaped sequence
-        if (IsCodePoint(nextCharacter, CODEPOINT_FORMAT_ESCAPE)) {
-            parser.MCharacter(nextCharacter);
-        }
-        if (!parser.Ok()) {
-            break;
-        }
-        nextBlock.contents[nextBlock.contents.length] = nextCharacter;
-    }
-    //  Only put in empty block if there is nothing else.
-    if (nextBlock.contents.length > 0 || result.length == 0) {
-        result[result.length] = nextBlock;
-    }
-    _.memory.Free(parser);
-    return result;
+    local Text.Formatting emptyFormatting;
+    return emptyFormatting;
 }
 
 /**
- *  Converts given `string` (`source`) of specified type `sourceType`
- *  into the "raw data", a sequence of individually colored symbols.
+ *  Creates a new `Formatting` structure that defines a specified color.
  *
- *  @param  source      `string` that we want to break into a raw data.
- *  @param  sourceType  Type of the `string`, plain by default.
- *  @return Raw data, corresponding to the given `string` if it's
- *      treated according to `sourceType`.
+ *  Cannot fail.
+ *
+ *  @param  color   Color that formatting must have.
+ *  @return Formatting object that describes text colored with `color`.
  */
-public final function array<Text.Character> StringToRaw(
-    string                      source,
-    optional Text.StringType    sourceType
-)
+public final function Text.Formatting FormattingFromColor(Color color)
 {
-    if (sourceType == STRING_Plain)     return StoR_Plain(source);
-    if (sourceType == STRING_Formatted) return StoR_Formatted(source);
-    return StoR_Colored(source);
-}
-
-//  Subroutine for converting plain string into raw data
-private final function array<Text.Character> StoR_Plain(string source)
-{
-    local int                   i;
-    local int                   sourceLength;
-    local Text.Character        nextCharacter;
-    local array<Text.Character> result;
-
-    //  Decompose `source` into integer codes
-    sourceLength = Len(source);
-    for (i = 0; i < sourceLength; i += 1)
-    {
-        nextCharacter.codePoint = Asc(Mid(source, i, 1));
-        result[result.length] = nextCharacter;
-    }
-    return result;
-}
-
-//  Subroutine for converting colored string into raw data
-private final function array<Text.Character> StoR_Colored(string source)
-{
-    local int                   i;
-    local int                   sourceLength;
-    local array<int>            sourceAsIntegers;
-    local Text.Character        nextCharacter;
-    local array<Text.Character> result;
-
-    //  Decompose `source` into integer codes
-    sourceLength = Len(source);
-    for (i = 0; i < sourceLength; i += 1)
-    {
-        sourceAsIntegers[sourceAsIntegers.length] = Asc(Mid(source, i, 1));
-    }
-    //  Record string as array of `Character`s, parsing color tags
-    i = 0;
-    while (i < sourceLength)
-    {
-        if (sourceAsIntegers[i] == CODEPOINT_ESCAPE)
-        {
-            if (i + 3 >= sourceLength) break;
-            nextCharacter.colorType = STRCOLOR_Struct;
-            nextCharacter.color = _.color.RGB(  sourceAsIntegers[i + 1],
-                                                sourceAsIntegers[i + 2],
-                                                sourceAsIntegers[i + 3]);
-            i += 4;
-        }
-        else
-        {
-            nextCharacter.codePoint = sourceAsIntegers[i];
-            result[result.length] = nextCharacter;
-            i += 1;
-        }
-    }
-    return result;
-}
-
-//  Subroutine for converting formatted string into raw data
-private final function array<Text.Character> StoR_Formatted(string source)
-{
-    local int                   i, j;
-    local Parser                parser;
-    local Text.Character        nextCharacter;
-    local array<FormattedBlock> decomposedSource;
-    local array<Text.Character> blockContentsCopy;
-    local array<Text.Character> colorStack;
-    local array<Text.Character> result;
-    parser                  = Parser(_.memory.Borrow(class'Parser'));
-    nextCharacter.colorType = STRCOLOR_Default;
-    decomposedSource        = DecomposeFormattedString(source);
-    //  First element of `decomposedSource` is special and has
-    //  no color information, see `DecomposeFormattedString()` for details.
-    result = decomposedSource[0].contents;
-    for (i = 1; i < decomposedSource.length; i += 1)
-    {
-        if (decomposedSource[i].isOpening)
-        {
-            parser.Initialize(decomposedSource[i].tag);
-            nextCharacter = PushIntoColorStack(colorStack, parser);
-        }
-        else if (colorStack.length > 0) {
-            nextCharacter = PopColorStack(colorStack);
-        }
-        //  This whole method is mostly to decide which formatting each symbol
-        //  should have, so we only copy code points from block's `contents`.
-        blockContentsCopy = decomposedSource[i].contents;
-        for (j = 0; j < blockContentsCopy.length; j += 1)
-        {
-            nextCharacter.codePoint = blockContentsCopy[j].codePoint;
-            result[result.length] = nextCharacter;
-        }
-    }
-    _.memory.Free(parser);
-    return result;
-}
-
-//      Following two functions are to maintain a "color stack" that will
-//  remember unclosed colors (new colors are obtained from a parser) defined in
-//  formatted string, on order.
-//      It is necessary to deal with possible folded formatting definitions in
-//  formatted strings.
-//      For storing the color information we simply use `Text.Character`,
-//  ignoring all information that is not related to colors.
-private final function Text.Character PushIntoColorStack(
-    out array<Text.Character>   stack,
-    Parser                      colorDefinitionParser)
-{
-    local Text.Character coloredCharacter;
-    if (colorDefinitionParser.Match("$").Ok()) {
-        coloredCharacter.colorType = STRCOLOR_Alias;
-        colorDefinitionParser.MUntil(coloredCharacter.colorAlias,, true);
-    }
-    else {
-        coloredCharacter.colorType = STRCOLOR_Struct;
-    }
-    colorDefinitionParser.R();
-    if (!_.color.ParseWith(colorDefinitionParser, coloredCharacter.color)) {
-        coloredCharacter.colorType = STRCOLOR_Default;
-    }
-    stack[stack.length] = coloredCharacter;
-    return coloredCharacter;
-}
-
-private final function Text.Character PopColorStack(
-    out array<Text.Character> stack)
-{
-    local Text.Character coloredCharacter;
-    stack.length = Max(0, stack.length - 1);
-    if (stack.length > 0) {
-        coloredCharacter = stack[stack.length - 1];
-    }
-    else {
-        coloredCharacter.colorType = STRCOLOR_Default;
-    }
-    return coloredCharacter;
+    local Text.Formatting coloredFormatting;
+    coloredFormatting.isColored = true;
+    coloredFormatting.color = color;
+    return coloredFormatting;
 }
 
 /**
- *  Converts given "raw data" (`source`) into a `string` of a specified type
- *  `sourceType`.
+ *  Checks if two `Text.Formatting` structures are the same.
  *
- *  @param  source      Raw data that we want to assemble into a `string`.
- *  @param  sourceType  Type of the `string` we want to assemble,
- *      plain by default.
- *  @return `string`, assembled from given "raw data" in `sourceType` format.
- */
-public final function string RawToString(
-    array<Text.Character>       source,
-    optional Text.StringType    sourceType,
-    optional Color              defaultColor
-)
-{
-    if (sourceType == STRING_Plain)     return RtoS_Plain(source);
-    if (sourceType == STRING_Formatted) return RtoS_Formatted(source);
-    return RtoS_Colored(source, defaultColor);
-}
-
-//  Subroutine for converting raw data into plain `string`
-private final function string RtoS_Plain(array<Text.Character> rawData)
-{
-    local int       i;
-    local string    result;
-    for (i = 0; i < rawData.length; i += 1)
-    {
-        result $= Chr(rawData[i].codePoint);
-    }
-    return result;
-}
-
-//  Subroutine for converting raw data into colored `string`
-private final function string RtoS_Colored
-(
-    array<Text.Character>   rawData,
-    Color                   defaultColor
-)
-{
-    local int       i;
-    local Color     currentColor;
-    local Color     nextColor;
-    local string    result;
-    defaultColor = _.color.FixColor(defaultColor);
-    for (i = 0; i < rawData.length; i += 1)
-    {
-        //  Skip any escape codepoints to avoid unnecessary colorization
-        if (IsCodePoint(rawData[i], CODEPOINT_ESCAPE)) continue;
-        //  Find `nextColor` that `rawData[i]` is supposed to have
-        if (rawData[i].colorType != STRCOLOR_Default)
-        {
-            nextColor = _.color.FixColor(rawData[i].color);
-        }
-        else
-        {
-            nextColor = defaultColor;
-        }
-        //  Add color tag (either initially or when color changes)
-        if (i == 0 || !_.color.AreEqual(nextColor, currentColor))
-        {
-            currentColor = nextColor;
-            result $= Chr(CODEPOINT_ESCAPE);
-            result $= Chr(currentColor.r);
-            result $= Chr(currentColor.g);
-            result $= Chr(currentColor.b);
-        }
-        result $= Chr(rawData[i].codePoint);
-    }
-    return result;
-}
-
-//  Subroutine for converting raw data into formatted `string`
-private final function string RtoS_Formatted(array<Text.Character> rawData)
-{
-    local int               i;
-    local bool              isColorChange;
-    local Text.Character    previousCharacter;
-    local string            result;
-    previousCharacter.colorType = STRCOLOR_Default;
-    for (i = 0; i < rawData.length; i += 1)
-    {
-        isColorChange = rawData[i].colorType != previousCharacter.colorType;
-        if (!isColorChange && rawData[i].colorType != STRCOLOR_Default)
-        {
-            isColorChange = !_.color.AreEqual(  rawData[i].color,
-                                                previousCharacter.color);
-        }
-        if (isColorChange)
-        {
-            if (previousCharacter.colorType != STRCOLOR_Default) {
-                result $= "}";
-            }
-            if (rawData[i].colorType == STRCOLOR_Struct) {
-                result $= "{" $ _.color.ToString(rawData[i].color) $ " ";
-            }
-            if (rawData[i].colorType == STRCOLOR_Alias) {
-                result $= "{" $ "$" $ rawData[i].colorAlias $ " ";
-            }
-        }
-        if (    IsCodePoint(rawData[i], CODEPOINT_OPEN_FORMAT)
-            ||  IsCodePoint(rawData[i], CODEPOINT_CLOSE_FORMAT)) {
-            result $= "&";
-        }
-        result $= Chr(rawData[i].codePoint);
-        previousCharacter = rawData[i];
-    }
-    if (previousCharacter.colorType != STRCOLOR_Default) {
-        result $= "}";
-    }
-    return result;
-}
-
-/**
- *  Converts between three different types of `string`.
+ *  To be considered the same both formatting must be either colorless or
+ *  both have the same color.
  *
- *  @param  input           `string` to convers
- *  @param  currentType     Current type of the given `string`.
- *  @param  newType         Type to which given `string` must be converted to.
- *  @param  defaultColor    In case `input` is being converted into a
- *      `STRING_Colored` type, this color will be used for characters
- *      without one. Otherwise unused.
+ *  @param  formatting1 Formatting to compare.
+ *  @param  formatting2 Formatting to compare.
+ *  @return `true` if formattings are equal and `false` otherwise.
  */
-public final function string ConvertString(
-    string          input,
-    Text.StringType currentType,
-    Text.StringType newType,
-    optional Color  defaultColor)
+public final function bool IsFormattingEqual(
+    Text.Formatting formatting1,
+    Text.Formatting formatting2)
 {
-    local array<Text.Character> rawData;
-    if (currentType == newType) return input;
-    rawData = StringToRaw(input, currentType);
-    return RawToString(rawData, newType, defaultColor);
+    if (formatting1.isColored != formatting2.isColored) {
+        return false;
+    }
+    if (!formatting1.isColored) {
+        return true;
+    }
+    return _.color.AreEqualWithAlpha(formatting1.color, formatting2.color);
 }
 
 /**
@@ -432,40 +103,6 @@ public final function bool IsLower(Text.Character character)
 }
 
 /**
- *  Checks if given `string` is in lower case.
- *
- *  This function returns `true` as long as it's equal to it's own
- *  `ToLowerString()` folding.
- *  This means that it can contain symbols that neither lower or upper case, or
- *  upper case symbols that don't have a lower case folding.
- *
- *  To check whether a symbol is lower cased, use a combination of
- *  `GetCharacter()` and `IsLower()`.
- *
- *  @param  source      `string` to check for being in lower case.
- *  @param  sourceType  Type of the `string` to check; default is plain string.
- *  @return `true` if `string` is equal to it's own lower folding,
- *      (per character given by `ToLower()` method).
- */
-public final function bool IsLowerString
-(
-    string                      source,
-    optional Text.StringType    sourceType
-)
-{
-    local int                   i;
-    local array<Text.Character> rawData;
-    rawData = StringToRaw(source, sourceType);
-    for (i = 0; i < rawData.length; i += 1)
-    {
-        if (rawData[i] != ToLower(rawData[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
  *  Checks if given character is upper case.
  *
  *      Result of this method describes whether character is
@@ -494,40 +131,6 @@ public final function bool IsUpper(Text.Character character)
 }
 
 /**
- *  Checks if given `string` is in upper case.
- *
- *  This function returns `true` as long as it's equal to it's own
- *  `ToUpperString()` folding.
- *  This means that it can contain symbols that neither lower or upper case, or
- *  lower case symbols that don't have an upper case folding.
- *
- *  To check whether a symbol is upper cased, use a combination of
- *  `GetCharacter()` and `IsUpper()`.
- *
- *  @param  source  `string` to check for being in upper case.
- *  @param  sourceType  Type of the `string` to check; default is plain string.
- *  @return `true` if `string` is equal to it's own upper folding,
- *      (per character given by `ToUpper()` method).
- */
-public final function bool IsUpperString
-(
-    string                      source,
-    optional Text.StringType    sourceType
-)
-{
-    local int                   i;
-    local array<Text.Character> rawData;
-    rawData = StringToRaw(source, sourceType);
-    for (i = 0; i < rawData.length; i += 1)
-    {
-        if (rawData[i] != ToUpper(rawData[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
  *  Checks if given character corresponds to a digit.
  *
  *  @param  codePoint   Unicode code point to check for being a digit.
@@ -553,32 +156,6 @@ public final function bool IsASCII(Text.Character character)
         return true;
     }
     return false;
-}
-
-/**
- *  Checks if given `string` consists only from ASCII characters
- *  (ignoring characters in 4-byte color change sequences in colored strings).
- *
- *  @param  source      `string` to test for being ASCII-only.
- *  @param  sourceType  Type of the passed `string`.
- *  @return `true` if passed `string` contains only ASCII characters.
- */
-public final function bool IsASCIIString
-(
-    string                      source,
-    optional Text.StringType    sourceType
-)
-{
-    local int                   i;
-    local array<Text.Character> rawData;
-    rawData = StringToRaw(source, sourceType);
-    for (i = 0; i < rawData.length; i += 1)
-    {
-        if (!IsASCII(rawData[i])) {
-            return false;
-        }
-    }
-    return true;
 }
 
 /**
@@ -643,6 +220,45 @@ public final function bool IsQuotationMark(Text.Character character)
 }
 
 /**
+ *  Extracts a character at position `position` from a given plain `string`.
+ *
+ *  For extracting multiple character or character from colored/formatted
+ *  `string` we advice to convert `string` into `Text` instead.
+ *
+ *  @param  source      `string`, from which to extract the character.
+ *  @param  position    Position of the character to extract, starts from `0`.
+ *  @return Returns character at given position in the given source.
+ *      If specified position is invalid (`< 0` or `>= Len(source)`),
+ *      returns invalid character.
+ */
+public final function Text.Character GetCharacter(
+    string          source,
+    optional int    position)
+{
+    local Text.Character result;
+    if (position < 0)               return GetInvalidCharacter();
+    if (position >= Len(source))    return GetInvalidCharacter();
+
+    result.codePoint = Asc(Mid(source, position, 1));
+    return result;
+}
+
+/**
+ *  Creates a `string` that consists only of a given character.
+ *
+ *  @param  character   Character that will be converted into a string.
+ *  @return `string` that consists only of a given character,
+ *      if given character is valid. Empty `string` otherwise.
+ */
+public final function string CharacterToString(Text.Character character)
+{
+    if (!IsValidCharacter(character)) {
+        return "";
+    }
+    return Chr(character.codePoint);
+}
+
+/**
  *  Converts given character into a number it represents in some base
  *  (from 2 to 36), i.e.:
  *  1 -> 1
@@ -662,8 +278,7 @@ public final function bool IsQuotationMark(Text.Character character)
  *      given character in given base;
  *      `-1` if given character does not represent anything in the given base.
  */
-public final function int CharacterToInt
-(
+public final function int CharacterToInt(
     Text.Character  character,
     optional int    base
 )
@@ -705,45 +320,39 @@ public final function bool IsCodePoint(Text.Character character, int codePoint)
 }
 
 /**
- *  Returns a particular character from a given `string`, of a given type,
- *  with preserved color information.
+ *  Extracts formatting of the given character.
  *
- *  @param  source      String, from which to fetch the character.
- *  @param  position    Which, in order, character to fetch
- *      (starting counting from '0').
- *      By default returns first (`0`th) character.
- *  @param  sourceType  Type of the given `source` `string`.
- *  @return Character from a `source` at a given position `position`.
- *      If given position is out-of-bounds for a given `string`
- *      (it is either negative or at least the same as a total character count),
- *      - returns invalid character.
+ *  @param  character   Character to get formatting of.
+ *  @return Returns formatting of the given character.
+ *      Always returns 'null' (not colored) formatting for invalid characters.
  */
-public final function Text.Character GetCharacter
-(
-    string                      source,
-    optional int                position,
-    optional Text.StringType    sourceType
-)
+public final function Text.Formatting GetCharacterFormatting(
+    Text.Character character)
 {
-    local Text.Character        resultCharacter;
-    local array<Text.Character> rawData;
-    if (position < 0) return GetInvalidCharacter();
+    local Text.Formatting emptyFormatting;
+    if(IsValidCharacter(character)) {
+        return character.formatting;
+    }
+    return emptyFormatting;
+}
 
-    //  `STRING_Plain` is the only type where we do not need to do any parsing
-    //  and get just fetch a character, so handle it separately.
-    if (sourceType == STRING_Plain)
-    {
-        if (position >= Len(source)) {
-            return GetInvalidCharacter();
-        }
-        resultCharacter.codePoint = Asc(Mid(source, position, 1));
-        return resultCharacter;
+/**
+ *  Changes formatting of a given character.
+ *
+ *  @param  character       Character to change formatting of.
+ *  @param  newFormatting   New formatting to set.
+ *  @return Same character as `character`, but with new formatting.
+ *      Invalid characters are not altered.
+ */
+public final function Text.Character SetFormatting(
+    Text.Character  character,
+    Text.Formatting newFormatting)
+{
+    if(!IsValidCharacter(character)) {
+        return character;
     }
-    rawData = StringToRaw(source, sourceType);
-    if (position >= rawData.length) {
-        return GetInvalidCharacter();
-    }
-    return rawData[position];
+    character.formatting = newFormatting;
+    return character;
 }
 
 /**
@@ -759,12 +368,12 @@ public final function Text.Character GetCharacter
  */
 public final function Color GetCharacterColor(
     Text.Character  character,
-    Color           defaultColor)
+    optional Color  defaultColor)
 {
-    if (character.colorType == STRCOLOR_Default) {
-        return defaultColor;
+    if (character.formatting.isColored) {
+        return character.formatting.color;
     }
-    return character.color;
+    return defaultColor;
 }
 
 /**
@@ -796,61 +405,45 @@ public final function bool IsValidCharacter(Text.Character character)
  *  Checks if given characters are equal, with or without accounting
  *  for their case.
  *
- *  @param  codePoint1      Character to compare.
- *  @param  codePoint2      Character to compare.
- *  @param  caseInsensitive Optional parameter,
- *      if `false` we will require characters to be exactly the same,
- *      if `true` we will also consider characters equal if they
- *      only differ by case.
+ *      This method supports comparison both sensitive and not sensitive to
+ *  the case and difference in formatting (color of the characters).
+ *      By default comparison is case-sensitive, but ignores
+ *  formatting information.
+ *
+ *      Invalid characters are always considered equal to each other
+ *  (precise value of their `codePoint` or `formatting` is irrelevant).
+ *
+ *  @param  codePoint1          Character to compare.
+ *  @param  codePoint2          Character to compare.
+ *  @param  caseSensitivity     Defines whether comparison should be
+ *      case-sensitive. By default it is.
+ *  @param  formatSensitivity   Defines whether comparison should be
+ *      sensitive for color information. By default it is not.
  *  @return `true` if given characters are considered equal,
  *      `false` otherwise.
  */
 public final function bool AreEqual(
-    Text.Character character1,
-    Text.Character character2,
-    optional bool caseInsensitive
+    Text.Character                  character1,
+    Text.Character                  character2,
+    optional Text.CaseSensitivity   caseSensitivity,
+    optional Text.FormatSensitivity formatSensitivity
 )
 {
-    if (character1.codePoint == character2.codePoint)           return true;
+    //  These handle checks with invalid characters
     if (character1.codePoint < 0 && character2.codePoint < 0)   return true;
+    if (character1.codePoint < 0 || character2.codePoint < 0)   return false;
 
-    if (caseInsensitive)
+    if (caseSensitivity == SCASE_INSENSITIVE)
     {
         character1 = ToLower(character1);
         character2 = ToLower(character2);
     }
-    return (character1.codePoint == character2.codePoint);
-}
-
-/**
- *  Checks if given `string`s are equal to each other, with or without
- *  accounting for their case.
- *
- *  @param  string1         `string` to compare.
- *  @param  string2         `string` to compare.
- *  @param  caseInsensitive Optional parameter,
- *      if `false` we will require `string`s to be exactly the same,
- *      if `true` we will also consider `string`s equal if their corresponding
- *      characters only differ by case.
- *  @return `true` if given `string`s are considered equal, `false` otherwise.
- */
-public final function bool AreEqualStrings(
-    string string1,
-    string string2,
-    optional bool caseInsensitive
-)
-{
-    local int                   i;
-    local array<Text.Character> rawData1, rawData2;
-    rawData1 = StringToRaw(string1);
-    rawData2 = StringToRaw(string2);
-    if (rawData1.length != rawData2.length) return false;
-
-    for (i = 0; i < rawData1.length; i += 1)
+    if (    formatSensitivity == SFORM_SENSITIVE
+        &&  !IsFormattingEqual(character1.formatting, character2.formatting))
     {
-        if (!AreEqual(rawData1[i], rawData2[i], caseInsensitive)) return false;
+        return false;
     }
-    return true;
+    return (character1.codePoint == character2.codePoint);
 }
 
 /**
@@ -894,388 +487,190 @@ public final function Text.Character ToUpper(Text.Character character)
 }
 
 /**
- *  Converts `string` to lower case.
+ *      Prepares an array of parts from a given single `Text`.
+ *      First character is treated as a separator with which the rest of
+ *  the given `Text` is split into parts:
+ *      ~ "/ab/c/d" => ["ab", "c", "d"]
+ *      ~ "zWordzomgzz" => ["Word", "omg", "", ""]
  *
- *  Changes every symbol in the `string` to their lower case folding.
- *  Characters without lower case folding (like "&" or "!") are left unchanged.
+ *  This method is useful to easily prepare array of words for `Parser`'s
+ *  methods.
  *
- *  @param  source  `string` that will be converted into a lower case.
- *  @return Lower case folding of a given `string`.
+ *  @param  source  `Text` that contains separator with parts to
+ *      separate and extract.
+ *  @return Separated words. Empty array if passed `source` was empty,
+ *      otherwise contains at least one element.
  */
-public final function string ToLowerString(
-    string                      source,
-    optional Text.StringType    sourceType
-)
+public final function array<MutableText> Parts(Text source)
 {
-    if (sourceType == STRING_Plain) {
-        return ConvertCaseForString_Plain(source, LCASE_Lower);
-    }
-    if (sourceType == STRING_Formatted) {
-        return ConvertCaseForString_Formatted(source, LCASE_Lower);
-    }
-    return ConvertCaseForString_Colored(source, LCASE_Lower);
-}
-
-/**
- *  Converts `string` to upper case.
- *
- *  Changes every symbol in the `string` to their upper case folding.
- *  Characters without upper case folding (like "&" or "!") are left unchanged.
- *
- *  @param  source  `string` that will be converted into an upper case.
- *  @return Upper case folding of a given `string`.
- */
-public final function string ToUpperString(
-    string                      source,
-    optional Text.StringType    sourceType
-)
-{
-    if (sourceType == STRING_Plain) {
-        return ConvertCaseForString_Plain(source, LCASE_Upper);
-    }
-    if (sourceType == STRING_Formatted) {
-        return ConvertCaseForString_Formatted(source, LCASE_Upper);
-    }
-    return ConvertCaseForString_Colored(source, LCASE_Upper);
-}
-
-private final function string ConvertCaseForString_Plain
-(
-    string source,
-    Text.LetterCase targetCase
-)
-{
-    local int                   i;
-    local array<Text.Character> rawData;
-    rawData = StringToRaw(source, STRING_Plain);
-    for (i = 0; i < rawData.length; i += 1)
-    {
-        if (targetCase == LCASE_Lower) {
-            rawData[i] = ToLower(rawData[i]);
-        }
-        else {
-            rawData[i] = ToUpper(rawData[i]);
-        }
-    }
-    return RawToString(rawData, STRING_Plain);
-}
-
-private final function string ConvertCaseForString_Colored
-(
-    string source,
-    Text.LetterCase targetCase
-)
-{
-    local int                   i;
-    local string                result;
-    local array<Text.Character> rawData;
-    rawData = StringToRaw(source, STRING_Colored);
-    for (i = 0; i < rawData.length; i += 1)
-    {
-        if (targetCase == LCASE_Lower) {
-            rawData[i] = ToLower(rawData[i]);
-        }
-        else {
-            rawData[i] = ToUpper(rawData[i]);
-        }
-    }
-    result = RawToString(rawData, STRING_Colored);
-    if (rawData.length > 0 && rawData[0].colorType == STRCOLOR_Default) {
-        result = Mid(result, 4);
-    }
+    local array<MutableText> result;
+    if (source == none)             return result;
+    if (source.GetLength() <= 0)    return result;
+    result = source.SplitByCharacter(source.GetCharacter(0));
+    //  Since we use first character as a separator:
+    //      1. `result` is guaranteed to be non-empty;
+    //      2. We can just drop first (empty) substring.
+    result[0].FreeSelf();
+    result.Remove(0, 1);
     return result;
 }
 
-private final function string ConvertCaseForString_Formatted
-(
-    string source,
-    Text.LetterCase targetCase
-)
+/**
+ *  Creates a new, empty `MutableText`.
+ *
+ *  This is a shortcut, same result can be achieved by
+ *  `_.memory.Allocate(class'MutableText')`.
+ *
+ *  @return new instance of `Text` with empty contents.
+ */
+public final function MutableText Empty()
 {
-    //  TODO: finish it later, no one needs it right now,
-    //  no idea wtf I even bothered with these functions
-    return source;
+    return MutableText(_.memory.Allocate(class'MutableText'));
 }
 
 /**
- *  Returns hash for a raw `string` data.
+ *  Creates a `Text` that will contain a given plain `string`.
  *
- *  Uses djb2 algorithm, somewhat adapted to make use of formatting
- *  (color) information. Hopefully it did not broke horribly.
+ *  To create `MutableText` instead use `FromStringM()` method.
  *
- *  @param  rawData Data to calculate hash of.
- *  @return Hash of the given data.
+ *  @param  source  Plain `string` that will be copied into returned `Text`.
+ *  @return New instance of `Text` that will contain passed plain `string`.
  */
-public final function int GetHashRaw(array<Text.Character> rawData) {
-    local int i;
-    local int colorInt;
-    local int hash;
-    hash = 5381;
-    for (i = 0; i < rawData.length; i += 1) {
-        //  hash * 33 + rawData[i].codePoint
-        hash = ((hash << 5) + hash) + rawData[i].codePoint;
-        if (rawData[i].colorType != STRCOLOR_Default) {
-            colorInt = rawData[i].color.r
-                + rawData[i].color.g * 0x00ff
-                + rawData[i].color.b * 0xffff;
-            hash = ((hash << 5) + hash) + colorInt;
-        }
-    }
-    return hash;
-}
-
-/**
- *  Returns hash for a `string` data.
- *
- *  Uses djb2 algorithm, somewhat adapted to make use of formatting
- *  (color) information. Hopefully it did not broke horribly.
- *
- *  @param  rawData     `string` to calculate hash of.
- *  @param  sourceType  Type of the `string`, in case you want has to be more
- *      formatting-independent. Leaving default value (`STRING_Plain`) should be
- *      fine for almost any use case.
- *  @return Hash of the given data.
- */
-public final function int GetHash(
-                string source,
-    optional    Text.StringType sourceType) {
-    return GetHashRaw(StringToRaw(source, sourceType));
-}
-
-/**
- *  Creates a new, empty `Text`.
- *
- *  This is a shortcut, same result cam be achieved by `new class'Text'`.
- *
- *  @return Brand new, empty instance of `Text`.
- */
-public final function Text Empty()
+public final function Text FromString(string source)
 {
-    local Text newText;
-    newText = new class'Text';
-    return newText;
+    return class'Text'.static.ConstFromPlainString(source);
 }
 
 /**
- *  Creates a `Text` that will contain a given `string`. Parameter made optional
- *  to enable easier way of creating empty `Text`.
+ *  Creates a `MutableText` that will contain a given plain `string`.
  *
- *  @param  source  `string` that will be copied into returned `Text`.
- *  @return New instance (not taken from the object pool) of `Text` that
- *      will contain passed `string`.
+ *  To create immutable `Text` instead use `FromString()` method.
+ *
+ *  @param  source  Plain `string` that will be copied into
+ *      returned `MutableText`.
+ *  @return New instance of `MutableText` that will contain passed
+ *      plain `string`.
  */
-public final function Text FromString(optional string source)
+public final function MutableText FromStringM(string source)
 {
-    local Text newText;
-    newText = new class'Text';
-    newText.CopyString(source);
-    return newText;
+    local MutableText newText;
+    newText = MutableText(_.memory.Allocate(class'MutableText'));
+    return newText.AppendPlainString(source);
 }
 
 /**
- *  Creates a `Text` that will contain `string` with characters recorded in the
- *  given array. Parameter made optional to enable easier way of 
- *  creating empty `Text`.
+ *  Creates a `Text` that will contain a given colored `string`.
  *
- *  @param  rawData Sequence of characters that will be copied into
- *      returned `Text`.
- *  @return New instance (not taken from the object pool) of `Text` that
- *      will contain passed sequence of Unicode code points.
+ *  To create `MutableText` instead use `FromColoredStringM()` method.
+ *
+ *  @param  source  Colored `string` that will be copied into returned `Text`.
+ *  @return New instance of `Text` that will contain passed colored `string`.
  */
-public final function Text FromRaw(array<Text.Character> rawData)
+public final function Text FromColoredString(string source)
 {
-    local Text newText;
-    newText = new class'Text';
-    newText.CopyRaw(rawData);
-    return newText;
+    return class'Text'.static.ConstFromColoredString(source);
+}
+
+/**
+ *  Creates a `MutableText` that will contain a given colored `string`.
+ *
+ *  To create immutable `Text` instead use `FromColoredString()` method.
+ *
+ *  @param  source  Colored `string` that will be copied into
+ *      returned `MutableText`.
+ *  @return New instance of `MutableText` that will contain passed
+ *      colored `string`.
+ */
+public final function MutableText FromColoredStringM(string source)
+{
+    local MutableText newText;
+    newText = MutableText(_.memory.Allocate(class'MutableText'));
+    return newText.AppendColoredString(source);
+}
+
+/**
+ *  Creates a `Text` that will contain a given formatted `string`.
+ *
+ *  To create `MutableText` instead use `FromFormattedStringM()` method.
+ *
+ *  @param  source  Formatted `string` that will be copied into returned `Text`.
+ *  @return New instance of `Text` that will contain passed formatted `string`.
+ */
+public final function Text FromFormattedString(string source)
+{
+    return class'Text'.static.ConstFromFormattedString(source);
+}
+
+/**
+ *  Creates a `MutableText` that will contain a given formatted `string`.
+ *
+ *  To create immutable `Text` instead use `FromFormattedString()` method.
+ *
+ *  @param  source  Formatted `string` that will be copied into
+ *      returned `MutableText`.
+ *  @return New instance of `MutableText` that will contain passed
+ *      formatted `string`.
+ */
+public final function MutableText FromFormattedStringM(string source)
+{
+    local MutableText newText;
+    newText = MutableText(_.memory.Allocate(class'MutableText'));
+    return newText.AppendFormattedString(source);
 }
 
 /**
  *  Method for creating a new, uninitialized parser object.
  *
- *      Always creates a new parser. This method should be used when you plan to
- *  store created `Parser` and reuse later.
- *      To parse something once it's advised to use
- *  `Parse()`, `ParseString()` or `ParseRaw()` instead.
+ *  This is a shortcut, same result can be achieved by
+ *  `_.memory.Allocate(class'Parser')`.
  *
- *  It is a good practice to free created `Parser` once you don't need it.
- *
- *  @see `Parser`
- *  @return Guaranteed to be new, uninitialized `Parser`.
+ *  @return New, uninitialized `Parser`.
  */
 public final function Parser NewParser()
 {
-    return (new class'Parser');
+    return Parser(_.memory.Allocate(class'Parser'));
 }
 
 /**
  *  Method for creating a new parser, initialized with contents of given `Text`.
  *
- *      Always creates a new parser. This method should be used when you plan to
- *  store created `Parser` and reuse later.
- *      To parse something once it's advised to use `Parse()` instead.
- *
- *  It is a good practice to free created `Parser` once you don't need it.
- *
- *  @see `Parser`
  *  @param  source  Returned `Parser` will be setup to parse the contents of
  *      the passed `Text`.
  *      If `none` value is passed, - parser won't be initialized.
- *  @return Guaranteed to be new `Parser`,
- *      initialized with contents of `source`.
+ *  @return Guaranteed to be not `none` and contain a valid `Parser`.
+ *      If passed argument also is not `none`, - guaranteed to be
+ *      initialized with it's content.
  */
-public final function Parser NewParserFromText(Text source)
+public final function Parser Parse(Text source)
 {
     local Parser parser;
-    parser = new class'Parser';
-    parser.InitializeT(source);
-    return parser;
-}
-
-/**
- *  Method for creating a new parser, initialized with a given `string`.
- *
- *      Always creates a new parser. This method should be used when you plan to
- *  store created `Parser` and reuse later.
- *      To parse something once it's advised to use `ParseString()` instead.
- *
- *  It is a good practice to free created `Parser` once you don't need it.
- *
- *  @see `Parser`
- *  @param  source  Returned `Parser` will be setup to parse the `source`.
- *  @return Guaranteed to be new `Parser`, initialized with given `string`.
- */
-public final function Parser NewParserFromString(string source)
-{
-    local Parser parser;
-    parser = new class'Parser';
+    parser = NewParser();
     parser.Initialize(source);
     return parser;
 }
 
 /**
- *  Method for creating a new parser, initialized with a given sequence of
- *  characters.
+ *  Method for creating a new parser, initialized with a given plain `string`.
  *
- *      Always creates a new parser. This method should be used when you plan to
- *  store created `Parser` and reuse later.
- *      To parse something once it's advised to use `ParseRaw()` instead.
- *
- *  It is a good practice to free created `Parser` once you don't need it.
- *
- *  @see `Parser`
- *  @param  source  Returned `Parser` will be setup to parse passed
- *      characters sequence.
- *  @return Guaranteed to be new `Parser`, initialized with given
- *      characters sequence.
+ *  @param  source  Returned `Parser` will be setup to parse this
+ *      plain `string`.
+ *  @return Guaranteed to be not `none` and contain a valid `Parser`,
+ *      initialized with contents of a `source` (treated as a plain `string`).
  */
-public final function Parser NewParserFromRaw(array<Text.Character> source)
+public final function Parser ParseString(string source)
 {
     local Parser parser;
-    parser = new class'Parser';
-    parser.InitializeRaw(source);
+    parser = NewParser();
+    parser.InitializeS(source);
     return parser;
 }
 
-/**
- *      Returns "temporary" `Parser` that can be used for one-time parsing,
- *  initialized with a given sequence of characters.
- *      It will be automatically freed to be reused again after
- *  current tick ends.
- *
- *      Returned `Parser` does not have to be a new object and
- *  it is possible that it is still referenced by some buggy or malicious code.
- *      To ensure that no problem arises:
- *          1. Re-initialize returned `Parser` after executing any piece of
- *      code that you do not trust to misuse `Parser`s;
- *          2. Do not use obtained reference after current tick ends or
- *      calling `FreeParser()` on it.
- *      For more details @see `Parser`.
- *
- *  @param source   Returned `Parser` will be setup to parse passed
- *      characters sequence.
- *  @return Temporary `Parser`, initialized with given
- *      characters sequence.
- */
-public final function Parser ParseRaw(array<Text.Character> source)
+//TODO: remove this
+public final function int GetHash(string source)
 {
-    local Parser parser;
-    parser = Parser(_.memory.Borrow(class'Parser'));
-    if (parser != none)
-    {
-        parser.InitializeRaw(source);
-        return parser;
-    }
-    return none;
-}
-
-/**
- *      Returns "temporary" `Parser` that can be used for one-time parsing,
- *  initialized with contents of given `Text`.
- *      It will be automatically freed to be reused again after
- *  current tick ends.
- *
- *      Returned `Parser` does not have to be a new object and
- *  it is possible that it is still referenced by some buggy or malicious code.
- *      To ensure that no problem arises:
- *          1. Re-initialize returned `Parser` after executing any piece of
- *      code that you do not trust to misuse `Parser`s;
- *          2. Do not use obtained reference after current tick ends or
- *      calling `FreeParser()` on it.
- *      For more details @see `Parser`.
- *
- *  @param  source  Returned `Parser` will be setup to parse the contents of
- *      the passed `Text`.
- *  @return Temporary `Parser`, initialized with contents of the given `Text`.
- */
-public final function Parser Parse(Text source)
-{
-    local Parser parser;
-    if (source == none) return NewParser();
-
-    parser = Parser(_.memory.Borrow(class'Parser'));
-    if (parser != none)
-    {
-        parser.InitializeT(source);
-        return parser;
-    }
-    return none;
-}
-
-/**
- *      Returns "temporary" `Parser` that can be used for one-time parsing,
- *  initialized `string`.
- *      It will be automatically freed to be reused again after
- *  current tick ends.
- *
- *      Returned `Parser` does not have to be a new object and
- *  it is possible that it is still referenced by some buggy or malicious code.
- *      To ensure that no problem arises:
- *          1. Re-initialize returned `Parser` after executing any piece of
- *      code that you do not trust to misuse `Parser`s;
- *          2. Do not use obtained reference after current tick ends or
- *      calling `FreeParser()` on it.
- *      For more details @see `Parser`.
- *
- *  @param  source  Returned `Parser` will be setup to parse `source`.
- *  @return Temporary `Parser`, initialized with the given `string`.
- */
-public final function Parser ParseString (
-            string          source,
-optional    Text.StringType sourceType) {
-    local Parser parser;
-    parser = Parser(_.memory.Borrow(class'Parser'));
-    if (parser != none) {
-        parser.Initialize(source, sourceType);
-        return parser;
-    }
-    return none;
+    return 0;
 }
 
 defaultproperties
 {
-    CODEPOINT_ESCAPE        = 27    //  ANSI escape code
-    CODEPOINT_OPEN_FORMAT   = 123   //  '{'
-    CODEPOINT_CLOSE_FORMAT  = 125   //  '}'
-    CODEPOINT_FORMAT_ESCAPE = 38    //  '&'
 }

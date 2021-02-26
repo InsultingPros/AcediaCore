@@ -5,7 +5,7 @@
  *  standard config ini-files.
  *      Several `AliasSource`s are supposed to exist separately, each storing
  *  aliases of particular kind: for weapon, zeds, colors, etc..
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -24,10 +24,6 @@
  */
 class AliasSource extends Singleton
     config(AcediaAliases);
-
-//  Name of the configurational file (without extension) where
-//  this `AliasSource`'s data will be stored.
-var private const string configName;
 
 //      (Sub-)class of `Aliases` objects that this `AliasSource` uses to store
 //  aliases in per-object-config manner.
@@ -49,34 +45,29 @@ struct AliasValuePair
 //  Aliases data for saving and loading on a disk (ini-file).
 //  Name is chosen to make configurational files more readable.
 var private config array<AliasValuePair> record;
-//      Hash table for a faster access to value by alias' name.
+//      Faster access to value by alias' name.
 //      It contains same records as `record` array + aliases from
 //  `loadedAliasObjects` objects when there are no duplicate aliases.
 //  Otherwise only stores first loaded alias.
-var private AliasHash hash;
-
-
-//  How many times bigger capacity of `hash` should be, compared to amount of
-//  initially loaded data from a config.
-var private const float HASH_TABLE_SCALE;
+var private AssociativeArray aliasHash;
 
 //  Load and hash all the data `AliasSource` creation.
 protected function OnCreated()
 {
-    local int entriesAmount;
-    if (!AssertAliasesClassIsOwnedByMe()) {
+    if (!AssertAliasesClassIsOwnedByThisSource()) {
+        Destroy();
         return;
     }
     //  Load and hash
-    entriesAmount = LoadData();
-    hash = AliasHash(_.memory.Allocate(class'AliasHash'));
-    hash.Initialize(int(entriesAmount * HASH_TABLE_SCALE));
-    HashValidAliases();
+    loadedAliasObjects = aliasesClass.static.LoadAllObjects();
+    aliasHash = _.collections.EmptyAssociativeArray();
+    HashValidAliasesFromRecord();
+    HashValidAliasesFromPerObjectConfig();
 }
 
-//  Ensures invariant of our `Aliases` class only belonging to us by
-//  itself ourselves otherwise.
-private final function bool AssertAliasesClassIsOwnedByMe()
+//  Ensures that our `Aliases` class is properly linked with this
+//  source's class. Logs failure otherwise.
+private final function bool AssertAliasesClassIsOwnedByThisSource()
 {
     if (aliasesClass == none)                       return true;
     if (aliasesClass.default.sourceClass == class)  return true;
@@ -86,77 +77,110 @@ private final function bool AssertAliasesClassIsOwnedByMe()
     return false;
 }
 
-//      This method loads all the defined aliases from the config file and
-//  returns how many entries are there are total.
-//      Does not change data, including fixing duplicates.
-private final function int LoadData()
+//  Load hashes from `AliasSource`'s config (`record` array)
+private final function HashValidAliasesFromRecord()
 {
-    local int           i;
-    local int           entriesAmount;
-    local array<string> objectNames;
-    entriesAmount = record.length;
-    if (aliasesClass == none) {
-        return entriesAmount;
-    }
-    objectNames =
-        GetPerObjectNames(configName, string(aliasesClass.name), MaxInt);
-    loadedAliasObjects.length = objectNames.length;
-    for (i = 0; i < objectNames.length; i += 1)
+    local int   i;
+    local Text  aliasAsText, valueAsText;
+    for (i = 0; i < record.length; i += 1)
     {
-        loadedAliasObjects[i] = new(none, objectNames[i]) aliasesClass;
-        entriesAmount += loadedAliasObjects[i].GetAliases().length;
+        aliasAsText = _.text.FromString(record[i].alias);
+        valueAsText = _.text.FromString(record[i].value);
+        InsertAlias(aliasAsText, valueAsText);
+        aliasAsText.FreeSelf();
+        valueAsText.FreeSelf();
     }
-    return entriesAmount;
+}
+
+//  Load hashes from `Aliases` objects' config
+private final function HashValidAliasesFromPerObjectConfig()
+{
+    local int           i, j;
+    local Text          nextValue;
+    local array<Text>   valueAliases;
+    for (i = 0; i < loadedAliasObjects.length; i += 1)
+    {
+        nextValue       = loadedAliasObjects[i].GetValue();
+        valueAliases    = loadedAliasObjects[i].GetAliases();
+        for (j = 0; j < valueAliases.length; j += 1) {
+            InsertAlias(valueAliases[j], nextValue);
+        }
+        nextValue.FreeSelf();
+        _.memory.FreeMany(valueAliases);
+    }
+}
+
+//      Inserts alias into `aliasHash`, cleaning previous keys/values in case
+//  they already exist.
+//      Takes care of lower case conversion to store aliases in `aliasHash`
+//  in a case-insensitive way.
+private final function InsertAlias(Text alias, Text value)
+{
+    local Text                      aliasLowerCaseCopy;
+    local AssociativeArray.Entry    hashEntry;
+    if (alias == none)  return;
+    if (value == none)  return;
+    aliasLowerCaseCopy = alias.LowerCopy();
+    hashEntry = aliasHash.TakeEntry(aliasLowerCaseCopy);
+    if (hashEntry.value != none) {
+        LogDuplicateAliasWarning(alias, Text(hashEntry.value));
+    }
+    _.memory.Free(hashEntry.key);
+    _.memory.Free(hashEntry.value);
+    aliasHash.SetItem(aliasLowerCaseCopy, value.Copy(), true);
 }
 
 /**
- *  Simply checks if given alias is present in caller `AliasSource`.
+ *  Checks if given alias is present in caller `AliasSource`.
  *
  *  @param  alias   Alias to check, case-insensitive.
  *  @return `true` if present, `false` otherwise.
  */
-public function bool ContainsAlias(string alias)
+public function bool HasAlias(Text alias)
 {
-    return hash.Contains(alias);
-}
-
-/**
- *  Tries to look up a value, stored for given alias in caller `AliasSource` and
- *  reports error upon failure.
- *
- *  Also see `Try()` method.
- *
- *  @param  alias   Alias, for which method will attempt to look up a value.
- *      Case-insensitive.
- *  @param  value   If passed `alias` was recorded in caller `AliasSource`,
- *      it's corresponding value will be written in this variable.
- *      Otherwise value is undefined.
- *  @return `true` if lookup was successful (alias present in 'AliasSource`)
- *      and correct value was written into `value`, `false` otherwise.
- */
-public function bool Resolve(string alias, out string value)
-{
-    return hash.Find(alias, value);
-}
-
-/**
- *  Tries to look up a value, stored for given alias in caller `AliasSource` and
- *  silently returns given `alias` value upon failure.
- *
- *  Also see `Resolve()` method.
- *
- *  @param  alias   Alias, for which method will attempt to look up a value.
- *      Case-insensitive.
- *  @return Value corresponding to a given alias, if it was present in
- *      caller `AliasSource` and value of `alias` parameter instead.
- */
-public function string Try(string alias)
-{
-    local string result;
-    if (hash.Find(alias, result)) {
-        return result;
+    local bool  result;
+    local Text  lowerCaseAlias;
+    if (alias == none) {
+        return false;
     }
-    return alias;
+    lowerCaseAlias = alias.LowerCopy();
+    result = aliasHash.HasKey(lowerCaseAlias);
+    lowerCaseAlias.FreeSelf();
+    return result;
+}
+
+/**
+ *  Return value stored for the given alias in caller `AliasSource`
+ *  (as well as it's `Aliases` objects).
+ *
+ *  @param  alias           Alias, for which method will attempt to return
+ *      a value. Case-insensitive.
+ *  @param  copyOnFailure   Whether method should return copy of original
+ *      `alias` value in case caller source did not have any records
+ *      corresponding to `alias`.
+ *  @return If look up was successful - value, associated with the given
+ *      alias `alias`. If lookup was unsuccessful, it depends on `copyOnFailure`
+ *      flag: `copyOnFailure == false` means method will return `none`
+ *      and `copyOnFailure == true` means method will return `alias.Copy()`.
+ *      If `alias == none` method always returns `none`.
+ */
+public function Text Resolve(Text alias, optional bool copyOnFailure)
+{
+    local Text result;
+    local Text lowerCaseAlias;
+    if (alias == none) {
+        return none;
+    }
+    lowerCaseAlias = alias.LowerCopy();
+    result = Text(aliasHash.GetItem(lowerCaseAlias));
+    lowerCaseAlias.FreeSelf();
+    if (result != none) {
+        return result.Copy();
+    }
+    if (copyOnFailure) {
+        return alias.Copy();
+    }
+    return none;
 }
 
 /**
@@ -164,7 +188,7 @@ public function string Try(string alias)
  *  If alias with the same name as `aliasToAdd` already exists, -
  *  method overwrites it.
  *
- *  Can fail iff `aliasToAdd` is an invalid alias.
+ *  Can fail iff `aliasToAdd` is an invalid alias or `aliasValue == none`.
  *
  *  When adding alias to an object (`saveInObject == true`) alias `aliasToAdd`
  *  will be altered by changing any ':' inside it into a '.'.
@@ -190,23 +214,18 @@ public function string Try(string alias)
  *  @return `true` if alias was added and `false` otherwise (alias was invalid).
  */
 public final function bool AddAlias(
-    string          aliasToAdd,
-    string          aliasValue,
+    Text            aliasToAdd,
+    Text            aliasValue,
     optional bool   saveInObject)
 {
-    local AliasValuePair newPair;
-    if (_.alias.IsAliasValid(aliasToAdd)) {
-        return false;
-    }
-    if (hash.Contains(aliasToAdd)) {
+    local Text              lowerCaseAlias;
+    local AliasValuePair    newPair;
+    if (aliasToAdd == none) return false;
+    if (aliasValue == none) return false;
+
+    lowerCaseAlias = aliasToAdd.LowerCopy();
+    if (aliasHash.HasKey(lowerCaseAlias)) {
         RemoveAlias(aliasToAdd);
-    }
-    //  We might not be able to use per-object-config storage
-    if (saveInObject && aliasesClass == none) {
-        saveInObject = false;
-        _.logger.Warning("Cannot save alias in object for source `"
-            $ string(class)
-            $ "`, because it does not have appropriate `Aliases` class setup.");
     }
     //  Save
     if (saveInObject) {
@@ -214,11 +233,11 @@ public final function bool AddAlias(
     }
     else
     {
-        newPair.alias = aliasToAdd;
-        newPair.value = aliasValue;
+        newPair.alias = aliasToAdd.ToPlainString();
+        newPair.value = aliasValue.ToPlainString();
         record[record.length] = newPair;
     }
-    hash.Insert(aliasToAdd, aliasValue);
+    aliasHash.SetItem(lowerCaseAlias, aliasValue);
     AliasService(class'AliasService'.static.Require()).PendingSaveSource(self);
     return true;
 }
@@ -238,14 +257,23 @@ public final function bool AddAlias(
  *
  *  @param  aliasToRemove   Alias that you want to remove from caller source.
  */
-public final function RemoveAlias(string aliasToRemove)
+public final function RemoveAlias(Text aliasToRemove)
 {
-    local int   i;
-    local bool  removedAliasFromRecord;
-    hash.Remove(aliasToRemove);
+    local int                       i;
+    local bool                      isMatchingRecord;
+    local bool                      removedAliasFromRecord;
+    local AssociativeArray.Entry    hashEntry;
+    if (aliasToRemove == none) {
+        return;
+    }
+    hashEntry = aliasHash.TakeEntry(aliasToRemove);
+    _.memory.Free(hashEntry.key);
+    _.memory.Free(hashEntry.value);
     while (i < record.length)
     {
-        if (record[i].alias ~= aliasToRemove)
+        isMatchingRecord = aliasToRemove
+            .CompareToPlainString(record[i].alias, SCASE_INSENSITIVE);
+        if (isMatchingRecord)
         {
             record.Remove(i, 1);
             removedAliasFromRecord = true;
@@ -264,107 +292,39 @@ public final function RemoveAlias(string aliasToRemove)
     }
 }
 
-//      Performs initial hashing of every record with valid alias.
-//      In case of duplicate or invalid aliases - method will skip them
-//  and log warnings.
-private final function HashValidAliases()
-{
-    if (hash == none) {
-        _.logger.Warning("Alias source `" $ string(class) $ "` called"
-            $ "`HashValidAliases()` function without creating an `AliasHasher`"
-            $ "instance first. This should not have happened.");
-        return;
-    }
-    HashValidAliasesFromRecord();
-    HashValidAliasesFromPerObjectConfig();
-}
-
-private final function LogDuplicateAliasWarning(
-    string alias,
-    string existingValue)
+private final function LogDuplicateAliasWarning(Text alias, Text existingValue)
 {
     _.logger.Warning("Alias source `" $ string(class)
-        $ "` has duplicate record for alias \"" $ alias
-        $ "\". This is likely due to an erroneous config. \"" $ existingValue
+        $ "` has duplicate record for alias \"" $ alias.ToPlainString()
+        $ "\". This is likely due to an erroneous config. \""
+        $ existingValue.ToPlainString()
         $ "\" value will be used.");
 }
 
-private final function LogInvalidAliasWarning(string invalidAlias)
+private final function LogInvalidAliasWarning(Text invalidAlias)
 {
     _.logger.Warning("Alias source `" $ string(class)
-        $ "` contains invalid alias name \"" $ invalidAlias
+        $ "` contains invalid alias name \"" $ invalidAlias.ToPlainString()
         $ "\". This alias will not be loaded.");
-}
-
-private final function HashValidAliasesFromRecord()
-{
-    local int       i;
-    local bool      isDuplicate;
-    local string    existingValue;
-    for (i = 0; i < record.length; i += 1)
-    {
-        if (!_.alias.IsAliasValid(record[i].alias))
-        {
-            LogInvalidAliasWarning(record[i].alias);
-            continue;
-        }
-        isDuplicate = !hash.InsertIfMissing(record[i].alias, record[i].value,
-                                            existingValue);
-        if (isDuplicate) {
-            LogDuplicateAliasWarning(record[i].alias, existingValue);
-        }
-    }
-}
-
-private final function HashValidAliasesFromPerObjectConfig()
-{
-    local int           i, j;
-    local bool          isDuplicate;
-    local string        existingValue;
-    local string        objectValue;
-    local array<string> objectAliases;
-    for (i = 0; i < loadedAliasObjects.length; i += 1)
-    {
-        objectValue     = loadedAliasObjects[i].GetValue();
-        objectAliases   = loadedAliasObjects[i].GetAliases();
-        for (j = 0; j < objectAliases.length; j += 1)
-        {
-            if (!_.alias.IsAliasValid(objectAliases[j]))
-            {
-                LogInvalidAliasWarning(objectAliases[j]);
-                continue;
-            }
-            isDuplicate = !hash.InsertIfMissing(objectAliases[j], objectValue,
-                                                existingValue);
-            if (isDuplicate) {
-                LogDuplicateAliasWarning(objectAliases[j], existingValue);
-            }
-        }
-    }
 }
 
 //      Tries to find a loaded `Aliases` config object that stores aliases for
 //  the given value. If such object does not exists - creates a new one.
-private final function Aliases GetAliasesObjectWithValue(string value)
+//      Assumes `value != none`.
+private final function Aliases GetAliasesObjectWithValue(Text value)
 {
     local int       i;
+    local Text      nextValue;
     local Aliases   newAliasesObject;
-    //  This method only makes sense if this `AliasSource` supports
-    //  per-object-config storage.
-    if (aliasesClass == none)
-    {
-        _.logger.Warning("`GetAliasesObjectForValue()` function was called for "
-            $ "alias source with `aliasesClass == none`."
-            $ "This should not happen.");
-        return none;
-    }
     for (i = 0; i < loadedAliasObjects.length; i += 1)
     {
-        if (loadedAliasObjects[i].GetValue() ~= value) {
+        nextValue = loadedAliasObjects[i].GetValue();
+        if (value.Compare(nextValue)) {
             return loadedAliasObjects[i];
         }
+        _.memory.Free(nextValue);
     }
-    newAliasesObject = new(none, value) aliasesClass;
+    newAliasesObject = aliasesClass.static.LoadObject(value);
     loadedAliasObjects[loadedAliasObjects.length] = newAliasesObject;
     return newAliasesObject;
 }
@@ -372,8 +332,5 @@ private final function Aliases GetAliasesObjectWithValue(string value)
 defaultproperties
 {
     //  Source main parameters
-    configName      = "AcediaAliases"
-    aliasesClass    = class'Aliases'
-    //  HashTable twice the size of data entries should do it
-    HASH_TABLE_SCALE = 2.0
+    aliasesClass = class'Aliases'
 }

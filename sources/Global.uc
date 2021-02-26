@@ -1,8 +1,8 @@
 /**
  *  Class for an object that will provide an access to a Acedia's functionality
- *  by giving a reference to this actor to all Acedia's objects and actors,
+ *  by giving a reference to this object to all Acedia's objects and actors,
  *  emulating a global API namespace.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -19,34 +19,50 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Global extends Singleton;
+class Global extends Object;
 
-var public LoggerAPI    logger;
-var public JSONAPI      json;
-var public AliasesAPI   alias;
-var public TextAPI      text;
-var public MemoryAPI    memory;
-var public ConsoleAPI   console;
-var public ColorAPI     color;
-var public UserAPI      users;
+//  `Global` is expected to behave like a singleton and will store it's
+//  main instance in this variable's default value.
+var protected Global myself;
 
-//  TODO: APIs must be `remoteRole = ROLE_None`
-protected function OnCreated()
+var public RefAPI           ref;
+var public BoxAPI           box;
+var public LoggerAPI        logger;
+var public CollectionsAPI   collections;
+//var public JSONAPI          json;
+var public AliasesAPI       alias;
+var public TextAPI          text;
+var public MemoryAPI        memory;
+var public ConsoleAPI       console;
+var public ColorAPI         color;
+var public UserAPI          users;
+var public JSONAPI          json;
+
+public final static function Global GetInstance()
 {
-    Spawn(class'LoggerAPI');
-    logger  = LoggerAPI(class'LoggerAPI'.static.GetInstance());
-    Spawn(class'JSONAPI');
-    json    = JSONAPI(class'JSONAPI'.static.GetInstance());
-    Spawn(class'AliasesAPI');
-    alias   = AliasesAPI(class'AliasesAPI'.static.GetInstance());
-    Spawn(class'TextAPI');
-    text    = TextAPI(class'TextAPI'.static.GetInstance());
-    Spawn(class'MemoryAPI');
-    memory  = MemoryAPI(class'MemoryAPI'.static.GetInstance());
-    Spawn(class'ConsoleAPI');
-    console = ConsoleAPI(class'ConsoleAPI'.static.GetInstance());
-    Spawn(class'ColorAPI');
-    color   = ColorAPI(class'ColorAPI'.static.GetInstance());
-    Spawn(class'UserAPI');
-    users   = UserAPI(class'UserAPI'.static.GetInstance());
+    if (default.myself == none) {
+        //  `Global` is special and exists outside main Acedia's
+        //  object infrastructure, so we allocate it without using API methods.
+        default.myself = new class'Global';
+        default.myself.Initialize();
+    }
+    return default.myself;
+}
+
+protected function Initialize()
+{
+    //  Special case that we cannot spawn with memory API since it obviously
+    //  does not exist yet!
+    memory      = new class'MemoryAPI';
+    ref         = RefAPI(memory.Allocate(class'RefAPI'));
+    box         = BoxAPI(memory.Allocate(class'BoxAPI'));
+    logger      = LoggerAPI(memory.Allocate(class'LoggerAPI'));
+    collections = CollectionsAPI(memory.Allocate(class'CollectionsAPI'));
+    alias       = AliasesAPI(memory.Allocate(class'AliasesAPI'));
+    text        = TextAPI(memory.Allocate(class'TextAPI'));
+    console     = ConsoleAPI(memory.Allocate(class'ConsoleAPI'));
+    color       = ColorAPI(memory.Allocate(class'ColorAPI'));
+    users       = UserAPI(memory.Allocate(class'UserAPI'));
+    json        = JSONAPI(memory.Allocate(class'JSONAPI'));
+    json.InitializeStatic();
 }

@@ -54,7 +54,7 @@ public final function ConsoleWriter Initialize(
 {
     displaySettings = newDisplaySettings;
     if (outputBuffer == none) {
-        outputBuffer = ConsoleBuffer(_().memory.Allocate(class'ConsoleBuffer'));
+        outputBuffer = ConsoleBuffer(_.memory.Allocate(class'ConsoleBuffer'));
     }
     else {
         outputBuffer.Clear();
@@ -257,73 +257,29 @@ public final function ConsoleWriter Flush()
 }
 
 /**
- *  Writes a formatted string into console.
+ *  Writes text's contents into console.
  *
  *  Does not trigger console output, for that use `WriteLine()` or `Flush()`.
  *
- *  To output a different type of string into a console, use `WriteT()`.
- *
- *  @param  message Formatted string to output.
+ *  @param  message `Text` to output.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter Write(string message)
+public final function ConsoleWriter Write(Text message)
 {
-    outputBuffer.InsertString(message, STRING_Formatted);
+    outputBuffer.Insert(message);
     return self;
 }
 
 /**
- *  Writes a formatted string into console.
+ *  Writes text's contents into console.
  *  Result will be output immediately, starts a new line.
  *
- *  To output a different type of string into a console, use `WriteLineT()`.
- *
- *  @param  message Formatted string to output.
+ *  @param  message `Text` to output.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter WriteLine(string message)
+public final function ConsoleWriter WriteLine(Text message)
 {
-    outputBuffer.InsertString(message, STRING_Formatted);
-    Flush();
-    return self;
-}
-
-/**
- *  Writes a `string` of specified type into console.
- *
- *  Does not trigger console output, for that use `WriteLineT()` or `Flush()`.
- *
- *  To output a formatted string you might want to simply use `Write()`.
- *
- *  @param  message     String of a given type to output.
- *  @param  inputType   Type of the string method should output.
- *  @return Returns caller `ConsoleWriter` to allow for method chaining.
- */
-public final function ConsoleWriter WriteT(
-    string          message,
-    Text.StringType inputType)
-{
-    outputBuffer.InsertString(message, inputType);
-    return self;
-}
-
-/**
- *  Writes a `string` of specified type into console.
- *  Result will be output immediately, starts a new line.
- *
- *  To output a formatted string you might want to simply use `WriteLine()`.
- *
- *  @param  message     String of a given type to output.
- *  @param  inputType   Type of the string method should output.
- *  @return Returns caller `ConsoleWriter` to allow for method chaining.
- */
-public final function ConsoleWriter WriteLineT(
-    string          message,
-    Text.StringType inputType)
-{
-    outputBuffer.InsertString(message, inputType);
-    Flush();
-    return self;
+    return Write(message).Flush();
 }
 
 //  Send all completed lines from an `outputBuffer`
