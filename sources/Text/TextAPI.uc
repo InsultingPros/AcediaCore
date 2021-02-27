@@ -665,10 +665,186 @@ public final function Parser ParseString(string source)
     return parser;
 }
 
-//TODO: remove this
-public final function int GetHash(string source)
+/**
+ *  Method for converting `bool` values into immutable `Text`.
+ *
+ *  To create `MutableText` instead use `FromBoolM()` method.
+ *
+ *  @param  value   `bool` value to be displayed as `Text`.
+ *  @return Text representation of given `bool` value.
+ */
+public final function Text FromBool(bool value)
 {
-    return 0;
+    if (value) {
+        return P("true").Copy();
+    }
+    return P("false").Copy();
+}
+
+/**
+ *  Method for converting `bool` values into mutable `MutableText`.
+ *
+ *  To create `Text` instead use `FromBool()` method.
+ *
+ *  @param  value   `bool` value to be displayed as `MutableText`.
+ *  @return Text representation of given `bool` value.
+ */
+public final function MutableText FromBoolM(bool value)
+{
+    if (value) {
+        return P("true").MutableCopy();
+    }
+    return P("false").MutableCopy();
+}
+
+/**
+ *  Method for converting `byte` values into immutable `Text`.
+ *
+ *  To create `MutableText` instead use `FromByteM()` method.
+ *
+ *  @param  value   `byte` value to be displayed as `Text`.
+ *  @return Text representation of given `byte` value.
+ */
+public final function Text FromByte(byte value)
+{
+    return FromString(string(value));
+}
+
+/**
+ *  Method for converting `byte` values into mutable `MutableText`.
+ *
+ *  To create `Text` instead use `FromByte()` method.
+ *
+ *  @param  value   `byte` value to be displayed as `MutableText`.
+ *  @return Text representation of given `byte` value.
+ */
+public final function MutableText FromByteM(byte value)
+{
+    return FromStringM(string(value));
+}
+
+/**
+ *  Method for converting `int` values into immutable `Text`.
+ *
+ *  To create `MutableText` instead use `FromIntM()` method.
+ *
+ *  @param  value   `int` value to be displayed as `Text`.
+ *  @return Text representation of given `int` value.
+ */
+public final function Text FromInt(int value)
+{
+    return FromString(string(value));
+}
+
+/**
+ *  Method for converting `int` values into mutable `MutableText`.
+ *
+ *  To create `Text` instead use `FromInt()` method.
+ *
+ *  @param  value   `int` value to be displayed as `MutableText`.
+ *  @return Text representation of given `int` value.
+ */
+public final function MutableText FromIntM(int value)
+{
+    return FromStringM(string(value));
+}
+
+/**
+ *  Method for converting `float` values into immutable `Text`.
+ *
+ *  To create `MutableText` instead use `FromFloatM()` method.
+ *
+ *  @param  value       `float` value to be displayed as `Text`.
+ *  @param  precision   Up to how many digits after the decimal point to
+ *      display in resulting `Text`. If `0` (default value) is passed - method
+ *      will use native `float` conversion that usually specifies up to
+ *      2 digits. To render number without any digits after the decimal point,
+ *      specify any negative precision as a value.
+ *  @return Text representation of given `float` value.
+ */
+public final function Text FromFloat(float value, optional int precision)
+{
+    return FromString(FloatToString(value, precision));
+}
+
+/**
+ *  Method for converting `float` values into mutable `MutableText`.
+ *
+ *  To create `Text` instead use `FromFloat()` method.
+ *
+ *  @param  value       `float` value to be displayed as `MutableText`.
+ *  @param  precision   Up to how many digits after the decimal point to
+ *      display in resulting `MutableText`. If `0` (default value) is passed -
+ *      method will use native `float` conversion that usually specifies up to
+ *      2 digits. To render number without any digits after the decimal point,
+ *      specify any negative precision as a value.
+ *  @return Text representation of given `float` value.
+ */
+public final function MutableText FromFloatM(
+    float           value,
+    optional int    precision)
+{
+    return FromStringM(FloatToString(value, precision));
+}
+
+//  Auxiliary method that does `float` into `string` conversion to later
+//  reassemble it into `Text` / `MutableText`. Likely to be replaced later.
+private final function string FloatToString(float value, optional int precision)
+{
+    local int       integerPart, fractionalPart;
+    local int       howManyZeroes;
+    local string    zeroes;
+    local string    result;
+    //  Special cases of: native `float` -> `string` conversion
+    //  and of displaying `float`, effectively, as an `int`
+    if (precision == 0) {
+        return string(value);
+    }
+    if (precision < 0) {
+        return string(int(Round(value)));
+    }
+    //  Display sign if needed and then the absolute value of the `value`
+    if (value < 0)
+    {
+        value *= -1;
+        result = "-";
+    }
+    //  Separate integer and fractional parts
+    integerPart = value;
+    value = (value - integerPart);
+    fractionalPart = Round(value * (10 ** precision));
+    //  Display integer & fractional parts (if latter even needed)
+    result $= string(integerPart);
+    if (fractionalPart <= 0) {
+        return result;
+    }
+    result $= ".";
+    //  Pad necessary zeroes in front
+    howManyZeroes = precision - CountDigits(fractionalPart);
+    while (howManyZeroes > 0)
+    {
+        zeroes $= "0";
+        howManyZeroes -= 1;
+    }
+    //  Cut off trailing zeroes from fractional part
+    while (fractionalPart > 0 && fractionalPart % 10 == 0) {
+        fractionalPart /= 10;
+    }
+    return result $ zeroes $ string(fractionalPart);
+}
+
+//  Auxiliary method that counts amount of digits in decimal representation
+//  of `number`.
+private final function int CountDigits(int number)
+{
+    local int digitCounter;
+    while (number > 0)
+    {
+        number -= (number % 10);
+        number /= 10;
+        digitCounter += 1;
+    }
+    return digitCounter;
 }
 
 defaultproperties

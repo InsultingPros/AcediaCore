@@ -796,22 +796,22 @@ public final function MutableText Print(AcediaObject toPrint)
         return T(default.TNULL).MutableCopy();
     }
     if (toPrint.class == class'IntBox') {
-        return _.text.FromStringM(DisplayInt(IntBox(toPrint).Get()));
+        return _.text.FromIntM(IntBox(toPrint).Get());
     }
     if (toPrint.class == class'IntRef') {
-        return _.text.FromStringM(DisplayInt(IntRef(toPrint).Get()));
+        return _.text.FromIntM(IntRef(toPrint).Get());
     }
     if (toPrint.class == class'BoolBox') {
-        return _.text.FromStringM(DisplayBool(BoolBox(toPrint).Get()));
+        return _.text.FromBoolM(BoolBox(toPrint).Get());
     }
     if (toPrint.class == class'BoolRef') {
-        return _.text.FromStringM(DisplayBool(BoolRef(toPrint).Get()));
+        return _.text.FromBoolM(BoolRef(toPrint).Get());
     }
     if (toPrint.class == class'FloatBox') {
-        return _.text.FromStringM(DisplayFloat(FloatBox(toPrint).Get()));
+        return _.text.FromFloatM(FloatBox(toPrint).Get(), MAX_FLOAT_PRECISION);
     }
     if (toPrint.class == class'FloatRef') {
-        return _.text.FromStringM(DisplayFloat(FloatRef(toPrint).Get()));
+        return _.text.FromFloatM(FloatRef(toPrint).Get(), MAX_FLOAT_PRECISION);
     }
     if (    toPrint.class == class'Text'
         ||  toPrint.class == class'MutableText') {
@@ -923,77 +923,11 @@ public final function MutableText PrintObject(AssociativeArray toPrint)
     return result;
 }
 
-//  Auxiliary method to convert `bool` into it's JSON `string` representation.
-private final function string DisplayBool(bool toDisplay)
-{
-    if (toDisplay) {
-        return stringConstants[default.TTRUE];
-    }
-    return stringConstants[default.TFALSE];
-}
-
-//  Auxiliary method to convert `int` into it's JSON `string` representation.
-private final function string DisplayInt(int toDisplay)
-{
-    return string(toDisplay);
-}
-
-//  Auxiliary method to convert `float` into it's JSON `string` representation.
-private final function string DisplayFloat(float toDisplay)
-{
-    local int       integerPart, fractionalPart;
-    local int       precision;
-    local int       howManyZeroes;
-    local string    zeroes;
-    local string    result;
-    precision = Clamp(MAX_FLOAT_PRECISION, 0, 10);
-    if (toDisplay < 0)
-    {
-        toDisplay *= -1;
-        result = "-";
-    }
-    integerPart = toDisplay;
-    result $= string(integerPart);
-    toDisplay = (toDisplay - integerPart);
-    //  We try to perform minimal amount of operations to extract fractional
-    //  part as integer in order to avoid accumulating too much of an error.
-    fractionalPart = Round(toDisplay * (10 ** precision));
-    if (fractionalPart <= 0) {
-        return result;
-    }
-    result $= ".";
-    //  Pad necessary zeroes in front
-    howManyZeroes = precision - CountDigits(fractionalPart);
-    while (howManyZeroes > 0)
-    {
-        zeroes $= "0";
-        howManyZeroes -= 1;
-    }
-    //  Cut off trailing zeroes and 
-    while (fractionalPart > 0 && fractionalPart % 10 == 0) {
-        fractionalPart /= 10;
-    }
-    return result $ zeroes $ string(fractionalPart);
-}
-
-//  Auxiliary method that counts amount of digits in decimal representation
-//  of `number`.
-private final function int CountDigits(int number)
-{
-    local int digitCounter;
-    while (number > 0)
-    {
-        number -= (number % 10);
-        number /= 10;
-        digitCounter += 1;
-    }
-    return digitCounter;
-}
-
 //      Auxiliary method to convert `Text` into it's JSON `string`
 //  representation.
 //      We can't just dump `original`'s contents into JSON output as is,
 //  since we have to replace several special characters with escaped sequences.
+//  TODO: replace this with a more sensible solution later
 private final function string DisplayText(Text original)
 {
     local int       i, length;
