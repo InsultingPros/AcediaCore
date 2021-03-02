@@ -51,6 +51,8 @@ var private config array<AliasValuePair> record;
 //  Otherwise only stores first loaded alias.
 var private AssociativeArray aliasHash;
 
+var LoggerAPI.Definition errIncorrectAliasPair, warnDuplicateAlias;
+
 //  Load and hash all the data `AliasSource` creation.
 protected function OnCreated()
 {
@@ -71,8 +73,7 @@ private final function bool AssertAliasesClassIsOwnedByThisSource()
 {
     if (aliasesClass == none)                       return true;
     if (aliasesClass.default.sourceClass == class)  return true;
-    _.logger.Failure("`AliasSource`-`Aliases` class pair is incorrectly"
-        @ "setup for source `" $ string(class) $ "`. Omitting it.");
+    _.logger.Auto(errIncorrectAliasPair).ArgClass(class);
     Destroy();
     return false;
 }
@@ -294,18 +295,10 @@ public final function RemoveAlias(Text aliasToRemove)
 
 private final function LogDuplicateAliasWarning(Text alias, Text existingValue)
 {
-    _.logger.Warning("Alias source `" $ string(class)
-        $ "` has duplicate record for alias \"" $ alias.ToPlainString()
-        $ "\". This is likely due to an erroneous config. \""
-        $ existingValue.ToPlainString()
-        $ "\" value will be used.");
-}
-
-private final function LogInvalidAliasWarning(Text invalidAlias)
-{
-    _.logger.Warning("Alias source `" $ string(class)
-        $ "` contains invalid alias name \"" $ invalidAlias.ToPlainString()
-        $ "\". This alias will not be loaded.");
+    _.logger.Auto(warnDuplicateAlias)
+        .ArgClass(class)
+        .Arg(alias.Copy())
+        .Arg(existingValue.Copy());
 }
 
 //      Tries to find a loaded `Aliases` config object that stores aliases for
@@ -333,4 +326,6 @@ defaultproperties
 {
     //  Source main parameters
     aliasesClass = class'Aliases'
+    errIncorrectAliasPair   = (l=LOG_Error,m="`AliasSource`-`Aliases` class pair is incorrectly setup for source `%1`. Omitting it.")
+    warnDuplicateAlias      = (l=LOG_Warning,m="Alias source `%1` has duplicate record for alias \"%2\". This is likely due to an erroneous config. \"%3\" value will be used.")
 }

@@ -208,6 +208,7 @@ public final static function Command GetInstance()
  *  Returns name (in lower case) of the caller command class.
  *
  *  @return Name (in lower case) of the caller command class.
+ *      Guaranteed to be not `none`.
  */
 public final static function Text GetName()
 {

@@ -791,10 +791,10 @@ public final function Parser MUntil(
  *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MUntilS(
-    out string result,
+    out string              result,
     optional Text.Character characterBreak,
-    optional bool whitespacesBreak,
-    optional bool quotesBreak)
+    optional bool           whitespacesBreak,
+    optional bool           quotesBreak)
 {
     local MutableText wrapper;
     if (!Ok()) return self;

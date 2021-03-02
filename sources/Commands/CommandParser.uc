@@ -77,7 +77,7 @@ var private Command.SubCommand      pickedSubCommand;
 var private array<Command.Option>   availableOptions;
 //  Result variable we are filling during the parsing process,
 //  should be `none` outside of `self.ParseWith()` method call.
-var private CommandCall           nextResult;
+var private CommandCall             nextResult;
 
 //      Describes which parameters we are currently parsing, classifying them
 //  as either "necessary" or "extra".
@@ -120,6 +120,8 @@ var private array<Command.Option>   usedOptions;
 var private array<string> booleanTrueEquivalents;
 var private array<string> booleanFalseEquivalents;
 
+var LoggerAPI.Definition errNoSubCommands;
+
 protected function Finalizer()
 {
     Reset();
@@ -160,8 +162,7 @@ private final function PickSubCommand(Command.Data commandData)
     allSubCommands = commandData.subCommands;
     if (allSubcommands.length == 0)
     {
-        _.logger.Failure("`GetSubCommand()` method was called on a command"
-            @ class @ "with zero defined sub-commands.");
+        _.logger.Auto(errNoSubCommands).ArgClass(class);
         pickedSubCommand = emptySubCommand;
         return;
     }
@@ -797,4 +798,5 @@ defaultproperties
     booleanFalseEquivalents(1)  = "disable"
     booleanFalseEquivalents(2)  = "off"
     booleanFalseEquivalents(3)  = "no"
+    errNoSubCommands = (l=LOG_Error,m="`GetSubCommand()` method was called on a command `%1` with zero defined sub-commands.")
 }

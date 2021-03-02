@@ -19,13 +19,15 @@
  */
 class ConnectionListener_Player extends ConnectionListenerBase;
 
+var LoggerAPI.Definition fatalNoPlayerService;
+
 static function ConnectionEstablished(ConnectionService.Connection connection)
 {
     local PlayerService service;
     service = PlayerService(class'PlayerService'.static.Require());
-    if (service == none) {
-        __().logger.Fatal("Cannot start `PlayerService` service"
-            @ "Acedia will not properly work from now on.");
+    if (service == none)
+    {
+        __().logger.Auto(default.fatalNoPlayerService);
         return;
     }
     service.RegisterPlayer(connection.controllerReference);
@@ -35,9 +37,9 @@ static function ConnectionLost(ConnectionService.Connection connection)
 {
     local PlayerService service;
     service = PlayerService(class'PlayerService'.static.Require());
-    if (service == none) {
-        __().logger.Fatal("Cannot start `PlayerService` service"
-            @ "Acedia will not properly work from now on.");
+    if (service == none)
+    {
+        __().logger.Auto(default.fatalNoPlayerService);
         return;
     }
     service.UpdateAllPlayers();
@@ -46,4 +48,5 @@ static function ConnectionLost(ConnectionService.Connection connection)
 defaultproperties
 {
     relatedEvents = class'ConnectionEvents'
+    fatalNoPlayerService = (l=LOG_Fatal,m="Cannot start `PlayerService` service Acedia will not properly work from now on.")
 }

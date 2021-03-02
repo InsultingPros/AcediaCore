@@ -17,7 +17,11 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class AliasesAPI extends AcediaObject;
+class AliasesAPI extends AcediaObject
+    dependson(LoggerAPI);
+
+var LoggerAPI.Definition noWeaponAliasSource, invalidWeaponAliasSource;
+var LoggerAPI.Definition noColorAliasSource, invalidColorAliasSource;
 
 /**
  *  Provides an easier access to the instance of the `AliasSource` of
@@ -52,17 +56,15 @@ public final function AliasSource GetWeaponSource()
     local AliasSource           weaponSource;
     local class<AliasSource>    sourceClass;
     sourceClass = class'AliasService'.default.weaponAliasesSource;
-    if (sourceClass == none) {
-        _.logger.Failure("No weapon aliases source configured for Acedia's"
-            @ "alias API. Error is most likely cause by erroneous config.");
+    if (sourceClass == none)
+    {
+        _.logger.Auto(noWeaponAliasSource);
         return none;
     }
     weaponSource = AliasSource(sourceClass.static.GetInstance(true));
-    if (weaponSource == none) {
-        _.logger.Failure("`AliasSource` class `" $ string(sourceClass) $ "` is"
-            @ "configured to store weapon aliases, but it seems to be invalid."
-            @ "This is a bug and not configuration file problem, but issue"
-            @ "might be avoided by using a different `AliasSource`.");
+    if (weaponSource == none)
+    {
+        _.logger.Auto(invalidWeaponAliasSource).ArgClass(sourceClass);
         return none;
     }
     return weaponSource;
@@ -85,17 +87,15 @@ public final function AliasSource GetColorSource()
     local AliasSource           colorSource;
     local class<AliasSource>    sourceClass;
     sourceClass = class'AliasService'.default.colorAliasesSource;
-    if (sourceClass == none) {
-        _.logger.Failure("No color aliases source configured for Acedia's"
-            @ "alias API. Error is most likely cause by erroneous config.");
+    if (sourceClass == none)
+    {
+        _.logger.Auto(noColorAliasSource);
         return none;
     }
     colorSource = AliasSource(sourceClass.static.GetInstance(true));
-    if (colorSource == none) {
-        _.logger.Failure("`AliasSource` class `" $ string(sourceClass) $ "` is"
-            @ "configured to store color aliases, but it seems to be invalid."
-            @ "This is a bug and not configuration file problem, but issue"
-            @ "might be avoided by using a different `AliasSource`.");
+    if (colorSource == none)
+    {
+        _.logger.Auto(invalidColorAliasSource).ArgClass(sourceClass);
         return none;
     }
     return colorSource;
@@ -167,4 +167,8 @@ public final function Text ResolveColor(Text alias, optional bool copyOnFailure)
 
 defaultproperties
 {
+    noWeaponAliasSource         = (l=LOG_Error,m="No weapon aliases source configured for Acedia's alias API. Error is most likely cause by erroneous config.")
+    invalidWeaponAliasSource    = (l=LOG_Error,m="`AliasSource` class `%1` is configured to store weapon aliases, but it seems to be invalid. This is a bug and not configuration file problem, but issue might be avoided by using a different `AliasSource`.")
+    noColorAliasSource          = (l=LOG_Error,m="No color aliases source configured for Acedia's alias API. Error is most likely cause by erroneous config.")
+    invalidColorAliasSource     = (l=LOG_Error,m="`AliasSource` class `%1` is configured to store color aliases, but it seems to be invalid. This is a bug and not configuration file problem, but issue might be avoided by using a different `AliasSource`.")
 }

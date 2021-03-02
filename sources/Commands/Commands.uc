@@ -32,6 +32,8 @@ var private AssociativeArray    registeredCommands;
 //  by prepending them with "!" character.
 var public config bool useChatInput;
 
+var LoggerAPI.Definition errCommandDuplicate;
+
 protected function OnEnabled()
 {
     registeredCommands = _.collections.EmptyAssociativeArray();
@@ -72,10 +74,10 @@ public final function RegisterCommand(class<Command> commandClass)
     commandInstance = Command(registeredCommands.GetItem(commandName));
     if (commandInstance != none)
     {
-        _.logger.Failure("Command `" $ string(commandInstance.class)
-            $ "` with name '" $ commandName.ToPlainString()
-            $ "' is already registered. Command `" $ string(commandClass)
-            $ "` will be ignored.");
+        _.logger.Auto(errCommandDuplicate)
+            .ArgClass(commandInstance.class)
+            .Arg(commandName.Copy())
+            .ArgClass(commandClass);
         commandName.FreeSelf();
         return;
     }
@@ -155,4 +157,5 @@ defaultproperties
 {
     useChatInput = true
     requiredListeners(0) = class'BroadcastListener_Commands'
+    errCommandDuplicate = (l=LOG_Error,m="Command `%1` with name '%2' is already registered. Command `%3` will be ignored.")
 }

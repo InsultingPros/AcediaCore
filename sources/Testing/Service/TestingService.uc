@@ -51,6 +51,7 @@ var public config const string  requiredGroup;
 //  class'TestingEvents' every time.
 var const class<TestingEvents> events;
 
+var LoggerAPI.Definition warnDuplicateTestCases;
 /**
  *  Registers another `TestCase` class for later testing.
  *
@@ -75,13 +76,11 @@ public final static function bool RegisterTestCase(class<TestCase> newTestCase)
             ~=  newTestCase.static.GetName())) {
             continue;
         }
-        default._.logger.Warning("Two different test cases with name \""
-            $ newTestCase.static.GetName() $ "\" in the same group \""
-            $ newTestCase.static.GetGroup() $ "\"have been registered:"
-            @ "\"" $ string(newTestCase) $ "\" and \""
-            $ string(default.registeredTestCases[i])
-            $ "\". This can lead to issues and it is not something you can fix,"
-            @ "- contact developers of the relevant packages.");
+        __().logger.Auto(default.warnDuplicateTestCases)
+            .Arg(__().text.FromString(newTestCase.static.GetName()))
+            .Arg(__().text.FromString(newTestCase.static.GetGroup()))
+            .ArgClass(newTestCase)
+            .ArgClass(default.registeredTestCases[i]);
     }
     default.registeredTestCases[default.registeredTestCases.length] =
         newTestCase;
@@ -250,4 +249,5 @@ defaultproperties
 {
     runTestsOnStartUp = false
     events = class'TestingEvents'
+    warnDuplicateTestCases = (l=LOG_Fatal,m="Two different test cases with name \"%1\" in the same group \"%2\"have been registered: \"%3\" and \"%4\". This can lead to issues and it is not something you can fix, - contact developers of the relevant packages.")
 }

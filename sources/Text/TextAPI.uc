@@ -666,6 +666,19 @@ public final function Parser ParseString(string source)
 }
 
 /**
+ *  Creates a `Text` that consists only of a given character.
+ *
+ *  @param  character   Character that will be converted into a string.
+ *  @return `Text` that consists only of a given character,
+ *      if given character is valid. Empty `Text` otherwise.
+ *      Guaranteed to be not `none`.
+ */
+public final function Text FromCharacter(Text.Character character)
+{
+    return _.text.FromString(CharacterToString(character));
+}
+
+/**
  *  Method for converting `bool` values into immutable `Text`.
  *
  *  To create `MutableText` instead use `FromBoolM()` method.
@@ -745,6 +758,32 @@ public final function Text FromInt(int value)
  *  @return Text representation of given `int` value.
  */
 public final function MutableText FromIntM(int value)
+{
+    return FromStringM(string(value));
+}
+
+/**
+ *  Method for converting `class<object>` values into immutable `Text`.
+ *
+ *  To create `MutableText` instead use `FromClassM()` method.
+ *
+ *  @param  value   `class<object>` value to be displayed as `Text`.
+ *  @return Text representation of given `class<object>` value.
+ */
+public final function Text FromClass(class<object> value)
+{
+    return FromString(string(value));
+}
+
+/**
+ *  Method for converting `class<Object>` values into mutable `MutableText`.
+ *
+ *  To create `Text` instead use `FromClass()` method.
+ *
+ *  @param  value   `class<Object>` value to be displayed as `MutableText`.
+ *  @return Text representation of given `class<Object>` value.
+ */
+public final function MutableText FromClassM(class<Object> value)
 {
     return FromStringM(string(value));
 }

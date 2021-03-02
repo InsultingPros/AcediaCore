@@ -48,4 +48,5 @@ defaultproperties
     testCases(14)   = class'TEST_Iterator'
     testCases(15)   = class'TEST_Command'
     testCases(16)   = class'TEST_CommandDataBuilder'
+    testCases(17)   = class'TEST_LogMessage'
 }

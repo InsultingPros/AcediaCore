@@ -54,12 +54,13 @@ protected function Initialize()
     //  Special case that we cannot spawn with memory API since it obviously
     //  does not exist yet!
     memory      = new class'MemoryAPI';
+    //  `TextAPI` and `CollectionsAPI` need to be loaded before `LoggerAPI`
     ref         = RefAPI(memory.Allocate(class'RefAPI'));
     box         = BoxAPI(memory.Allocate(class'BoxAPI'));
-    logger      = LoggerAPI(memory.Allocate(class'LoggerAPI'));
-    collections = CollectionsAPI(memory.Allocate(class'CollectionsAPI'));
-    alias       = AliasesAPI(memory.Allocate(class'AliasesAPI'));
     text        = TextAPI(memory.Allocate(class'TextAPI'));
+    collections = CollectionsAPI(memory.Allocate(class'CollectionsAPI'));
+    logger      = LoggerAPI(memory.Allocate(class'LoggerAPI'));
+    alias       = AliasesAPI(memory.Allocate(class'AliasesAPI'));
     console     = ConsoleAPI(memory.Allocate(class'ConsoleAPI'));
     color       = ColorAPI(memory.Allocate(class'ColorAPI'));
     users       = UserAPI(memory.Allocate(class'UserAPI'));

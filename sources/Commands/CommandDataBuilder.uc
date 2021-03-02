@@ -66,6 +66,9 @@ var private bool                        selectionIsOptional;
 //  Array of parameters we are currently filling (either required or optional)
 var private array<Command.Parameter>    selectedParameterArray;
 
+var LoggerAPI.Definition errLongNameTooShort, errShortNameTooLong;
+var LoggerAPI.Definition warnSameLongName, warnSameShortName;
+
 protected function Constructor()
 {
     //  Fill empty subcommand (no special key word) by default
@@ -313,23 +316,17 @@ private final function Text.Character GetValidShortName(
     }
     if (longName.GetLength() < 2)
     {
-         _.logger.Failure("Command" @ self.class @ "is trying to register"
-            @ "an option with a name that is way too short (<2 characters)."
-            @ "Option will be discarded:" @ longName.ToPlainString());
+        _.logger.Auto(errLongNameTooShort).ArgClass(class).Arg(longName.Copy());
         return _.text.GetInvalidCharacter();
     }
     //  Validate `shortName`,
     //  deriving if from `longName` if necessary & possible
-    if (shortName == none)
-    {
+    if (shortName == none) {
         return longName.GetCharacter(0);
     }
     if (shortName.IsEmpty() || shortName.GetLength() > 1)
     {
-        _.logger.Failure("Command" @ self.class @ "is trying to register"
-            @ "an option with a short name that doesn't consist of just"
-            @ "one character. Option will be discarded:"
-            @ longName.ToPlainString());
+        _.logger.Auto(errShortNameTooLong).ArgClass(class).Arg(longName.Copy());
         return _.text.GetInvalidCharacter();
     }
     return shortName.GetCharacter(0);
@@ -354,22 +351,18 @@ private final function bool VerifyNoOptionNamingConflict(
         if (    !_.text.AreEqual(shortName, options[i].shortName)
             &&  longName.Compare(options[i].longName))
         {
-            _   .logger.Warning("Command" @ self.class @ "is trying to register"
-                @ "several options with the same long name"
-                @ "\"" $ longName.ToPlainString()
-                $ "\", but different short names. This should not happen,"
-                @ "do not expect correct behavior.");
+            _.logger.Auto(warnSameLongName)
+                .ArgClass(class)
+                .Arg(longName.Copy());
             return true;
         }
         //  Is same short name, but different short ones?
         if (    _.text.AreEqual(shortName, options[i].shortName)
             &&  !longName.Compare(options[i].longName))
         {
-            _.logger.Warning("Command" @ self.class @ "is trying to register"
-                @ "several options with the same short name"
-                @ "\"" $ _.text.CharacterToString(shortName)
-                $ "\", but different long names. This should not have happened,"
-                @ "do not expect correct behavior.");
+            _.logger.Auto(warnSameLongName)
+                .ArgClass(class)
+                .Arg(_.text.FromCharacter(shortName));
             return true;
         }
     }
@@ -880,4 +873,8 @@ public final function CommandDataBuilder ParamArrayList(
 
 defaultproperties
 {
+    errLongNameTooShort = (l=LOG_Error,m="Command `%1` is trying to register an option with a name that is way too short (<2 characters). Option will be discarded: %2")
+    errShortNameTooLong = (l=LOG_Error,m="Command `%1` is trying to register an option with a short name that doesn't consist of just one character. Option will be discarded: %2")
+    warnSameLongName    = (l=LOG_Error,m="Command `%1` is trying to register several options with the same long name \"%2\", but different short names. This should not happen, do not expect correct behavior.")
+    warnSameShortName   = (l=LOG_Error,m="Command `%1` is trying to register several options with the same short name \"%2\", but different long names. This should not have happened, do not expect correct behavior.")
 }
