@@ -1,6 +1,6 @@
 # Aliases
 
-Aliases are `string` values that act as human-readable synonyms to some other `string` values.
+Aliases are `Text` values that act as human-readable synonyms to some other `Text` values.
 
 Often, when using some console commands, users are forced to type into exact class names of objects in **UnrealScript** (e.g., commands to give someone an M14EBR take form similar to `mutate give KFmod.M14EBRBattleRifle`), but such names can be cumbersome to remember and type.
 
@@ -8,7 +8,7 @@ Aliases solve this problem by allowing players to instead type `mutate give $ebr
 
 ## Alias names
 
-Alias can be any `string` consisting of ASCII character, although for practical reasons it is better to use only letters, digits and `_` character. Otherwise using them might become more difficult, partially defeating their purpose.
+Alias can be any non-empty `Text`, although for practical reasons it is recommended to use only English ASCII letters, digits and `_` character.
 
 Aliases are case-insensitive, so `EBR`, `Ebr` and `ebr` are all considered the same alias.
 
@@ -16,9 +16,9 @@ Aliases are case-insensitive, so `EBR`, `Ebr` and `ebr` are all considered the s
 
 Sources essentially act as aliases databases: matching each alias to some value. They can be used to separate aliases that describe different categories of objects: weapons, zeds, colors, etc..
 
-Inside each source aliases and their values are expected to be in many-to-one relationship: many aliases can mean the same value, but each alias can only mean one value. However, two different sources can each contain the same alias and make it point to different values. So it's important for the game to know what source contains what type of aliases.
+Inside each source aliases and their values are expected to be in many-to-one relationship: several aliases can mean the same value, but each alias can only mean one value. However, two different sources can each contain the same alias and make it point to different values. This won't cause any problems, since game won't look for color aliases in weapons alias source. So it's important for the game to know what source contains what type of aliases.
 
-In case there are several aliases with the same name in the database, - **Acedia** will warn you about it, but won't actually remove duplicates, instead letting the source use the first it finds.
+In case there are several aliases with the same name in the database, - **Acedia** will warn you about it, but won't actually remove duplicates from your configs, instead simply letting the source use the first it finds.
 
 By default **Acedia** offers 4 different alias sources:
 
@@ -93,7 +93,7 @@ Each source has it's own identification for per-object-config records:
 * For `MockAliasSource` it is `MockAliases`;
 * For `AliasSource` it is just `Aliases`.
 
-#### Limitations of the second way
+#### Limitations of the per-object-config
 
 Because alias' value must be a part of the *ini*-file section there are certain limitations imposed on what that value can be (for example having `.` or `]` inside value's name will confuse **Unreal Engine**'s config parser, so you can't use them). There is not official, complete list of forbidden characters, but it is suggested you keep them limited to sequence of letters, numbers and `_` character.
 
@@ -101,9 +101,34 @@ If you do need to store some weird string as a value, - first test that it does 
 
 But `.` being a forbidden symbol is too harsh of a limitation, since we mainly want to store class names via per-object-configs. Because of that any alias values defined the second way will load `:` as `.` from a config. This change allows us to define classes as values at the cost of preventing the use of `:`.
 
+## [Technical] Using aliases in the code
+
+To use built-in alias sources for weapons and colors Acedia provides `ResolveWeapon()` and `ResolveColor()` methods for converting aliases into corresponding values:
+
+```unrealscript
+local Text alias, resolved;
+alias = P("Blue");
+resolved = _.aliases.ResolveColor(alias);
+TEST_ExpectTrue(resolved.Compare(P("rgb(0,0,255)")));
+```
+
+If specified alias is not found `Resolve*()` methods will return `none`. This behavior can be changed by specifying optional second parameter (as `true`) to copy passed value, instead of returning `none`:
+
+```unrealscript
+local Text alias, resolved;
+
+alias = P("M14Ebr - not a color");
+TEST_ExpectNone(_.aliases.ResolveColor(alias));
+resolved = _.aliases.ResolveColor(alias, true);
+TEST_ExpectTrue(resolved.Compare(alias));
+TEST_ExpectTrue(resolved != alias);
+```
+
+If you need to use any other alias source, you can use `GetCustomSource()` to get it's reference and then use `Resolve()` that reference provides.
+
 ## [Technical] Defining new alias sources
 
-If you make a module using **Acedia** and want to add another alias source you simply need to decide on the names of your:
+If you are making a module using **Acedia** and want to add another alias source you simply need to decide on the names of your:
 
 * Alias source (suppose it's `NewSource`);
 * Helper class for second way (*per-object-config*) of defining aliases (suppose it's `NewAliases`)

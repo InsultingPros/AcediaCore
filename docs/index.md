@@ -37,6 +37,12 @@ Related to that is the question of `string`s. Acedia provides it's own type `Tex
 
 ## API
 
+### Aliases
+
+Acedia provides mechanism to give certain values aliases: alternative names that are easier for humans to write and remember, making it easier to specify, for example, weapon classes.
+
+[Read more](API/Aliases.md)
+
 ### Collections
 
 Acedia provides dynamic and associative array collections capable of storing `AcediaObject`s. Thanks to boxing we can store essentially any type of variable inside them.
