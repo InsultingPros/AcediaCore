@@ -351,6 +351,18 @@ private final function FormattedBlock CreateFormattedBlock(bool isOpening)
     return newBlock;
 }
 
+/**
+ *  Unlike `Text`, `MutableText` can change it's content and therefore it's
+ *  hash code cannot depend on it. So we restore `AcediaObject`'s behavior and
+ *  return random value, generated at the time of allocation.
+ *
+ *  @return Hash code for the caller `MutableText`.
+ */
+public function int GetHashCode()
+{
+    return super(AcediaObject).GetHashCode();
+}
+
 defaultproperties
 {
 }
