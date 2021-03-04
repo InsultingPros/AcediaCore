@@ -70,7 +70,7 @@ class ConsoleAPI extends AcediaObject
  *          that we had to break a long line.
  *
  *      Described measures are not perfect:
- *      1. Since Killing  Floor's console doe not use monospaced font,
+ *      1. Since Killing  Floor's console does not use monospaced font,
  *          the same amount of characters on the line does not mean lines of
  *          visually the same length;
  *      2. Heavily enough colored lines are still going to be shorter;
@@ -211,24 +211,24 @@ public final function ConsoleWriter ForAll()
 
 /**
  *      Returns new `ConsoleWriter` instance that will write into
- *  console of the player with a given controller.
+ *  console of the given player.
  *      Should be freed after use.
  *
- *  @param  targetController    Player, to whom console we want to write.
+ *  @param  targetPlayer    Player, to whom console we want to write.
  *      If `none` - returned `ConsoleWriter` would be configured to
  *      throw messages away.
  *  @return New `ConsoleWriter` instance, configured to
  *      write into consoles of all players.
  *      Guaranteed to not be `none`.
  */
-public final function ConsoleWriter For(PlayerController targetController)
+public final function ConsoleWriter For(APlayer targetPlayer)
 {
     local ConsoleDisplaySettings globalSettings;
     globalSettings.defaultColor         = defaultColor;
     globalSettings.maxTotalLineWidth    = maxTotalLineWidth;
     globalSettings.maxVisibleLineWidth  = maxVisibleLineWidth;
     return ConsoleWriter(_.memory.Allocate(class'ConsoleWriter'))
-        .Initialize(globalSettings).ForController(targetController);
+        .Initialize(globalSettings).ForPlayer(targetPlayer);
 }
 
 defaultproperties

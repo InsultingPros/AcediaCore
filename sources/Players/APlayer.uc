@@ -304,10 +304,11 @@ public final function ConsoleWriter Console()
     if (    consoleInstance == none
         ||  consoleInstance.GetLifeVersion() != consoleLifeVersion)
     {
-        consoleInstance = _.console.For(GetController());
+        consoleInstance = _.console.For(self);
         consoleLifeVersion = consoleInstance.GetLifeVersion();
     }
-    return consoleInstance;
+    //  Set us as target in case someone messed with this setting
+    return consoleInstance.ForPlayer(self);
 }
 
 defaultproperties

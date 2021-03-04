@@ -27,6 +27,7 @@ class ConsoleWriter extends AcediaObject
 //  or not
 var private string NEWLINE_PREFIX;
 var private string BROKENLINE_PREFIX;
+var private string INDENTATION;
 
 /**
  *  Describes current output target of the `ConsoleWriter`.
@@ -41,10 +42,9 @@ enum ConsoleWriterTarget
     CWTARGET_All
 };
 var private ConsoleWriterTarget targetType;
-//      Controller of the player that will receive output passed
-//  to this `ConsoleWriter`.
-//      Only used when `targetType == CWTARGET_Player`
-var private PlayerController    outputTarget;
+//  Player that will receive output passed to this `ConsoleWriter`.
+//  Only used when `targetType == CWTARGET_Player`
+var private APlayer             outputTarget;
 var private ConsoleBuffer       outputBuffer;
 
 var private ConsoleAPI.ConsoleDisplaySettings   displaySettings;
@@ -190,25 +190,22 @@ public final function ConsoleWriter ForAll()
 }
 
 /**
- *      Configures caller `ConsoleWriter` to output only to a player,
- *  given by a passed `PlayerController`.
+ *      Configures caller `ConsoleWriter` to output only to the given player.
  *      `Flush()` will be automatically called between target change.
  *
- *  @param  targetController    Player, to whom console we want to write.
+ *  @param  targetPlayer    Player, to whom console we want to write.
  *      If `none` - caller `ConsoleWriter` would be configured to
  *      throw messages away.
  *  @return ConsoleWriter Returns caller `ConsoleWriter` to allow for
  *      method chaining.
  */
-public final function ConsoleWriter ForController(
-    PlayerController targetController
-)
+public final function ConsoleWriter ForPlayer(APlayer targetPlayer)
 {
     Flush();
-    if (targetController != none)
+    if (targetPlayer != none)
     {
         targetType      = CWTARGET_Player;
-        outputTarget    = targetController;
+        outputTarget    = targetPlayer;
     }
     else {
         targetType = CWTARGET_None;
@@ -231,14 +228,14 @@ public final function ConsoleWriterTarget CurrentTarget()
 }
 
 /**
- *  Returns `PlayerController` of the player to whom console caller
- *  `ConsoleWriter` is outputting messages.
+ *  Returns `APlayer` to whom console caller `ConsoleWriter` is
+ *  outputting messages.
  *
- *  @return `PlayerController` of the player to whom console caller
- *      `ConsoleWriter` is outputting messages.
- *      Returns `none` iff it currently outputs to every player or to no one.
+ *  @return Player (`APlayer` class) to whom console caller `ConsoleWriter` is
+ *      outputting messages. Returns `none` iff it currently outputs to
+ *      every player or to no one.
  */
-public final function PlayerController GetTargetPlayerController()
+public final function APlayer GetTargetPlayer()
 {
     if (targetType == CWTARGET_All) return none;
     return outputTarget;
@@ -282,12 +279,54 @@ public final function ConsoleWriter WriteLine(Text message)
     return Write(message).Flush();
 }
 
-//  Send all completed lines from an `outputBuffer`
-private final function SendBuffer()
+/**
+ *  Writes text's indented contents into console.
+ *
+ *  Acts like a `Flush().WriteLine()` chain of calls, except all output contents
+ *  will be additionally indented by four whitespace symbols
+ *  (including lines after line breaks).
+ *
+ *  Result will be output immediately, starts a new line.
+ *
+ *  @param  message `Text` to output.
+ *  @return Returns caller `ConsoleWriter` to allow for method chaining.
+ */
+public final function ConsoleWriter WriteBlock(Text message)
+{
+    Flush();
+    outputBuffer.Insert(message).Flush();
+    SendBuffer(true);
+    return self;
+}
+
+/**
+ *  Writes text's contents into console as a player's chat message, causing them
+ *  to appear on screen in vanilla UI.
+ *
+ *  All the buffer stored in caller `ConsoleWriter` so far will be flushed.
+ *  Result will be output immediately. Starts a new line.
+ *
+ *  @param  message `Text` to output.
+ *  @return Returns caller `ConsoleWriter` to allow for method chaining.
+ */
+public final function ConsoleWriter Say(Text message)
+{
+    Flush();
+    outputBuffer.Insert(message).Flush();
+    SendBuffer(, true);
+    return self;
+}
+
+//      Send all completed lines from an `outputBuffer`.
+//      Setting `indented` to `true` will cause additional four whitespaces to
+//  be added to the output.
+private final function SendBuffer(optional bool asIndented, optional bool asSay)
 {
     local string                    prefix;
-    local ConnectionService         service;
     local ConsoleBuffer.LineRecord  nextLineRecord;
+    local array<PlayerController>   recipients;
+
+    recipients = GetRecipientsControllers();
     while (outputBuffer.HasCompletedLines())
     {
         nextLineRecord = outputBuffer.PopNextLine();
@@ -297,33 +336,80 @@ private final function SendBuffer()
         else {
             prefix = BROKENLINE_PREFIX;
         }
-        service = ConnectionService(class'ConnectionService'.static.Require());
-        SendConsoleMessage(service, prefix $ nextLineRecord.contents);
+        if (asIndented) {
+            prefix $= INDENTATION;
+        }
+        SendConsoleMessage(recipients, prefix $ nextLineRecord.contents, asSay);
     }
 }
 
-//  Assumes `service != none`, caller function must ensure that.
+//      Assumes `playerService != none` and `connectionService != none`,
+//  caller function must ensure that.
 private final function SendConsoleMessage(
-    ConnectionService   service,
-    string              message)
+    array<PlayerController> recipients,
+    string                  message,
+    bool                    asSay)
+{
+    local int i;
+    for (i = 0; i < recipients.length; i += 1)
+    {
+        if (recipients[i] != none)
+        {
+            if (asSay) {
+                recipients[i].ClientMessage(message);
+            }
+            else {
+                recipients[i].TeamMessage(none, message, 'AcediaConsole');
+            }
+        }
+    }
+}
+
+//  Method for retrieving `PlayerController`s of recipients at the moment
+//  of the call
+private final function array<PlayerController> GetRecipientsControllers()
 {
     local int                                   i;
+    local PlayerController                      nextRecipient;
+    local PlayerService                         playerService;
+    local ConnectionService                     connectionService;
+    local array<PlayerController>               recipients;
     local array<ConnectionService.Connection>   connections;
+    //  No targets
+    if (targetType == CWTARGET_None) {
+        return recipients;
+    }
+    //  Single target case
     if (targetType != CWTARGET_All)
     {
-        if (outputTarget != none) {
-            outputTarget.ClientMessage(message);
+        playerService = PlayerService(class'PlayerService'.static.Require());
+        if (playerService != none && outputTarget != none) {
+            nextRecipient = playerService.GetController(outputTarget);
         }
-        return;
+        if (nextRecipient != none) {
+            recipients[0] = nextRecipient;
+        }
+        return recipients;
     }
-    connections = service.GetActiveConnections();
-    for (i = 0; i < connections.length; i += 1) {
-        connections[i].controllerReference.ClientMessage(message);
+    //  All players target case
+    connectionService =
+        ConnectionService(class'ConnectionService'.static.Require());
+    if (connectionService == none) {
+        return recipients;
     }
+    connections = connectionService.GetActiveConnections();
+    for (i = 0; i < connections.length; i += 1)
+    {
+        if (connections[i].controllerReference != none) {
+            recipients[recipients.length] = connections[i].controllerReference;
+        }
+    }
+    return recipients;
 }
 
 defaultproperties
 {
     NEWLINE_PREFIX      = "| "
     BROKENLINE_PREFIX   = "  "
+    INDENTATION         = "    "
 }
