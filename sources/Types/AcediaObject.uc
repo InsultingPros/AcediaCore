@@ -53,9 +53,10 @@ var private bool _isAllocated;
 //  called for this object.
 var private bool _staticConstructorWasCalled;
 
-//  We want to have a common `GetHashCode()` method for all Acedia's objects.
-//  Just randomizing one at the time of allocation seems like a great idea.
-var private int _randomizedHashCode;
+//  We only want to compute hash code once and reuse generated value later,
+//  since it cannot changed without reallocation.
+var private int     _cachedHashCode;
+var private bool    _hashCodeWasCached;
 
 //      This object will provide hashed `string` to `Text` map, necessary for
 //  efficient and convenient conversion methods.
@@ -112,7 +113,6 @@ public final function _constructor()
     if (_isAllocated) return;
     _isAllocated = true;
     _lifeVersion += 1;
-    _randomizedHashCode = Rand(MaxInt);
     if (_ == none) {
         default._ = class'Global'.static.GetInstance();
         _ = default._;
@@ -121,6 +121,7 @@ public final function _constructor()
         StaticConstructor();
         default._staticConstructorWasCalled = true;
     }
+    _hashCodeWasCached = false;
     Constructor();
 }
 
@@ -266,19 +267,42 @@ public function bool IsEqual(Object other)
 }
 
 /**
- *  Returns hash of an object.
+ *  Calculated hash of an object. Overload this method if you want to change
+ *  how object's hash is computed.
+ *
+ *  `GetHashCode()` method uses it to calculate had code once and then cache it.
  *
  *  If you overload `IsEqual()` method to allow two different objects to
- *  be equal, you must implement `GetHashCode()` to return the same hash
+ *  be equal, you must implement `CalculateHashCode()` to return the same hash
  *  for them.
  *
  *  By default it is just a random value, generated at the time of allocation.
  *
  *  @return Hash code for the caller object.
  */
-public function int GetHashCode()
+protected function int CalculateHashCode()
 {
-    return _randomizedHashCode;
+    return Rand(MaxInt);
+}
+
+/**
+ *  Returns hash of an object.
+ *
+ *  Calculated hash only once, later using internally cached value.
+ *
+ *  By default it is just a random value.
+ *  See `CalculateHashCode()` if you wish to change how hash code is computed.
+ *
+ *  @return Hash code for the caller object.
+ */
+public final function int GetHashCode()
+{
+    if (_hashCodeWasCached) {
+        return _cachedHashCode;
+    }
+    _hashCodeWasCached = true;
+    _cachedHashCode = CalculateHashCode();
+    return _cachedHashCode;
 }
 
 /**

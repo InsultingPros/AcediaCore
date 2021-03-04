@@ -37,7 +37,7 @@ public function bool IsEqual(Object other)
     return true;
 }
 
-public function int GetHashCode()
+protected function int CalculateHashCode()
 {
     return 0;
 }

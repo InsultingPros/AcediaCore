@@ -358,7 +358,7 @@ private final function FormattedBlock CreateFormattedBlock(bool isOpening)
  *
  *  @return Hash code for the caller `MutableText`.
  */
-public function int GetHashCode()
+protected function int CalculateHashCode()
 {
     return super(AcediaObject).GetHashCode();
 }

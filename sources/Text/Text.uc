@@ -418,7 +418,7 @@ protected final function ConvertCase(bool toLower)
  *
  *  @return Hash, that depends on textual contents only.
  */
-public function int GetHashCode()
+protected function int CalculateHashCode()
 {
     local int i;
     local int hash;
