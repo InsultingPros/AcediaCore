@@ -35,7 +35,7 @@ Related to that is the question of `string`s. Acedia provides it's own type `Tex
 
 [Read more](introduction/Text.md)
 
-## API
+## API details
 
 ### Aliases
 
@@ -48,3 +48,15 @@ Acedia provides mechanism to give certain values aliases: alternative names that
 Acedia provides dynamic and associative array collections capable of storing `AcediaObject`s. Thanks to boxing we can store essentially any type of variable inside them.
 
 [Read more](API/Collections.md)
+
+### Console
+
+Default Killing Floor console output is ill-fit for printing long text messages due to it's automatic line breaking of long enough messages. Acedia provides `ConsoleAPI` that resolves this issue in a nice and easy-to-use way.
+
+[Read more](API/Console.md)
+
+### Colors
+
+Acedia provides some convenience methods and constant that have to do with colors:
+
+[Read more](API/Colors.md)

@@ -1,6 +1,6 @@
 # Colors
 
-The main, and possibly only, notable thing abotu **Acedia**'s colors is it's support for parsing their text representation. To be precise, **Acedia** understands:
+The main notable thing about **Acedia**'s colors is it's support for parsing their text representation. To be precise, **Acedia** understands:
 
 1. Hex color definitions in format of `#ffc0cb`;
 2. RGB color definitions that look like either `rgb(255,192,203)` or `rgb(r=255,g=192,b=203)`;
@@ -8,6 +8,15 @@ The main, and possibly only, notable thing abotu **Acedia**'s colors is it's sup
 4. Alias color definitions that **Acedia** looks up from color-specific alias source and look like any other alias reference: `$pink`.
 
 You should be able to use any form you like while working with **Acedia**.
+
+## Color constants
+
+`ColorAPI` accessed through `_.color.` also provides a large amount of color constants:
+
+* Constants named after their respective colors, such as `White`, ``Black` or `DeepPink`;
+* System colors used by Acedia for particular purpose, such as `TextDefault`, `TextEmphasis` or `TypeNumber`.
+
+All of them can be changed using `AcediaSystem.ini` config.
 
 ## [Technical] Color fixing
 
