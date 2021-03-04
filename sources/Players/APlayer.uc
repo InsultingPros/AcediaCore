@@ -163,6 +163,7 @@ public final function Text GetName()
  */
 public final function SetName(Text newPlayerName)
 {
+    local Text.Formatting       endingFormatting;
     local PlayerReplicationInfo myReplicationInfo;
     myReplicationInfo = GetRI();
     if (myReplicationInfo == none) return;
@@ -176,15 +177,24 @@ public final function SetName(Text newPlayerName)
     else {
         textName = newPlayerName.Copy();
     }
-    hashedName = textName.ToColoredString(,, _.color.White);
+    hashedName = textName.ToColoredString(,, _.color.white);
     //      To correctly display nicknames we want to drop default color tag
     //  at the beginning (the one `ToColoredString()` adds if first character
     //  has no defined color).
     //      This is a compatibility consideration with vanilla UIs that use
     //  color codes from `myReplicationInfo.playerName` for displaying nicknames
-    //  and whos expected behavior can get broken by default color tag.
-    if (!newPlayerName.GetFormatting(0).isColored) {
+    //  and whose expected behavior can get broken by default color tag.
+    if (!textName.GetFormatting(0).isColored) {
         hashedName = Mid(hashedName, 4);
+    }
+    //      This is another compatibility consideration with vanilla UIs: unless
+    //  we restore color to neutral white, Killing Floor will paint any chat
+    //  messages we send in the color our nickname ended with.
+    endingFormatting = textName.GetFormatting(textName.GetLength() - 1);
+    if (    endingFormatting.isColored
+        &&  !_.color.AreEqual(endingFormatting.color, _.color.white, true))
+    {
+        hashedName $= _.color.GetColorTag(_.color.white);
     }
     myReplicationInfo.playerName = hashedName;
 }
