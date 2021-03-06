@@ -27,7 +27,7 @@ protected function BuildData(CommandDataBuilder builder)
         .Describe(P("Gives (takes if negative) players a specified <amount>"
             @ "of money."));
     builder.SubCommand(P("set"))
-        .ParamIntegerList(P("amount"))
+        .ParamInteger(P("amount"))
         .Describe(P("Sets players' money to a specified <amount>."));
     builder.Option(P("silent"))
         .Describe(P("If specified - players won't receive a notification about"
