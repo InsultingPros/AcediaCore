@@ -29,10 +29,11 @@ class PlayersParser extends AcediaObject
  *          This one is used to specify players by their key, assigned to
  *          them when they enter the game. This type of selectors can be used
  *          when players have hard to type names.
- *      2. Macro selector: "@self", "@admin" or just "@".
+ *      2. Macro selector: "@self", "@all", "@admin" or just "@".
  *          "@" and "@self" are identical and can be used to specify player
  *          that called the command.
  *          "@admin" can be used to specify all admins in the game at once.
+ *          "@all" specifies all current players.
  *          In future it is planned to make macros extendable by allowing to
  *          bind more names to specific groups of players.
  *      3. Name selectors: quoted strings and any other types of string that
@@ -75,7 +76,7 @@ var private bool            parsedFirstSelector;
 //  Will be equal to a single-element array [","], used for parsing
 var private array<Text>     selectorDelimiters;
 
-var const int TSELF, TADMIN, TNOT, TKEY, TMACRO, TCOMMA;
+var const int TSELF, TADMIN, TALL, TNOT, TKEY, TMACRO, TCOMMA;
 var const int TOPEN_BRACKET, TCLOSE_BRACKET;
 
 protected function Finalizer()
@@ -210,8 +211,14 @@ private final function RemoveAdmins()
 //  Does nothing if there is no such macro.
 private final function AddByMacro(Text macroText)
 {
-    if (macroText.Compare(T(TADMIN), SCASE_INSENSITIVE)) {
+    if (macroText.Compare(T(TADMIN), SCASE_INSENSITIVE))
+    {
         AddAdmins();
+        return;
+    }
+    if (macroText.Compare(T(TALL), SCASE_INSENSITIVE))
+    {
+        currentSelection = playersSnapshot;
         return;
     }
     if (macroText.IsEmpty() || macroText.Compare(T(TSELF), SCASE_INSENSITIVE)) {
@@ -225,8 +232,15 @@ private final function AddByMacro(Text macroText)
 private final function RemoveByMacro(Text macroText)
 {
     local int i;
-    if (macroText.Compare(T(TADMIN), SCASE_INSENSITIVE)) {
+    if (macroText.Compare(T(TADMIN), SCASE_INSENSITIVE))
+    {
         RemoveAdmins();
+        return;
+    }
+    if (macroText.Compare(T(TALL), SCASE_INSENSITIVE))
+    {
+        currentSelection.length = 0;
+        return;
     }
     if (macroText.IsEmpty() || macroText.Compare(T(TSELF), SCASE_INSENSITIVE))
     {
@@ -467,16 +481,18 @@ defaultproperties
     stringConstants(0) = "self"
     TADMIN          = 1
     stringConstants(1) = "admin"
-    TNOT            = 2
-    stringConstants(2) = "!"
-    TKEY            = 3
-    stringConstants(3) = "#"
-    TMACRO          = 4
-    stringConstants(4) = "@"
-    TCOMMA          = 5
-    stringConstants(5) = ","
-    TOPEN_BRACKET   = 6
-    stringConstants(6)  = "["
-    TCLOSE_BRACKET  = 7
-    stringConstants(7)  = "]"
+    TALL            = 2
+    stringConstants(2) = "all"
+    TNOT            = 3
+    stringConstants(3) = "!"
+    TKEY            = 4
+    stringConstants(4) = "#"
+    TMACRO          = 5
+    stringConstants(5) = "@"
+    TCOMMA          = 6
+    stringConstants(6) = ","
+    TOPEN_BRACKET   = 7
+    stringConstants(7)  = "["
+    TCLOSE_BRACKET  = 8
+    stringConstants(8)  = "]"
 }
