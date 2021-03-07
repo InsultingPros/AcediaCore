@@ -568,7 +568,9 @@ public final function Parser MUnsignedInteger(
         nextPosition = _.text.CharacterToInt(GetCharacter(), base);
         if (nextPosition < 0)                                           break;
 
-        result = result * base + nextPosition;
+        //  This `result = result * base + nextPosition`,
+        //  but protected from integer overflow
+        result = SafeIntegerCombination(result, base, nextPosition);
         consumedCodePoints += 1;
         ShiftPointer();
     }
@@ -578,6 +580,36 @@ public final function Parser MUnsignedInteger(
         return Fail();
     }
     return self;
+}
+
+/**
+ *  Auxiliary method for a adding another numeric position `addition` to the
+ *  given `baseValue` in base the `multiplier`, effectively performing:
+ *  `baseValue * multiplier + addition`, but safely truncated at
+ *  `MaxInt = 0x7fffffff`, preventing integer overflow.
+ *
+ *  @param  baseValue   Initial value to modify by multiplication and addition.
+ *  @param  multiplier  Value to first multiply given `baseValue` first.
+ *  @param  addition    Value to add to the result of multiplication of
+ *      `baseValue` and `multiplier`.
+ *  @return `baseValue * multiplier + addition` truncated at
+ *      `MaxInt = 0x7fffffff`, preventing integer overflow.
+ */
+protected final function int SafeIntegerCombination(
+    int baseValue,
+    int multiplier,
+    int addition)
+{
+    local int safeThreshold;
+    safeThreshold = MaxInt / multiplier;
+    if (baseValue > safeThreshold) {
+        return MaxInt;
+    }
+    baseValue *= multiplier;
+    if (MaxInt - baseValue < addition) {
+        return MaxInt;
+    }
+    return baseValue + addition;
 }
 
 /**
