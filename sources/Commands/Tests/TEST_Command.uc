@@ -353,7 +353,7 @@ protected static function SubTest_MockBQ1()
 
 protected static function SubTest_MockBQ2()
 {
-    local CommandCall     result;
+    local CommandCall       result;
     local DynamicArray      subArray;
     local AssociativeArray  options, subObject;
     Issue("Cannot parse command queries with mixed-in options.");
@@ -394,7 +394,7 @@ defaultproperties
     queryAFailure2 = "simple fal"
 
     queryBSuccess1 = "[7, null] --values 1 3 5 2 4 text"
-    queryBSuccess2 = "do --type \"value\" -va 8 -sV --forced -T"
+    queryBSuccess2 = "do --type \"value\" -va 8 -sV --forced -T  \"\" "
     //  long then same as short
     queryBFailure1 = "[] 8 -tv 13"
     queryBFailure2 = "do 7 5 -sfV --forced yes"

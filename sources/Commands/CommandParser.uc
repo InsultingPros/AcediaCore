@@ -523,9 +523,25 @@ private final function bool ParseTextValue(
     AssociativeArray    parsedParameters,
     Command.Parameter   expectedParameter)
 {
-    local string textValue;
-    commandParser.Skip().MStringS(textValue);
-    if (!commandParser.Ok()) {
+    local bool                  failedParsing;
+    local string                textValue;
+    local parser.ParserState    initialState;
+    //  TODO: use parsing methods into `Text`
+    //  (needs some work for reading formatting `string`s from `Text` objects)
+    initialState = commandParser.Skip().GetCurrentState();
+    //  Try manually parsing as a string literal first, since then we will
+    //  allow empty `textValue` as a result
+    commandParser.MStringLiteralS(textValue);
+    failedParsing = !commandParser.Ok();
+    //  Otherwise - empty values are not allowed
+    if (failedParsing)
+    {
+        commandParser.RestoreState(initialState).MStringS(textValue);
+        failedParsing = (!commandParser.Ok() || textValue == "");
+    }
+    if (failedParsing)
+    {
+        commandParser.Fail();
         return false;
     }
     RecordParameter(parsedParameters, expectedParameter,
