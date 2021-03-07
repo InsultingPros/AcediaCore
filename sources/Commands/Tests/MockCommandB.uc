@@ -41,6 +41,8 @@ protected function BuildData(CommandDataBuilder builder)
         .OptionalParams()
         .ParamNumberList(P("numeric list"), P("list"))
         .ParamBoolean(P("maybe"));
+    builder.Option(P("remainder"))
+        .ParamRemainder(P("everything"));
 }
 
 defaultproperties

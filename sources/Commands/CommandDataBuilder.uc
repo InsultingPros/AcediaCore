@@ -813,6 +813,33 @@ public final function CommandDataBuilder ParamTextList(
 }
 
 /**
+ *  Adds new remainder parameter (required or optional depends on whether
+ *  `RequireTarget()` call happened) to the currently selected
+ *  sub-command / option.
+ *
+ *  Only fails if provided `name` is `none`.
+ *
+ *  @param  name            Name of the parameter, will be copied
+ *      (as it would appear in the generated help info).
+ *  @param  variableName    Name of the variable that will store this
+ *      parameter's value in `AssociativeArray` after user's command input
+ *      is parsed. Provided value will be copied.
+ *      If left `none`, - will coincide with `name` parameter.
+ *  @return Returns the caller `CommandDataBuilder` to allow for
+ *      method chaining.
+ */
+public final function CommandDataBuilder ParamRemainder(
+    Text            name,
+    optional Text   variableName)
+{
+    if (name == none) {
+        return self;
+    }
+    PushParameter(NewParameter(name, CPT_Remainder, false, variableName));
+    return self;
+}
+
+/**
  *  Adds new object parameter (required or optional depends on whether
  *  `RequireTarget()` call happened) to the currently selected
  *  sub-command / option.

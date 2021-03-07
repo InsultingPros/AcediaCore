@@ -268,6 +268,7 @@ private final function PrintParameter(ConsoleWriter cout, Parameter parameter)
         cout.UseColor(_.color.typeNumber);
         break;
     case CPT_Text:
+    case CPT_Remainder:
         cout.UseColor(_.color.typeString);
         break;
     case CPT_Object:

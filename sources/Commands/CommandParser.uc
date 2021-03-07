@@ -54,7 +54,8 @@ class CommandParser extends AcediaObject
  *
  *      Finally, to allow users to specify options at any point in command,
  *  we call `TryParsingOptions()` at the beginning of every
- *  `ParseSingleValue()`, since option definition can appear at any place
+ *  `ParseSingleValue()` (the only parameter that has higher priority than
+ *  options is `CPT_Remainder`), since option definition can appear at any place
  *  between parameters. We also call `TryParsingOptions()` *after* we've parsed
  *  all command's parameters, since that case won't be detected by parsing
  *  them *before* every parameter.
@@ -397,8 +398,13 @@ private final function bool ParseSingleValue(
     AssociativeArray    parsedParameters,
     Command.Parameter   expectedParameter)
 {
-    //      Before parsing a value we need to check if user has specified any
-    //  options instead.
+    //  First we try `CPT_Remainder` parameter, since it is a special case that
+    //  consumes all further input
+    if (expectedParameter.type == CPT_Remainder) {
+        return ParseRemainderValue(parsedParameters, expectedParameter);
+    }
+    //      Before parsing any other value we need to check if user has
+    //  specified any options instead.
     //      However this might lead to errors if we are already parsing
     //  necessary parameters of another option:
     //  we must handle such situation and report an error.
@@ -425,6 +431,9 @@ private final function bool ParseSingleValue(
     }
     else if (expectedParameter.type == CPT_Text) {
         return ParseTextValue(parsedParameters, expectedParameter);
+    }
+    else if (expectedParameter.type == CPT_Remainder) {
+        return ParseRemainderValue(parsedParameters, expectedParameter);
     }
     else if (expectedParameter.type == CPT_Object) {
         return ParseObjectValue(parsedParameters, expectedParameter);
@@ -542,6 +551,25 @@ private final function bool ParseTextValue(
     if (failedParsing)
     {
         commandParser.Fail();
+        return false;
+    }
+    RecordParameter(parsedParameters, expectedParameter,
+                    _.text.FromFormattedString(textValue));
+    return true;
+}
+
+//      Assumes `commandParser` and `parsedParameters` are not `none`.
+//      Parses a single `Text` value into given `parsedParameters`
+//  associative array, consuming all remaining contents.
+private final function bool ParseRemainderValue(
+    AssociativeArray    parsedParameters,
+    Command.Parameter   expectedParameter)
+{
+    local string textValue;
+    //  TODO: use parsing methods into `Text`
+    //  (needs some work for reading formatting `string`s from `Text` objects)
+    commandParser.Skip().MUntilS(textValue);
+    if (!commandParser.Ok()) {
         return false;
     }
     RecordParameter(parsedParameters, expectedParameter,
@@ -782,7 +810,10 @@ private final function bool AddOptionByCharacter(
 private final function bool ParseOptionParameters(Command.Option pickedOption)
 {
     local AssociativeArray optionParameters;
-    if (currentTargetIsOption && currentTarget != CPT_ExtraParameter) {
+    //  If we are already parsing other option's parameters and did not finish
+    //  parsing all required ones - we cannot start another option
+    if (currentTargetIsOption && currentTarget != CPT_ExtraParameter)
+    {
         DeclareError(CET_NoRequiredParamForOption, targetOption.longName);
         return false;
     }

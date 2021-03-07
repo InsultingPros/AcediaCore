@@ -1,6 +1,6 @@
 /**
  *  Set of tests for `Command` class.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -23,7 +23,7 @@ class TEST_Command extends TestCase
 var string queryASuccess1, queryASuccess2, queryASuccess3, queryASuccess4;
 var string queryAFailure1, queryAFailure2;
 
-var string queryBSuccess1, queryBSuccess2;
+var string queryBSuccess1, queryBSuccess2, queryBSuccess3;
 var string queryBFailure1, queryBFailure2, queryBFailure3;
 var string queryBFailureUnknownOptionLong, queryBFailureUnknownOptionShort;
 var string queryBFailureUnused;
@@ -59,6 +59,7 @@ protected static function Test_MockB()
     SubTest_MockBFailed();
     SubTest_MockBQ1();
     SubTest_MockBQ2();
+    SubTest_MockBQ3Remainder();
 }
 
 protected static function Test_CommandCallErrors()
@@ -381,6 +382,26 @@ protected static function SubTest_MockBQ2()
     TEST_ExpectTrue(IntBox(subArray.GetItem(0)).Get() == 8);
 }
 
+protected static function SubTest_MockBQ3Remainder()
+{
+    local CommandCall       result;
+    local DynamicArray      subArray;
+    local AssociativeArray  options, subObject;
+    Issue("Cannot parse command queries with `CPT_Remainder` type parameters.");
+    result = class'MockCommandB'.static.GetInstance()
+        .ProcessInput(PRS(default.queryBSuccess3), none);
+    TEST_ExpectTrue(result.GetParameters().GetLength() == 1);
+    subArray = DynamicArray(result.GetParameters().GetItem(P("list")));
+    TEST_ExpectTrue(FloatBox(subArray.GetItem(0)).Get() == 3);
+    TEST_ExpectTrue(FloatBox(subArray.GetItem(1)).Get() == -76);
+    options = result.GetOptions();
+    TEST_ExpectTrue(options.GetLength() == 1);
+    TEST_ExpectTrue(options.HasKey(P("remainder")));
+    subObject = AssociativeArray(options.GetItem(P("remainder")));
+    TEST_ExpectTrue(    Text(subObject.GetItem(P("everything"))).ToPlainString()
+                    ==  "--type \"value\" -va 8 -sV --forced -T  \"\" 32");
+}
+// [1, 2, 3, 6]
 defaultproperties
 {
     caseName = "Command"
@@ -395,6 +416,7 @@ defaultproperties
 
     queryBSuccess1 = "[7, null] --values 1 3 5 2 4 text"
     queryBSuccess2 = "do --type \"value\" -va 8 -sV --forced -T  \"\" "
+    queryBSuccess3 = "do 3 -76 -r --type \"value\" -va 8 -sV --forced -T  \"\" 32"
     //  long then same as short
     queryBFailure1 = "[] 8 -tv 13"
     queryBFailure2 = "do 7 5 -sfV --forced yes"

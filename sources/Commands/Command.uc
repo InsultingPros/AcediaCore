@@ -61,11 +61,19 @@ enum ErrorType
  */
 enum ParameterType
 {
+    //  Parses into `BoolBox`
     CPT_Boolean,
+    //  Parses into `IntBox`
     CPT_Integer,
+    //  Parses into `FloatBox`
     CPT_Number,
+    //  Parses into `Text`
     CPT_Text,
+    //  Special parameter that consumes the rest of the input into `Text`
+    CPT_Remainder,
+    //  Parses into `AssociativeArray`
     CPT_Object,
+    //  Parses into `DynamicArray`
     CPT_Array
 };
 
