@@ -47,6 +47,8 @@ enum ColorDisplayType
 
 //  System colors for displaying text and variables
 var public config const Color TextDefault;
+var public config const Color TextHeader;
+var public config const Color TextSubHeader;
 var public config const Color TextSubtle;
 var public config const Color TextEmphasis;
 var public config const Color TextOk;
@@ -677,6 +679,8 @@ public final function bool Parse(
 defaultproperties
 {
     TextDefault=(R=255,G=255,B=255,A=255)
+    TextHeader=(R=128,G=0,B=128,A=255)
+    TextSubHeader=(R=147,G=112,B=219,A=255)
     TextSubtle=(R=128,G=128,B=128,A=255)
     TextEmphasis=(R=0,G=128,B=255,A=255)
     TextOk=(R=0,G=255,B=0,A=255)
