@@ -24,7 +24,7 @@ class TEST_Base extends TestCase
 protected static function TESTS()
 {
     //  Use test case itself to test `Text`-returning methods
-    InitializeStatic();
+    StaticConstructor();
     Test_QuickText();
     Test_Constants();
 }

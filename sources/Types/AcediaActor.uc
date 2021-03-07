@@ -68,9 +68,7 @@ var private bool    _hashCodeWasCached;
 var private TextCache _textCache;
 
 //  Formatted `strings` declared in this array will be converted into `Text`s
-//  available via `T()` method when static constructor is called
-//  (either when first object of this class is created or
-//  `InitializeStatic()` method is called)
+//  available via `T()` method when static constructor is called.
 var protected const array<string> stringConstants;
 
 /**
@@ -116,6 +114,10 @@ public function _constructor()
         default._ = class'Global'.static.GetInstance();
         _ = default._;
     }
+    if (!default._staticConstructorWasCalled) {
+        StaticConstructor();
+        default._staticConstructorWasCalled = true;
+    }
     _hashCodeWasCached = false;
     Constructor();
 }
@@ -152,19 +154,6 @@ protected final static function bool StaticConstructorGuard()
 }
 
 /**
- *  Method that can cause early static constructor call for a caller class.
- *
- *  Normally static constructor is called the first time an instance of a class
- *  (or it's child class) is created, but this method can be used to cause this
- *  initialization early.
- */
-public final static function InitializeStatic()
-{
-    if (StaticConstructorGuard()) return;
-    StaticConstructor();
-}
-
-/**
  *  When using proper methods for creating actors (`MemoryAPI`),
  *  this method is guaranteed to be called after actor is spawned,
  *  but before it's returned from allocation method.
@@ -185,7 +174,7 @@ protected function Constructor(){}
  *  |___________________________________________________________________________
  *  otherwise behavior of constructors should be considered undefined.
  */
-protected static function StaticConstructor()
+public static function StaticConstructor()
 {
     local int           i;
     local array<string> stringConstantsCopy;
@@ -323,9 +312,16 @@ public final function int GetLifeVersion()
  *
  *  You can define array `stringConstants` (of `string`s) in `defaultproperties`
  *  that will statically be converted into `Text` objects first time an object
- *  of that class is created or (`InitializeStatic()` method is called).
+ *  of that class is created or `StaticConstructor()` method is called manually.
  *
- *  `Text` instances
+ *  Provided that returned values are not deallocated, they always refer to
+ *  the same `Text` object for any fixed `index`.
+ *  Otherwise new `Text` object can be allocated.
+ *
+ *  @param  index   Index for which to return `Text` instance.
+ *  @return `Text` instance containing the data in a `stringConstants[index]`.
+ *      `none` if either `index < 0` or `index >= stringConstants.length`,
+ *      otherwise guaranteed to be not `none`.
  */
 public static final function Text T(int index)
 {

@@ -69,9 +69,7 @@ var private bool    _hashCodeWasCached;
 var private TextCache _textCache;
 
 //  Formatted `strings` declared in this array will be converted into `Text`s
-//  available via `T()` method when static constructor is called
-//  (either when first object of this class is created or
-//  `InitializeStatic()` method is called)
+//  available via `T()` method when static constructor is called.
 var protected const array<string> stringConstants;
 
 /**
@@ -157,19 +155,6 @@ protected final static function bool StaticConstructorGuard()
 }
 
 /**
- *  Method that can cause early static constructor call for a caller class.
- *
- *  Normally static constructor is called the first time an instance of a class
- *  (or it's child class) is created, but this method can be used to cause this
- *  initialization early.
- */
-public final static function InitializeStatic()
-{
-    if (default._staticConstructorWasCalled) return;
-    StaticConstructor();
-}
-
-/**
  *  When using proper methods for creating objects (`MemoryAPI`),
  *  this method is guaranteed to be called after object is allocated,
  *  but before it's returned from allocation method.
@@ -190,7 +175,7 @@ protected function Constructor(){}
  *  |___________________________________________________________________________
  *  otherwise behavior of constructors should be considered undefined.
  */
-protected static function StaticConstructor()
+public static function StaticConstructor()
 {
     local int           i;
     local array<string> stringConstantsCopy;
@@ -342,7 +327,7 @@ public final function int GetLifeVersion()
  *
  *  You can define array `stringConstants` (of `string`s) in `defaultproperties`
  *  that will statically be converted into `Text` objects first time an object
- *  of that class is created or (`InitializeStatic()` method is called).
+ *  of that class is created or `StaticConstructor()` method is called manually.
  *
  *  Provided that returned values are not deallocated, they always refer to
  *  the same `Text` object for any fixed `index`.

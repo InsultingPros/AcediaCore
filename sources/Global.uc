@@ -65,5 +65,5 @@ protected function Initialize()
     color       = ColorAPI(memory.Allocate(class'ColorAPI'));
     users       = UserAPI(memory.Allocate(class'UserAPI'));
     json        = JSONAPI(memory.Allocate(class'JSONAPI'));
-    json.InitializeStatic();
+    json.StaticConstructor();
 }

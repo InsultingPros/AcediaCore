@@ -21,10 +21,7 @@ Implementing and enforcing (de)allocation allowed us to introduce constructors t
 
 To make use of them one can simply overload protected methods `Constructor()` and `Finalizer()`. Parametrized constructors are not supported.
 
-Static constructors are also supported (and can be used by overloading `StaticConstructor()`), - they are methods that take care of some initialization work before any instance of the given class is created. They are called only once, at the earliest of the following two events:
-
-1. An instance of relevant class (or it's child class) is created;
-2. Public `InitializeStatic()` method was called to force it early.
+Static constructors are also supported (and can be used by overloading `StaticConstructor()`), - they are methods that take care of some initialization work before any instance of the given class is created. They are called only once, at the latest when an instance of relevant class (or it's child class) is created. `StaticConstructor()` is allowed to be called early to initialize static members of a certain class before creating it's instances.
 
 ### General collections
 
