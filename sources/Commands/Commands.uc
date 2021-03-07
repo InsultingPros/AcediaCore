@@ -66,24 +66,26 @@ protected function OnDisabled()
 public final function RegisterCommand(class<Command> commandClass)
 {
     local Text      commandName;
-    local Command   commandInstance;
+    local Command   newCommandInstance, existingCommandInstance;
     if (commandClass == none)       return;
     if (registeredCommands == none) return;
 
-    commandName = commandClass.static.GetName();
-    commandInstance = Command(registeredCommands.GetItem(commandName));
-    if (commandInstance != none)
+    newCommandInstance  = Command(_.memory.Allocate(commandClass, true));
+    commandName         = newCommandInstance.GetName();
+    //  Check for duplicates and report them
+    existingCommandInstance = Command(registeredCommands.GetItem(commandName));
+    if (existingCommandInstance != none)
     {
         _.logger.Auto(errCommandDuplicate)
-            .ArgClass(commandInstance.class)
-            .Arg(commandName.Copy())
+            .ArgClass(existingCommandInstance.class)
+            .Arg(commandName)
             .ArgClass(commandClass);
-        commandName.FreeSelf();
+        _.memory.Free(newCommandInstance);
         return;
     }
-    commandInstance = Command(_.memory.Allocate(commandClass, true));
+    //  Otherwise record new command
     //  `commandName` used as a key, do not deallocate it
-    registeredCommands.SetItem(commandName, commandInstance, true);
+    registeredCommands.SetItem(commandName, newCommandInstance, true);
 }
 
 /**
@@ -157,5 +159,5 @@ defaultproperties
 {
     useChatInput = true
     requiredListeners(0) = class'BroadcastListener_Commands'
-    errCommandDuplicate = (l=LOG_Error,m="Command `%1` with name '%2' is already registered. Command `%3` will be ignored.")
+    errCommandDuplicate = (l=LOG_Error,m="Command `%1` is already registered with name '%2'. Command `%3` with the same name will be ignored.")
 }

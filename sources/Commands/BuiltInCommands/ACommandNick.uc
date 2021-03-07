@@ -22,6 +22,7 @@ class ACommandNick extends Command;
 //'dosh' for giving dosh (subcommand for setting it, options for min/max resulting value, silent)
 protected function BuildData(CommandDataBuilder builder)
 {
+    builder.Name(P("nick")).Summary(P("Changes player's nickname."));
     builder.RequireTarget();
     builder.ParamText(P("nick"))
         .Describe(P("Sets new nickname to the targeted players."));
@@ -34,5 +35,4 @@ protected function ExecutedFor(APlayer player, CommandCall result)
 
 defaultproperties
 {
-    commandName = "nick"
 }

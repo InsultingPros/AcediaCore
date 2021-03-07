@@ -42,6 +42,7 @@ class CommandDataBuilder extends AcediaObject
  */
 
 //  "Prepared data"
+var private Text                        commandName, commandSummary;
 var private array<Command.SubCommand>   subcommands;
 var private array<Command.Option>       options;
 var private bool                        requiresTarget;
@@ -82,6 +83,8 @@ protected function Finalizer()
     options.length                  = 0;
     optionsIsOptional.length        = 0;
     selectedParameterArray.length   = 0;
+    commandName                     = none;
+    commandSummary                  = none;
     selectedItemName                = none;
     selectedDescription             = none;
     requiresTarget                  = false;
@@ -450,6 +453,50 @@ public final function CommandDataBuilder Describe(Text description)
 }
 
 /**
+ *  Sets new name of `Command.Data` under construction. This is a name that will
+ *  be used unless Acedia is configured to do otherwise.
+ *
+ *  @return Returns the caller `CommandDataBuilder` to allow for
+ *      method chaining.
+ */
+public final function CommandDataBuilder Name(Text newName)
+{
+    if (newName != none && newName == commandName) {
+        return self;
+    }
+    _.memory.Free(commandName);
+    if (newName != none) {
+        commandName = newName.Copy();
+    }
+    else {
+        commandName = none;
+    }
+    return self;
+}
+
+/**
+ *  Sets new summary of `Command.Data` under construction. Summary gives a short
+ *  description of the command on the whole, to be displayed in a command list.
+ *
+ *  @return Returns the caller `CommandDataBuilder` to allow for
+ *      method chaining.
+ */
+public final function CommandDataBuilder Summary(Text newSummary)
+{
+    if (newSummary != none && newSummary == commandSummary) {
+        return self;
+    }
+    _.memory.Free(commandSummary);
+    if (newSummary != none) {
+        commandSummary = newSummary.Copy();
+    }
+    else {
+        commandSummary = none;
+    }
+    return self;
+}
+
+/**
  *  Makes caller builder to mark `Command.Data` under construction to require
  *  a player target.
  *
@@ -497,9 +544,11 @@ public final function Command.Data GetData()
 {
     local Command.Data newData;
     RecordSelection();
-    newData.subcommands      = subcommands;
-    newData.options          = options;
-    newData.requiresTarget   = requiresTarget;
+    newData.name            = commandName;
+    newData.summary         = commandSummary;
+    newData.subcommands     = subcommands;
+    newData.options         = options;
+    newData.requiresTarget  = requiresTarget;
     return newData;
 }
 

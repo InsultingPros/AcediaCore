@@ -22,6 +22,7 @@ class ACommandDosh extends Command;
 //'dosh' for giving dosh (subcommand for setting it, options for min/max resulting value, silent)
 protected function BuildData(CommandDataBuilder builder)
 {
+    builder.Name(P("dosh")).Summary(P("Changes how much money player has."));
     builder.RequireTarget();
     builder.ParamInteger(P("amount"))
         .Describe(P("Gives (takes if negative) players a specified <amount>"
@@ -99,5 +100,4 @@ protected function ExecutedFor(APlayer player, CommandCall result)
 
 defaultproperties
 {
-    commandName = "dosh"
 }
