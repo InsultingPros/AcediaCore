@@ -90,7 +90,7 @@ public final function Object Allocate(
     //  If pools did not work - spawn / create object through regular methods
     if (allocatedObject == none)
     {
-        actorClassToAllocate  = class<AcediaActor>(classToAllocate);
+        actorClassToAllocate  = class<Actor>(classToAllocate);
         if (actorClassToAllocate != none)
         {
             allocatedObject = class'CoreService'.static
