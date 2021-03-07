@@ -19,30 +19,29 @@
  */
 class ACommandDosh extends Command;
 
-//'dosh' for giving dosh (subcommand for setting it, options for min/max resulting value, silent)
 protected function BuildData(CommandDataBuilder builder)
 {
-    builder.Name(P("dosh")).Summary(P("Changes how much money player has."));
+    builder.Name(P("dosh")).Summary(P("Changes amount of money."));
     builder.RequireTarget();
     builder.ParamInteger(P("amount"))
-        .Describe(P("Gives (takes if negative) players a specified <amount>"
+        .Describe(P("Gives (or takes if negative) players a specified <amount>"
             @ "of money."));
     builder.SubCommand(P("set"))
         .ParamInteger(P("amount"))
-        .Describe(P("Sets players' money to a specified <amount>."));
+        .Describe(P("Sets player's money to a specified <amount>."));
     builder.Option(P("silent"))
         .Describe(P("If specified - players won't receive a notification about"
             @ "obtaining/losing dosh."));
     builder.Option(P("min"))
         .ParamInteger(P("minValue"))
         .Describe(F("Players will retain at least this amount of dosh after"
-            @ "the command's execution. In case of conflict overrides"
+            @ "the command's execution. In case of conflict, overrides"
             @ "'{$TextEmphasis --max}' option. `0` is assumed by default."));
     builder.Option(P("max"), P("M"))
         .ParamInteger(P("maxValue"))
         .Describe(F("Players will have at most this amount of dosh after"
-            @ "the command's execution. In case of conflict is overridden by"
-            @ "'{$TextEmphasis --min}' option."));
+            @ "the command's execution. In case of conflict, it is overridden"
+            @ "by '{$TextEmphasis --min}' option."));
 }
 
 protected function ExecutedFor(APlayer player, CommandCall result)
@@ -76,22 +75,17 @@ protected function ExecutedFor(APlayer player, CommandCall result)
         newAmount = amount;
     }
     //  Enforce min/max bounds
-    if (newAmount > maxValue) {
-        newAmount = maxValue;
-    }
-    if (newAmount < minValue) {
-        newAmount = minValue;
-    }
+    newAmount = Clamp(newAmount, minValue, maxValue);
     if (!commandOptions.HasKey(P("silent")))
     {
         if (newAmount > oldAmount)
         {
-            player.Console().WriteLine(P("You've gotten"
+            player.Console().Say(F("You've {$TextPositive gotten}"
                 @ newAmount - oldAmount @ "dosh!"));
         }
         if (newAmount < oldAmount)
         {
-            player.Console().WriteLine(P("You've lost"
+            player.Console().Say(F("You've {$TextNegative lost}"
             @ oldAmount - newAmount @ "dosh!"));
         }
     }
