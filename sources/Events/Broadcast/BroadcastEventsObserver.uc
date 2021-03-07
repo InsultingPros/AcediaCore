@@ -187,7 +187,7 @@ public function bool HandlerAllowsBroadcast(Actor broadcaster, int sentTextNum)
         canBroadcast = nextBroadcastHandler
             .HandlerAllowsBroadcast(broadcaster, sentTextNum);
     }
-	return canBroadcast;
+    return canBroadcast;
 }
 
 function Broadcast(Actor sender, coerce string message, optional name type)
@@ -254,7 +254,7 @@ event AllowBroadcastLocalized(
 
 function bool AllowsBroadcast(Actor broadcaster, int len)
 {
-	if (blockAllowsBroadcast)
+    if (blockAllowsBroadcast)
         return true;
     return super.AllowsBroadcast(broadcaster, len);
 }
@@ -288,7 +288,7 @@ function bool AcceptBroadcastText(
     if (!canBroadcast) {
         return false;
     }
-	return super.AcceptBroadcastText(receiver, senderPRI, message, type);
+    return super.AcceptBroadcastText(receiver, senderPRI, message, type);
 }
 
 
@@ -302,7 +302,7 @@ function bool AcceptBroadcastLocalized(
     optional Object                 obj
 )
 {
-	local bool                              canBroadcast;
+    local bool                              canBroadcast;
     local BroadcastEvents.LocalizedMessage  packedMessage;
     packedMessage.class         = message;
     packedMessage.id            = switch;
@@ -324,7 +324,7 @@ function bool AcceptBroadcastLocalized(
     if (!canBroadcast) {
         return false;
     }
-	return super.AcceptBroadcastLocalized(  receiver, sender, message, switch,
+    return super.AcceptBroadcastLocalized(  receiver, sender, message, switch,
                                             relatedPRI1, relatedPRI2, obj);
 }
 
