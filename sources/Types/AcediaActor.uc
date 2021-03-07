@@ -412,6 +412,9 @@ public static final function Global __()
 event PreBeginPlay()
 {
     super.PreBeginPlay();
+    //  Calling this early here makes sure `Actor`s that catch `PreBeginPlay()`
+    //  and similar early initialization events will find global API already
+    //  setup and working
     _constructor();
 }
 

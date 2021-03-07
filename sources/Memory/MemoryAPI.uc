@@ -106,6 +106,9 @@ public final function Object Allocate(
         AcediaObject(allocatedObject)._constructor();
     }
     if (acediaActorClassToAllocate != none) {
+        //  Despite `_constructor()` being called during `PreBeginPlay()` event,
+        //  we must also call it here for `Actor`s that we did not spawn anew,
+        //  but took from object pool.
         AcediaActor(allocatedObject)._constructor();
     }
     return allocatedObject;
