@@ -48,10 +48,20 @@ var private APlayer             outputTarget;
 var private ConsoleBuffer       outputBuffer;
 
 var private ConsoleAPI.ConsoleDisplaySettings   displaySettings;
+//      Sometimes we want to output a certain part of text with a color
+//  different from the default one. However this requires to remember current
+//  default in additional variable, set new color and then return the old one.
+//  To slightly simplify this process we use pair of `UseColor()`/`ResetColor()`
+//  methods that use this variable to remember "real" default color and allowing
+//  us to quickly reset back to it.
+//      This also means that `displaySettings` can sometimes store "default"
+//  color information instead.
+var private Color                               defaultColor;
 
 public final function ConsoleWriter Initialize(
     ConsoleAPI.ConsoleDisplaySettings newDisplaySettings)
 {
+    defaultColor = newDisplaySettings.defaultColor;
     displaySettings = newDisplaySettings;
     if (outputBuffer == none) {
         outputBuffer = ConsoleBuffer(_.memory.Allocate(class'ConsoleBuffer'));
@@ -64,17 +74,50 @@ public final function ConsoleWriter Initialize(
 }
 
 /**
- *  Return current default color for caller `ConsoleWriter`.
+ *  Return default color setting for caller `ConsoleWriter`. It can be
+ *  temporarily overwritten by `UseColor()` method.
  *
- *  This method returns default color, i.e. color that will be used if no other
- *  is specified by text you're outputting.
- *  If color is specified, this value will be ignored.
+ *      This method returns default color setting, i.e. color that will be used
+ *  if no other is specified by text you're outputting and if it was not
+ *  overwritten with `UseColor()` method.
+ *      To get color currently used for outputting text, see `GetColor()`
+ *  method.
+ *
+ *      Do note that `ConsoleWriter` can have two "default" colors: a "real"
+ *  default and a "temporary" default: "temporary" one can be set with
+ *  `UseColor()` method call to temporarily color certain part of the output and
+ *  then revert to the "real" default color.
+ *      This method always returns "real" default color.
  *
  *  This value is not synchronized with the global value from `ConsoleAPI`
  *  (or such value from any other `ConsoleWriter`) and affects only
  *  output produced by this `ConsoleWriter`.
  *
- *  @return Current default color.
+ *  @return Current default color (the one that will be used to color output
+ *      text after `ResetColor()` method call).
+ */
+public final function Color GetDefaultColor()
+{
+    return defaultColor;
+}
+
+/**
+ *  Return currently used default color for caller `ConsoleWriter`.
+ *
+ *      This method returns default color, i.e. color that will be used if
+ *  no other is specified by text you're outputting. If color is specified,
+ *  this value is ignored.
+ *      See also `GetDefaultColor()`.
+ *
+ *      Do note that `ConsoleWriter` can have two "default" colors: a "real"
+ *  default and a "temporary" default: "temporary" one can be set with
+ *  `UseColor()` method call to temporarily color certain part of the output and
+ *  then revert to the "real" default color.
+ *      This method always return the color that will be actually used to
+ *  output text, so "temporary" default if it's set and "real" default
+ *  otherwise.
+ *
+ *  @return Current default color (currently used to output text information).
  */
 public final function Color GetColor()
 {
@@ -85,8 +128,12 @@ public final function Color GetColor()
  *  Sets default color for caller 'ConsoleWriter`'s output.
  *
  *  This only changes default color, i.e. color that will be used if no other is
- *  specified by text you're outputting.
- *  If color is specified, this value will be ignored.
+ *  specified by `newDefaultColor`. If color is specified, this value will
+ *  be ignored.
+ *
+ *  If you only want to quickly color certain part of output, it is better to
+ *  use `UseColor()` method that temporarily changes used default color and
+ *  allows to return to actual default color with `ResetColor()` method.
  *
  *  This value is not synchronized with the global value from `ConsoleAPI`
  *  (or such value from any other `ConsoleWriter`) and affects only
@@ -97,7 +144,53 @@ public final function Color GetColor()
  */
 public final function ConsoleWriter SetColor(Color newDefaultColor)
 {
+    defaultColor = newDefaultColor;
     displaySettings.defaultColor = newDefaultColor;
+    if (outputBuffer != none) {
+        outputBuffer.SetSettings(displaySettings);
+    }
+    return self;
+}
+
+/**
+ *  Sets "temporary" default color that can be reverted to "real" default color
+ *  with `ResetColor()` method.
+ *
+ *  For quickly coloring certain parts of output:
+ *  `console.UseColor(_.color.blue).Write(blueMessage).ResetColor()`.
+ *
+ *  This only changes default text color, i.e. color that will be used if no
+ *  other is specified by `temporaryColor`. If color is specified, this value
+ *  will be ignored.
+ *
+ *  Consecutive calls do not "stack up" colors - only last one is remembered:
+ *      `console.UseColor(_.color.blue).UseColor(_.color.green)` is the same as
+ *      `console.UseColor(_.color.green)`.
+ *
+ *  Use `SetColor()` to set both "real" and "temporary" color.
+ *
+ *  @param  temporaryColor  Color to use as default one in the next console
+ *      output calls until the `ResetColor()` method call.
+ *  @return Returns caller `ConsoleWriter` to allow for method chaining.
+ */
+public final function ConsoleWriter UseColor(Color temporaryColor)
+{
+    displaySettings.defaultColor = temporaryColor;
+    if (outputBuffer != none) {
+        outputBuffer.SetSettings(displaySettings);
+    }
+    return self;
+}
+
+/**
+ *  Resets "temporary" default text color to "real" default color.
+ *  See `UseColor()` for details.
+ *
+ *  @return Returns caller `ConsoleWriter` to allow for method chaining.
+ */
+public final function ConsoleWriter ResetColor()
+{
+    displaySettings.defaultColor = defaultColor;
     if (outputBuffer != none) {
         outputBuffer.SetSettings(displaySettings);
     }
