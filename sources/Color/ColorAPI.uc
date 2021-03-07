@@ -51,6 +51,8 @@ var public config const Color TextHeader;
 var public config const Color TextSubHeader;
 var public config const Color TextSubtle;
 var public config const Color TextEmphasis;
+var public config const Color TextPositive;
+var public config const Color TextNegative;
 var public config const Color TextOk;
 var public config const Color TextWarning;
 var public config const Color TextFailure;
@@ -683,6 +685,8 @@ defaultproperties
     TextSubHeader=(R=147,G=112,B=219,A=255)
     TextSubtle=(R=128,G=128,B=128,A=255)
     TextEmphasis=(R=0,G=128,B=255,A=255)
+    TextPositive=(R=0,G=128,B=0,A=255)
+    TextNegative=(R=220,G=20,B=60,A=255)
     TextOk=(R=0,G=255,B=0,A=255)
     TextWarning=(R=255,G=128,B=0,A=255)
     TextFailure=(R=255,G=0,B=0,A=255)
