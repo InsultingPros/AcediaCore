@@ -19,7 +19,6 @@
  */
 class ACommandNick extends Command;
 
-//'dosh' for giving dosh (subcommand for setting it, options for min/max resulting value, silent)
 protected function BuildData(CommandDataBuilder builder)
 {
     builder.Name(P("nick")).Summary(P("Changes nickname."));
