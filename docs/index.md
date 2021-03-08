@@ -49,6 +49,12 @@ Acedia provides dynamic and associative array collections capable of storing `Ac
 
 [Read more](API/Collections.md)
 
+### Commands
+
+Acedia provides a centralized way to define user command that can be invoked by players through either chat or console. Examples are `dosh m14pro 500` to give player named 'm14pro' 500 dosh or `nick m14pro m14elitist` to change his nickname to 'm14elitist'. They have a variety of advantages compared to simple "mutate" commands, providing modders with a powerful tool for creating new commands.
+
+[Read more](API/Commands.md)
+
 ### Console
 
 Default Killing Floor console output is ill-fit for printing long text messages due to it's automatic line breaking of long enough messages. Acedia provides `ConsoleAPI` that resolves this issue in a nice and easy-to-use way.
