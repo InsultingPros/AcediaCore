@@ -573,7 +573,6 @@ public final function bool StartsWith(
     if (GetLength() < otherText.GetLength()) {
         return false;
     }
-    //  Copy once to avoid doing it each iteration
     for (i = 0; i < otherText.GetLength(); i += 1)
     {
         char1 = GetCharacter(i);
@@ -619,7 +618,6 @@ public final function bool EndsWith(
     if (GetLength() < otherText.GetLength()) {
         return false;
     }
-    //  Copy once to avoid doing it each iteration
     index           = GetLength() - 1;
     otherIndex      = otherText.GetLength() - 1;
     while (otherIndex >= 0)
@@ -1191,6 +1189,117 @@ public final function array<MutableText> SplitByCharacter(Character separator)
     }
     result[result.length] = nextText;
     return result;
+}
+
+/**
+ *  Returns the index position of the first occurrence of the `otherText` in
+ *  the caller `Text`, searching forward from index position `fromIndex`.
+ *
+ *  @param  otherText           `Text` data to find inside the caller `Text`.
+ *  @param  fromIndex           Index from which we should start searching.
+ *  @param  caseSensitivity     Defines whether comparison should be
+ *      case-sensitive. By default it is.
+ *  @param  formatSensitivity   Defines whether comparison should be
+ *      sensitive for color information. By default it is not.
+ *  @return `-1` if `otherText` is not found after `fromIndex`.
+ */
+public final function int IndexOf(
+    Text                        otherText,
+    optional int                fromIndex,
+    optional CaseSensitivity    caseSensitivity,
+    optional FormatSensitivity  formatSensitivity)
+{
+    local int       startCandidate;
+    local int       index, otherIndex;
+    local Character char1, char2;
+    if (otherText == none)                                  return -1;
+    if (fromIndex > GetLength())                            return -1;
+    if (GetLength() - fromIndex < otherText.GetLength())    return -1;
+    if (otherText.IsEmpty())                                return fromIndex;
+
+    startCandidate = fromIndex;
+    for (index = fromIndex; index < GetLength(); index += 1)
+    {
+        char1 = GetCharacter(index);
+        char2 = otherText.GetCharacter(otherIndex);
+        if (    NormalizeCodePoint(char1.codePoint, caseSensitivity)
+            !=  NormalizeCodePoint(char2.codePoint, caseSensitivity))
+        {
+            startCandidate = index + 1;
+            otherIndex = 0;
+            continue;
+        }
+        if (    formatSensitivity == SFORM_SENSITIVE
+            &&  !_.text.IsFormattingEqual(char1.formatting, char2.formatting))
+        {
+            startCandidate = index + 1;
+            otherIndex = 0;
+            continue;
+        }
+        otherIndex += 1;
+        if (otherIndex == otherText.GetLength()) {
+            return startCandidate;
+        }
+    }
+    return -1;
+}
+
+/**
+ *  Returns the index position of the last occurrence of the `otherText` in
+ *  the caller `Text`, searching backward from index position `fromIndex`,
+ *  counted the end of the caller `Text`.
+ *
+ *  @param  otherText           `Text` data to find inside the caller `Text`.
+ *  @param  fromIndex           Index from which we should start searching, but
+ *      it's counted from the end of the caller `Text`: `0` means starting from
+ *      the last character, `1` means next to last, etc.
+ *  @param  caseSensitivity     Defines whether comparison should be
+ *      case-sensitive. By default it is.
+ *  @param  formatSensitivity   Defines whether comparison should be
+ *      sensitive for color information. By default it is not.
+ *  @return `-1` if `otherText` is not found starting `fromIndex`
+ *      (this index is counted from the end of the caller `Text`).
+ */
+public final function int LastIndexOf(
+    Text                        otherText,
+    optional int                fromIndex,
+    optional CaseSensitivity    caseSensitivity,
+    optional FormatSensitivity  formatSensitivity)
+{
+    local int       startCandidate;
+    local int       index, otherIndex;
+    local Character char1, char2;
+    if (otherText == none)                                  return -1;
+    if (fromIndex > GetLength())                            return -1;
+    if (GetLength() - fromIndex < otherText.GetLength())    return -1;
+    if (otherText.IsEmpty())                                return fromIndex;
+
+    otherIndex = otherText.GetLength() - 1;
+    startCandidate = GetLength() - fromIndex - 1;
+    for (index = startCandidate; index >= 0; index -= 1)
+    {
+        char1 = GetCharacter(index);
+        char2 = otherText.GetCharacter(otherIndex);
+        if (    NormalizeCodePoint(char1.codePoint, caseSensitivity)
+            !=  NormalizeCodePoint(char2.codePoint, caseSensitivity))
+        {
+            startCandidate = index - 1;
+            otherIndex = otherText.GetLength() - 1;
+            continue;
+        }
+        if (    formatSensitivity == SFORM_SENSITIVE
+            &&  !_.text.IsFormattingEqual(char1.formatting, char2.formatting))
+        {
+            startCandidate = index - 1;
+            otherIndex = otherText.GetLength() - 1;
+            continue;
+        }
+        otherIndex -= 1;
+        if (otherIndex < 0) {
+            return startCandidate - (otherText.GetLength() - 1);
+        }
+    }
+    return -1;
 }
 
 defaultproperties

@@ -38,6 +38,7 @@ protected static function TESTS()
     Test_Substring();
     Test_SeparateByCharacter();
     Test_StartsEndsWith();
+    Test_IndexOf();
 }
 
 protected static function Test_TextCreation()
@@ -693,6 +694,188 @@ protected static function SubTest_EndsWith_Formatting()
         .EndsWith(F("{#f00000 ome}{#00ff00 thing}"),, SFORM_SENSITIVE));
     TEST_ExpectTrue(F("{#454545 Cr}aZy")
         .EndsWith(F("{#454545 r}aZy"),, SFORM_SENSITIVE));
+}
+
+protected static function Test_IndexOf()
+{
+    Context("Testing `IndexOf()` method with non-formatted `Text`s.");
+    SubTest_IndexOfSuccess(SFORM_SENSITIVE);
+    SubTest_IndexOfSuccess(SFORM_INSENSITIVE);
+    SubTest_IndexOfFail(SFORM_SENSITIVE);
+    SubTest_IndexOfFail(SFORM_INSENSITIVE);
+    Context("Testing `IndexOf()` method with formatted `Text`s.");
+    SubTest_IndexOfFormatting();
+    Context("Testing `LastIndexOf()` method with non-formatted `Text`s.");
+    SubTest_LastIndexOfSuccess(SFORM_SENSITIVE);
+    SubTest_LastIndexOfSuccess(SFORM_INSENSITIVE);
+    SubTest_LastIndexOfFail(SFORM_SENSITIVE);
+    SubTest_LastIndexOfFail(SFORM_INSENSITIVE);
+    Context("Testing `LastIndexOf()` method with formatted `Text`s.");
+    SubTest_LastIndexOfFormatting();
+}
+
+protected static function SubTest_IndexOfSuccess(Text.FormatSensitivity flag)
+{
+    Issue("`IndexOf()` works incorrectly with empty `Text`s.");
+    TEST_ExpectTrue(P("").IndexOf(F("{rgb(4,5,6) }"),,, flag) == 0);
+    TEST_ExpectTrue(P("something").IndexOf(P(""),,, flag) == 0);
+    TEST_ExpectFalse(
+        F("{rgb(23,342,32) }").IndexOf(P("something"),,, flag) == 0);
+
+    Issue("`IndexOf()` returns non-zero index for identical `Text`s.");
+    TEST_ExpectTrue(P("Just something").IndexOf(P("Just something")) == 0);
+    TEST_ExpectTrue(
+        P("CraZy").IndexOf(P("CRaZy"),, SCASE_INSENSITIVE, flag) == 0);
+
+    Issue("`IndexOf()` returns wrong index for correct sub-`Text`s.");
+    TEST_ExpectTrue(P("Just something").IndexOf(P("some"),,, flag) == 5);
+    TEST_ExpectTrue(P("Just something").IndexOf(P("some"), 3,, flag) == 5);
+    TEST_ExpectTrue(P("Just something").IndexOf(P("some"), 5,, flag) == 5);
+    TEST_ExpectTrue(
+        P("Just some-something").IndexOf(P("some"), 7,, flag) == 10);
+
+    Issue("`IndexOf()` returns wrong index for correct case-insensitive" @
+        "sub-`Text`s.");
+    TEST_ExpectTrue(P("JUSt sOmEtHiNG")
+            .IndexOf(P("sOME"),, SCASE_INSENSITIVE, flag)
+        ==  5);
+    TEST_ExpectTrue(P("JUSt sOmEtHiNG")
+            .IndexOf(P("SoMe"), 3, SCASE_INSENSITIVE, flag)
+        ==  5);
+    TEST_ExpectTrue(P("JUSt sOmEtHiNG")
+            .IndexOf(P("sOMe"), 5, SCASE_INSENSITIVE, flag)
+        ==  5);
+    TEST_ExpectTrue(P("JUSt soME-sOmEtHiNG")
+            .IndexOf(P("SomE"), 7, SCASE_INSENSITIVE, flag)
+        ==  10);
+}
+
+protected static function SubTest_IndexOfFail(Text.FormatSensitivity flag)
+{
+    Issue("`IndexOf()` returns non-negative index for longer `Text`s.");
+    TEST_ExpectTrue(
+        P("text").IndexOf(P("image"),, SCASE_INSENSITIVE, flag) < 0);
+    TEST_ExpectTrue(P("++text").IndexOf(P("text+"), 2,, flag) < 0);
+
+    Issue("`IndexOf()` returns non-negative index when looking for `Text`s that"
+        @ "are not a substring.");
+    TEST_ExpectTrue(P("text").IndexOf(P("exd"),, SCASE_INSENSITIVE, flag) < 0);
+    TEST_ExpectTrue(P("A string").IndexOf(P("  string"),,, flag) < 0);
+    TEST_ExpectTrue(P("A string").IndexOf(P("  string"),,, flag) < 0);
+    TEST_ExpectTrue(P("A string").IndexOf(P("str"), 3,, flag) < 0);
+    TEST_ExpectTrue(P("A string").IndexOf(P("str"), 20,, flag) < 0);
+}
+
+protected static function SubTest_IndexOfFormatting()
+{
+    Issue("`IndexOf()` returns non-zero index for identical `Text`s.");
+    TEST_ExpectTrue(F("Just {#4fe2ac some}thing")
+            .IndexOf(F("Just {#4fe2ac some}thing"),,, SFORM_SENSITIVE)
+        ==  0);
+    TEST_ExpectTrue(F("Cra{#ff0000 Zy}")
+            .IndexOf(F("Cra{#ff0000 Zy}"),,, SFORM_SENSITIVE)
+        ==  0);
+
+    Issue("`IndexOf()` returns wrong index for correct sub-`Text`s.");
+    TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
+            .IndexOf(F("so{#4f632dc me}"),,, SFORM_SENSITIVE)
+        ==  5);
+    TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
+            .IndexOf(F("so{#4f632dc me}"), 3,, SFORM_SENSITIVE)
+        ==  5);
+    TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
+            .IndexOf(F("so{#4f632dc me}"), 5,, SFORM_SENSITIVE)
+        ==  5);
+    TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
+            .IndexOf(F("{#4f632dc some}"),,, SFORM_SENSITIVE)
+        ==  10);
+    TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
+            .IndexOf(F("{#4f632dc some}"), 7,, SFORM_SENSITIVE)
+        ==  10);
+}
+
+protected static function SubTest_LastIndexOfSuccess(
+    Text.FormatSensitivity flag)
+{
+    Issue("`LastIndexOf()` works incorrectly with empty `Text`s.");
+    TEST_ExpectTrue(P("").LastIndexOf(F("{rgb(4,5,6) }"),,, flag) == 0);
+    TEST_ExpectTrue(P("something").LastIndexOf(P(""),,, flag) == 0);
+    TEST_ExpectFalse(
+        F("{rgb(23,342,32) }").LastIndexOf(P("something"),,, flag) == 0);
+
+    Issue("`LastIndexOf()` returns non-zero index for identical `Text`s.");
+    TEST_ExpectTrue(P("Just something").LastIndexOf(P("Just something")) == 0);
+    TEST_ExpectTrue(
+        P("CraZy").LastIndexOf(P("CRaZy"),, SCASE_INSENSITIVE, flag) == 0);
+
+    Issue("`LastIndexOf()` returns wrong index for correct sub-`Text`s.");
+    TEST_ExpectTrue(P("Just something").LastIndexOf(P("some"),,, flag) == 5);
+    TEST_ExpectTrue(P("Just something").LastIndexOf(P("some"), 3,, flag) == 5);
+    TEST_ExpectTrue(P("Just something").LastIndexOf(P("some"), 5,, flag) == 5);
+    TEST_ExpectTrue(
+        P("Just some-something").LastIndexOf(P("some"),,, flag) == 10);
+    TEST_ExpectTrue(
+        P("Just some-something").LastIndexOf(P("some"), 6,, flag) == 5);
+
+    Issue("`LastIndexOf()` returns wrong index for correct case-insensitive" @
+        "sub-`Text`s.");
+    TEST_ExpectTrue(P("JUSt sOmEtHiNG")
+            .LastIndexOf(P("sOME"),, SCASE_INSENSITIVE, flag)
+        ==  5);
+    TEST_ExpectTrue(P("JUSt sOmEtHiNG")
+            .LastIndexOf(P("SoMe"), 3, SCASE_INSENSITIVE, flag)
+        ==  5);
+    TEST_ExpectTrue(P("JUSt soME-sOmEtHiNG")
+            .LastIndexOf(P("sOMe"), 5, SCASE_INSENSITIVE, flag)
+        ==  10);
+    TEST_ExpectTrue(P("JUSt soME-sOmEtHiNG")
+            .LastIndexOf(P("SomE"), 6, SCASE_INSENSITIVE, flag)
+        ==  5);
+}
+
+protected static function SubTest_LastIndexOfFail(Text.FormatSensitivity flag)
+{
+    Issue("`LastIndexOf()` returns non-negative index for longer `Text`s.");
+    TEST_ExpectTrue(
+        P("text").LastIndexOf(P("image"),, SCASE_INSENSITIVE, flag) < 0);
+    TEST_ExpectTrue(P("++text").LastIndexOf(P("text+"), 2,, flag) < 0);
+
+    Issue("`LastIndexOf()` returns non-negative index when looking for `Text`s that"
+        @ "are not a substring.");
+    TEST_ExpectTrue(
+        P("text").LastIndexOf(P("exd"),, SCASE_INSENSITIVE, flag) < 0);
+    TEST_ExpectTrue(P("A string").LastIndexOf(P("  string"),,, flag) < 0);
+    TEST_ExpectTrue(P("A string").LastIndexOf(P("  string"),,, flag) < 0);
+    TEST_ExpectTrue(P("A string").LastIndexOf(P("str"), 4,, flag) < 0);
+    TEST_ExpectTrue(P("A string").LastIndexOf(P("str"), 20,, flag) < 0);
+}
+
+protected static function SubTest_LastIndexOfFormatting()
+{
+    Issue("`LastIndexOf()` returns non-zero index for identical `Text`s.");
+    TEST_ExpectTrue(F("Just {#4fe2ac some}thing")
+            .LastIndexOf(F("Just {#4fe2ac some}thing"),,, SFORM_SENSITIVE)
+        ==  0);
+    TEST_ExpectTrue(F("Cra{#ff0000 Zy}")
+            .LastIndexOf(F("Cra{#ff0000 Zy}"),,, SFORM_SENSITIVE)
+        ==  0);
+
+    Issue("`LastIndexOf()` returns wrong index for correct sub-`Text`s.");
+    TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
+            .LastIndexOf(F("{#4f632dc some}"),,, SFORM_SENSITIVE)
+        ==  10);
+    TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
+            .LastIndexOf(F("{#4f632dc some}"), 3,, SFORM_SENSITIVE)
+        ==  10);
+    TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
+            .LastIndexOf(F("{#4f632dc some}"), 5,, SFORM_SENSITIVE)
+        ==  10);
+    TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
+            .LastIndexOf(F("so{#4f632dc me}"),,, SFORM_SENSITIVE)
+        ==  5);
+    TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
+            .LastIndexOf(F("so{#4f632dc me}"), 7,, SFORM_SENSITIVE)
+        ==  5);
 }
 
 defaultproperties
