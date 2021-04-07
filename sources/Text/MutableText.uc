@@ -363,6 +363,62 @@ protected function int CalculateHashCode()
     return super(AcediaObject).GetHashCode();
 }
 
+/**
+ *  Replaces every occurrence of the string `before` with the string `after`.
+ *
+ *  @param  before              `Text` contents to match and then replace.
+ *  @param  after               `Text` contents to replace `before` with.
+ *  @param  caseSensitivity     Defines whether `before` should be matched
+ *      in a case-sensitive manner. By default it will be.
+ *  @param  formatSensitivity   Defines whether `before` should be matched
+ *      in a way sensitive for color information. By default it is will not.
+ *  @return Returns caller `Text`, to allow for method chaining.
+ */
+public final function MutableText Replace(
+    Text                        before,
+    Text                        after,
+    optional CaseSensitivity    caseSensitivity,
+    optional FormatSensitivity  formatSensitivity)
+{
+    local int   index;
+    local bool  needToInsertReplacer;
+    local int   nextReplacementIndex;
+    local Text  selfCopy;
+    if (before == none)     return self;
+    if (before.IsEmpty())   return self;
+
+    selfCopy = Copy();
+    Clear();
+    while (index < selfCopy.GetLength())
+    {
+        nextReplacementIndex = selfCopy.IndexOf(before, index,
+                                                caseSensitivity,
+                                                formatSensitivity);
+        if (nextReplacementIndex < 0)
+        {
+            needToInsertReplacer    = false;
+            nextReplacementIndex    = selfCopy.GetLength();
+        }
+        else {
+            needToInsertReplacer    = true;
+        }
+        //  Copy characters between replacements one by one
+        while (index < nextReplacementIndex)
+        {
+            AppendCharacter(selfCopy.GetCharacter(index));
+            index += 1;
+        }
+        if (needToInsertReplacer)
+        {
+            Append(after);
+            //  `before.GetLength() > 0` because of entry conditions
+            index += before.GetLength();
+        }
+    }
+    selfCopy.FreeSelf();
+    return self;
+}
+
 defaultproperties
 {
 }

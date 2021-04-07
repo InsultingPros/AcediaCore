@@ -39,6 +39,7 @@ protected static function TESTS()
     Test_SeparateByCharacter();
     Test_StartsEndsWith();
     Test_IndexOf();
+    Test_Replace();
 }
 
 protected static function Test_TextCreation()
@@ -876,6 +877,171 @@ protected static function SubTest_LastIndexOfFormatting()
     TEST_ExpectTrue(F("Just so{#4f632dc me-some}thing")
             .LastIndexOf(F("so{#4f632dc me}"), 7,, SFORM_SENSITIVE)
         ==  5);
+}
+
+protected static function Test_Replace()
+{
+    Context("Testing `Replace()` method with non-formatted `MutableText`s.");
+    SubTest_ReplaceEdgeCases(SFORM_SENSITIVE);
+    SubTest_ReplaceEdgeCases(SFORM_INSENSITIVE);
+    SubTest_ReplaceMainCases(SFORM_SENSITIVE);
+    SubTest_ReplaceMainCases(SFORM_INSENSITIVE);
+    Context("Testing `Replace()` method with formatted `MutableText`s.");
+    SubTest_ReplaceEmptyFormatting();
+    SubTest_ReplaceFullFormatting();
+    SubTest_ReplacePartFormatting();
+}
+
+protected static function SubTest_ReplaceEdgeCases(Text.FormatSensitivity flag)
+{
+    local MutableText builder;
+    builder = __().text.Empty();
+    Issue("`Replace()` works incorrectly when replacing empty `Text`s.");
+    TEST_ExpectTrue(builder.Replace(P(""), P(""),, flag).ToPlainString() == "");
+    TEST_ExpectTrue(
+        builder.Replace(P(""), P("huh"),, flag).ToPlainString() == "");
+    builder.AppendPlainString("word");
+    TEST_ExpectTrue(
+        builder.Replace(P(""), P(""),, flag).ToPlainString() == "word");
+    TEST_ExpectTrue(
+        builder.Replace(P(""), P("huh"),, flag).ToPlainString() == "word");
+
+    Issue("`Replace()` works incorrectly when replacing something inside"
+        @ "an empty `Text`s.");
+    builder.Clear();
+    TEST_ExpectTrue(
+        builder.Replace(P("huh"), P(""),, flag).ToPlainString() == "");
+
+    Issue("`Replace()` cannot replace whole `Text`s.");
+    TEST_ExpectTrue(builder.Clear()
+            .AppendFormattedString("Just {#54af4c something}")
+            .Replace(F("Just {#54af4c something}"), P("Nothing really"),, flag)
+            .ToPlainString()
+        ==  "Nothing really");
+    TEST_ExpectTrue(builder.Clear().AppendPlainString("CraZy")
+            .Replace(P("CRaZy"), P("calm"), SCASE_INSENSITIVE, flag)
+            .ToPlainString()
+        ==  "calm");
+}
+
+protected static function SubTest_ReplaceMainCases(Text.FormatSensitivity flag)
+{
+    local MutableText builder;
+    builder = __().text.FromStringM("Mate eight said");
+    Issue("`Replace()` works incorrectly changes `Text` when replacing"
+        @ "non-existent sub-`Text`.");
+    TEST_ExpectTrue(builder.Replace(P("word"), P("another"),, flag)
+            .ToPlainString()
+        ==  "Mate eight said");
+    TEST_ExpectTrue(builder
+            .Replace(P("word"), P("another"), SCASE_INSENSITIVE, flag)
+            .ToPlainString()
+        ==  "Mate eight said");
+
+    Issue("`Replace()` replaces sub-`Text` incorrectly.");
+    builder.Clear().AppendPlainString("Do it bay bee");
+    TEST_ExpectTrue(builder.Replace(P("it"), P("this"),, flag).ToPlainString()
+        ==  "Do this bay bee");
+    builder.Clear().AppendPlainString("dO It bAy BEe");
+    TEST_ExpectTrue(
+            builder.Replace(P("it"), P("tHis"), SCASE_INSENSITIVE, flag)
+            .ToPlainString()
+        ==  "dO tHis bAy BEe");
+
+    Issue("`Replace()` replaces sub-`Text` incorrectly.");
+    builder.Clear().AppendPlainString("he and she and it");
+    TEST_ExpectTrue(builder.Replace(P("and"), P("OR"),, flag)
+            .ToPlainString()
+        ==  "he OR she OR it");
+    builder.Clear().AppendFormattedString("{#54af4c HE} aNd sHe aND iT");
+    TEST_ExpectTrue(builder.Replace(P("AND"), P("Or"), SCASE_INSENSITIVE, flag)
+            .ToPlainString()
+        ==  "HE Or sHe Or iT");
+}
+
+protected static function SubTest_ReplaceEmptyFormatting()
+{
+    local MutableText builder;
+    builder = __().text.Empty();
+    Issue("`Replace()` works incorrectly when replacing empty `MutableText`s.");
+    TEST_ExpectTrue(builder
+        .Replace(F("{rgb(4,5,6) }"), F("{rgb(76,52,161) }"),, SFORM_SENSITIVE)
+        .IsEmpty());
+    TEST_ExpectTrue(
+        builder.Replace(F("{rgb(76,52,161) }"), F("huh"),, SFORM_SENSITIVE)
+        .IsEmpty());
+    builder.AppendFormattedString("{rgb(76,52,161) wo}rd");
+    TEST_ExpectTrue(builder
+        .Replace(F("{rgb(4,5,6) }"), F("{rgb(76,52,161) }"),, SFORM_SENSITIVE)
+        .ToFormattedString() ==  "{rgb(76,52,161) wo}rd");
+    TEST_ExpectTrue(builder
+        .Replace(F("{rgb(76,52,161) }"), F("huh"),, SFORM_SENSITIVE)
+        .ToFormattedString() ==  "{rgb(76,52,161) wo}rd");
+}
+
+protected static function SubTest_ReplaceFullFormatting()
+{
+    local Text          other;
+    local MutableText   builder;
+    builder = __().text.Empty();
+    Issue("`Replace()` cannot replace whole `MutableText`s.");
+    builder.AppendFormattedString("{rgb(76,52,161) One}, {rgb(4,5,6) two}!");
+    other = F("{rgb(76,52,161) One}, {rgb(4,5,6) two}!");
+    TEST_ExpectTrue(builder
+            .Replace(other, F("Nothing {rgb(25,0,0) really}"),, SFORM_SENSITIVE)
+            .ToFormattedString()
+        ==  "Nothing {rgb(25,0,0) really}");
+    builder.Clear().AppendFormattedString("{rgb(76,52,161) CraZy}");
+    other = __().text.FromFormattedString("{rgb(76,52,161) CraZy}");
+    TEST_ExpectTrue(builder.Replace(other, F("c{rgb(25,0,0) a}lm"),
+                                    SCASE_INSENSITIVE, SFORM_SENSITIVE)
+                    .ToFormattedString() ==  "c{rgb(25,0,0) a}lm");
+
+    Issue("`Replace()` incorrectly replaces whole `MutableText`s by matching"
+        @ "with a `Text` with different formatting.");
+    builder.Clear();
+    builder.AppendFormattedString("{rgb(76,52,161) One}, {rgb(4,5,6) two}!");
+    other = F("{rgb(76,52,161) One}, {rgb(5,5,6) two}!");
+    TEST_ExpectTrue(builder
+            .Replace(other, F("Nothing {rgb(25,0,0) really}"),, SFORM_SENSITIVE)
+            .ToFormattedString()
+        ==  "{rgb(76,52,161) One}, {rgb(4,5,6) two}!");
+}
+
+protected static function SubTest_ReplacePartFormatting()
+{
+    local string        normalCase, randomCase, complexCase;
+    local Text          other;
+    local MutableText   builder;
+    builder = __().text.Empty();
+    normalCase = "He {rgb(76,52,161) and} she {rgb(204,5,6) and} it!";
+    randomCase = "hE {rgb(76,52,161) aNd} SHE {rgb(76,52,161) ANd} IT!";
+    complexCase =
+        "{rgb(76,52,161) Aba}B{rgb(76,52,161) bb{rgb(76,52,160) aB}b}a";
+    Issue("`Replace()` incorrectly replaces parts of `MutableText`s.");
+    builder.Clear();
+    builder.AppendFormattedString(normalCase);
+    other = F("{rgb(204,5,6) and}");
+    TEST_ExpectTrue(builder
+            .Replace(other, F("{rgb(25,0,0) ???}"),, SFORM_SENSITIVE)
+            .ToFormattedString()
+        ==  "He {rgb(76,52,161) and} she {rgb(25,0,0) ???} it!");
+    builder.Clear().AppendFormattedString(randomCase);
+    other = F("{rgb(76,52,161) and}");
+    TEST_ExpectTrue(builder.Replace(other, F("c{rgb(25,0,0) o}r"),
+                                    SCASE_INSENSITIVE, SFORM_SENSITIVE)
+            .ToFormattedString()
+        ==  "hE c{rgb(25,0,0) o}r SHE c{rgb(25,0,0) o}r IT!");
+
+    builder.Clear();
+    builder.AppendFormattedString(complexCase);
+    other = F("{rgb(76,52,161) B}");
+    TEST_ExpectTrue(builder
+            .Replace(   other, F("{rgb(4,4,4) cc}"),
+                        SCASE_INSENSITIVE, SFORM_SENSITIVE)
+            .ToFormattedString()
+        ==  ("{rgb(76,52,161) A}{rgb(4,4,4) cc}{rgb(76,52,161) a}B"
+            $ "{rgb(4,4,4) cccc}{rgb(76,52,160) aB}{rgb(4,4,4) cc}a"));
 }
 
 defaultproperties
