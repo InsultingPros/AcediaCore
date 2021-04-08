@@ -355,8 +355,8 @@ public final function float GetFloatByPointer(
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
  *  See `GetItemByPointer()` for more information.
  *
- *  Referred value must be stored as `Text` or `MutableText`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `Text` (or one of it's sub-classes,
+ *  such as `MutableText`) for this method to work.
  *
  *  @param  jsonPointerAsText   Description of a path to the `Text` value.
  *  @return `Text` value, stored at `jsonPointerAsText` or `none` if it
@@ -364,22 +364,7 @@ public final function float GetFloatByPointer(
  */
 public final function Text GetTextByPointer(Text jsonPointerAsText)
 {
-    local AcediaObject  result;
-    local MutableText   asMutable;
-    local Text          asImmutable;
-    result = GetItemByPointer(jsonPointerAsText);
-    if (result == none) {
-        return none;
-    }
-    asMutable = MutableText(result);
-    if (asMutable != none) {
-        return asMutable;
-    }
-    asImmutable = Text(result);
-    if (asImmutable != none) {
-        return asImmutable;
-    }
-    return none;
+    return Text(GetItemByPointer(jsonPointerAsText));
 }
 
 /**
