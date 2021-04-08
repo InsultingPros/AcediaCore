@@ -5,7 +5,7 @@
  *  `AcediaObject`s.
  *      Appropriate classes and APIs for their construction are provided for
  *  main primitive types and can be extended to any custom `struct`.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -472,6 +472,21 @@ public final function int Find(AcediaObject item)
         }
     }
     return -1;
+}
+
+protected function AcediaObject GetByText(MutableText key)
+{
+    local int       index, consumed;
+    local Parser    parser;
+    parser = _.text.Parse(key);
+    parser.MUnsignedInteger(index,,, consumed);
+    if (!parser.Ok())
+    {
+        parser.FreeSelf();
+        return none;
+    }
+    parser.FreeSelf();
+    return GetItem(index);
 }
 
 defaultproperties

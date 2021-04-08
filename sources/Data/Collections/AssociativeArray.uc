@@ -6,7 +6,7 @@
  *  stores generic `AcediaObject` keys and values. `Text` can be used instead of
  *  typical `string` keys and primitive values can be added in their boxed form
  *  (either as actual `<Type>Box` or as it's reference counterpart).
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -528,6 +528,19 @@ public final function Entry GetEntryByIndex(Index index)
         return emptyEntry;
     }
     return hashTable[index.bucketIndex].entries[index.entryIndex];
+}
+
+protected function AcediaObject GetByText(MutableText key)
+{
+    local Text          immutableKey;
+    local AcediaObject  result;
+    if (key == none) {
+        return none;
+    }
+    immutableKey = key.Copy();
+    result = GetItem(immutableKey);
+    immutableKey.FreeSelf();
+    return result;
 }
 
 defaultproperties
