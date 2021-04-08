@@ -489,6 +489,323 @@ protected function AcediaObject GetByText(MutableText key)
     return GetItem(index);
 }
 
+/**
+ *  Returns `bool` item at `index`. If index is invalid or
+ *  stores a non-`bool` value, returns `defaultValue`.
+ *
+ *  Referred value must be stored as `BoolBox` or `BoolRef`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  index           Index of a `bool` item that `DynamicArray`
+ *      has to return.
+ *  @param  defaultValue    Value to return if there is either no item recorded
+ *      at `index` or it has a wrong type.
+ *  @return `bool` value at `index` in the caller `DynamicArray`.
+ *      `defaultValue` if passed `index` is invalid or non-`bool` value
+ *      is stored there.
+ */
+public final function bool GetBool(int index, optional bool defaultValue)
+{
+    local AcediaObject  result;
+    local BoolBox       asBox;
+    local BoolRef       asRef;
+    result = GetItem(index);
+    if (result == none) {
+        return defaultValue;
+    }
+    asBox = BoolBox(result);
+    if (asBox != none) {
+        return asBox.Get();
+    }
+    asRef = BoolRef(result);
+    if (asRef != none) {
+        return asRef.Get();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Changes `DynamicArray`'s value at `index` to `value` that will be recorded
+ *  as either `BoolBox` or `BoolRef`, depending of `asRef` optional parameter.
+ *
+ *  Inserted value will always be recorded as a managed value, i.e. it will be
+ *  automatically deallocated when overwritten, removed or caller `DynamicArray`
+ *  is deallocated.
+ *
+ *  @param  index   Index, at which to change the value. If `DynamicArray` is
+ *      not long enough to hold it, it will be automatically expanded.
+ *      If passed index is negative - method will do nothing.
+ *  @param  value   Value to be set at a given index.
+ *  @param  asRef   Given `bool` value will be recorded as immutable `BoolBox`
+ *      by default (`asRef == false`). Setting this parameter to `true` will
+ *      make this method record it as a mutable `BoolRef`.
+ *  @return Reference to the caller `DynamicArray` to allow for method chaining.
+ */
+public final function DynamicArray SetBool(
+    int             index,
+    bool            value,
+    optional bool   asRef)
+{
+    if (asRef) {
+        SetItem(index, _.ref.bool(value), true);
+    }
+    else {
+        SetItem(index, _.box.bool(value), true);
+    }
+    return self;
+}
+
+/**
+ *  Returns `byte` item at `index`. If index is invalid or
+ *  stores a non-`byte` value, returns `defaultValue`.
+ *
+ *  Referred value must be stored as `ByteBox` or `ByteRef`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  index           Index of a `byte` item that `DynamicArray`
+ *      has to return.
+ *  @param  defaultValue    Value to return if there is either no item recorded
+ *      at `index` or it has a wrong type.
+ *  @return `byte` value at `index` in the caller `DynamicArray`.
+ *      `defaultValue` if passed `index` is invalid or non-`byte` value
+ *      is stored there.
+ */
+public final function byte GetByte(int index, optional byte defaultValue)
+{
+    local AcediaObject  result;
+    local ByteBox       asBox;
+    local ByteRef       asRef;
+    result = GetItem(index);
+    if (result == none) {
+        return defaultValue;
+    }
+    asBox = ByteBox(result);
+    if (asBox != none) {
+        return asBox.Get();
+    }
+    asRef = ByteRef(result);
+    if (asRef != none) {
+        return asRef.Get();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Changes `DynamicArray`'s value at `index` to `value` that will be recorded
+ *  as either `ByteBox` or `ByteRef`, depending of `asRef` optional parameter.
+ *
+ *  Inserted value will always be recorded as a managed value, i.e. it will be
+ *  automatically deallocated when overwritten, removed or caller `DynamicArray`
+ *  is deallocated.
+ *
+ *  @param  index   Index, at which to change the value. If `DynamicArray` is
+ *      not long enough to hold it, it will be automatically expanded.
+ *      If passed index is negative - method will do nothing.
+ *  @param  value   Value to be set at a given index.
+ *  @param  asRef   Given `byte` value will be recorded as immutable `ByteBox`
+ *      by default (`asRef == false`). Setting this parameter to `true` will
+ *      make this method record it as a mutable `ByteRef`.
+ *  @return Reference to the caller `DynamicArray` to allow for method chaining.
+ */
+public final function DynamicArray SetByte(
+    int             index,
+    byte            value,
+    optional bool   asRef)
+{
+    if (asRef) {
+        SetItem(index, _.ref.byte(value), true);
+    }
+    else {
+        SetItem(index, _.box.byte(value), true);
+    }
+    return self;
+}
+
+/**
+ *  Returns `int` item at `index`. If index is invalid or
+ *  stores a non-`int` value, returns `defaultValue`.
+ *
+ *  Referred value must be stored as `IntBox` or `IntRef`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  index           Index of a `int` item that `DynamicArray`
+ *      has to return.
+ *  @param  defaultValue    Value to return if there is either no item recorded
+ *      at `index` or it has a wrong type.
+ *  @return `int` value at `index` in the caller `DynamicArray`.
+ *      `defaultValue` if passed `index` is invalid or non-`int` value
+ *      is stored there.
+ */
+public final function int GetInt(int index, optional int defaultValue)
+{
+    local AcediaObject  result;
+    local IntBox        asBox;
+    local IntRef        asRef;
+    result = GetItem(index);
+    if (result == none) {
+        return defaultValue;
+    }
+    asBox = IntBox(result);
+    if (asBox != none) {
+        return asBox.Get();
+    }
+    asRef = IntRef(result);
+    if (asRef != none) {
+        return asRef.Get();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Changes `DynamicArray`'s value at `index` to `value` that will be recorded
+ *  as either `IntBox` or `IntRef`, depending of `asRef` optional parameter.
+ *
+ *  Inserted value will always be recorded as a managed value, i.e. it will be
+ *  automatically deallocated when overwritten, removed or caller `DynamicArray`
+ *  is deallocated.
+ *
+ *  @param  index   Index, at which to change the value. If `DynamicArray` is
+ *      not long enough to hold it, it will be automatically expanded.
+ *      If passed index is negative - method will do nothing.
+ *  @param  value   Value to be set at a given index.
+ *  @param  asRef   Given `int` value will be recorded as immutable `IntBox`
+ *      by default (`asRef == false`). Setting this parameter to `true` will
+ *      make this method record it as a mutable `IntRef`.
+ *  @return Reference to the caller `DynamicArray` to allow for method chaining.
+ */
+public final function DynamicArray SetInt(
+    int             index,
+    int             value,
+    optional bool   asRef)
+{
+    if (asRef) {
+        SetItem(index, _.ref.int(value), true);
+    }
+    else {
+        SetItem(index, _.box.int(value), true);
+    }
+    return self;
+}
+
+/**
+ *  Returns `float` item at `index`. If index is invalid or
+ *  stores a non-`int` value, returns `defaultValue`.
+ *
+ *  Referred value must be stored as `FloatBox` or `FloatRef`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  index           Index of a `float` item that `DynamicArray`
+ *      has to return.
+ *  @param  defaultValue    Value to return if there is either no item recorded
+ *      at `index` or it has a wrong type.
+ *  @return `float` value at `index` in the caller `DynamicArray`.
+ *      `defaultValue` if passed `index` is invalid or non-`float` value
+ *      is stored there.
+ */
+public final function float GetFloat(int index, optional float defaultValue)
+{
+    local AcediaObject  result;
+    local FloatBox      asBox;
+    local FloatRef      asRef;
+    result = GetItem(index);
+    if (result == none) {
+        return defaultValue;
+    }
+    asBox = FloatBox(result);
+    if (asBox != none) {
+        return asBox.Get();
+    }
+    asRef = FloatRef(result);
+    if (asRef != none) {
+        return asRef.Get();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Changes `DynamicArray`'s value at `index` to `value` that will be recorded
+ *  as either `FloatBox` or `FloatRef`, depending of `asRef` optional parameter.
+ *
+ *  Inserted value will always be recorded as a managed value, i.e. it will be
+ *  automatically deallocated when overwritten, removed or caller `DynamicArray`
+ *  is deallocated.
+ *
+ *  @param  index   Index, at which to change the value. If `DynamicArray` is
+ *      not long enough to hold it, it will be automatically expanded.
+ *      If passed index is negative - method will do nothing.
+ *  @param  value   Value to be set at a given index.
+ *  @param  asRef   Given `float` value will be recorded as immutable `FloatBox`
+ *      by default (`asRef == false`). Setting this parameter to `true` will
+ *      make this method record it as a mutable `FloatRef`.
+ *  @return Reference to the caller `DynamicArray` to allow for method chaining.
+ */
+public final function DynamicArray SetFloat(
+    int             index,
+    float           value,
+    optional bool   asRef)
+{
+    if (asRef) {
+        SetItem(index, _.ref.float(value), true);
+    }
+    else {
+        SetItem(index, _.box.float(value), true);
+    }
+    return self;
+}
+
+/**
+ *  Returns `Text` item at `index`. If index is invalid or
+ *  stores a non-`Text` value, returns `none`.
+ *
+ *  Referred value must be stored as `Text` (or one of it's sub-classes,
+ *  such as `MutableText`) for this method to work.
+ *
+ *  @param  index   Index of a `Text` item that `DynamicArray` has to return.
+ *  @return `Text` value at `index` in the caller `DynamicArray`.
+ *      `none` if passed `index` is invalid or non-`Text` value
+ *      is stored there.
+ */
+public final function Text GetText(int index)
+{
+    return Text(GetItem(index));
+}
+
+/**
+ *  Returns `AssociativeArray` item at `index`. If index is invalid or
+ *  stores a non-`AssociativeArray` value, returns `none`.
+ *
+ *  Referred value must be stored as `AssociativeArray`
+ *  (or one of it's sub-classes) for this method to work.
+ *
+ *  @param  index   Index of an `AssociativeArray` item that `DynamicArray`
+ *      has to return.
+ *  @return `AssociativeArray` value at `index` in the caller `DynamicArray`.
+ *      `none` if passed `index` is invalid or non-`AssociativeArray` value
+ *      is stored there.
+ */
+public final function AssociativeArray GetAssociativeArray(int index)
+{
+    return AssociativeArray(GetItem(index));
+}
+
+/**
+ *  Returns `DynamicArray` item at `index`. If index is invalid or
+ *  stores a non-`DynamicArray` value, returns `none`.
+ *
+ *  Referred value must be stored as `Text` (or one of it's sub-classes,
+ *  such as `MutableText`) for this method to work.
+ *
+ *  @param  index   Index of a `DynamicArray` item that caller `DynamicArray`
+ *      has to return.
+ *  @return `DynamicArray` value at `index` in the caller `DynamicArray`.
+ *      `none` if passed `index` is invalid or non-`DynamicArray` value
+ *      is stored there.
+ */
+public final function DynamicArray GetDynamicArray(int index)
+{
+    return DynamicArray(GetItem(index));
+}
+
 defaultproperties
 {
     iteratorClass = class'DynamicArrayIterator'
