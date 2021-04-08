@@ -424,9 +424,14 @@ public final function AssociativeArray RemoveItem(AcediaObject key)
  *  Completely clears caller `AssociativeArray` of all stored entries,
  *  deallocating any stored managed values.
  *
+ *  @param  deallocateKeys  Setting this to `true` will force this method to
+ *      also deallocate all keys from the caller `AssociativeArray`.
+ *      Since we do not record whether `AssociativeArray` manages keys like it
+ *      does values - all keys will be deallocated, so use this parameter with
+ *      caution.
  *  @return Caller `AssociativeArray` to allow for method chaining.
  */
-public function Empty()
+public function Empty(optional bool deallocateKeys)
 {
     local int           i, j;
     local array<Entry>  nextEntries;
@@ -439,9 +444,19 @@ public function Empty()
             if (nextEntries[j].value == none) continue;
             nextEntries[j].value.FreeSelf(nextEntries[j].valueLifeVersion);
         }
+        if (deallocateKeys)
+        {
+            for (j = 0; j < nextEntries.length; j += 1)
+            {
+                if (nextEntries[j].key != none) {
+                    nextEntries[j].key.FreeSelf(nextEntries[j].keyLifeVersion);
+                }
+            }
+        }
     }
     hashTable.length = 0;
     storedElementCount = 0;
+    UpdateHashTableCapacity();
 }
 
 /**
@@ -458,7 +473,6 @@ public final function array<AcediaObject> GetKeys()
     local array<Entry>          nextEntry;
     for (i = 0; i < hashTable.length; i += 1)
     {
-        //hashTable[i] = CleanBucket(hashTable[i]);
         CleanBucket(hashTable[i]);
         nextEntry = hashTable[i].entries;
         for (j = 0; j < nextEntry.length; j += 1) {

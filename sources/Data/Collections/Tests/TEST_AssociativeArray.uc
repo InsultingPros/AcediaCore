@@ -183,16 +183,39 @@ protected static function Test_CreateItem()
 
 protected static function Test_Empty()
 {
+    local AcediaObject key1, key2, key3;
     local AssociativeArray array;
+    key1 = __().text.FromString("key");
+    key2 = __().box.int(13);
+    key3 = __().box.float(345.2);
     array = AssociativeArray(__().memory.Allocate(class'AssociativeArray'));
+    array.SetItem(key1, __().text.FromString("value"));
+    array.SetItem(key2, __().text.FromString("value #2"), true);
+    array.SetItem(key3, __().box.bool(true));
+
     Context("Testing `Empty()` method for `AssociativeArray`.");
-    array.SetItem(__().text.FromString("key"), __().text.FromString("value"));
-    array.SetItem(__().box.int(13), __().text.FromString("value #2"));
-    array.SetItem(__().box.float(345.2), __().box.bool(true));
     Issue("`AssociativeArray` still contains elements after being emptied.");
     array.Empty();
     TEST_ExpectTrue(array.GetKeys().length == 0);
     TEST_ExpectTrue(array.GetLength() == 0);
+
+    Issue("`AssociativeArray` deallocated keys when not being told to do so.");
+    TEST_ExpectTrue(key1.IsAllocated());
+    TEST_ExpectTrue(key2.IsAllocated());
+    TEST_ExpectTrue(key3.IsAllocated());
+
+    Issue("`AssociativeArray` still contains elements after being emptied.");
+    array.SetItem(key1, __().text.FromString("value"), true);
+    array.SetItem(key2, __().text.FromString("value #2"));
+    array.SetItem(key3, __().box.bool(true), true);
+    array.Empty(true);
+    TEST_ExpectTrue(array.GetKeys().length == 0);
+    TEST_ExpectTrue(array.GetLength() == 0);
+
+    Issue("`AssociativeArray` does not deallocate keys when told to do so.");
+    TEST_ExpectFalse(key1.IsAllocated());
+    TEST_ExpectFalse(key2.IsAllocated());
+    TEST_ExpectFalse(key3.IsAllocated());
 }
 
 protected static function Test_Length()
