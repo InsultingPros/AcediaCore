@@ -3,9 +3,12 @@
  *  can be enabled or disabled, according to server owner's wishes.
  *  In the current version of Acedia enabling or disabling a feature requires
  *  manually editing configuration file and restarting a server.
- *      Factually feature is just a collection of settings with one universal
- *  'isActive' setting that tells Acedia whether or not to load a feature.
- *      Copyright 2019 Anton Tarasenko
+ *      Creating a `Feature` instance should be done by using
+ *  `EnableMe()` / `DisableMe()` methods; instead of regular `Constructor()`
+ *  and `Finalizer()` one should use `OnEnabled() and `OnDisabled()` methods.
+ *  Any instances created through other means will be automatically deallocated,
+ *  enforcing `Singleton`-like behavior for the `Feature` class.
+ *      Copyright 2019 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -22,8 +25,20 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Feature extends Singleton
+class Feature extends AcediaObject
     abstract;
+
+//      Default value of this variable will store one and only existing version
+//  of `Feature` of this class.
+var private Feature activeInstance;
+var private int     activeInstanceLifeVersion;
+
+//      Setting default value of this variable to 'true' prevents creation of
+//  a `Feature`, even if no instances of it exist. This is used to ensure active
+//  `Feature`s can only be created through the proper means and behave like
+//  singletons.
+//      Only a default value is ever used.
+var protected bool blockSpawning;
 
 //      Setting that tells Acedia whether or not to enable this feature
 //  during initialization.
@@ -33,56 +48,127 @@ var private config bool autoEnable;
 //  Listeners listed here will be automatically activated.
 var public const array< class<Listener> > requiredListeners;
 
-//  Sets whether to enable this feature by default.
-public static final function SetAutoEnable(bool doEnable)
+protected function Contructor()
 {
-    default.autoEnable  = doEnable;
-    StaticSaveConfig();
+    if (default.blockSpawning)
+    {
+        FreeSelf();
+        return;
+    }
+    SetListenersActiveSatus(true);
+    OnEnabled();
 }
 
+protected function Finalizer()
+{
+    if (GetInstance() == self)
+    {
+        SetListenersActiveSatus(false);
+        OnDisabled();
+        default.activeInstance = none;
+    }
+}
+
+/**
+ *  Returns an instance of the `Feature` of the class used to call
+ *  this method.
+ *
+ *  @return Active `Feature` instance of the class used to call
+ *      this method (i.e. `class'MyFunFeature'.static.GetInstance()`).
+ *      `none` if particular `Feature` in question is not currently active.
+ */
+public final static function Feature GetInstance()
+{
+    if (default.activeInstance == none) {
+        return none;
+    }
+    if (    default.activeInstance.GetLifeVersion()
+        !=  default.activeInstanceLifeVersion)
+    {
+        default.activeInstance = none;
+        return none;
+    }
+    return default.activeInstance;
+}
+
+/**
+ *  Checks if caller `Feature` should be auto-enabled on game starting.
+ *
+ *  @return `true` if caller `Feature` should be auto-enabled and
+ *      `false` otherwise.
+ */
 public static final function bool IsAutoEnabled()
 {
     return default.autoEnable;
 }
 
-//  Whether feature is enabled is determined by 
+/**
+ *  Checks whether caller `Feature` is currently enabled.
+ *
+ *  @return `true` if caller `Feature` is currently enabled and
+ *      `false` otherwise.
+ */
 public static final function bool IsEnabled()
 {
     return (GetInstance() != none); 
 }
 
-//  Enables feature of given class.
+/**
+ *  Enables the feature and returns it's active instance.
+ *
+ *  Cannot fail. Any checks on whether it's appropriate to enable `Feature`
+ *  must be done separately, before calling this method.
+ *
+ *  @return Active instance of the caller `Feature` class.
+ */
 public static final function Feature EnableMe()
 {
     local Feature newInstance;
-    if (IsEnabled())
-    {
-        return Feature(GetInstance());
+    if (IsEnabled()) {
+        return GetInstance();
     }
     default.blockSpawning = false;
-    //  TODO: code duplication with `Service`?
     newInstance = Feature(__().memory.Allocate(default.class));
+    default.activeInstance              = newInstance;
+    default.activeInstanceLifeVersion   = newInstance.GetLifeVersion();
     default.blockSpawning = true;
     return newInstance;
 }
 
+/**
+ *  Disables this feature in case it is enabled. Does nothing otherwise.
+ *
+ *  @return `true` if `Feature` in question was enabled at th moment of
+ *      the call and `false` otherwise.
+ */
 public static final function bool DisableMe()
 {
     local Feature myself;
-    myself = Feature(GetInstance());
+    myself = GetInstance();
     if (myself != none)
     {
-        myself.Destroy();
+        myself.FreeSelf();
         return true;
     }
     return false;
 }
 
-//  Event functions that are called when 
+/**
+ *  When using proper methods for enabling a `Feature`,
+ *  this method is guaranteed to be called right after it is enabled.
+ *
+ *  AVOID MANUALLY CALLING IT.
+ */
 protected function OnEnabled(){}
+
+/**
+ *  When using proper methods for enabling a `Feature`,
+ *  this method is guaranteed to be called right after it is disabled.
+ *
+ *  AVOID MANUALLY CALLING IT.
+ */
 protected function OnDisabled(){}
 
-//  Set listeners' status
 private static function SetListenersActiveSatus(bool newStatus)
 {
     local int i;
@@ -93,25 +179,8 @@ private static function SetListenersActiveSatus(bool newStatus)
     }
 }
 
-protected function OnCreated()
-{
-    default.blockSpawning = true;
-    SetListenersActiveSatus(true);
-    OnEnabled();
-}
-
-protected function OnDestroyed()
-{
-    SetListenersActiveSatus(false);
-    OnDisabled();
-}
-
 defaultproperties
 {
     autoEnable      = false
-    DrawType        = DT_None
-    //  Prevent spawning this feature by any other means than 'EnableMe()'.
     blockSpawning   = true
-    //  Features are server-only actors
-    remoteRole      = ROLE_None
 }
