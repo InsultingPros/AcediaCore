@@ -48,25 +48,43 @@ var private config bool autoEnable;
 //  Listeners listed here will be automatically activated.
 var public const array< class<Listener> > requiredListeners;
 
-protected function Contructor()
+//  `Service` that will be launched and shut down along with this `Feature`.
+//  One should never launch or shut down this service manually.
+var protected const class<FeatureService> serviceClass;
+
+protected function Constructor()
 {
+    local FeatureService myService;
     if (default.blockSpawning)
     {
         FreeSelf();
         return;
     }
-    SetListenersActiveSatus(true);
+    SetListenersActiveStatus(true);
+    if (serviceClass != none) {
+        myService = FeatureService(serviceClass.static.Require());
+    }
+    if (myService != none) {
+        myService.SetOwnerFeature(self);
+    }
     OnEnabled();
 }
 
 protected function Finalizer()
 {
-    if (GetInstance() == self)
-    {
-        SetListenersActiveSatus(false);
-        OnDisabled();
-        default.activeInstance = none;
+    local FeatureService service;
+    if (GetInstance() != self) {
+        return;
     }
+    SetListenersActiveStatus(false);
+    OnDisabled();
+    if (serviceClass != none) {
+        service = FeatureService(serviceClass.static.GetInstance());
+    }
+    if (service != none) {
+        service.Destroy();
+    }
+    default.activeInstance = none;
 }
 
 /**
@@ -89,6 +107,21 @@ public final static function Feature GetInstance()
         return none;
     }
     return default.activeInstance;
+}
+
+/**
+ *  Returns reference to this `Feature`'s `FeatureService`.
+ *
+ *  @return Reference to this `Feature`'s `FeatureService`.
+ *      `none` if caller `Feature` did not set a proper `serviceClass`,
+ *      otherwise guaranteed to be not `none`.
+ */
+public final function Service GetService()
+{
+    if (serviceClass == none) {
+        return none;
+    }
+    return serviceClass.static.Require();
 }
 
 /**
@@ -169,7 +202,7 @@ protected function OnEnabled(){}
  */
 protected function OnDisabled(){}
 
-private static function SetListenersActiveSatus(bool newStatus)
+private static function SetListenersActiveStatus(bool newStatus)
 {
     local int i;
     for (i = 0; i < default.requiredListeners.length; i += 1)
@@ -183,4 +216,5 @@ defaultproperties
 {
     autoEnable      = false
     blockSpawning   = true
+    serviceClass    = none
 }
