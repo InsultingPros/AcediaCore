@@ -241,6 +241,20 @@ public final function array<Inventory> GetAllInventoryFrom(
     return result;
 }
 
+/**
+ *  Creates reference object to store a `Actor` value.
+ *
+ *  @param  value   Initial value to store in reference.
+ *  @return `NativeActorRef`, containing `value`.
+ */
+public final function NativeActorRef ActorRef(optional Actor value)
+{
+    local NativeActorRef ref;
+    ref = NativeActorRef(_.memory.Allocate(class'NativeActorRef'));
+    ref.Set(value);
+    return ref;
+}
+
 defaultproperties
 {
 }
