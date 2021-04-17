@@ -20,8 +20,8 @@
 class AliasesAPI extends AcediaObject
     dependson(LoggerAPI);
 
-var LoggerAPI.Definition noWeaponAliasSource, invalidWeaponAliasSource;
-var LoggerAPI.Definition noColorAliasSource, invalidColorAliasSource;
+var private LoggerAPI.Definition noWeaponAliasSource, invalidWeaponAliasSource;
+var private LoggerAPI.Definition noColorAliasSource, invalidColorAliasSource;
 
 /**
  *  Provides an easier access to the instance of the `AliasSource` of

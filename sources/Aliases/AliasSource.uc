@@ -23,6 +23,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class AliasSource extends Singleton
+    dependson(AssociativeArray)
     config(AcediaAliases);
 
 //      (Sub-)class of `Aliases` objects that this `AliasSource` uses to store
@@ -51,7 +52,7 @@ var private config array<AliasValuePair> record;
 //  Otherwise only stores first loaded alias.
 var private AssociativeArray aliasHash;
 
-var LoggerAPI.Definition errIncorrectAliasPair, warnDuplicateAlias;
+var private LoggerAPI.Definition errIncorrectAliasPair, warnDuplicateAlias;
 
 //  Load and hash all the data `AliasSource` creation.
 protected function OnCreated()
