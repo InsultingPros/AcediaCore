@@ -33,8 +33,10 @@
 class Slot extends AcediaObject
     abstract;
 
-var private bool    dummyMethodCalled;
-var private Signal  ownerSignal;
+var private bool            dummyMethodCalled;
+var private AcediaObject    myReceiver;
+var private int             myReceiverLifeVersion;
+var private Signal          mySignal;
 
 /*  TEMPLATE for handlers without returned values:
 delegate connect(<PARAMETERS>)
@@ -78,10 +80,11 @@ protected function Finalizer()
 protected function Finalizer()
 {
     dummyMethodCalled = false;
-    if (ownerSignal != none) {
-        ownerSignal.RemoveSlot(self);
+    if (mySignal != none) {
+        mySignal.RemoveSlot(self);
     }
-    ownerSignal = none;
+    mySignal    = none;
+    myReceiver  = none;
 }
 
 /**
@@ -93,8 +96,8 @@ protected function Finalizer()
 protected final function DummyCall()
 {
     dummyMethodCalled = true;
-    //  We do not want to call `ownerSignal.RemoveSlot(self)` here, since
-    //  `ownerSignal` is likely in process of iterating through it's `Slot`s
+    //  We do not want to call `mySignal.RemoveSlot(self)` here, since
+    //  `mySignal` is likely in process of iterating through it's `Slot`s
     //  and removing (or adding) `Slot`s from it can mess up that process.
 }
 
@@ -104,21 +107,29 @@ protected final function DummyCall()
  *  Can only be done once for every `Slot`.
  *
  *  @param  newOwnerSignal  `Signal` we want to receive emitted signals from.
+ *  @param  receiver        Receiver object that caused creation of this `Slot`.
  *  @return `true` if initialization was successful and `false` otherwise
  *      (if `newOwnerSignal` is invalid or caller `Slot` was
  *      already initialized).
  */
-public final function bool Initialize(Signal newOwnerSignal)
+public final function bool Initialize(
+    Signal          newOwnerSignal,
+    AcediaObject    receiver)
 {
-    if (ownerSignal != none) {
+    if (mySignal != none) {
         return false;
+    }
+    if (receiver != none && receiver.IsAllocated())
+    {
+        myReceiver = receiver;
+        myReceiverLifeVersion = receiver.GetLifeVersion();
     }
     if (newOwnerSignal == none || !newOwnerSignal.IsAllocated())
     {
         FreeSelf();
         return false;
     }
-    ownerSignal = newOwnerSignal;
+    mySignal = newOwnerSignal;
     return true;
 }
 
@@ -131,7 +142,27 @@ public final function bool Initialize(Signal newOwnerSignal)
  */
 public final function bool IsOwnerSignal(Signal testSignal)
 {
-    return (ownerSignal == testSignal);
+    return (mySignal == testSignal);
+}
+
+/**
+ *  Disconnects all the `Slot`s that belong to receiver of the caller `Slot`
+ *  from our owner signal `mySignal`.
+ *
+ *  Method's name does not reflect what it does well, however this is done
+ *  deliberately to provide an overall more intuitive user interface to
+ *  signals and slots that allows for receiver to disconnect from `Signal` in
+ *  the similar way to how it connects:
+ *  `eventSource.OnSomeEvent(self).connect = handler`
+ *  `eventSource.OnSomeEvent(self).Disconnect()`
+ */
+public final function Disconnect()
+{
+    if (mySignal == none)                                       return;
+    if (myReceiver == none)                                     return;
+    if (myReceiver.GetLifeVersion() != myReceiverLifeVersion)   return;
+
+    mySignal.Disconnect(myReceiver);
 }
 
 /**

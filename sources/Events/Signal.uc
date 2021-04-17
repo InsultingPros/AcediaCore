@@ -38,28 +38,53 @@
 class Signal extends AcediaObject
     abstract;
 
+/**
+ *      `Signal` essentially has to provide functionality for
+ *  connecting/disconnecting slots and iterating through them. The main
+ *  challenge is that slots can also be connected / disconnected during
+ *  the signal emission. And in such cases we want:
+ *      1. To not propagate a signal to `Slot`s that were added during
+ *          it's emission;
+ *      2. To not propagate a signal to any removed `Slot`, even if it was
+ *          connected to the `Signal` in question when signal started emitting.
+ *
+ *      We store connected `Slot`s in array, so to iterate we will simply use
+ *  internal index variable `nextSlotIndex`. To account for removal of `Slot`s
+ *  we will simply have to appropriately correct `nextSlotIndex` variable.
+ *  To account for adding `Slot`s during signal emission we will first add them
+ *  to a temporary queue `slotQueueToAdd` and only dump signals stored there
+ *  into actual connected `Slot`s array before next iteration starts.
+ */
+
 //  Class of the slot that can catch your `Signal` class
 var public const class<Slot> relatedSlotClass;
 
-//      We want to always return a non-`none` slot to avoid "Access 'none'"
-//  errors.
-//      So if provided signal receiver is invalid - we still create a `Slot`
-//  for it, but remember it in this array of slots we aren't going to use
-//  in order to dispose of them later.
-var private array<Slot> failedSlots;
-
-//      Set to `true` when we are in the process of deleting our `Slot`s.
+//      Set to `true` when we are in the process of removing connected `Slot`s.
 //      Once `Slot` is deallocated, it notifies it's `Signal` (us) that it
 //  should be removed.
-//      But if it's deallocated because we are removing it we want to ignore
-//  their notification and this flag helps us do that.
+//      But if it's deallocated because we are removing it, then we want to
+//  ignore that notification and this flag helps us do that.
 var private bool    doingSelfCleaning;
 //  Used to provide iterating interface (`StartIterating()` / `GetNextSlot()`).
 //  Points at the next slot to return.
 var private int     nextSlotIndex;
 
-//      These arrays could be defined as one array of `struct`s with four
-//  elements.
+//  This record describes slot-receiver pair to be added, along with it's
+//  life versions at the moment of adding a slot. Life versions help us verify
+//  that slot/receiver were not re-allocated at some point
+//  (thus becoming different objects).
+struct SlotRecord
+{
+    var Slot            slotInstance;
+    var int             slotLifeVersion;
+    var AcediaObject    receiver;
+    var int             receiverLifeVersion;
+};
+//  Slots to be added before the next iteration (signal emission).
+//  We ensure that any added record has `slotInstance != none`.
+var array<SlotRecord> slotQueueToAdd;
+
+//      These arrays could be defined as one array of `SlotRecord` structs.
 //      We use four different arrays instead for performance reasons.
 //      They must have the same length at all times and elements with the
 //  same index correspond to the same "record".
@@ -92,7 +117,7 @@ public final function Emit(<PARAMETERS>)
 
 /*  TEMPLATE for handlers with returned values:
 
-public final function int Emit(<PARAMETERS>)
+public final function <RETURN_TYPE> Emit(<PARAMETERS>)
 {
     local <RETURN_TYPE> newValue;
     local Slot          nextSlot;
@@ -109,7 +134,8 @@ public final function int Emit(<PARAMETERS>)
         nextSlot = GetNextSlot();
     }
     CleanEmptySlots();
-    return value;
+    //  Return whatever you see fit after handling all the slots
+    return <END_RETURN_VALUE>;
 }
 */
 
@@ -124,10 +150,21 @@ public final function <SLOT_CLASS> OnMyEvent(AcediaObject receiver)
 
 protected function Finalizer()
 {
+    local int i;
     doingSelfCleaning = true;
-    _.memory.FreeMany(registeredSlots);
-    doingSelfCleaning = false;
+    //  Free queue for slot addition
+    for (i = 0; i < slotQueueToAdd.length; i += 1)
+    {
+        slotQueueToAdd[i].slotInstance
+            .FreeSelf(slotQueueToAdd[i].slotLifeVersion);
+    }
+    slotQueueToAdd.length = 0;
+    //  Free actually connected slots
+    for (i = 0; i < registeredSlots.length; i += 1) {
+        registeredSlots[i].FreeSelf(slotLifeVersions[i]);
+    }
     registeredSlots.length              = 0;
+    doingSelfCleaning = false;
     slotLifeVersions.length             = 0;
     slotReceivers.length                = 0;
     slotReceiversLifeVersions.length    = 0;
@@ -150,7 +187,7 @@ public final function Slot NewSlot(AcediaObject receiver)
 {
     local Slot newSlot;
     newSlot = Slot(_.memory.Allocate(relatedSlotClass));
-    newSlot.Initialize(self);
+    newSlot.Initialize(self, receiver);
     AddSlot(newSlot, receiver);
     return newSlot;
 }
@@ -158,21 +195,38 @@ public final function Slot NewSlot(AcediaObject receiver)
 /**
  *  Disconnects all of the `receiver`'s `Slot`s from the caller `Signal`.
  *
+ *  Meant to only be used by the `Slot`s `Disconnect()` method.
+ *
  *  @param  receiver    Object to disconnect from the caller `Signal`.
+ *      If `none` is passed, does nothing.
  */
 public final function Disconnect(AcediaObject receiver)
 {
     local int i;
+    if (receiver == none) {
+        return;
+    }
     doingSelfCleaning = true;
+    //  Clean from the queue for addition
+    i = 0;
+    while (i < slotQueueToAdd.length)
+    {
+        if (slotQueueToAdd[i].receiver == receiver)
+        {
+            slotQueueToAdd[i].slotInstance
+                .FreeSelf(slotQueueToAdd[i].slotLifeVersion);
+            slotQueueToAdd.Remove(i, 1);
+        }
+        else {
+            i += 1;
+        }
+    }
+    //  Clean from the active slots
+    i = 0;
     while (i < slotReceivers.length)
     {
-        if (slotReceivers[i] == none || slotReceivers[i] == receiver)
-        {
-            _.memory.Free(registeredSlots[i]);
-            registeredSlots.Remove(i, 1);
-            slotLifeVersions.Remove(i, 1);
-            slotReceivers.Remove(i, 1);
-            slotReceiversLifeVersions.Remove(i, 1);
+        if (slotReceivers[i] == receiver) {
+            RemoveSlotAtIndex(i);
         }
         else {
             i += 1;
@@ -182,55 +236,90 @@ public final function Disconnect(AcediaObject receiver)
 }
 
 /**
- *  Adds new `Slot` `newSlot` with receiver `receiver` to the caller `Signal`.
+ *  Adds new `Slot` (`newSlot`) with receiver `receiver` to the caller `Signal`.
  *
- *  Does nothing if `newSlot` is already added to the caller `Signal`.
+ *  Does nothing if `newSlot` is already added to the caller `Signal`
+ *  (even if it's added with a different receiver).
  *
  *  @param  newSlot     Slot to add. Must be initialize for the caller `Signal`.
  *  @param  receiver    Receiver to which new `Slot` would be connected.
  *      Method connected to a `Slot` generated by this method must belong to
  *      the `receiver`, otherwise behavior of `Signal`-`Slot` system is
- *      undefined.
- *      Must be a properly allocated `AcediaObject`.
+ *      undefined. Must be a properly allocated `AcediaObject`.
  */
 protected final function AddSlot(Slot newSlot, AcediaObject receiver)
 {
-    local int i;
-    local int newSlotIndex;
-    if (newSlot == none)                    return;
-    if (newSlot.class != relatedSlotClass)  return;
-    if (!newSlot.IsOwnerSignal(self))       return;
-    if (receiver == none || !receiver.IsAllocated())
-    {
-        failedSlots[failedSlots.length] = newSlot;
+    local SlotRecord newRecord;
+    if (newSlot == none) {
         return;
     }
+    newRecord.slotInstance = newSlot;
+    newRecord.slotLifeVersion = newSlot.GetLifeVersion();
+    newRecord.receiver = receiver;
+    if (receiver != none) {
+        newRecord.receiverLifeVersion = receiver.GetLifeVersion();
+    }
+    slotQueueToAdd[slotQueueToAdd.length] = newRecord;
+}
+
+//      Attempts to add a `Slot` from a `SlotRecord` into array of currently
+//  connected `Slot`s.
+//      IMPORTANT: Must only be called right before a new iteration
+//  (signal emission) through the `Slot`s. Otherwise `Signal`'s behavior
+//  should be considered undefined.
+private final function AddSlotRecord(SlotRecord record)
+{
+    local int           i;
+    local int           newSlotIndex;
+    local Slot          newSlot;
+    local AcediaObject  receiver;
+    newSlot = record.slotInstance;
+    receiver = record.receiver;
+    if (newSlot.class != relatedSlotClass)                  return;
+    if (!newSlot.IsOwnerSignal(self))                       return;
+    //  Slot got outdated while waiting in queue
+    if (newSlot.GetLifeVersion() != record.slotLifeVersion) return;
+
+    //  Receiver is outright invalid or got outdated
+    if (    receiver == none
+        ||  !receiver.IsAllocated()
+        ||  receiver.GetLifeVersion() != record.receiverLifeVersion)
+    {
+        doingSelfCleaning = true;
+        newSlot.FreeSelf();
+        doingSelfCleaning = false;
+        return;
+    }
+    //  Check if that slot is already added
     for (i = 0; i < registeredSlots.length; i += 1)
     {
         if (registeredSlots[i] != newSlot) {
             continue;
         }
-        if (slotLifeVersions[i] != newSlot.GetLifeVersion())
+        //  If we have the same instance recorded, but...
+        //      1. it was reallocated: update it's records;
+        //      2. it was not reallocated: leave the records intact.
+        //  Neither would case issues with iterating along `Slot`s if this
+        //  method is only called right before new iteration.
+        if (slotLifeVersions[i] != record.slotLifeVersion)
         {
-            slotLifeVersions[i] = newSlot.GetLifeVersion();
+            slotLifeVersions[i] = record.slotLifeVersion;
             slotReceivers[i] = receiver;
             if (receiver != none) {
-                slotReceiversLifeVersions[i] = receiver.GetLifeVersion();
+                slotReceiversLifeVersions[i] = record.receiverLifeVersion;
             }
         }
         return;
     }
     newSlotIndex = registeredSlots.length;
     registeredSlots[newSlotIndex]           = newSlot;
-    slotLifeVersions[newSlotIndex]          = newSlot.GetLifeVersion();
+    slotLifeVersions[newSlotIndex]          = record.slotLifeVersion;
     slotReceivers[newSlotIndex]             = receiver;
-    slotReceiversLifeVersions[newSlotIndex] = receiver.GetLifeVersion();
+    slotReceiversLifeVersions[newSlotIndex] = record.receiverLifeVersion;
 }
 
 /**
  *  Removes given `slotToRemove` if it was connected to the caller `Signal`.
- *
- *  Does not deallocate `slotToRemove`.
  *
  *  Cannot fail.
  *
@@ -242,14 +331,24 @@ public final function RemoveSlot(Slot slotToRemove)
     if (slotToRemove == none)   return;
     if (doingSelfCleaning)      return;
 
+    //  Remove from queue for addition
+    while (i < slotQueueToAdd.length)
+    {
+        if (slotQueueToAdd[i].slotInstance == slotToRemove)
+        {
+            slotToRemove.FreeSelf(slotQueueToAdd[i].slotLifeVersion);
+            slotQueueToAdd.Remove(i, 1);
+        }
+        else {
+            i += 1;
+        }
+    }
+    //  Remove from active slots
     for (i = 0; i < registeredSlots.length; i += 1)
     {
         if (registeredSlots[i] == slotToRemove)
         {
-            registeredSlots.Remove(i, 1);
-            slotLifeVersions.Remove(i, 1);
-            slotReceivers.Remove(i, 1);
-            slotReceiversLifeVersions.Remove(i, 1);
+            RemoveSlotAtIndex(i);
             return;
         }
     }
@@ -265,6 +364,11 @@ public final function RemoveSlot(Slot slotToRemove)
  */
 protected final function StartIterating()
 {
+    local int i;
+    for (i = 0; i < slotQueueToAdd.length; i += 1) {
+        AddSlotRecord(slotQueueToAdd[i]);
+    }
+    slotQueueToAdd.length = 0;
     nextSlotIndex = 0;
 }
 
@@ -298,15 +402,11 @@ protected final function Slot GetNextSlot()
         if (isNextSlotValid)
         {
             nextSlotIndex += 1;
+            doingSelfCleaning = false;
             return nextSlot;
         }
-        else
-        {
-            registeredSlots.Remove(nextSlotIndex, 1);
-            slotLifeVersions.Remove(nextSlotIndex, 1);
-            slotReceivers.Remove(nextSlotIndex, 1);
-            slotReceiversLifeVersions.Remove(nextSlotIndex, 1);
-            _.memory.Free(nextSlot);
+        else {
+            RemoveSlotAtIndex(nextSlotIndex);
         }
     }
     doingSelfCleaning = false;
@@ -315,30 +415,37 @@ protected final function Slot GetNextSlot()
 
 /**
  *  In case it's detected that some of the slots do not actually have any
- *  handler setup - this method will clean them up.
+ *  delegate set - this method will clean them up.
  */
 protected final function CleanEmptySlots()
 {
     local int index;
-    _.memory.FreeMany(failedSlots);
-    failedSlots.length = 0;
     doingSelfCleaning = true;
     while (index < registeredSlots.length)
     {
-        if (registeredSlots[index].IsEmpty())
-        {
-            registeredSlots[index].FreeSelf(slotLifeVersions[index]);
-            _.memory.Free(registeredSlots[index]);
-            registeredSlots.Remove(index, 1);
-            slotLifeVersions.Remove(index, 1);
-            slotReceivers.Remove(index, 1);
-            slotReceiversLifeVersions.Remove(index, 1);
+        if (registeredSlots[index].IsEmpty()) {
+            RemoveSlotAtIndex(index);
         }
         else {
             index += 1;
         }
     }
     doingSelfCleaning = false;
+}
+
+//  Removes `Slot` at a given `index`.
+//  Assumes that passed index is within boundaries.
+private final function RemoveSlotAtIndex(int index)
+{
+    registeredSlots[index].FreeSelf(slotLifeVersions[index]);
+    registeredSlots.Remove(index, 1);
+    slotLifeVersions.Remove(index, 1);
+    slotReceivers.Remove(index, 1);
+    slotReceiversLifeVersions.Remove(index, 1);
+    //  Alter iteration index `nextSlotIndex` to account for this `Slot` removal
+    if (nextSlotIndex > index) {
+        nextSlotIndex -= 1;
+    }
 }
 
 defaultproperties

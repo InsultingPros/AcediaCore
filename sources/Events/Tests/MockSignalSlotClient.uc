@@ -20,20 +20,55 @@
  */
 class MockSignalSlotClient extends AcediaObject;
 
-var private int value;
+//  Remember `Signal` and `Slot` for testing purposes
+var private MockSignal  usedSignal;
+var private MockSlot    usedSlot;
+var private int         value;
 
 public final function SetValue(int newValue)
 {
     value = newValue;
 }
 
+public final function DisconnectMe(MockSignal signal)
+{
+    if (signal != none) {
+        signal.NewSlot(self).Disconnect();
+    }
+}
+
 //  Return `SMockSlot` for testing purposes
 public final function MockSlot AddToSignal(MockSignal signal)
 {
     local MockSlot slot;
+    if (signal == none) {
+        return none;
+    }
     slot = MockSlot(signal.NewSlot(self));
     slot.connect = Handler;
     return slot;
+}
+
+public final function MockSlot AddToSignal_AddNewSlot(MockSignal signal)
+{
+    local MockSlot slot;
+    if (signal == none) {
+        return none;
+    }
+    usedSignal = signal;
+    slot = MockSlot(signal.NewSlot(self));
+    slot.connect = Handler_AddNewSlot;
+    return slot;
+}
+
+public final function MockSlot AddToSignal_DestroySlot(MockSignal signal)
+{
+    if (signal == none) {
+        return none;
+    }
+    usedSlot = MockSlot(signal.NewSlot(self));
+    usedSlot.connect = Handler_DestroySlot;
+    return usedSlot;
 }
 
 private final function int Handler(int inputValue, optional bool doSubtract)
@@ -42,6 +77,33 @@ private final function int Handler(int inputValue, optional bool doSubtract)
         return inputValue - value;
     }
     return inputValue + value;
+}
+
+private final function int Handler_AddNewSlot(
+    int             inputValue,
+    optional bool   doSubtract)
+{
+    local MockSignalSlotClient newClient;
+    if (usedSignal == none) {
+        return inputValue;
+    }
+    newClient = MockSignalSlotClient(
+        _.memory.Allocate(class'MockSignalSlotClient'));
+    newClient.SetValue(value);
+    newClient.AddToSignal(usedSignal);
+    usedSignal = none;
+    return inputValue;
+}
+
+private final function int Handler_DestroySlot(
+    int             inputValue,
+    optional bool   doSubtract)
+{
+    if (usedSlot != none) {
+        usedSlot.FreeSelf();
+    }
+    usedSlot = none;
+    return inputValue;
 }
 
 defaultproperties

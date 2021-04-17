@@ -26,11 +26,16 @@ protected static function TESTS()
         @ "a signal.");
     Test_Connecting();
     Test_Disconnecting();
+    Test_DisconnectingThroughSlot();
     Context("Testing how signals and slots system handles deallocations and"
         @ "unexpected changes to managed objects.");
     Test_DeallocSlots();
     Test_EmptySlots();
     Test_DeallocReceivers();
+    Context("Testing how signals and slots system handles connecting and"
+        @ "disconnections of slots while a signal is being emitted.");
+    Test_ConnectSlotsDuringEmittion();
+    Test_DisconnectSlotsDuringEmittion();
 }
 
 protected static function Test_Connecting()
@@ -93,6 +98,25 @@ protected static function Test_Disconnecting()
     TEST_ExpectTrue(signal.Emit(550, true) == -2000);
     __().memory.Free(signal);
     __().memory.FreeMany(objects);
+}
+
+protected static function Test_DisconnectingThroughSlot()
+{
+    local MockSignal            signal;
+    local MockSlot              slot1, slot2, slot3;
+    local MockSignalSlotClient  client;
+    Issue("`Disconnect()` defined for `Slot()` does not properly disconnect all"
+        @ "of it's receiver's slots.");
+    signal = MockSignal(__().memory.Allocate(class'MockSignal'));
+    client = MockSignalSlotClient(
+        __().memory.Allocate(class'MockSignalSlotClient'));
+    slot1 = client.AddToSignal_AddNewSlot(signal);
+    slot2 = client.AddToSignal_DestroySlot(signal);
+    slot3 = client.AddToSignal(signal);
+    client.DisconnectMe(signal);
+    TEST_ExpectFalse(slot1.IsAllocated());
+    TEST_ExpectFalse(slot2.IsAllocated());
+    TEST_ExpectFalse(slot3.IsAllocated());
 }
 
 protected static function Test_DeallocSlots()
@@ -202,9 +226,55 @@ protected static function Test_DeallocReceivers()
         }
     }
     Issue("Slots with deallocated receivers are not deallocated.");
-    TEST_ExpectFalse(true);
+    TEST_ExpectFalse(slotsAreNotDeallocated);
     __().memory.Free(signal);
     __().memory.FreeMany(objects);
+}
+
+protected static function Test_ConnectSlotsDuringEmittion()
+{
+    local MockSignal            signal;
+    local MockSignalSlotClient  clientWithNewConnection, regularClient;
+    Issue("Slots added during signal emission also receive that signal.");
+    signal = MockSignal(__().memory.Allocate(class'MockSignal'));
+    clientWithNewConnection = MockSignalSlotClient(
+        __().memory.Allocate(class'MockSignalSlotClient'));
+    regularClient = MockSignalSlotClient(
+        __().memory.Allocate(class'MockSignalSlotClient'));
+    clientWithNewConnection.AddToSignal_AddNewSlot(signal);
+    regularClient.AddToSignal(signal);
+    clientWithNewConnection.SetValue(27);
+    regularClient.SetValue(23);
+    //      Ideally `clientWithNewConnection` only adds a new slot to which
+    //  an object with the same value as `clientWithNewConnection` is connected.
+    //  That newly added object should not affect hat same signal emission.
+    //      This test checks that it actually does not, which would mean that
+    //  only `regularClient` alters resulting value and sets it to `23`.
+    TEST_ExpectTrue(signal.Emit(0) == 23);
+}
+
+protected static function Test_DisconnectSlotsDuringEmittion()
+{
+    local MockSignal            signal;
+    local MockSignalSlotClient  clientThatDestroys, regularClient;
+    Issue("Some slots do not receive a signal if one of them was removed during"
+        @ "that signal's emission.");
+    signal = MockSignal(__().memory.Allocate(class'MockSignal'));
+    clientThatDestroys = MockSignalSlotClient(
+        __().memory.Allocate(class'MockSignalSlotClient'));
+    regularClient = MockSignalSlotClient(
+        __().memory.Allocate(class'MockSignalSlotClient'));
+    clientThatDestroys.AddToSignal_DestroySlot(signal);
+    regularClient.AddToSignal(signal);
+    regularClient.SetValue(23);
+    //      Ideally `clientThatDestroys` only removes itself from a `signal`,
+    //  without affecting whether other `Slot`s receive a signal. However,
+    //  in one of the previous implementations that prevented the next `Slot`
+    //  from receiving signal emission.
+    //      This test checks that this does not actually happen, which would
+    //  mean that `regularClient` still alters resulting value and sets it
+    //  to `23`.
+    TEST_ExpectTrue(signal.Emit(0) == 23);
 }
 
 defaultproperties
