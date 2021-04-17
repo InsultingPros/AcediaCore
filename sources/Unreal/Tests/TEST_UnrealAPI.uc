@@ -19,10 +19,10 @@
  */
 class TEST_UnrealAPI extends TestCase;
 
-protected static function int CountRulesAmount(class<GameRules> gameRulesClass)
+protected static function int CountRulesAmount(class<gameRules> gameRulesClass)
 {
     local int       counter;
-    local GameRules rulesIter;
+    local gameRules rulesIter;
     if (gameRulesClass == none) {
         return 0;
     }
@@ -32,7 +32,7 @@ protected static function int CountRulesAmount(class<GameRules> gameRulesClass)
         if (rulesIter.class == gameRulesClass) {
             counter += 1;
         }
-        rulesIter = rulesIter.nextGameRules;
+        rulesIter = rulesIter.nextgameRules;
     }
     return counter;
 }
@@ -57,38 +57,38 @@ protected static function Test_GameType()
 
 protected static function Test_GameRules()
 {
-    Context("Testing methods for working with `GameRules`.");
+    Context("Testing methods for working with `gameRules`.");
     SubTest_AddRemoveGameRules();
     SubTest_CheckGameRules();
 }
 
 protected static function SubTest_AddRemoveGameRules()
 {
-    Issue("`AddGameRules()` does not add game rules.");
-    __().unreal.AddGameRules(class'MockGameRulesA');
+    Issue("`gameRules.Add()` does not add game rules.");
+    __().unreal.gameRules.Add(class'MockGameRulesA');
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesA') == 1);
 
-    __().unreal.AddGameRules(class'MockGameRulesA');
-    Issue("Calling `AddGameRules()` twice leads to rule duplication.");
+    __().unreal.gameRules.Add(class'MockGameRulesA');
+    Issue("Calling `gameRules.Add()` twice leads to rule duplication.");
     TEST_ExpectFalse(CountRulesAmount(class'MockGameRulesA') > 1);
-    Issue("Calling `AddGameRules()` leads to rule not being added.");
+    Issue("Calling `gameRules.Add()` leads to rule not being added.");
     TEST_ExpectFalse(CountRulesAmount(class'MockGameRulesA') == 0);
 
-    Issue("Adding new rules with `AddGameRules()` does not work properly.");
-    __().unreal.AddGameRules(class'MockGameRulesB');
+    Issue("Adding new rules with `gameRules.Add()` does not work properly.");
+    __().unreal.gameRules.Add(class'MockGameRulesB');
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesA') == 1);
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesB') == 1);
 
-    Issue("Adding/removing rules with `RemoveGameRules()` leads to" @
+    Issue("Adding/removing rules with `gameRules.Remove()` leads to" @
         "unexpected results.");
-    __().unreal.RemoveGameRules(class'MockGameRulesB');
+    __().unreal.gameRules.Remove(class'MockGameRulesB');
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesA') == 1);
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesB') == 0);
-    __().unreal.AddGameRules(class'MockGameRulesB');
-    __().unreal.RemoveGameRules(class'MockGameRulesA');
+    __().unreal.gameRules.Add(class'MockGameRulesB');
+    __().unreal.gameRules.Remove(class'MockGameRulesA');
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesA') == 0);
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesB') == 1);
-    __().unreal.RemoveGameRules(class'MockGameRulesB');
+    __().unreal.gameRules.Remove(class'MockGameRulesB');
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesA') == 0);
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesB') == 0);
 }
@@ -96,32 +96,32 @@ protected static function SubTest_AddRemoveGameRules()
 protected static function SubTest_CheckGameRules()
 {
     local string issueForAdded, issueForNotAdded;
-    issueForAdded = "`AreGameRulesAdded()` returns `false` for rules that are" @
-        "currently added.";
-    issueForNotAdded = "`AreGameRulesAdded()` returns `true` for rules that" @
+    issueForAdded = "`gameRules.AreAdded()` returns `false` for rules that"
+        @ "are currently added.";
+    issueForNotAdded = "`gameRules.AreAdded()` returns `true` for rules that" @
         "are not currently added.";
-    __().unreal.RemoveGameRules(class'MockGameRulesA');
-    __().unreal.RemoveGameRules(class'MockGameRulesB');
+    __().unreal.gameRules.Remove(class'MockGameRulesA');
+    __().unreal.gameRules.Remove(class'MockGameRulesB');
     Issue(issueForNotAdded);
-    TEST_ExpectFalse(__().unreal.AreGameRulesAdded(class'MockGameRulesA'));
-    TEST_ExpectFalse(__().unreal.AreGameRulesAdded(class'MockGameRulesB'));
+    TEST_ExpectFalse(__().unreal.gameRules.AreAdded(class'MockGameRulesA'));
+    TEST_ExpectFalse(__().unreal.gameRules.AreAdded(class'MockGameRulesB'));
 
-    __().unreal.AddGameRules(class'MockGameRulesB');
+    __().unreal.gameRules.Add(class'MockGameRulesB');
     Issue(issueForNotAdded);
-    TEST_ExpectFalse(__().unreal.AreGameRulesAdded(class'MockGameRulesA'));
+    TEST_ExpectFalse(__().unreal.gameRules.AreAdded(class'MockGameRulesA'));
     Issue(issueForAdded);
-    TEST_ExpectTrue(__().unreal.AreGameRulesAdded(class'MockGameRulesB'));
+    TEST_ExpectTrue(__().unreal.gameRules.AreAdded(class'MockGameRulesB'));
 
-    __().unreal.AddGameRules(class'MockGameRulesA');
+    __().unreal.gameRules.Add(class'MockGameRulesA');
     Issue(issueForAdded);
-    TEST_ExpectTrue(__().unreal.AreGameRulesAdded(class'MockGameRulesA'));
-    TEST_ExpectTrue(__().unreal.AreGameRulesAdded(class'MockGameRulesB'));
+    TEST_ExpectTrue(__().unreal.gameRules.AreAdded(class'MockGameRulesA'));
+    TEST_ExpectTrue(__().unreal.gameRules.AreAdded(class'MockGameRulesB'));
 
-    __().unreal.RemoveGameRules(class'MockGameRulesB');
+    __().unreal.gameRules.Remove(class'MockGameRulesB');
     Issue(issueForAdded);
-    TEST_ExpectTrue(__().unreal.AreGameRulesAdded(class'MockGameRulesA'));
+    TEST_ExpectTrue(__().unreal.gameRules.AreAdded(class'MockGameRulesA'));
     Issue(issueForNotAdded);
-    TEST_ExpectFalse(__().unreal.AreGameRulesAdded(class'MockGameRulesB'));
+    TEST_ExpectFalse(__().unreal.gameRules.AreAdded(class'MockGameRulesB'));
 }
 
 protected static function Test_InventoryChainFetching()
@@ -137,7 +137,8 @@ protected static function Test_InventoryChainFetching()
     chainEnd = chainEnd.inventory;
     chainEnd.inventory = Inventory(__().memory.Allocate(class'MockInventoryA'));
     chainEnd = chainEnd.inventory;
-    chainEnd.inventory = Inventory(__().memory.Allocate(class'MockInventoryAChild'));
+    chainEnd.inventory =
+        Inventory(__().memory.Allocate(class'MockInventoryAChild'));
     chainEnd = chainEnd.inventory;
     chainEnd.inventory = Inventory(__().memory.Allocate(class'MockInventoryB'));
     chainEnd = chainEnd.inventory;

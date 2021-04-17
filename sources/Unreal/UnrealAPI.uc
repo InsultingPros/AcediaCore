@@ -20,6 +20,41 @@
  */
 class UnrealAPI extends AcediaObject;
 
+var public GameRulesAPI gameRules;
+
+var private LoggerAPI.Definition errNoService;
+
+protected function Constructor()
+{
+    gameRules = GameRulesAPI(_.memory.Allocate(class'GameRulesAPI'));
+}
+
+/**
+ *  Signal that will be emitted every tick.
+ *
+ *  [Signature]
+ *  void <slot>(float delta)
+ *
+ *  @param  delta   In-game time in seconds that has passed since the last tick.
+ *      To obtain real time passed from the last tick multiply `delta` by
+ *      `1.1 / level.timeDilation`.
+ */
+/* SIGNAL */
+public final function Unreal_OnTick_Slot OnTick(
+    AcediaObject receiver)
+{
+    local Signal        signal;
+    local UnrealService service;
+    service = UnrealService(class'UnrealService'.static.Require());
+    if (service == none)
+    {
+        _.logger.Auto(errNoService);
+        return none;
+    }
+    signal = service.GetSignal(class'Unreal_OnTick_Signal');
+    return Unreal_OnTick_Slot(signal.NewSlot(receiver));
+}
+
 /**
  *  Returns current game's `LevelInfo`. Useful because `level` variable
  *  is not defined inside objects.
@@ -30,6 +65,33 @@ class UnrealAPI extends AcediaObject;
 public final function LevelInfo GetLevel()
 {
     return class'CoreService'.static.GetInstance().level;
+}
+
+/**
+ *  Returns current game's `GameReplicationInfo`. Useful because `level.game`
+ *  is not accessible inside objects.
+ *
+ *  @return `GameReplicationInfo` instance for the current game. Guaranteed to
+ *      not be `none`.
+ */
+public final function GameReplicationInfo GetGameRI()
+{
+    return class'CoreService'.static.GetInstance().level.GRI;
+}
+
+/**
+ *  Returns current game's `GameReplicationInfo` as `KFGameReplicationInfo`.
+ *  Useful because `level.game` is not accessible inside objects and because it
+ *  auto converts game replication info type to `KFGameReplicationInfo`, which
+ *  virtually all mods for killing floor use (by itself or as a base class).
+ *
+ *  @return `KFGameReplicationInfo` instance for the current game.
+ *      Can be `none` only if game was modded to run a `KFGameReplicationInfo`
+ *      not derived from `KFGameType`.
+ */
+public final function KFGameReplicationInfo GetKFGameRI()
+{
+    return KFGameReplicationInfo(GetGameRI());
 }
 
 /**
@@ -69,89 +131,6 @@ public final function PlayerController GetLocalPlayer()
 {
     return class'CoreService'.static.GetInstance().level
         .GetLocalPlayerController();
-}
-
-/**
- *  Checks if given class of `GameRules` is currently active in `GameInfo`.
- *
- *  @param  rulesClassToCheck   Class of rules to check for.
- *  @return `true` if `GameRules` are active and `false` otherwise.
- */
-public final function bool AreGameRulesAdded(
-    class<GameRules> rulesClassToCheck)
-{
-    local GameRules rulesIter;
-    if (rulesClassToCheck == none) {
-        return false;
-    }
-    rulesIter = GetGameType().gameRulesModifiers;
-    while (rulesIter != none)
-    {
-        if (rulesIter.class == rulesClassToCheck) {
-            return true;
-        }
-        rulesIter = rulesIter.nextGameRules;
-    }
-    return false;
-}
-
-/**
- *  Adds new `GameRules` class to the current `GameInfo`.
- *  Does nothing if give `GameRules` class was already added before.
- *
- *  @param  newRulesClass   Class of rules to add.
- *  @return `true` if `GameRules` were added and `false` otherwise
- *      (because they were already active.)
- */
-public final function bool AddGameRules(class<GameRules> newRulesClass)
-{
-    if (AreGameRulesAdded(newRulesClass)) {
-        return false;
-    }
-    GetGameType().AddGameModifier(GameRules(_.memory.Allocate(newRulesClass)));
-    return true;
-}
-
-/**
- *  Removes given `GameRules` class from the current `GameInfo`,
- *  if they are active. Does nothing otherwise.
- *
- *  @param  rulesClassToRemove  Class of rules to try and remove.
- *  @return `true` if `GameRules` were removed and `false` otherwise
- *      (if they were not active in the first place).
- */
-public final function bool RemoveGameRules(class<GameRules> rulesClassToRemove)
-{
-    local GameInfo  game;
-    local GameRules rulesIter;
-    local GameRules rulesToDestroy;
-    if (rulesClassToRemove == none)         return false;
-    game = GetGameType();
-    if (game.gameRulesModifiers == none)    return false;
-
-    //  Check root rules
-    rulesToDestroy = game.gameRulesModifiers;
-    if (rulesToDestroy.class == rulesClassToRemove)
-    {
-        game.gameRulesModifiers = rulesToDestroy.nextGameRules;
-        rulesToDestroy.Destroy();
-        return true;
-    }
-    //  Check rest of the rules
-    rulesIter = game.gameRulesModifiers;
-    while (rulesIter != none)
-    {
-        rulesToDestroy = rulesIter.nextGameRules;
-        if (    rulesToDestroy != none
-            &&  rulesToDestroy.class == rulesClassToRemove)
-        {
-            rulesIter.nextGameRules = rulesToDestroy.nextGameRules;
-            rulesToDestroy.Destroy();
-            return true;
-        }
-        rulesIter = rulesIter.nextGameRules;
-    }
-    return false;
 }
 
 /**
@@ -257,4 +236,5 @@ public final function NativeActorRef ActorRef(optional Actor value)
 
 defaultproperties
 {
+    errNoService = (l=LOG_Error,m="`UnrealService` could not be reached.")
 }
