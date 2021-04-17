@@ -24,6 +24,8 @@ class Service extends Singleton
 //  Listeners listed here will be automatically activated.
 var public const array< class<Listener> > requiredListeners;
 
+var LoggerAPI.Definition errNoService;
+
 //  Enables feature of given class.
 public static final function Service Require()
 {
@@ -35,6 +37,9 @@ public static final function Service Require()
     default.blockSpawning = false;
     newInstance = Service(__().memory.Allocate(default.class));
     default.blockSpawning = true;
+    if (newInstance == none) {
+        __().logger.Auto(default.errNoService).ArgClass(default.class);
+    }
     return newInstance;
 }
 
@@ -78,4 +83,5 @@ defaultproperties
     blockSpawning   = true
     //  Features are server-only actors
     remoteRole      = ROLE_None
+    errNoService = "Cannot start required service %1."
 }
