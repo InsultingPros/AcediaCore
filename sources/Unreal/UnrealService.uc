@@ -87,6 +87,9 @@ public event Tick(float delta)
 defaultproperties
 {
     serviceSignals(0) = (signalClass=class'GameRules_OnFindPlayerStart_Signal')
-    serviceSignals(1) = (signalClass=class'GameRules_OnOverridePickupQuery_Signal')
-    serviceSignals(2) = (signalClass=class'GameRules_OnNetDamage_Signal')
+    serviceSignals(1) = (signalClass=class'GameRules_OnHandleRestartGame_Signal')
+    serviceSignals(2) = (signalClass=class'GameRules_OnCheckEndGame_Signal')
+    serviceSignals(3) = (signalClass=class'GameRules_OnCheckScore_Signal')
+    serviceSignals(4) = (signalClass=class'GameRules_OnOverridePickupQuery_Signal')
+    serviceSignals(5) = (signalClass=class'GameRules_OnNetDamage_Signal')
 }

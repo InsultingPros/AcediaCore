@@ -1,5 +1,5 @@
 /**
- *  Signal class implementation for `GameRulesAPI`'s `OnFindPlayerStart` signal.
+ *  Signal class implementation for `GameRulesAPI`'s `OnCheckScore` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,33 +17,28 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class GameRules_OnFindPlayerStart_Signal extends Signal;
+class GameRules_OnCheckScore_Signal extends Signal;
 
-public final function NavigationPoint Emit(
-    Controller      player,
-    optional byte   inTeam,
-    optional string incomingName)
+public final function bool Emit(PlayerReplicationInfo scorer)
 {
-    local Slot              nextSlot;
-    local NavigationPoint   nextPoint;
+    local Slot  nextSlot;
+    local bool  result, nextReply;
     StartIterating();
     nextSlot = GetNextSlot();
+    result = true;
     while (nextSlot != none)
     {
-        nextPoint = GameRules_OnFindPlayerStart_Slot(nextSlot)
-            .connect(player, inTeam, incomingName);
-        if (nextPoint != none && !nextSlot.IsEmpty())
-        {
-            CleanEmptySlots();
-            return nextPoint;
+        nextReply = GameRules_OnCheckScore_Slot(nextSlot).connect(scorer);
+        if (!nextReply && !nextSlot.IsEmpty()) {
+            result = result && nextReply;
         }
         nextSlot = GetNextSlot();
     }
     CleanEmptySlots();
-    return none;
+    return result;
 }
 
 defaultproperties
 {
-    relatedSlotClass = class'GameRules_OnFindPlayerStart_Slot'
+    relatedSlotClass = class'GameRules_OnCheckScore_Slot'
 }

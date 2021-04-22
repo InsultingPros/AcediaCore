@@ -21,6 +21,9 @@
 class AcediaGameRules extends GameRules;
 
 var private GameRules_OnFindPlayerStart_Signal      onFindPlayerStartSignal;
+var private GameRules_OnHandleRestartGame_Signal    onHandleRestartGameSignal;
+var private GameRules_OnCheckEndGame_Signal         onCheckEndGameSignal;
+var private GameRules_OnCheckScore_Signal           onCheckScoreSignal;
 var private GameRules_OnOverridePickupQuery_Signal  onOverridePickupQuery;
 var private GameRules_OnNetDamage_Signal            onNetDamage;
 
@@ -31,6 +34,12 @@ public final function Initialize(unrealService service)
     }
     onFindPlayerStartSignal = GameRules_OnFindPlayerStart_Signal(
         service.GetSignal(class'GameRules_OnFindPlayerStart_Signal'));
+    onHandleRestartGameSignal = GameRules_OnHandleRestartGame_Signal(
+        service.GetSignal(class'GameRules_OnHandleRestartGame_Signal'));
+    onCheckEndGameSignal = GameRules_OnCheckEndGame_Signal(
+        service.GetSignal(class'GameRules_OnCheckEndGame_Signal'));
+    onCheckScoreSignal = GameRules_OnCheckScore_Signal(
+        service.GetSignal(class'GameRules_OnCheckScore_Signal'));
     onOverridePickupQuery   = GameRules_OnOverridePickupQuery_Signal(
         service.GetSignal(class'GameRules_OnOverridePickupQuery_Signal'));
     onNetDamage             = GameRules_OnNetDamage_Signal(
@@ -58,6 +67,43 @@ function NavigationPoint FindPlayerStart(
     }
     if (result == none && nextGameRules != none) {
         return nextGameRules.FindPlayerStart(player, inTeam, incomingName);
+    }
+    return result;
+}
+
+function bool HandleRestartGame()
+{
+    local bool result;
+    if (onHandleRestartGameSignal != none) {
+        result = onHandleRestartGameSignal.Emit();
+    }
+    if (nextGameRules != none && nextGameRules.HandleRestartGame()) {
+        return true;
+    }
+    return result;
+}
+
+function bool CheckEndGame(PlayerReplicationInfo winner, string reason)
+{
+    local bool result;
+    result = true;
+    if (onCheckEndGameSignal != none) {
+        result = onCheckEndGameSignal.Emit(winner, reason);
+    }
+    if (nextGameRules != none && !nextGameRules.HandleRestartGame()) {
+        return false;
+    }
+    return result;
+}
+
+function bool CheckScore(PlayerReplicationInfo scorer)
+{
+    local bool result;
+    if (onCheckScoreSignal != none) {
+        result = onCheckScoreSignal.Emit(scorer);
+    }
+    if (nextGameRules != none && nextGameRules.CheckScore(Scorer)) {
+        return true;
     }
     return result;
 }

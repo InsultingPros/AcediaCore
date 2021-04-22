@@ -1,6 +1,5 @@
 /**
- *  Signal class implementation for `GameRulesAPI`'s
- *  `OnOverridePickupQuerySignal` signal.
+ *  Slot class implementation for `GameRulesAPI`'s `OnCheckScore` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -18,30 +17,25 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class GameRules_OnOverridePickupQuery_Signal extends Signal;
+class GameRules_OnCheckScore_Slot extends Slot;
 
-public final function bool Emit(Pawn other, Pickup item, out byte allowPickup)
+delegate bool connect(PlayerReplicationInfo scorer)
 {
-    local Slot  nextSlot;
-    local bool  shouldOverride;
-    StartIterating();
-    nextSlot = GetNextSlot();
-    while (nextSlot != none)
-    {
-        shouldOverride = GameRules_OnOverridePickupQuery_Slot(nextSlot)
-            .connect(other, item, allowPickup);
-        if (shouldOverride && !nextSlot.IsEmpty())
-        {
-            CleanEmptySlots();
-            return shouldOverride;
-        }
-        nextSlot = GetNextSlot();
-    }
-    CleanEmptySlots();
-    return false;
+    DummyCall();
+    return true;
+}
+
+protected function Constructor()
+{
+    connect = none;
+}
+
+protected function Finalizer()
+{
+    super.Finalizer();
+    connect = none;
 }
 
 defaultproperties
 {
-    relatedSlotClass = class'GameRules_OnOverridePickupQuery_Slot'
 }

@@ -20,8 +20,6 @@
  */
 class GameRulesAPI extends AcediaObject;
 
-var private LoggerAPI.Definition errNoService;
-
 /**
  *  Called when game decides on a player's spawn point. If a `NavigationPoint`
  *  is returned, signal propagation will be interrupted and returned value will
@@ -46,13 +44,82 @@ public final function GameRules_OnFindPlayerStart_Slot OnFindPlayerStart(
     local Signal        signal;
     local UnrealService service;
     service = UnrealService(class'UnrealService'.static.Require());
-    if (service == none)
-    {
-        _.logger.Auto(errNoService);
-        return none;
-    }
     signal = service.GetSignal(class'GameRules_OnFindPlayerStart_Signal');
     return GameRules_OnFindPlayerStart_Slot(signal.NewSlot(receiver));
+}
+
+/**
+ *  Called in `GameInfo`'s `RestartGame()` method and allows to prevent
+ *  game's restart.
+ *
+ *  This signal will always be propagated to all registered slots.
+ *
+ *  [Signature]
+ *  bool <slot>()
+ *
+ *  @return `true` if you want to prevent game restart and `false` otherwise.
+ */
+/* SIGNAL */
+public final function GameRules_OnHandleRestartGame_Slot OnHandleRestartGame(
+    AcediaObject receiver)
+{
+    local Signal        signal;
+    local UnrealService service;
+    service = UnrealService(class'UnrealService'.static.Require());
+    signal = service.GetSignal(class'GameRules_OnHandleRestartGame_Signal');
+    return GameRules_OnHandleRestartGame_Slot(signal.NewSlot(receiver));
+}
+
+/**
+ *  Allows modification of game ending conditions.
+ *  Return `false` to prevent game from ending.
+ *
+ *  This signal will always be propagated to all registered slots.
+ *
+ *  [Signature]
+ *  bool <slot>(PlayerReplicationInfo winner, string reason)
+ *
+ *  @param  winner  Replication info of the supposed winner of the game.
+ *  @param  reason  String with a description about how/why `winner` has won.
+ *  @return `false` if you want to prevent game from ending
+ *      and `false` otherwise.
+ */
+/* SIGNAL */
+public final function GameRules_OnCheckEndGame_Slot OnCheckEndGame(
+    AcediaObject receiver)
+{
+    local Signal        signal;
+    local UnrealService service;
+    service = UnrealService(class'UnrealService'.static.Require());
+    signal = service.GetSignal(class'GameRules_OnHandleRestartGame_Signal');
+    return GameRules_OnCheckEndGame_Slot(signal.NewSlot(receiver));
+}
+
+/* CheckScore()
+
+*/
+/**
+ *  Check if this score means the game ends.
+ *
+ *  Return `true` to override `GameInfo`'s `CheckScore()`, or if game was ended
+ *  (with a call to `Level.Game.EndGame()`).
+ *
+ *  [Signature]
+ *  bool <slot>(PlayerReplicationInfo scorer)
+ *
+ *  @param  scorer  For whom to do a score check.
+ *  @return `true` to override `GameInfo`'s `CheckScore()`, or if game was ended
+ *      and `false` otherwise.
+ */
+/* SIGNAL */
+public final function GameRules_OnCheckScore_Slot OnCheckScore(
+    AcediaObject receiver)
+{
+    local Signal        signal;
+    local UnrealService service;
+    service = UnrealService(class'UnrealService'.static.Require());
+    signal = service.GetSignal(class'GameRules_OnCheckScore_Signal');
+    return GameRules_OnCheckScore_Slot(signal.NewSlot(receiver));
 }
 
 /**
@@ -82,16 +149,10 @@ public final function GameRules_OnOverridePickupQuery_Slot
     local Signal        signal;
     local UnrealService service;
     service = UnrealService(class'UnrealService'.static.Require());
-    if (service == none)
-    {
-        _.logger.Auto(errNoService);
-        return none;
-    }
     signal = service.GetSignal(class'GameRules_OnOverridePickupQuery_Signal');
     return GameRules_OnOverridePickupQuery_Slot(signal.NewSlot(receiver));
 }
 
-//  TODO: rewrite
 /**
  *      When pawn wants to pickup something, `GameRule`s are given a chance to
  *  modify it.  If one of the `Slot`s returns `true`, `allowPickup` will
@@ -119,11 +180,6 @@ public final function GameRules_OnNetDamage_Slot OnNetDamage(
     local Signal        signal;
     local UnrealService service;
     service = UnrealService(class'UnrealService'.static.Require());
-    if (service == none)
-    {
-        _.logger.Auto(errNoService);
-        return none;
-    }
     signal = service.GetSignal(class'GameRules_OnNetDamage_Signal');
     return GameRules_OnNetDamage_Slot(signal.NewSlot(receiver));
 }
@@ -228,5 +284,4 @@ public final function bool AreAdded(
 
 defaultproperties
 {
-    errNoService = (l=LOG_Error,m="`UnrealService` could not be reached.")
 }

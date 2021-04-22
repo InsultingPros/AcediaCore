@@ -1,5 +1,6 @@
 /**
- *  Signal class implementation for `GameRulesAPI`'s `OnFindPlayerStart` signal.
+ *  Signal class implementation for `GameRulesAPI`'s
+ *  `OnHandleRestartGame` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,33 +18,27 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class GameRules_OnFindPlayerStart_Signal extends Signal;
+class GameRules_OnHandleRestartGame_Signal extends Signal;
 
-public final function NavigationPoint Emit(
-    Controller      player,
-    optional byte   inTeam,
-    optional string incomingName)
+public final function bool Emit()
 {
-    local Slot              nextSlot;
-    local NavigationPoint   nextPoint;
+    local Slot  nextSlot;
+    local bool  doPrevent, nextResult;
     StartIterating();
     nextSlot = GetNextSlot();
     while (nextSlot != none)
     {
-        nextPoint = GameRules_OnFindPlayerStart_Slot(nextSlot)
-            .connect(player, inTeam, incomingName);
-        if (nextPoint != none && !nextSlot.IsEmpty())
-        {
-            CleanEmptySlots();
-            return nextPoint;
+        nextResult = GameRules_OnHandleRestartGame_Slot(nextSlot).connect();
+        if (nextResult && !nextSlot.IsEmpty()) {
+            doPrevent = doPrevent || nextResult;
         }
         nextSlot = GetNextSlot();
     }
     CleanEmptySlots();
-    return none;
+    return doPrevent;
 }
 
 defaultproperties
 {
-    relatedSlotClass = class'GameRules_OnFindPlayerStart_Slot'
+    relatedSlotClass = class'GameRules_OnHandleRestartGame_Slot'
 }
