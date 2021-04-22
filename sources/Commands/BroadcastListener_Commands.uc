@@ -27,6 +27,7 @@ static function bool HandleText(
     out string      message,
     optional name   messageType)
 {
+    local Text          messageAsText;
     local APlayer       callerPlayer;
     local Parser        parser;
     local Commands      commandFeature;
@@ -39,8 +40,13 @@ static function bool HandleText(
     if (!commandFeature.useChatInput)   return true;
     //  We are only interested in messages that start with "!"
     parser = __().text.ParseString(message);
-    if (!parser.Match(P("!")).Ok()) {
+    if (!parser.Match(P("!")).Ok())
+    {
         parser.FreeSelf();
+        //  Convert color tags into colors
+        messageAsText = __().text.FromFormattedString(message);
+        message = messageAsText.ToColoredString(,, __().color.White);
+        messageAsText.FreeSelf();
         return true;
     }
     //  Extract `APlayer` from the `sender`
