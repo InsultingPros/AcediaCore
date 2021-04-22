@@ -34,15 +34,47 @@ struct Connection
 
 var private array<Connection> activeConnections;
 
-//  Shortcut to `ConnectionEvents`, so that we don't have to write
-//  `class'ConnectionEvents'` every time.
-var const class<ConnectionEvents> events;
+var private Connection_Signal onConnectionEstablishedSignal;
+var private Connection_Signal onConnectionLostSignal;
+
+/**
+ *  Signal that will be emitted when new player connection is established.
+ *
+ *  [Signature]
+ *  void <slot>(ConnectionService.Connection newConnection)
+ *
+ *  @param  newConnection   Structure that describes new connection.
+ */
+/* SIGNAL */
+public final function Connection_Slot OnConnectionEstablished(
+    AcediaObject receiver)
+{
+    return Connection_Slot(onConnectionEstablishedSignal.NewSlot(receiver));
+}
+
+/**
+ *  Signal that will be emitted when the player connection is lost.
+ *
+ *  [Signature]
+ *  void <slot>(ConnectionService.Connection newConnection)
+ *
+ *  @param  newConnection   Structure that describes lost connection.
+ */
+/* SIGNAL */
+public final function Connection_Slot OnConnectionLost(AcediaObject receiver)
+{
+    return Connection_Slot(onConnectionLostSignal.NewSlot(receiver));
+}
 
 //  Clean disconnected and manually find all new players on launch
 protected function OnLaunch()
 {
     local Controller        nextController;
     local PlayerController  nextPlayerController;
+    onConnectionEstablishedSignal =
+        Connection_Signal(_.memory.Allocate(class'Connection_Signal'));
+    onConnectionLostSignal =
+        Connection_Signal(_.memory.Allocate(class'Connection_Signal'));
     RemoveBrokenConnections();
     nextController = level.controllerList;
     while (nextController != none)
@@ -53,6 +85,13 @@ protected function OnLaunch()
         }
         nextController = nextController.nextController;
     }
+}
+
+protected function OnShutdown()
+{
+    default.activeConnections = activeConnections;
+    _.memory.Free(onConnectionEstablishedSignal);
+    _.memory.Free(onConnectionLostSignal);
 }
 
 //      Returning `true` guarantees that `controllerToCheck != none`
@@ -99,7 +138,7 @@ private function RemoveBrokenConnections()
             if (activeConnections[i].acediaRI != none) {
                 activeConnections[i].acediaRI.Destroy();
             }
-            events.static.CallConnectionLost(activeConnections[i]);
+            onConnectionLostSignal.Emit(activeConnections[i]);
             activeConnections.Remove(i, 1);
         }
         else {
@@ -143,19 +182,14 @@ public final function bool RegisterConnection(PlayerController player)
     if (!IsHumanController(player))         return false;
     if (GetConnectionIndex(player) >= 0)    return true;
     newConnection.controllerReference = player;
-    //  TODO: move this check to AcediaCore
-    /*if (!class'Acedia'.static.GetInstance().IsServerOnly())
-    {
-        newConnection.acediaRI = Spawn(class'AcediaReplicationInfo', player);
-        newConnection.acediaRI.linkOwner = player;
-    }*/
+
     newConnection.idHash = player.GetPlayerIDHash();
     newConnection.networkAddress = player.GetPlayerNetworkAddress();
     activeConnections[activeConnections.length] = newConnection;
     //  Remember recorded connections in case someone decides to
     //  nuke this service
     default.activeConnections = activeConnections;
-    events.static.CallConnectionEstablished(newConnection);
+    onConnectionEstablishedSignal.Emit(newConnection);
     return true;
 }
 
@@ -192,6 +226,5 @@ event Tick(float delta)
 
 defaultproperties
 {
-    events = class'ConnectionEvents'
     requiredListeners(0) = class'MutatorListener_Connection'
 }

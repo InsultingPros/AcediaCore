@@ -22,61 +22,65 @@
  */
 class PlayerService extends Service;
 
-//  Used to 1-to-1 associate `APlayer` with `PlayerController` object.
+//  Used to 1-to-1 associate `APlayer` objects with `PlayerController` actors.
 struct PlayerControllerPair
 {
     var APlayer             player;
     var PlayerController    controller;
 };
-//  Store all known players along with their `PlayerController`s.
+//  Records of all known pairs
 var private array<PlayerControllerPair> allPlayers;
 
-//  Shortcut to `ConnectionEvents`, so that we don't have to write
-//  `class'ConnectionEvents'` every time.
-var const class<PlayerEvents> events;
+protected function Contructor()
+{
+    SetTimer(1.0, true);
+}
+
+protected function Finalizer()
+{
+    SetTimer(0.0, false);
+}
 
 /**
  *  Creates a new `APlayer` instance for a given `newPlayerController`
  *  controller.
  *
- *  If given controller is `none` or it's `APLayer` was already created,
+ *  If given controller is `none` or it's `APlayer` was already created,
  *  - does nothing.
  *
  *  @param  newPlayerController Controller for which we must
  *      create new `APlayer`.
  *  @return `true` if new `APlayer` was created and `false` otherwise.
  */
-public final function bool RegisterPlayer(PlayerController newPlayerController)
+public final function bool RegisterPair(
+    PlayerController    newController,
+    APlayer             newPlayer)
 {
     local int                   i;
-    local Text                  textIdHash;
     local PlayerControllerPair  newPair;
-    if (newPlayerController == none) return false;
+    if (newController == none)  return false;
+    if (newPlayer == none)      return false;
 
-    UpdateAllPlayers();
     for (i = 0; i < allPlayers.length; i += 1)
     {
-        if (allPlayers[i].controller == newPlayerController) {
+        if (allPlayers[i].controller == newController) {
+            return false;
+        }
+        if (allPlayers[i].player == newPlayer) {
             return false;
         }
     }
     //  Record new pair in service's data
-    newPair.controller  = newPlayerController;
-    newPair.player      = APlayer(_.memory.Allocate(class'APlayer', true));
+    newPair.controller  = newController;
+    newPair.player      = newPlayer;
     allPlayers[allPlayers.length] = newPair;
-    //  Initialize new `APlayer`
-    textIdHash = _.text.FromString(newPlayerController.GetPlayerIDHash());
-    newPair.player.Initialize(textIdHash);
-    textIdHash.FreeSelf();
-    //  Run events
-    events.static.CallPlayerConnected(newPair.player);
     return true;
 }
 
 /**
- *  Fetches current array of all player (registered `APLayer`s).
+ *  Fetches current array of all players (registered `APlayer`s).
  *
- *  @return Current array of all player (registered `APLayer`s). Guaranteed to
+ *  @return Current array of all players (registered `APlayer`s). Guaranteed to
  *      not contain `none` values.
  */
 public final function array<APlayer> GetAllPlayers()
@@ -99,7 +103,7 @@ public final function array<APlayer> GetAllPlayers()
  *  @return `APlayer` that is associated with a given `PlayerController`.
  *      Can return `none` if player has already "expired".
  */
-public final function APlayer GetPlayer(PlayerController controller)
+public final function APlayer GetPlayer(Controller controller)
 {
     local int i;
     if (controller == none) {
@@ -143,14 +147,12 @@ public final function PlayerController GetController(APlayer player)
  *  Causes status of all players to update.
  *  See `APlayer.Update()` for details.
  */
-public final function UpdateAllPlayers()
+event Timer()
 {
     local int i;
     while (i < allPlayers.length)
     {
-        if (allPlayers[i].controller == none)
-        {
-            events.static.CallPlayerDisconnected(allPlayers[i].player);
+        if (allPlayers[i].controller == none || allPlayers[i].player == none) {
             allPlayers.Remove(i, 1);
         }
         else {
@@ -161,6 +163,4 @@ public final function UpdateAllPlayers()
 
 defaultproperties
 {
-    events = class'PlayerEvents'
-    requiredListeners(0) = class'ConnectionListener_Player'
 }

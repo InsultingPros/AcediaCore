@@ -33,6 +33,8 @@ var private ConsoleWriter   consoleInstance;
 //  Remember version to reallocate writer in case someone deallocates it
 var private int             consoleLifeVersion;
 
+var private NativeActorRef  controller;
+
 //  These variables record name of this player;
 //  `hashedName` is used to track outside changes that bypass our getter/setter.
 var private Text    textName;
@@ -49,19 +51,9 @@ enum AdminStatus
     AS_SilentAdmin
 };
 
-//  `PlayerController` associated with the caller `APLayer`.
-//  Can return `none` if:
-//      1. Caller `APlayer` has already disconnected;
-//      2. It was not properly initialized;
-//      3. There is an issue running `PlayerService`.
-private final function PlayerController GetController()
+protected function Finalizer()
 {
-    local PlayerService service;
-    service = PlayerService(class'PlayerService'.static.Require());
-    if (service != none) {
-        return service.GetController(self);
-    }
-    return none;
+    _.memory.Free(controller);
 }
 
 //  `PlayerReplicationInfo` associated with the caller `APLayer`.
@@ -72,7 +64,7 @@ private final function PlayerController GetController()
 private final function PlayerReplicationInfo GetRI()
 {
     local PlayerController myController;
-    myController = GetController();
+    myController = PlayerController(controller.Get());
     if (myController != none) {
         return myController.playerReplicationInfo;
     }
@@ -88,7 +80,7 @@ private final function PlayerReplicationInfo GetRI()
  */
 public final function bool IsConnected()
 {
-    return (GetController() != none);
+    return (controller.Get() != none);
 }
 
 /**
@@ -110,6 +102,7 @@ public final function Initialize(Text idHash)
     //  Retrieve controller and replication info
     service = PlayerService(class'PlayerService'.static.Require());
     myController = service.GetController(self);
+    controller = _.unreal.ActorRef(myController);
     if (myController != none) {
         myReplicationInfo = myController.playerReplicationInfo;
     }

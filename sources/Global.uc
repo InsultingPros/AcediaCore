@@ -37,6 +37,7 @@ var public MemoryAPI        memory;
 var public ConsoleAPI       console;
 var public ColorAPI         color;
 var public UserAPI          users;
+var public PlayersAPI       players;
 var public JSONAPI          json;
 
 public final static function Global GetInstance()
@@ -67,6 +68,7 @@ protected function Initialize()
     console     = ConsoleAPI(memory.Allocate(class'ConsoleAPI'));
     color       = ColorAPI(memory.Allocate(class'ColorAPI'));
     users       = UserAPI(memory.Allocate(class'UserAPI'));
+    players     = PlayersAPI(memory.Allocate(class'PlayersAPI'));
     json        = JSONAPI(memory.Allocate(class'JSONAPI'));
     json.StaticConstructor();
 }
