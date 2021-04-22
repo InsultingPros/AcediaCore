@@ -56,6 +56,29 @@ protected function Finalizer()
     _.memory.Free(controller);
 }
 
+/**
+ *  Returns location of the caller `APlayer`.
+ *
+ *  @return If caller `APlayer` has a pawn, then it's location will be returned,
+ *  otherwise a location caller `APlayer` is currently spectating the map from
+ *  will be returned.
+ */
+public final function Vector GetLocation()
+{
+    local Pawn              myPawn;
+    local PlayerController  myController;
+    myController = PlayerController(controller.Get());
+    if (myController != none)
+    {
+        myPawn = myController.pawn;
+        if (myPawn != none) {
+            return myPawn.location;
+        }
+        return myController.location;
+    }
+    return Vect(0.0, 0.0, 0.0);
+}
+
 //  `PlayerReplicationInfo` associated with the caller `APLayer`.
 //  Can return `none` if:
 //      1. Caller `APlayer` has already disconnected;
