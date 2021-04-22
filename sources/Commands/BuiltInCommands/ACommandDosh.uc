@@ -19,6 +19,8 @@
  */
 class ACommandDosh extends Command;
 
+var protected const int TGOTTEN, TLOST, TDOSH;
+
 protected function BuildData(CommandDataBuilder builder)
 {
     builder.Name(P("dosh")).Summary(P("Changes amount of money."));
@@ -50,48 +52,59 @@ protected function ExecutedFor(APlayer player, CommandCall result)
     local int                   amount, minValue, maxValue;
     local AssociativeArray      commandOptions;
     //  Find min and max value boundaries
-    minValue = 0;
-    maxValue = MaxInt;
     commandOptions = result.GetOptions();
-    if (commandOptions.HasKey(P("min")))
-    {
-        minValue = IntBox(AssociativeArray(commandOptions.GetItem(P("min")))
-            .GetItem(P("minValue"))).Get();
-    }
-    if (commandOptions.HasKey(P("max"))) {
-        minValue = IntBox(AssociativeArray(commandOptions.GetItem(P("max")))
-            .GetItem(P("maxValue"))).Get();
-    }
+    minValue = commandOptions.GetIntByPointer(P("/min/minValue"), 0);
+    maxValue = commandOptions.GetIntByPointer(P("/max/maxValue"), MaxInt);
     if (minValue > maxValue) {
         maxValue = minValue;
     }
     //  Change dosh
     oldAmount = player.GetDosh();
-    amount = IntBox(result.GetParameters().GetItem(P("amount"))).Get();
+    amount = result.GetParameters().GetInt(P("amount"));
     if (result.GetSubCommand().IsEmpty()) {
         newAmount = oldAmount + amount;
     }
     else {
+        //  This has to be "dosh set"
         newAmount = amount;
     }
-    //  Enforce min/max bounds
     newAmount = Clamp(newAmount, minValue, maxValue);
-    if (!commandOptions.HasKey(P("silent")))
-    {
-        if (newAmount > oldAmount)
-        {
-            player.Console().Say(F("You've {$TextPositive gotten}"
-                @ newAmount - oldAmount @ "dosh!"));
-        }
-        if (newAmount < oldAmount)
-        {
-            player.Console().Say(F("You've {$TextNegative lost}"
-            @ oldAmount - newAmount @ "dosh!"));
-        }
+    //  Announce dosh change, if necessary
+    if (!commandOptions.HasKey(P("silent"))) {
+        AnnounceDoshChange(player.Console(), oldAmount, newAmount);
     }
     player.SetDosh(newAmount);  
 }
 
+protected function AnnounceDoshChange(
+    ConsoleWriter   console,
+    int             oldAmount,
+    int             newAmount)
+{
+    local Text amountDeltaAsText;
+    if (newAmount > oldAmount)
+    {
+        amountDeltaAsText = _.text.FromInt(newAmount - oldAmount);
+        console.Write(T(TGOTTEN))
+            .Write(amountDeltaAsText)
+            .WriteLine(T(TDOSH));
+    }
+    if (newAmount < oldAmount)
+    {
+        amountDeltaAsText = _.text.FromInt(oldAmount - newAmount);
+        console.Write(T(TLOST))
+            .Write(amountDeltaAsText)
+            .WriteLine(T(TDOSH));
+    }
+    _.memory.Free(amountDeltaAsText);
+}
+
 defaultproperties
 {
+    TGOTTEN = 0
+    stringConstants(0)  = "You've {$TextPositive gotten} "
+    TLOST   = 1
+    stringConstants(1)  = "You've {$TextNegative lost} "
+    TDOSH   = 2
+    stringConstants(2)  = " dosh!"
 }

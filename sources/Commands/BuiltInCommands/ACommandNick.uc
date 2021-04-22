@@ -29,7 +29,7 @@ protected function BuildData(CommandDataBuilder builder)
 
 protected function ExecutedFor(APlayer player, CommandCall result)
 {
-    player.SetName(Text(result.GetParameters().GetItem(P("nick"))));
+    player.SetName(result.GetParameters().GetText(P("nick")));
 }
 
 defaultproperties
