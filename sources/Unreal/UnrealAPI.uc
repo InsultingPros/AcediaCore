@@ -22,7 +22,7 @@ class UnrealAPI extends AcediaObject;
 
 var public GameRulesAPI gameRules;
 
-var private LoggerAPI.Definition errNoService;
+var private LoggerAPI.Definition fatalNoStalker;
 
 protected function Constructor()
 {
@@ -46,13 +46,43 @@ public final function Unreal_OnTick_Slot OnTick(
     local Signal        signal;
     local UnrealService service;
     service = UnrealService(class'UnrealService'.static.Require());
-    if (service == none)
-    {
-        _.logger.Auto(errNoService);
-        return none;
-    }
     signal = service.GetSignal(class'Unreal_OnTick_Signal');
     return Unreal_OnTick_Slot(signal.NewSlot(receiver));
+}
+
+/**
+ *  Signal that will be emitted when a passed `targetToStalk` is destroyed.
+ *
+ *  Passed parameter `targetToStalk` cannot be `none`, otherwise `none` will be
+ *  returned instead of a valid slot.
+ *
+ *  @param  receiver        Specify a receiver like for any other signal.
+ *  @param  targetToStalk   Actor whose destruction we want to detect.
+ *
+ *  [Signature]
+ *  void <slot>()
+ */
+/* SIGNAL */
+public final function SimpleSlot OnDestructionFor(
+    AcediaObject    receiver,
+    Actor           targetToStalk)
+{
+    local ActorStalker stalker;
+    if (receiver == none)       return none;
+    if (targetToStalk == none)  return none;
+
+    //  Failing to spawn this actor without any collision flags is considered
+    //  completely unexpected and grounds for fatal failure on Acedia' part
+    stalker = ActorStalker(_.memory.Allocate(class'ActorStalker'));
+    if (stalker == none)
+    {
+        _.logger.Auto(fatalNoStalker);
+        return none;
+    }
+    //  This will not fail, since we have already ensured that
+    //  `targetToStalk == none`
+    stalker.Initialize(targetToStalk);
+    return stalker.OnActorDestruction(receiver);
 }
 
 /**
@@ -236,5 +266,5 @@ public final function NativeActorRef ActorRef(optional Actor value)
 
 defaultproperties
 {
-    errNoService = (l=LOG_Error,m="`UnrealService` could not be reached.")
+    fatalNoStalker = (l=LOG_Fatal,m="Cannot spawn `PawnStalker`")
 }
