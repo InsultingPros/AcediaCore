@@ -128,7 +128,7 @@ public final function Color GetColor()
  *  Sets default color for caller 'ConsoleWriter`'s output.
  *
  *  This only changes default color, i.e. color that will be used if no other is
- *  specified by `newDefaultColor`. If color is specified, this value will
+ *  specified by "temporary" color. If color is specified, this value will
  *  be ignored.
  *
  *  If you only want to quickly color certain part of output, it is better to
@@ -158,10 +158,6 @@ public final function ConsoleWriter SetColor(Color newDefaultColor)
  *
  *  For quickly coloring certain parts of output:
  *  `console.UseColor(_.color.blue).Write(blueMessage).ResetColor()`.
- *
- *  This only changes default text color, i.e. color that will be used if no
- *  other is specified by `temporaryColor`. If color is specified, this value
- *  will be ignored.
  *
  *  Consecutive calls do not "stack up" colors - only last one is remembered:
  *      `console.UseColor(_.color.blue).UseColor(_.color.green)` is the same as
