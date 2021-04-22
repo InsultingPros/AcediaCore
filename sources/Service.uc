@@ -83,5 +83,5 @@ defaultproperties
     blockSpawning   = true
     //  Features are server-only actors
     remoteRole      = ROLE_None
-    errNoService = "Cannot start required service %1."
+    errNoService    = (l=LOG_Fatal,m="Cannot start required service %1")
 }
