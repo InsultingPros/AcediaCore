@@ -40,6 +40,8 @@ var public UserAPI          users;
 var public PlayersAPI       players;
 var public JSONAPI          json;
 
+var public KFFrontend       kf;
+
 public final static function Global GetInstance()
 {
     if (default.myself == none) {
@@ -70,5 +72,6 @@ protected function Initialize()
     users       = UserAPI(memory.Allocate(class'UserAPI'));
     players     = PlayersAPI(memory.Allocate(class'PlayersAPI'));
     json        = JSONAPI(memory.Allocate(class'JSONAPI'));
+    kf          = KFFrontend(memory.Allocate(class'KF1_Frontend'));
     json.StaticConstructor();
 }
