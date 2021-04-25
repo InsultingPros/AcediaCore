@@ -220,6 +220,28 @@ public final function bool IsQuotationMark(Text.Character character)
 }
 
 /**
+ *  Creates a new character from a provided code point.
+ *
+ *  @param  codePoint   Code point that defines resulting character.
+ *      Must be a valid Unicode code point.
+ *  @param  formatting  Optional parameter that allows to specify resulting
+ *      character's formatting. By default uses default formatting
+ *      (text is not colored).
+ *  @return Character defined by provided code point and, optionally,
+ *      `formatting`.
+ */
+// TODO: Validity checks fro non-negative input code points
+public final function Text.Character CharacterFromCodePoint(
+    int                         codePoint,
+    optional Text.Formatting    formatting)
+{
+    local Text.Character result;
+    result.codePoint    = codePoint;
+    result.formatting   = formatting;
+    return result;
+}
+
+/**
  *  Extracts a character at position `position` from a given plain `string`.
  *
  *  For extracting multiple character or character from colored/formatted

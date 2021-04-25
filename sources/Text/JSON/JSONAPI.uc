@@ -28,7 +28,7 @@ class JSONAPI extends AcediaObject
 //  complex value
 var const int TNULL, TTRUE, TFALSE, TDOT, TEXPONENT;
 var const int TOPEN_BRACKET, TCLOSE_BRACKET, TOPEN_BRACE, TCLOSE_BRACE;
-var const int TCOMMA, TCOLON;
+var const int TCOMMA, TCOLON, TQUOTE;
 
 var const int CODEPOINT_BACKSPACE, CODEPOINT_TAB, CODEPOINT_LINE_FEED;
 var const int CODEPOINT_FORM_FEED, CODEPOINT_CARRIAGE_RETURN;
@@ -815,7 +815,7 @@ public final function MutableText Print(AcediaObject toPrint)
     }
     if (    toPrint.class == class'Text'
         ||  toPrint.class == class'MutableText') {
-        return _.text.FromStringM(DisplayText(Text(toPrint)));
+        return DisplayText(Text(toPrint));
     }
     if (toPrint.class == class'DynamicArray') {
         return PrintArray(DynamicArray(toPrint));
@@ -905,7 +905,7 @@ public final function MutableText PrintObject(AssociativeArray toPrint)
         nextValue   = iter.Get();
         if (nextKey == none)                continue;
         if (nextKey.class != class'Text')   continue;
-        printedKey      = _.text.FromStringM(DisplayText(nextKey));
+        printedKey      = DisplayText(nextKey);
         printedValue    = Print(nextValue);
         result.Append(printedKey).Append(T(default.TCOLON));
         printedKey.FreeSelf();
@@ -923,31 +923,35 @@ public final function MutableText PrintObject(AssociativeArray toPrint)
     return result;
 }
 
-//      Auxiliary method to convert `Text` into it's JSON `string`
+//      Auxiliary method to convert `Text` into it's JSON "string"
 //  representation.
 //      We can't just dump `original`'s contents into JSON output as is,
 //  since we have to replace several special characters with escaped sequences.
-//  TODO: replace this with a more sensible solution later
-private final function string DisplayText(Text original)
+private final function MutableText DisplayText(Text original)
 {
-    local int       i, length;
-    local string    result;
-    local int       nextCodePoint;
+    local int               i, length;
+    local MutableText       result;
+    local Text.Character    nextCharacter;
+    local Text.Character    reverseSolidus;
+    reverseSolidus = _.text.CharacterFromCodePoint(CODEPOINT_REVERSE_SOLIDUS);
+    result = T(TQUOTE).MutableCopy();
     length = original.GetLength();
     for (i = 0; i < length; i += 1)
     {
-        nextCodePoint = original.GetCharacter(i).codePoint;
-        if (DoesNeedEscaping(nextCodePoint))
+        nextCharacter = original.GetCharacter(i);
+        if (DoesNeedEscaping(nextCharacter.codePoint))
         {
-            result $= Chr(CODEPOINT_REVERSE_SOLIDUS);
-            nextCodePoint = GetEscapedVersion(nextCodePoint);
-            result $= Chr(nextCodePoint);
+            result.AppendCharacter(reverseSolidus);
+            nextCharacter.codePoint =
+                GetEscapedVersion(nextCharacter.codePoint);
+            result.AppendCharacter(nextCharacter);
         }
         else {
-            result $= Chr(nextCodePoint);
+            result.AppendCharacter(nextCharacter);
         }
     }
-    return "\"" $ result $ "\"";
+    result.Append(T(TQUOTE));
+    return result;
 }
 
 //  Checks whether a certain character (code point) needs to be replaced for
@@ -1014,6 +1018,8 @@ defaultproperties
     stringConstants(9)  = ","
     TCOLON              = 10
     stringConstants(10) = ":"
+    TQUOTE              = 11
+    stringConstants(11) = "\""
 
     CODEPOINT_BACKSPACE         = 8
     CODEPOINT_TAB               = 9
