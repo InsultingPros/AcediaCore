@@ -125,6 +125,90 @@ protected function Finalizer()
 }
 
 /**
+ *  Auxiliary method that changes formatting of the whole `Text` to
+ *  a specified one (`newFormatting`). This method is faster than calling
+ *  `ReformatRange`.
+ *
+ *  @param  newFormatting   Formatting to set to the whole `Text`.
+ */
+protected final function ReformatWhole(Formatting newFormatting)
+{
+    local FormattingChunk newChunk;
+    formattingChunks.length = 0;
+    newChunk.startIndex = 0;
+    newChunk.formatting = newFormatting;
+    formattingChunks[0] = newChunk;
+}
+
+/**
+ *  Auxiliary method that changes formatting of the characters with indices in
+ *  range `[start; end]` to a specified one (`newFormatting`).
+ *
+ *  This method assumes, but does not check that:
+ *      1. `start <= end`;
+ *      2. `start` and `end` parameters belong to the range of valid indices
+ *          `[0; GetLength() - 1]`
+ *
+ *  @param  start           First character to change formatting of.
+ *  @param  end             Last character to change formatting of.
+ *  @param  newFormatting   Formatting to set to the specified characters.
+ */
+protected final function ReformatRange(
+    int         start,
+    int         end,
+    Formatting  newFormatting)
+{
+    local int                       i;
+    local Formatting                formattingAfterChangedSegment;
+    local FormattingChunk           newChunk;
+    local array<FormattingChunk>    newFormattingChunks;
+    start   = Max(start, 0);
+    end     = Min(GetLength() - 1, end);
+    //  Formatting right after `end`, te end of re-formatted segment
+    formattingAfterChangedSegment = GetFormatting(end + 1);
+    //  1. Copy old formatting before `start`
+    for (i = 0; i < formattingChunks.length; i += 1)
+    {
+        if (start <= formattingChunks[i].startIndex) {
+            break;
+        }
+        newFormattingChunks[newFormattingChunks.length] = formattingChunks[i];
+    }
+    newChunk.formatting = newFormatting;
+    newChunk.startIndex = start;
+    newFormattingChunks[newFormattingChunks.length] = newChunk;
+    if (end == GetLength() - 1)
+    {
+        formattingChunks = newFormattingChunks;
+        //  We have inserted `FormattingChunk` without checking if it actually
+        //  changes formatting. It might be excessive, so do a normalization.
+        NormalizeFormatting();
+        return;
+    }
+    //  2. Drop old formatting overwritten by `newFormatting`
+    while (i < formattingChunks.length)
+    {
+        if (end < formattingChunks[i].startIndex) {
+            break;
+        }
+        i += 1;
+    }
+    //  3. Copy old formatting after `end`
+    newChunk.formatting = formattingAfterChangedSegment;
+    newChunk.startIndex = end + 1;  //  end < GetLength() - 1
+    newFormattingChunks[newFormattingChunks.length] = newChunk;
+    while (i < formattingChunks.length)
+    {
+        newFormattingChunks[newFormattingChunks.length] = formattingChunks[i];
+        i += 1;
+    }
+    formattingChunks = newFormattingChunks;
+    //  We have inserted `FormattingChunk` without checking if it actually
+    //  changes formatting. It might be excessive, so do a normalization.
+    NormalizeFormatting();
+}
+
+/**
  *  Static method for creating an immutable `Text` object from (plain) `string`.
  *
  *  It is preferred to use `TextAPI` methods for creating `Text` instances.
@@ -964,6 +1048,26 @@ private final function UpdateFormattingCacheFor(int index)
     }
     if (formattingChunks[formattingIndexCache].startIndex > index) {
         formattingIndexCache = 0;
+    }
+}
+
+//  Removes possible unnecessary chunks from `formattingChunks`:
+//  if there is a chunk that tells us to have red color after index `3` and
+//  next one tells us to have red color after index `5` - the second chunk is
+//  unnecessary.
+private final function NormalizeFormatting()
+{
+    local int i;
+    while (i < formattingChunks.length - 1)
+    {
+        if (_.text.IsFormattingEqual(   formattingChunks[i].formatting,
+                                        formattingChunks[i + 1].formatting))
+        {
+            formattingChunks.Remove(i + 1, 1);
+        }
+        else {
+            i += 1;
+        }
     }
 }
 

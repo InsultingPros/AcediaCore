@@ -419,6 +419,44 @@ public final function MutableText Replace(
     return self;
 }
 
+/**
+ *  Changes formatting for characters with indices in range, specified as
+ *  `[startIndex; startIndex + maxLength - 1]` to `newFormatting` parameter.
+ *
+ *  If provided parameters `startPosition` and `maxLength` define a range that
+ *  goes beyond `[0; self.GetLength() - 1]`, then intersection with a valid
+ *  range will be used.
+ *
+ *  @param  startPosition   Position of the first character to change formatting
+ *      of. By default `0`, corresponding to the very first character.
+ *  @param  maxLength       Max length of the segment to change formatting of.
+ *      By default `0`, - that and all negative values are replaces by `MaxInt`,
+ *      effectively extracting as much of a string as possible.
+ *  @return Reference to the caller `MutableText` to allow for method chaining.
+ */
+public final function MutableText ChangeFormatting(
+    int         startIndex,
+    int         maxLength,
+    Formatting  newFormatting)
+{
+    local int endIndex;
+    if (maxLength <= 0)             return self;
+    if (startIndex >= GetLength())  return self;
+
+    endIndex    = Min(startIndex + maxLength, GetLength()) - 1;
+    startIndex  = Max(startIndex, 0);
+    if (startIndex > endIndex) {
+        return self;
+    }
+    if (startIndex == 0 && endIndex == GetLength() - 1) {
+        ReformatWhole(newFormatting);
+    }
+    else {
+        ReformatRange(startIndex, endIndex, newFormatting);
+    }
+    return self;
+}
+
 defaultproperties
 {
 }

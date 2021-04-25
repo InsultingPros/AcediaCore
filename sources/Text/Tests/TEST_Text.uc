@@ -40,6 +40,7 @@ protected static function TESTS()
     Test_StartsEndsWith();
     Test_IndexOf();
     Test_Replace();
+    Test_ChangeFormatting();
 }
 
 protected static function Test_TextCreation()
@@ -1042,6 +1043,74 @@ protected static function SubTest_ReplacePartFormatting()
             .ToFormattedString()
         ==  ("{rgb(76,52,161) A}{rgb(4,4,4) cc}{rgb(76,52,161) a}B"
             $ "{rgb(4,4,4) cccc}{rgb(76,52,160) aB}{rgb(4,4,4) cc}a"));
+}
+
+protected static function Test_ChangeFormatting()
+{
+    Context("Testing `ChangeFormatting()` method.");
+    SubTest_ChangeFormattingRegular();
+    SubTest_ChangeFormattingEdgeCases();
+}
+
+protected static function SubTest_ChangeFormattingRegular()
+{
+    local Text              template;
+    local MutableText       testText;
+    local Text.Formatting   greenFormatting, defaultFormatting;
+    greenFormatting = __().text.FormattingFromColor(__().color.Lime);
+    Issue("Formatting is not changed correctly.");
+    template = __().text.FromFormattedString(
+        "Normal part, {#ff0000 red part}, {#00ff00 green part}!!!");
+    testText = template.MutableCopy().ChangeFormatting(3, 4, greenFormatting);
+    TEST_ExpectTrue(testText.ToFormattedString() ==
+        ("Nor{rgb(0,255,0) mal }part, {rgb(255,0,0) red part}, {rgb(0,255,0)"
+        @ "green part}!!!"));
+    testText = template.MutableCopy().ChangeFormatting(12, 10, greenFormatting);
+    TEST_ExpectTrue(testText.ToFormattedString() ==
+        "Normal part,{rgb(0,255,0)  red part,} {rgb(0,255,0) green part}!!!");
+    testText = template.MutableCopy().ChangeFormatting(12, 11, greenFormatting);
+    TEST_ExpectTrue(testText.ToFormattedString() ==
+        "Normal part,{rgb(0,255,0)  red part, green part}!!!");
+    //  This test was added because it produced `none` access errors in the
+    //  old implementation of `ChangeFormatting()`
+    testText = template.MutableCopy().ChangeFormatting(0, 35, greenFormatting);
+    TEST_ExpectTrue(testText.ToFormattedString() ==
+        "{rgb(0,255,0) Normal part, red part, green part!!}!");
+    testText = template.MutableCopy().ChangeFormatting(3, 4, defaultFormatting);
+    TEST_ExpectTrue(testText.ToFormattedString() ==
+        "Normal part, {rgb(255,0,0) red part}, {rgb(0,255,0) green part}!!!");
+    testText = template.MutableCopy()
+        .ChangeFormatting(16, 13, defaultFormatting);
+    TEST_ExpectTrue(testText.ToFormattedString() ==
+        "Normal part, {rgb(255,0,0) red} part, green {rgb(0,255,0) part}!!!");
+}
+
+protected static function SubTest_ChangeFormattingEdgeCases()
+{
+    local Text              template;
+    local MutableText       testText;
+    local Text.Formatting   greenFormatting, defaultFormatting;
+    greenFormatting = __().text.FormattingFromColor(__().color.Lime);
+    Issue("Formatting is not changed correctly when indices are out of or"
+        @ "near index boundaries.");
+    template = __().text.FromFormattedString(
+        "Normal part, {#ff0000 red part}, {#00ff00 green part}!!!");
+    testText = template.MutableCopy().ChangeFormatting(33, 3, greenFormatting);
+    TEST_ExpectTrue(testText.ToFormattedString() ==
+        "Normal part, {rgb(255,0,0) red part}, {rgb(0,255,0) green part!!!}");
+    testText = template.MutableCopy().ChangeFormatting(36, 5, greenFormatting);
+    TEST_ExpectTrue(testText.ToFormattedString() ==
+        "Normal part, {rgb(255,0,0) red part}, {rgb(0,255,0) green part}!!!");
+
+    testText = template.MutableCopy()
+        .ChangeFormatting(-10, 100, defaultFormatting);
+    TEST_ExpectTrue(testText.ToFormattedString() ==
+        "Normal part, red part, green part!!!");
+    testText = template.MutableCopy()
+        .ChangeFormatting(-10, 16, greenFormatting);
+    TEST_ExpectTrue(testText.ToFormattedString() ==
+        ("{rgb(0,255,0) Normal} part, {rgb(255,0,0) red part}, {rgb(0,255,0)"
+        @ "green part}!!!"));
 }
 
 defaultproperties
