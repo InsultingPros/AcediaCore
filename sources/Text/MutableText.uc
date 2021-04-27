@@ -427,7 +427,8 @@ public final function MutableText Replace(
  *  goes beyond `[0; self.GetLength() - 1]`, then intersection with a valid
  *  range will be used.
  *
- *  @param  startPosition   Position of the first character to change formatting
+ *  @param  newFormatting   New formatting to apply.
+ *  @param  startIndex      Position of the first character to change formatting
  *      of. By default `0`, corresponding to the very first character.
  *  @param  maxLength       Max length of the segment to change formatting of.
  *      By default `0`, - that and all negative values are replaces by `MaxInt`,
@@ -435,14 +436,17 @@ public final function MutableText Replace(
  *  @return Reference to the caller `MutableText` to allow for method chaining.
  */
 public final function MutableText ChangeFormatting(
-    int         startIndex,
-    int         maxLength,
-    Formatting  newFormatting)
+    Formatting      newFormatting,
+    optional int    startIndex,
+    optional int    maxLength)
 {
     local int endIndex;
-    if (maxLength <= 0)             return self;
-    if (startIndex >= GetLength())  return self;
-
+    if (startIndex >= GetLength()) {
+        return self;
+    }
+    if (maxLength <= 0) {
+        maxLength = MaxInt;
+    }
     endIndex    = Min(startIndex + maxLength, GetLength()) - 1;
     startIndex  = Max(startIndex, 0);
     if (startIndex > endIndex) {
