@@ -25,10 +25,15 @@
 class JSONAPI extends AcediaObject
     config(AcediaSystem);
 
-//  complex value
+var private bool            formattingInitialized;
+//  Variables used in json pretty printing for defining used colors;
+//  Colors are taken from `ColorAPI`.
+var private Text.Formatting jPropertyName, jObjectBraces, jArrayBraces, jComma;
+var private Text.Formatting jColon, jNumber, jBoolean, jString, jNull;
+
 var const int TNULL, TTRUE, TFALSE, TDOT, TEXPONENT;
 var const int TOPEN_BRACKET, TCLOSE_BRACKET, TOPEN_BRACE, TCLOSE_BRACE;
-var const int TCOMMA, TCOLON, TQUOTE;
+var const int TCOMMA, TCOLON, TQUOTE, TJSON_INDENT, TSPACE, TCOLON_SPACE;
 
 var const int CODEPOINT_BACKSPACE, CODEPOINT_TAB, CODEPOINT_LINE_FEED;
 var const int CODEPOINT_FORM_FEED, CODEPOINT_CARRIAGE_RETURN;
@@ -39,6 +44,24 @@ var const int CODEPOINT_SMALL_N, CODEPOINT_SMALL_R, CODEPOINT_SMALL_T;
 //  Max precision that will be used when outputting JSON values as a string.
 //  Hardcoded to force this value between 0 and 10, inclusively.
 var private const config int MAX_FLOAT_PRECISION;
+
+//  Method for initializing json formatting variables
+private final function InitFormatting()
+{
+    if (formattingInitialized) {
+        return;
+    }
+    formattingInitialized = true;
+    jPropertyName   = _.text.FormattingFromColor(_.color.jPropertyName);
+    jObjectBraces   = _.text.FormattingFromColor(_.color.jObjectBraces);
+    jArrayBraces    = _.text.FormattingFromColor(_.color.jArrayBraces);
+    jComma          = _.text.FormattingFromColor(_.color.jComma);
+    jColon          = _.text.FormattingFromColor(_.color.jColon);
+    jNumber         = _.text.FormattingFromColor(_.color.jNumber);
+    jBoolean        = _.text.FormattingFromColor(_.color.jBoolean);
+    jString         = _.text.FormattingFromColor(_.color.jString);
+    jNull           = _.text.FormattingFromColor(_.color.jNull);
+}
 
 /**
  *  Uses given parser to parse a null JSON value ("null" in arbitrary case).
@@ -768,7 +791,10 @@ public final function AcediaObject ParseWith(
 }
 
 /**
- *  "Prints" given `AcediaObject` value, saving in in JSON format.
+ *  "Prints" given `AcediaObject` value, saving it in JSON format.
+ *
+ *  "Prints" given `AcediaObject` in a minimal way, for a human-readable output
+ *  use `PrettyPrint()` method.
  *
  *  Only certain classes (the same as the ones that can be parsed from JSON
  *  via this API) are supported:
@@ -830,6 +856,9 @@ public final function MutableText Print(AcediaObject toPrint)
  *  "Prints" given `DynamicArray` value, saving it as a JSON array in
  *  `MutableText`.
  *
+ *  "Prints" given `DynamicArray` in a minimal way, for a human-readable output
+ *  use `PrettyPrintArray()` method.
+ *
  *      It's items must either be equal to `none` or have one of the following
  *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
  *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
@@ -871,6 +900,9 @@ public final function MutableText PrintArray(DynamicArray toPrint)
 /**
  *  "Prints" given `AssociativeArray` value, saving it as a JSON object in
  *  `MutableText`.
+ *
+ *      "Prints" given `AssociativeArray` in a minimal way, for
+ *  a human-readable output use `PrettyPrintObject()` method.
  *
  *      Only prints items recorded with `Text` key, the rest is omitted.
  *
@@ -921,6 +953,271 @@ public final function MutableText PrintObject(AssociativeArray toPrint)
     }
     result.Append(T(default.TCLOSE_BRACE));
     return result;
+}
+
+/**
+ *  "Prints" given `AcediaObject` value, saving it in JSON format.
+ *
+ *  "Prints" given `AcediaObject` in a human-readable, for a minimal output
+ *  use `Print()` method.
+ *
+ *  Only certain classes (the same as the ones that can be parsed from JSON
+ *  via this API) are supported:
+ *      1. `none` is printed into "null";
+ *      2. Boolean types (`BoolBox`/`BoolRef`) are printed into JSON bool value;
+ *      3. Integer (`IntBox`/`IntRef`) and float (`FloatBox`/`FloatRef`) types
+ *          are printed into JSON number value;
+ *      4. `Text` and `MutableText` are printed into JSON string value;
+ *      5. `DynamicArray` is printed into JSON array with `Print()` method
+ *          applied to each of it's items. If some of them have not printable
+ *          types - "none" will be used as a fallback.
+ *      6. `AssociativeArray` is printed into JSON object with `Print()` method
+ *          applied to each of it's items. Only items with `Text` keys are
+ *          printed, the rest is omitted. If some of them have not printable
+ *          types - "none" will be used as a fallback.
+ *
+ *  @param  toPrint Object to "print" into `MutableText`.
+ *  @return Text version of given `toDisplay`, if it has one of the printable
+ *      classes. Otherwise returns `none`.
+ *      Note that `none` is considered printable and will produce "null".
+ */
+public final function MutableText PrettyPrint(AcediaObject toPrint)
+{
+    local MutableText result;
+    local MutableText accumulatedIndent;
+    InitFormatting();
+    accumulatedIndent = _.text.Empty();
+    result = PrettyPrintWithIndent(toPrint, accumulatedIndent);
+    accumulatedIndent.FreeSelf();
+    return result;
+}
+
+/**
+ *  "Prints" given `DynamicArray` value, saving it as a JSON array in
+ *  `MutableText`.
+ *
+ *  "Prints" given `DynamicArray` in human-readable way, for minimal output
+ *  use `PrintArray()` method.
+ *
+ *      It's items must either be equal to `none` or have one of the following
+ *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
+ *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
+ *      Otherwise items will be printed as "null" values.
+ *      Also see `Print()` method.
+ *
+ *  @param  toPrint Array to "print" into `MutableText`.
+ *  @return Text version of given `toPrint`, if it has one of the printable
+ *      classes. Otherwise returns `none`.
+ *      Note that `none` is considered printable and will produce "null".
+ */
+public final function MutableText PrettyPrintArray(DynamicArray toPrint)
+{
+    local MutableText result;
+    local MutableText accumulatedIndent;
+    InitFormatting();
+    accumulatedIndent = _.text.Empty();
+    result = PrettyPrintArrayWithIndent(toPrint, accumulatedIndent);
+    accumulatedIndent.FreeSelf();
+    return result;
+}
+
+/**
+ *  "Prints" given `AssociativeArray` value, saving it as a JSON object in
+ *  `MutableText`.
+ *
+ *      "Prints" given `AssociativeArray` in a human readable way, for
+ *  a minimal output use `PrintObject()` method.
+ *
+ *      Only prints items recorded with `Text` key, the rest is omitted.
+ *
+ *      It's items must either be equal to `none` or have one of the following
+ *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
+ *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
+ *      Otherwise items will be printed as "null" values.
+ *      Also see `Print()` method.
+ *
+ *  @param  toPrint Array to "print" into `MutableText`.
+ *  @return Text version of given `toPrint`, if it has one of the printable
+ *      classes. Otherwise returns `none`.
+ *      Note that `none` is considered printable and will produce "null".
+ */
+public final function MutableText PrettyPrintObject(AssociativeArray toPrint)
+{
+    local MutableText result;
+    local MutableText accumulatedIndent;
+    InitFormatting();
+    accumulatedIndent = _.text.Empty();
+    result = PrettyPrintObjectWithIndent(toPrint, accumulatedIndent);
+    accumulatedIndent.FreeSelf();
+    return result;
+}
+
+//      Does the actual job for `PrettyPrint()` method.
+//      Separated to hide `accumulatedIndent` parameter that is necessary for
+//  pretty printing.
+//      Assumes `InitFormatting()` was made and json formatting variables are
+//  initialized.
+private final function MutableText PrettyPrintWithIndent(
+    AcediaObject            toPrint,
+    optional MutableText    accumulatedIndent)
+{
+    if (toPrint == none) {
+        return T(default.TNULL).MutableCopy().ChangeFormatting(jNull);
+    }
+    if (toPrint.class == class'IntBox') {
+        return _.text.FromIntM(IntBox(toPrint).Get()).ChangeFormatting(jNumber);
+    }
+    if (toPrint.class == class'IntRef') {
+        return _.text.FromIntM(IntRef(toPrint).Get()).ChangeFormatting(jNumber);
+    }
+    if (toPrint.class == class'BoolBox')
+    {
+        return _.text.FromBoolM(BoolBox(toPrint).Get())
+            .ChangeFormatting(jBoolean);
+    }
+    if (toPrint.class == class'BoolRef')
+    {
+        return _.text.FromBoolM(BoolRef(toPrint).Get())
+            .ChangeFormatting(jBoolean);
+    }
+    if (toPrint.class == class'FloatBox')
+    {
+        return _.text.FromFloatM(FloatBox(toPrint).Get(), MAX_FLOAT_PRECISION)
+            .ChangeFormatting(jNumber);
+    }
+    if (toPrint.class == class'FloatRef')
+    {
+        return _.text.FromFloatM(FloatRef(toPrint).Get(), MAX_FLOAT_PRECISION)
+            .ChangeFormatting(jNumber);
+    }
+    if (    toPrint.class == class'Text'
+        ||  toPrint.class == class'MutableText')
+    {
+        return DisplayText(Text(toPrint)).ChangeFormatting(jString);
+    }
+    if (toPrint.class == class'DynamicArray')
+    {
+        return PrettyPrintArrayWithIndent(  DynamicArray(toPrint),
+                                            accumulatedIndent);
+    }
+    if (toPrint.class == class'AssociativeArray') {
+        return PrettyPrintObjectWithIndent( AssociativeArray(toPrint),
+                                            accumulatedIndent);
+    }
+    return none;
+}
+
+//      Does the actual job for `PrettyPrintArray()` method.
+//      Separated to hide `accumulatedIndent` parameter that is necessary for
+//  pretty printing.
+//      Assumes `InitFormatting()` was made and json formatting variables are
+//  initialized.
+private final function MutableText PrettyPrintArrayWithIndent(
+    DynamicArray    toPrint,
+    MutableText     accumulatedIndent)
+{
+    local int           i, length;
+    local MutableText   extendedIndent;
+    local MutableText   result, printedItem;
+    if (toPrint == none) {
+        return none;
+    }
+    length = toPrint.GetLength();
+    extendedIndent = accumulatedIndent.MutableCopy().Append(T(TJSON_INDENT));
+    result = T(default.TOPEN_BRACKET).MutableCopy()
+        .ChangeFormatting(jArrayBraces);
+    for (i = 0; i < length; i += 1)
+    {
+        if (i > 0) {
+            result.Append(T(default.TCOMMA), jComma);
+        }
+        printedItem = PrettyPrintWithIndent(toPrint.GetItem(i), extendedIndent);
+        if (printedItem != none)
+        {
+            result.AppendLineBreak().Append(extendedIndent).Append(printedItem);
+            printedItem.FreeSelf();
+        }
+        else {
+            result.Append(T(default.TNULL), jNull);
+        }
+    }
+    if (i > 0) {
+        result.AppendLineBreak().Append(accumulatedIndent);
+    }
+    result.Append(T(default.TCLOSE_BRACKET), jArrayBraces);
+    extendedIndent.FreeSelf();
+    return result;
+}
+
+//      Does the actual job for `PrettyPrintObject()` method.
+//      Separated to hide `accumulatedIndent` parameter that is necessary for
+//  pretty printing.
+//      Assumes `InitFormatting()` was made and json formatting variables are
+//  initialized.
+private final function MutableText PrettyPrintObjectWithIndent(
+    AssociativeArray    toPrint,
+    MutableText         accumulatedIndent)
+{
+    local bool          printedKeyValuePair;
+    local Iter          iter;
+    local Text          nextKey;
+    local AcediaObject  nextValue;
+    local MutableText   extendedIndent;
+    local MutableText   result;
+    if (toPrint == none) {
+        return none;
+    }
+    extendedIndent = accumulatedIndent.MutableCopy().Append(T(TJSON_INDENT));
+    result = T(default.TOPEN_BRACE).MutableCopy()
+        .ChangeFormatting(jObjectBraces);
+    iter = toPrint.Iterate();
+    for (iter = toPrint.Iterate(); !iter.HasFinished(); iter.Next())
+    {
+        if (printedKeyValuePair) {
+            result.Append(T(default.TCOMMA), jComma);
+        }
+        nextKey     = Text(iter.GetKey());
+        nextValue   = iter.Get();
+        if (nextKey == none)                continue;
+        if (nextKey.class != class'Text')   continue;
+        PrettyPrintKeyValue(result, nextKey, nextValue, extendedIndent);
+        printedKeyValuePair = true;
+    }
+    if (printedKeyValuePair) {
+        result.AppendLineBreak().Append(accumulatedIndent);
+    }
+    result.Append(T(default.TCLOSE_BRACE), jObjectBraces);
+    extendedIndent.FreeSelf();
+    return result;
+}
+
+//      Auxiliary method for printing key-value pair into the `builder`.
+//  `accumulatedIndent` is necessary in case passed `value` is
+//  an object or array.
+//      Assumes `InitFormatting()` was made and json formatting variables are
+//  initialized.
+private final function PrettyPrintKeyValue(
+    MutableText     builder,
+    Text            nextKey,
+    AcediaObject    nextValue,
+    MutableText     accumulatedIndent)
+{
+    local MutableText printedKey, printedValue;
+    printedKey      = DisplayText(nextKey).ChangeFormatting(jPropertyName);
+    printedValue    = PrettyPrintWithIndent(nextValue, accumulatedIndent);
+    builder.AppendLineBreak()
+        .Append(accumulatedIndent)
+        .Append(printedKey)
+        .Append(T(default.TCOLON_SPACE), jColon);
+    printedKey.FreeSelf();
+    if (printedValue != none)
+    {
+        builder.Append(printedValue);
+        printedValue.FreeSelf();
+    }
+    else {
+        builder.Append(T(default.TNULL), jNull);
+    }
 }
 
 //      Auxiliary method to convert `Text` into it's JSON "string"
@@ -1020,6 +1317,10 @@ defaultproperties
     stringConstants(10) = ":"
     TQUOTE              = 11
     stringConstants(11) = "\""
+    TJSON_INDENT        = 12
+    stringConstants(12) = "  "
+    TCOLON_SPACE        = 13
+    stringConstants(13) = ": "
 
     CODEPOINT_BACKSPACE         = 8
     CODEPOINT_TAB               = 9
