@@ -19,6 +19,8 @@
  */
 class MutableText extends Text;
 
+var private int CODEPOINT_NEWLINE;
+
 //      Every formatted `string` essentially consists of multiple differently
 //  formatted (colored) parts. Such `string`s will be more convenient for us to
 //  work with if we separate them from each other.
@@ -94,6 +96,17 @@ public final function ToLower()
 public final function ToUpper()
 {
     ConvertCase(false);
+}
+
+/**
+ *  Appends new line character to the caller `MutableText`.
+ *
+ *  @return Caller `MutableText` to allow for method chaining.
+ */
+public final function MutableText AppendLineBreak()
+{
+    AppendCodePoint(CODEPOINT_NEWLINE);
+    return self;
 }
 
 /**
@@ -463,4 +476,5 @@ public final function MutableText ChangeFormatting(
 
 defaultproperties
 {
+    CODEPOINT_NEWLINE = 10
 }
