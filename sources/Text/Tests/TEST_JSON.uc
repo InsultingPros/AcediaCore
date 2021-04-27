@@ -24,8 +24,39 @@ var string simpleJSONObject, complexJSONObject;
 
 protected static function TESTS()
 {
+    Test_Pointer();
     Test_Print();
     Test_Parse();
+}
+
+protected static function Test_Pointer()
+{
+    local JSONPointer pointer;
+    Context("Testing JSON pointer.");
+    Issue("\"Empty\" JSON pointers are not handled correctly.");
+    pointer = __().json.Pointer(P(""));
+    TEST_ExpectTrue(pointer.GetLength() == 0);
+    TEST_ExpectNone(pointer.GetSegment(0));
+    pointer = __().json.Pointer(P("/"));
+    TEST_ExpectTrue(pointer.GetLength() == 1);
+    TEST_ExpectNotNone(pointer.GetSegment(0));
+    TEST_ExpectTrue(pointer.GetSegment(0).IsEmpty());
+
+    Issue("Normal JSON pointers are not handled correctly.");
+    pointer = __().json.Pointer(P("/a~1b/c%d/e^f/g|h/i\\j/m~0n"));
+    TEST_ExpectTrue(pointer.GetLength() == 6);
+    TEST_ExpectTrue(pointer.GetSegment(0).ToPlainString() == "a/b");
+    TEST_ExpectTrue(pointer.GetSegment(1).ToPlainString() == "c%d");
+    TEST_ExpectTrue(pointer.GetSegment(2).ToPlainString() == "e^f");
+    TEST_ExpectTrue(pointer.GetSegment(3).ToPlainString() == "g|h");
+    TEST_ExpectTrue(pointer.GetSegment(4).ToPlainString() == "i\\j");
+    TEST_ExpectTrue(pointer.GetSegment(5).ToPlainString() == "m~n");
+
+    Issue("Non-JSON pointers `Text` constants are not handled correctly.");
+    pointer = __().json.Pointer(P("huh/send~0/pics~1"));
+    TEST_ExpectTrue(pointer.GetLength() == 1);
+    TEST_ExpectTrue(    pointer.GetSegment(0).ToPlainString() 
+                    ==  "huh/send~0/pics~1");
 }
 
 protected static function Test_Print()

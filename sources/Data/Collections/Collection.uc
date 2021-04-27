@@ -22,25 +22,7 @@
 class Collection extends AcediaObject
     abstract;
 
-//      A private struct for `Collection` that disassembles a
-//  [JSON pointer](https://tools.ietf.org/html/rfc6901) into the path parts,
-//  separated by "/".
-//      It is used to simplify the code working with them.
-struct JSONPointer
-{
-    //  Records whether JSON pointer had it's escape sequences ("~0" and "~1");
-    //  This is used to determine if we need to waste our time replacing them.
-    var private bool                hasEscapedSequences;
-    //  Parts of the path that were separated by "/" character.
-    var private array<MutableText>  keys;
-    //  Points at a part in `keys` to be used next.
-    var private int                 nextIndex;
-};
-
 var class<Iter> iteratorClass;
-
-var protected const int TSLASH, TJSON_ESCAPE, TJSON_ESCAPED_SLASH;
-var protected const int TJSON_ESCAPED_ESCAPE;
 
 /**
  *  Method that must be overloaded for `GetItemByPointer()` to properly work.
@@ -48,14 +30,13 @@ var protected const int TJSON_ESCAPED_ESCAPE;
  *      This method must return an item that `key` refers to with it's
  *  textual content (not as an object itself).
  *      For example, `DynamicArray` parses it into unsigned number, while
- *  `AssociativeArray` converts it into an immutable `Text` key, whose hash code
- *  depends on the contents.
+ *  `AssociativeArray` uses it as a key directly.
  *
  *      There is no requirement that all stored values must be reachable by
  *  this method (i.e. `AssociativeArray` only lets you access values with
  *  `Text` keys).
  */
-protected function AcediaObject GetByText(MutableText key);
+protected function AcediaObject GetByText(Text key);
 
 /**
  *  Creates an `Iterator` instance to iterate over stored items.
@@ -77,61 +58,6 @@ public final function Iter Iterate()
         return none;
     }
     return newIterator;
-}
-
-//      Created `JSONPointer` structure (inside `ptr` out argument), based on
-//  it's textual representation `pointerAsText`. Returns whether it's succeeded.
-//      Deviates from JSON pointer specification in also allowing non-empty
-//  arguments not starting with "/" by treating them as a whole variable name.
-private final function bool MakePointer(Text pointerAsText, out JSONPointer ptr)
-{
-    if (pointerAsText == none) {
-        return false;
-    }
-    FreePointer(ptr);   //  Clean up, in case we were given used pointer
-    ptr.hasEscapedSequences = (pointerAsText.IndexOf(T(TJSON_ESCAPE)) >= 0);
-    if (!pointerAsText.StartsWith(T(TSLASH)))
-    {
-        ptr.nextIndex = 0;
-        ptr.keys[0] = pointerAsText.MutableCopy();
-        return true;
-    }
-
-    ptr.keys = pointerAsText.SplitByCharacter(T(TSLASH).GetCharacter(0));
-    //  First elements of the array will be empty, so throw it away
-    _.memory.Free(ptr.keys[0]);
-    ptr.nextIndex = 1;
-    return true;
-}
-
-private final function bool IsFinalPointerKey(JSONPointer ptr)
-{
-    return ((ptr.nextIndex + 1) == ptr.keys.length);
-}
-
-private final function MutableText PopJSONKey(out JSONPointer ptr)
-{
-    local MutableText result;
-    if (ptr.nextIndex >= ptr.keys.length) {
-        return none;
-    }
-    ptr.nextIndex += 1;
-    result = ptr.keys[ptr.nextIndex - 1];
-    if (ptr.hasEscapedSequences)
-    {
-        //  Order is specific, necessity of which is explained in
-        //  JSON Pointer's documentation:
-        //  https://tools.ietf.org/html/rfc6901
-        result.Replace(T(TJSON_ESCAPED_SLASH), T(TSLASH));
-        result.Replace(T(TJSON_ESCAPED_ESCAPE), T(TJSON_ESCAPE));
-    }
-    return result;
-}
-
-//  Frees all memory used up by the `JSONPointer`
-private final function FreePointer(out JSONPointer ptr)
-{
-    _.memory.FreeMany(ptr.keys);
 }
 
 /**
@@ -173,27 +99,34 @@ private final function FreePointer(out JSONPointer ptr)
  */
 public final function AcediaObject GetItemByPointer(Text jsonPointerAsText)
 {
+    local int           segmentIndex;
+    local Text          nextSegment;
     local AcediaObject  result;
-    local JSONPointer   ptr;
+    local JSONPointer   pointer;
     local Collection    nextCollection;
-    if (jsonPointerAsText == none)      return none;
-    if (jsonPointerAsText.IsEmpty())    return self;
+    if (jsonPointerAsText == none)          return none;
+    if (jsonPointerAsText.IsEmpty())        return self;
+    pointer = _.json.Pointer(jsonPointerAsText);
+    if (jsonPointerAsText.GetLength() < 1)  return self;
 
-    if (!MakePointer(jsonPointerAsText, ptr)) {
-        return none;
-    }
     nextCollection = self;
-    while (!IsFinalPointerKey(ptr))
+    while (segmentIndex < pointer.GetLength() - 1)
     {
-        nextCollection = Collection(nextCollection.GetByText(PopJSONKey(ptr)));
-        if (nextCollection == none)
-        {
-            FreePointer(ptr);
-            return none;
+        nextSegment = pointer.GetSegment(segmentIndex);
+        nextCollection = Collection(nextCollection.GetByText(nextSegment));
+        _.memory.Free(nextSegment);
+        if (nextCollection == none) {
+            break;
         }
+        segmentIndex += 1;
     }
-    result = nextCollection.GetByText(PopJSONKey(ptr));
-    FreePointer(ptr);
+    if (nextCollection != none)
+    {
+        nextSegment = pointer.GetSegment(segmentIndex);
+        result = nextCollection.GetByText(nextSegment);
+        _.memory.Free(nextSegment);
+    }
+    _.memory.Free(pointer);
     return result;
 }
 
@@ -409,12 +342,4 @@ public final function DynamicArray GetDynamicArrayByPointer(
 
 defaultproperties
 {
-    TSLASH                  = 0
-    stringConstants(0)      = "/"
-    TJSON_ESCAPE            = 1
-    stringConstants(1)      = "~"
-    TJSON_ESCAPED_SLASH     = 2
-    stringConstants(2)      = "~1"
-    TJSON_ESCAPED_ESCAPE    = 3
-    stringConstants(3)      = "~0"
 }

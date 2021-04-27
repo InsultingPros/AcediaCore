@@ -544,17 +544,9 @@ public final function Entry GetEntryByIndex(Index index)
     return hashTable[index.bucketIndex].entries[index.entryIndex];
 }
 
-protected function AcediaObject GetByText(MutableText key)
+protected function AcediaObject GetByText(Text key)
 {
-    local Text          immutableKey;
-    local AcediaObject  result;
-    if (key == none) {
-        return none;
-    }
-    immutableKey = key.Copy();
-    result = GetItem(immutableKey);
-    immutableKey.FreeSelf();
-    return result;
+    return GetItem(key);
 }
 
 /**

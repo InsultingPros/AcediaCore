@@ -474,7 +474,7 @@ public final function int Find(AcediaObject item)
     return -1;
 }
 
-protected function AcediaObject GetByText(MutableText key)
+protected function AcediaObject GetByText(Text key)
 {
     local int       index, consumed;
     local Parser    parser;

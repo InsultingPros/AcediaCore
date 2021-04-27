@@ -64,6 +64,26 @@ private final function InitFormatting()
 }
 
 /**
+ *  Creates new `JSONPointer` from a given text representation `pointerAsText`.
+ *
+ *  @param  pointerAsText   Treated as a JSON pointer if it starts with "/"
+ *      character or is an empty `Text`, otherwise treated as an item's
+ *      name / identificator inside the caller collection (without resolving
+ *      escaped sequences "~0" and "~1").
+ *  @return `JSONPointer` if passed `Text` was not `none`. `none` otherwise.
+ */
+public final function JSONPointer Pointer(Text pointerAsText)
+{
+    local JSONPointer pointer;
+    pointer = JSONPointer(_.memory.Allocate(class'JSONPointer'));
+    if (pointer.Initialize(pointerAsText)) {
+        return pointer;
+    }
+    pointer.FreeSelf();
+    return none;
+}
+
+/**
  *  Uses given parser to parse a null JSON value ("null" in arbitrary case).
  *
  *  It does not matter what content follows parsed value in the `parser`,
