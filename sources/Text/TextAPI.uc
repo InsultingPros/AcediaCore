@@ -266,6 +266,88 @@ public final function Text.Character GetCharacter(
 }
 
 /**
+ *  Auxiliary method for checking whether `Text` object defines an "empty"
+ *  `string`. That is, if it's either `none` or has empty contents.
+ *
+ *  It is added, since it allows to replace two common checks
+ *  `text == none || text.IsEmpty()` with a nicer looking one:
+ *  `_.text.IsEmpty(text)`.
+ *
+ *  @param  text    `Text` to check for emptiness.
+ *  @return `true` iff either passed `text == none` or `text.IsEmpty()`.
+ */
+public final function bool IsEmpty(Text text)
+{
+    return (text == none || text.IsEmpty());
+}
+
+/**
+ *  Converts given `Text` into a plain `string`, returns it's value and
+ *  deallocates passed `Text`.
+ *
+ *  Method introduced to simplify a common use-case of converting returned copy
+ *  of `Text` into a `string`, which required additional variable to store and
+ *  later deallocate `Text` reference.
+ *
+ *  @param  toConvert   `Text` to convert.
+ *  @return `string` representation of passed `Text` as a plain `string`.
+ *      Empty `string`, if `toConvert == none`.
+ */
+public final function string ToString(Text toConvert)
+{
+    local string result;
+    if (toConvert != none) {
+        result = toConvert.ToPlainString();
+    }
+    _.memory.Free(toConvert);
+    return result;
+}
+
+/**
+ *  Converts given `Text` into a colored `string`, returns it's value and
+ *  deallocates passed `Text`.
+ *
+ *  Method introduced to simplify a common use-case of converting returned copy
+ *  of `Text` into a `string`, which required additional variable to store and
+ *  later deallocate `Text` reference.
+ *
+ *  @param  toConvert   `Text` to convert.
+ *  @return `string` representation of passed `Text` as a colored `string`.
+ *      Empty `string`, if `toConvert == none`.
+ */
+public final function string ToColoredString(Text toConvert)
+{
+    local string result;
+    if (toConvert != none) {
+        result = toConvert.ToColoredString();
+    }
+    _.memory.Free(toConvert);
+    return result;
+}
+
+/**
+ *  Converts given `Text` into a formatted `string`, returns it's value and
+ *  deallocates passed `Text`.
+ *
+ *  Method introduced to simplify a common use-case of converting returned copy
+ *  of `Text` into a `string`, which required additional variable to store and
+ *  later deallocate `Text` reference.
+ *
+ *  @param  toConvert   `Text` to convert.
+ *  @return `string` representation of passed `Text` as a formatted `string`.
+ *      Empty `string`, if `toConvert == none`.
+ */
+public final function string ToFormattedString(Text toConvert)
+{
+    local string result;
+    if (toConvert != none) {
+        result = toConvert.ToFormattedString();
+    }
+    _.memory.Free(toConvert);
+    return result;
+}
+
+/**
  *  Creates a `string` that consists only of a given character.
  *
  *  @param  character   Character that will be converted into a string.
