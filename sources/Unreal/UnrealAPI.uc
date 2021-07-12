@@ -33,11 +33,14 @@ protected function Constructor()
  *  Signal that will be emitted every tick.
  *
  *  [Signature]
- *  void <slot>(float delta)
+ *  void <slot>(float delta, float dilationCoefficient)
  *
- *  @param  delta   In-game time in seconds that has passed since the last tick.
- *      To obtain real time passed from the last tick multiply `delta` by
- *      `1.1 / level.timeDilation`.
+ *  @param  delta               In-game time in seconds that has passed since
+ *      the last tick. To obtain real time passed from the last tick divide
+ *      `delta` by `dilationCoefficient`.
+ *  @param  dilationCoefficient How fast is in-game time flow compared to
+ *      the real world's one? `2` means twice as fast and
+ *      `0.5` means twice as slow.
  */
 /* SIGNAL */
 public final function Unreal_OnTick_Slot OnTick(
