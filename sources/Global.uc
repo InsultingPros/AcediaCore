@@ -39,6 +39,7 @@ var public ColorAPI         color;
 var public UserAPI          users;
 var public PlayersAPI       players;
 var public JSONAPI          json;
+var public DBAPI            db;
 
 var public KFFrontend       kf;
 
@@ -72,6 +73,7 @@ protected function Initialize()
     users       = UserAPI(memory.Allocate(class'UserAPI'));
     players     = PlayersAPI(memory.Allocate(class'PlayersAPI'));
     json        = JSONAPI(memory.Allocate(class'JSONAPI'));
+    db          = DBAPI(memory.Allocate(class'DBAPI'));
     kf          = KFFrontend(memory.Allocate(class'KF1_Frontend'));
     json.StaticConstructor();
 }

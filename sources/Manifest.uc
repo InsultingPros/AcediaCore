@@ -54,4 +54,5 @@ defaultproperties
     testCases(19)   = class'TEST_Command'
     testCases(20)   = class'TEST_CommandDataBuilder'
     testCases(21)   = class'TEST_LogMessage'
+    testCases(22)   = class'TEST_LocalDatabase'
 }
