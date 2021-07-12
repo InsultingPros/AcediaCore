@@ -31,32 +31,137 @@ protected static function TESTS()
 
 protected static function Test_Pointer()
 {
+    Context("Testing method for working with JSON pointers.");
+    SubTest_PointerCreate();
+    SubTest_PointerToText();
+    SubTest_PointerPushPop();
+    SubTest_PointerNumeric();
+}
+
+protected static function SubTest_PointerCreate()
+{
     local JSONPointer pointer;
-    Context("Testing JSON pointer.");
     Issue("\"Empty\" JSON pointers are not handled correctly.");
     pointer = __().json.Pointer(P(""));
     TEST_ExpectTrue(pointer.GetLength() == 0);
-    TEST_ExpectNone(pointer.GetSegment(0));
+    TEST_ExpectNone(pointer.GetComponent(0));
     pointer = __().json.Pointer(P("/"));
     TEST_ExpectTrue(pointer.GetLength() == 1);
-    TEST_ExpectNotNone(pointer.GetSegment(0));
-    TEST_ExpectTrue(pointer.GetSegment(0).IsEmpty());
+    TEST_ExpectNotNone(pointer.GetComponent(0));
+    TEST_ExpectTrue(pointer.GetComponent(0).IsEmpty());
 
     Issue("Normal JSON pointers are not handled correctly.");
-    pointer = __().json.Pointer(P("/a~1b/c%d/e^f/g|h/i\\j/m~0n"));
-    TEST_ExpectTrue(pointer.GetLength() == 6);
-    TEST_ExpectTrue(pointer.GetSegment(0).ToPlainString() == "a/b");
-    TEST_ExpectTrue(pointer.GetSegment(1).ToPlainString() == "c%d");
-    TEST_ExpectTrue(pointer.GetSegment(2).ToPlainString() == "e^f");
-    TEST_ExpectTrue(pointer.GetSegment(3).ToPlainString() == "g|h");
-    TEST_ExpectTrue(pointer.GetSegment(4).ToPlainString() == "i\\j");
-    TEST_ExpectTrue(pointer.GetSegment(5).ToPlainString() == "m~n");
+    pointer = __().json.Pointer(P("/a~1b/c%d/e^f//g|h/i\\j/m~0n/"));
+    TEST_ExpectTrue(pointer.GetLength() == 8);
+    TEST_ExpectTrue(pointer.GetComponent(0).ToPlainString() == "a/b");
+    TEST_ExpectTrue(pointer.GetComponent(1).ToPlainString() == "c%d");
+    TEST_ExpectTrue(pointer.GetComponent(2).ToPlainString() == "e^f");
+    TEST_ExpectTrue(pointer.GetComponent(3).ToPlainString() == "");
+    TEST_ExpectTrue(pointer.GetComponent(4).ToPlainString() == "g|h");
+    TEST_ExpectTrue(pointer.GetComponent(5).ToPlainString() == "i\\j");
+    TEST_ExpectTrue(pointer.GetComponent(6).ToPlainString() == "m~n");
+    TEST_ExpectTrue(pointer.GetComponent(7).ToPlainString() == "");
 
-    Issue("Non-JSON pointers `Text` constants are not handled correctly.");
+    Issue("Initializing JSON pointers with values, not starting with \"/\","
+        @ "is not handled correctly.");
     pointer = __().json.Pointer(P("huh/send~0/pics~1"));
-    TEST_ExpectTrue(pointer.GetLength() == 1);
-    TEST_ExpectTrue(    pointer.GetSegment(0).ToPlainString() 
-                    ==  "huh/send~0/pics~1");
+    TEST_ExpectTrue(pointer.GetLength() == 3);
+    TEST_ExpectTrue(pointer.GetComponent(0).ToPlainString() ==  "huh");
+    TEST_ExpectTrue(pointer.GetComponent(1).ToPlainString() ==  "send~");
+    TEST_ExpectTrue(pointer.GetComponent(2).ToPlainString() ==  "pics/");
+}
+
+protected static function SubTest_PointerToText()
+{
+    local JSONPointer pointer;
+    Issue("`JSONPointer` is not converted to `Text` correctly.");
+    pointer = __().json.Pointer(P(""));
+    TEST_ExpectTrue(pointer.ToText().ToPlainString() == "");
+    TEST_ExpectTrue(pointer.ToTextM().ToPlainString() == "");
+    pointer = __().json.Pointer(P("///"));
+    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "///");
+    TEST_ExpectTrue(pointer.ToTextM().ToPlainString() ==  "///");
+    pointer = __().json.Pointer(P("/a~1b/c%d/e^f//g|h/i\\j/m~0n/"));
+    TEST_ExpectTrue(    pointer.ToText().ToPlainString()
+                    ==  "/a~1b/c%d/e^f//g|h/i\\j/m~0n/");
+    TEST_ExpectTrue(    pointer.ToTextM().ToPlainString()
+                    ==  "/a~1b/c%d/e^f//g|h/i\\j/m~0n/");
+
+    pointer = __().json.Pointer(P("/a/b/c"));
+    Issue("Result of `ToText()` has a wrong class.");
+    TEST_ExpectTrue(pointer.ToText().class == class'Text');
+
+    Issue("Result of `ToTextM()` has a wrong class.");
+    TEST_ExpectTrue(pointer.ToTextM().class == class'MutableText');
+}
+
+protected static function SubTest_PointerPushPop()
+{
+    local JSONPointer pointer;
+    local Text value0, value1, value2, value3, value4, value5, value6;
+    Issue("`Push()`/`PushNumeric()` incorrectly affect `JSONPointer`.");
+    pointer = __().json.Pointer(P("//lets/go"));
+    pointer.Push(P("one")).PushNumeric(404).Push(P("More"));
+    TEST_ExpectTrue(    pointer.ToText().ToPlainString()
+                    ==  "//lets/go/one/404/More");
+
+    Issue("`Pop()` incorrectly affects `JSONPointer`.");
+    value6 = pointer.Pop();
+    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "//lets/go/one/404");
+    value5 = pointer.Pop();
+    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "//lets/go/one");
+    value4 = pointer.Pop();
+    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "//lets/go");
+    value3 = pointer.Pop();
+    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "//lets");
+    value2 = pointer.Pop();
+    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "/");
+    value1 = pointer.Pop();
+    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "");
+    value0 = pointer.Pop();
+
+    Issue("`Pop()` returns incorrect value.");
+    TEST_ExpectTrue(value6.ToPlainString() == "More");
+    TEST_ExpectTrue(value5.ToPlainString() == "404");
+    TEST_ExpectTrue(value4.ToPlainString() == "one");
+    TEST_ExpectTrue(value3.ToPlainString() == "go");
+    TEST_ExpectTrue(value2.ToPlainString() == "lets");
+    TEST_ExpectTrue(value1.ToPlainString() == "");
+    TEST_ExpectNone(value0);
+}
+
+protected static function SubTest_PointerNumeric()
+{
+    local JSONPointer pointer;
+    local string correct, incorrect;
+    correct = "`GetNumericComponent()`/`PopNumeric()` cannot correctly retrieve"
+        @ "`JSONPointer`'s numeric components.";
+    incorrect = "`GetNumericComponent()`/`PopNumeric()` do not return negative"
+        @ "values for non-numeric components `JSONPointer`'s"
+        @ "numeric components.";
+    Issue(correct);
+    pointer = __().json.Pointer(P("/lets//404/8./6/11/d/0"));
+    pointer.PushNumeric(-2).PushNumeric(13);
+    TEST_ExpectTrue(pointer.GetNumericComponent(8) == 13);
+    Issue(incorrect);
+    TEST_ExpectTrue(pointer.GetNumericComponent(6) < 0);
+    Issue(correct);
+    TEST_ExpectTrue(pointer.PopNumeric() == 13);
+    TEST_ExpectTrue(pointer.PopNumeric() == 0);
+    Issue(incorrect);
+    TEST_ExpectTrue(pointer.PopNumeric() < 0);
+    Issue(correct);
+    TEST_ExpectTrue(pointer.PopNumeric() == 11);
+    TEST_ExpectTrue(pointer.PopNumeric() == 6);
+    Issue(incorrect);
+    TEST_ExpectTrue(pointer.PopNumeric() < 0);
+    Issue(correct);
+    TEST_ExpectTrue(pointer.PopNumeric() == 404);
+    Issue(incorrect);
+    TEST_ExpectTrue(pointer.PopNumeric() < 0);
+    TEST_ExpectTrue(pointer.PopNumeric() < 0);
+    TEST_ExpectTrue(pointer.PopNumeric() < 0);
+    TEST_ExpectTrue(pointer.PopNumeric() < 0);
 }
 
 protected static function Test_Print()

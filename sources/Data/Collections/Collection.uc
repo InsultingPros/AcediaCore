@@ -64,11 +64,13 @@ public final function Iter Iterate()
  *  Returns stored `AcediaObject` from the caller storage
  *  (or from it's sub-storages) via given `Text` path.
  *
- *  Path is used in one of the two ways:
- *      1. If path is an empty `Text` or if it starts with "/" character,
- *          it will be interpreted as
- *          a [JSON pointer](https://tools.ietf.org/html/rfc6901);
- *      2. Otherwise it will be used as an argument's name.
+ *  Path is treated like a [JSON pointer](https://tools.ietf.org/html/rfc6901).
+ *  If given path does not start with "/" character (like it is expected from
+ *  a json pointer) - it will be added automatically.
+ *  This means that "foo/bar" is treated like "/foo/bar" and
+ *  "path" like "/path". However, empty `Text` is treated like itself (""),
+ *  since it constitutes a valid JSON pointer (it will point at a caller
+ *  collection itself).
  *
  *      Acedia provides two collections:
  *      1. `DynamicArray` is treated as a JSON array in the context of
@@ -91,9 +93,7 @@ public final function Iter Iterate()
  *  this method (i.e. `AssociativeArray` only lets you access values with
  *  `Text` keys).
  *
- *  @param  jsonPointerAsText   Treated as a JSON pointer if it starts with "/"
- *      character or is an empty `Text`, otherwise treated as an item's
- *      name / identificator inside the caller collection.
+ *  @param  jsonPointerAsText   Path, given by a JSON pointer.
  *  @return An item `jsonPointerAsText` is referring to (according to the above
  *      stated rules). `none` if such item does not exist.
  */
@@ -112,7 +112,7 @@ public final function AcediaObject GetItemByPointer(Text jsonPointerAsText)
     nextCollection = self;
     while (segmentIndex < pointer.GetLength() - 1)
     {
-        nextSegment = pointer.GetSegment(segmentIndex);
+        nextSegment = pointer.GetComponent(segmentIndex);
         nextCollection = Collection(nextCollection.GetByText(nextSegment));
         _.memory.Free(nextSegment);
         if (nextCollection == none) {
@@ -122,7 +122,7 @@ public final function AcediaObject GetItemByPointer(Text jsonPointerAsText)
     }
     if (nextCollection != none)
     {
-        nextSegment = pointer.GetSegment(segmentIndex);
+        nextSegment = pointer.GetComponent(segmentIndex);
         result = nextCollection.GetByText(nextSegment);
         _.memory.Free(nextSegment);
     }

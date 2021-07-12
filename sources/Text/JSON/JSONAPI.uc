@@ -64,23 +64,53 @@ private final function InitFormatting()
 }
 
 /**
- *  Creates new `JSONPointer` from a given text representation `pointerAsText`.
+ *  Creates new `JSONPointer`, corresponding to a given path in
+ *  JSON pointer format (https://tools.ietf.org/html/rfc6901).
  *
- *  @param  pointerAsText   Treated as a JSON pointer if it starts with "/"
- *      character or is an empty `Text`, otherwise treated as an item's
- *      name / identificator inside the caller collection (without resolving
- *      escaped sequences "~0" and "~1").
- *  @return `JSONPointer` if passed `Text` was not `none`. `none` otherwise.
+ *      If provided `Text` value is an incorrect pointer, then it will be
+ *  treated like an empty pointer.
+ *      However, if given pointer can be fixed by prepending "/" - it will be
+ *  done automatically. This means that "foo/bar" is treated like "/foo/bar",
+ *  "path" like "/path", but empty `Text` "" is treated like itself.
+ *
+ *  @param  pointerAsText   `Text` representation of the JSON pointer.
+ *  @return New `JSONPointer`, corresponding to the given `pointerAsText`.
+ *      Guaranteed to not be `none`. If provided `pointerAsText` is
+ *      an incorrect JSON pointer or `none`, - empty `JSONPointer` will be
+ *      returned.
  */
 public final function JSONPointer Pointer(Text pointerAsText)
 {
-    local JSONPointer pointer;
-    pointer = JSONPointer(_.memory.Allocate(class'JSONPointer'));
-    if (pointer.Initialize(pointerAsText)) {
-        return pointer;
+    return JSONPointer(_.memory.Allocate(class'JSONPointer'))
+        .Set(pointerAsText);
+}
+
+/**
+ *  Checks whether passed `AcediaObject` can be converted into JSON by this API.
+ *
+ *  Compatible objects are `none` and any object that has one of the following
+ *  classes: `BoolBox`, `BoolRef`, `ByteBox`, `ByteRef`, `IntBox`, `IntRef`,
+ *  `FloatBox`, `FloatRef`, `Text`, `MutableText`, `DynamicArray`,
+ *  `AssociativeArray`.
+ *
+ *  This method does not check whether objects stored inside `DynamicArray`,
+ *  `AssociativeArray` are compatible. If they are not, they will normally be
+ *  defaulted to JSON null upon any conversion.
+ */
+public function bool IsCompatible(AcediaObject data)
+{
+    local class<AcediaObject> dataClass;
+    if (data == none) {
+        return true;
     }
-    pointer.FreeSelf();
-    return none;
+    dataClass = data.class;
+    return  dataClass == class'BoolBox'     || dataClass == class'BoolRef'
+        ||  dataClass == class'ByteBox'     || dataClass == class'ByteRef'
+        ||  dataClass == class'IntBox'      || dataClass == class'IntRef'
+        ||  dataClass == class'FloatBox'    || dataClass == class'FloatRef'
+        ||  dataClass == class'Text'        || dataClass == class'MutableText'
+        ||  dataClass == class'DynamicArray'
+        ||  dataClass == class'AssociativeArray';
 }
 
 /**

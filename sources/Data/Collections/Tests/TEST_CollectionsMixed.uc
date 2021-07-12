@@ -56,7 +56,6 @@ protected static function Test_GetByPointer()
         DynamicArray(obj.GetItemByPointer(P("/innerObject/array"))));
 
     Issue("`GetItemByPointer()` does not return `none` for incorrect pointers");
-    TEST_ExpectNone(obj.GetItemByPointer(P("innerObject/array")));
     TEST_ExpectNone(obj.GetItemByPointer(P("//")));
     TEST_ExpectNone(obj.GetItemByPointer(P("/innerObject/array/5")));
     TEST_ExpectNone(obj.GetItemByPointer(P("/innerObject/array/-1")));
