@@ -710,6 +710,7 @@ protected static function SubTest_WritingArrayIndicies(LocalDatabaseInstance db)
     db.WriteData(__().json.Pointer(P("")), templateObject);
     db.WriteData(__().json.Pointer(P("/A")), templateArray);
     db.WriteData(__().json.Pointer(P("/A/100")), __().box.int(-342));
+    db.WriteData(__().json.Pointer(P("/A/-")), __().box.int(95));
 
     Issue("Database allows writing data into negative JSON array indices.");
     writeTask = db.WriteData(__().json.Pointer(P("/A/-5")), __().box.int(1202));
@@ -717,12 +718,13 @@ protected static function SubTest_WritingArrayIndicies(LocalDatabaseInstance db)
     writeTask.TryCompleting();
 
     Issue("Database cannot extend stored JSON array's length by assigning to"
-        @ "the out-of-bounds index.");
+        @ "the out-of-bounds index or \"-\".");
     ReadFromDB(db, "/A");
     resultArray = DynamicArray(default.resultObject);
-    TEST_ExpectTrue(resultArray.GetLength() == 101);
+    TEST_ExpectTrue(resultArray.GetLength() == 102);
     TEST_ExpectNone(resultArray.GetItem(99));
     TEST_ExpectTrue(resultArray.GetInt(100) == -342);
+    TEST_ExpectTrue(resultArray.GetInt(101) == 95);
     TEST_ExpectTrue(resultArray.GetBool(0));
 }
 
@@ -1221,14 +1223,17 @@ protected static function SubTest_IncrementMissing(LocalDatabaseInstance db)
     task.connect = DBIncrementHandler;
     task.TryCompleting();
     TEST_ExpectTrue(default.resultType == DBR_Success);
-    task = db.IncrementData(__().json.Pointer(P("/B/A/1//10")), none);
+    db.IncrementData(__().json.Pointer(P("/B/A/1//10")), none);
+    task = db.IncrementData(__().json.Pointer(P("/B/A/1//-")),
+                            __().box.int(85));
     task.connect = DBIncrementHandler;
     task.TryCompleting();
     TEST_ExpectTrue(default.resultType == DBR_Success);
     db.CheckDataType(__().json.Pointer(P("/L"))).connect = DBCheckHandler;
     ReadFromDB(db, "/B/A/1/");
     TEST_ExpectTrue(default.resultDataType == JSON_Number);
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetLength() == 11);
+    TEST_ExpectTrue(DynamicArray(default.resultObject).GetLength() == 12);
+    TEST_ExpectTrue(DynamicArray(default.resultObject).GetInt(11) == 85);
 }
 
 defaultproperties

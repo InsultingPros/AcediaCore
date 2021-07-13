@@ -133,8 +133,9 @@ struct StorageItem
 };
 var private config array<StorageItem> storage;
 
-var private const int LATIN_LETTERS_AMOUNT;
-var private const int LOWER_A_CODEPOINT, UPPER_A_CODEPOINT;
+var private const int       LATIN_LETTERS_AMOUNT;
+var private const int       LOWER_A_CODEPOINT, UPPER_A_CODEPOINT;
+var private const string    JSONPOINTER_NEW_ARRAY_ELEMENT;
 
 /**
  *      Since `DBRecord` represents JSON array or object, we can use
@@ -422,16 +423,18 @@ public final function bool SaveObject(
         return false;
     }
     directContainer = pointer.record;
+    itemKey = __().text.ToString(jsonPointer.Pop(true));
     if (directContainer.isJSONArray)
     {
         index = jsonPointer.PopNumeric(true);
+        if (index < 0 && itemKey == JSONPOINTER_NEW_ARRAY_ELEMENT) {
+            index = directContainer.GetStorageLength();
+        }
         if (index < 0) {
             return false;
         }
     }
-    else
-    {
-        itemKey = __().text.ToString(jsonPointer.Pop(true));
+    else {
         index = directContainer.FindItem(itemKey);
     }
     directContainer.SetItem(index, ConvertObjectToItem(newItem), itemKey);
@@ -624,16 +627,18 @@ public final function Database.DBQueryResult IncrementObject(
         return DBR_InvalidPointer;
     }
     directContainer = pointer.record;
+    itemKey = __().text.ToString(jsonPointer.Pop(true));
     if (directContainer.isJSONArray)
     {
         index = jsonPointer.PopNumeric(true);
+        if (index < 0 && itemKey == JSONPOINTER_NEW_ARRAY_ELEMENT) {
+            index = directContainer.GetStorageLength();
+        }
         if (index < 0) {
             return DBR_InvalidPointer;
         }
     }
-    else
-    {
-        itemKey = __().text.ToString(jsonPointer.Pop(true));
+    else {
         index = directContainer.FindItem(itemKey);
     }
     if (directContainer.IncrementItem(index, object, itemKey)) {
@@ -752,6 +757,8 @@ private final function bool IncrementItem(
     }
     if (IncrementItemByObject(itemToIncrement, object))
     {
+        //  Increment object cannot overwrite existing `DBRecord` with
+        //  other value, so it's safe to skip cleaning check
         storage[index]      = itemToIncrement;
         storage[index].k    = itemName;
         return true;
@@ -1154,7 +1161,10 @@ private final function bool ReadNumericObjectInto(
 //  Add storing bytes
 defaultproperties
 {
-    LATIN_LETTERS_AMOUNT    = 26
-    LOWER_A_CODEPOINT       = 97
-    UPPER_A_CODEPOINT       = 65
+    LATIN_LETTERS_AMOUNT            = 26
+    LOWER_A_CODEPOINT               = 97
+    UPPER_A_CODEPOINT               = 65
+    //  JSON Pointers allow using "-" as an indicator that element must be
+    //  added at the end of the array
+    JSONPOINTER_NEW_ARRAY_ELEMENT   = "-"
 }

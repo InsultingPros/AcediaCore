@@ -104,6 +104,8 @@ public function DBReadTask ReadData(
  *
  *  @param  pointer JSON pointer to the location in the database, where `data`
  *      should be written (as a JSON value).
+ *      This JSON pointer can make use of "-" index for JSON arrays that allows
+ *      appending data at their end.
  *      `none` is always treated as an invalid JSON pointer.
  *  @param  data    Data that needs to be written at the specified location
  *      inside the database. For method to succeed this object needs to have
@@ -273,6 +275,9 @@ public function DBKeysTask GetDataKeys(JSONPointer pointer)
  *  @param  pointer     JSON pointer to the location in the database, where
  *      data should be incremented (by `increment`).
  *      `none` is always treated as an invalid JSON pointer.
+ *      This JSON pointer can make use of "-" index for JSON arrays that allows
+ *      to add `none` value at the end of that array and then "increment" it
+ *      with `increment` parameter.
  *  @param  increment   JSON-compatible value to be used as an increment for
  *      the data at the specified location inside the database.
  *  @return Task object that corresponds to this `IncrementData()` call.
