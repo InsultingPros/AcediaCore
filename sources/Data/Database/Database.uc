@@ -84,7 +84,7 @@ enum DBQueryResult
  *          It must be deallocated once no longer needed.
  *      *   Possible `DBQueryResult` types are `DBR_Success`,
  *          `DBR_InvalidPointer` and `DBR_InvalidDatabase`;
- *      *   `data != none` iff `result == DBR_Success`;//TODO: JSON null???
+ *      *   `data` is guaranteed to be `none` if `result != DBR_Success`;
  *      *   `DBR_InvalidPointer` can be produced if either `pointer == none` or
  *          it does not point at any existing value inside the caller database.
  */
