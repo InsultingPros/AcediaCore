@@ -102,7 +102,10 @@ public final function JSONPointer Set(Text pointerAsText)
     }
     hasEscapedSequences = (pointerAsText.IndexOf(T(TJSON_ESCAPE)) >= 0);
     parts = pointerAsText.SplitByCharacter(T(TSLASH).GetCharacter(0));
-    //  First elements of the array will be empty, so throw it away
+    //  First element of the array is expected to be empty, so throw it away;
+    //  If it is not empty - then `pointerAsText` does not start with "/" and
+    //  we will pretend that we have already removed first element, thus
+    //  "fixing" path (e.g. effectively turning "foo/bar" into "/foo/bar").
     if (parts[0].IsEmpty())
     {
         _.memory.Free(parts[0]);
@@ -199,7 +202,7 @@ public final function Text Pop(optional bool doNotRemove)
         result = _.text.FromIntM(components[lastIndex].asNumber);
     }
     else {
-        result = components[lastIndex].asText;
+        result = components[lastIndex].asText.Copy();
     }
     if (!doNotRemove) {
         components.length = components.length - 1;
@@ -229,8 +232,9 @@ public final function int PopNumeric(optional bool doNotRemove)
     }
     lastIndex = components.length - 1;
     result = GetNumericComponent(lastIndex);
-    _.memory.Free(components[lastIndex].asText);
-    if (!doNotRemove) {
+    if (!doNotRemove)
+    {
+        _.memory.Free(components[lastIndex].asText);
         components.length = components.length - 1;
     }
     return result;

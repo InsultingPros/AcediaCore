@@ -36,6 +36,7 @@ protected static function Test_Pointer()
     SubTest_PointerToText();
     SubTest_PointerPushPop();
     SubTest_PointerNumeric();
+    SubTest_PopWithoutRemoving();
 }
 
 protected static function SubTest_PointerCreate()
@@ -132,8 +133,8 @@ protected static function SubTest_PointerPushPop()
 
 protected static function SubTest_PointerNumeric()
 {
-    local JSONPointer pointer;
-    local string correct, incorrect;
+    local JSONPointer   pointer;
+    local string        correct, incorrect;
     correct = "`GetNumericComponent()`/`PopNumeric()` cannot correctly retrieve"
         @ "`JSONPointer`'s numeric components.";
     incorrect = "`GetNumericComponent()`/`PopNumeric()` do not return negative"
@@ -162,6 +163,28 @@ protected static function SubTest_PointerNumeric()
     TEST_ExpectTrue(pointer.PopNumeric() < 0);
     TEST_ExpectTrue(pointer.PopNumeric() < 0);
     TEST_ExpectTrue(pointer.PopNumeric() < 0);
+}
+
+protected static function SubTest_PopWithoutRemoving()
+{
+    local Text          component;
+    local JSONPointer   pointer;
+    Issue("`Pop(true)` removes the value from the pointer.");
+    pointer = __().json.Pointer(P("/just/a/simple/test"));
+    TEST_ExpectTrue(pointer.Pop(true).ToPlainString() == "test");
+    TEST_ExpectTrue(pointer.Pop(true).ToPlainString() == "test");
+
+    Issue("`Pop(true)` returns actually stored value instead of a copy.");
+    pointer.Pop(true).FreeSelf();
+    TEST_ExpectTrue(pointer.Pop(true).ToPlainString() == "test");
+    component = pointer.Pop();
+    TEST_ExpectNotNone(component);
+    TEST_ExpectTrue(component.ToPlainString() == "test");
+    TEST_ExpectTrue(component.IsAllocated());
+
+    Issue("`Pop(true)` breaks after regular `Pop()` call.");
+    TEST_ExpectTrue(pointer.Pop(true).ToPlainString() == "simple");
+    TEST_ExpectTrue(pointer.Pop(true).ToPlainString() == "simple");
 }
 
 protected static function Test_Print()
