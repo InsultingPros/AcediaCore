@@ -53,8 +53,8 @@ protected function ExecutedFor(APlayer player, CommandCall result)
     local AssociativeArray      commandOptions;
     //  Find min and max value boundaries
     commandOptions = result.GetOptions();
-    minValue = commandOptions.GetIntByPointer(P("/min/minValue"), 0);
-    maxValue = commandOptions.GetIntByPointer(P("/max/maxValue"), MaxInt);
+    minValue = commandOptions.GetIntBy(P("/min/minValue"), 0);
+    maxValue = commandOptions.GetIntBy(P("/max/maxValue"), MaxInt);
     if (minValue > maxValue) {
         maxValue = minValue;
     }

@@ -242,19 +242,19 @@ protected static function SubTest_LoadingPreparedSuccessRoot(
     TEST_ExpectTrue(default.resultType == DBR_Success);
     TEST_ExpectTrue(default.resultData.GetLength() == 1);
     TEST_ExpectTrue(default.resultData
-        .GetAssociativeArrayByPointer(P("/web-app")).GetLength() == 3);
+        .GetAssociativeArrayBy(P("/web-app")).GetLength() == 3);
     TEST_ExpectTrue(default.resultData
-        .GetDynamicArrayByPointer(P("/web-app/servlet")).GetLength() == 5);
+        .GetDynamicArrayBy(P("/web-app/servlet")).GetLength() == 5);
     TEST_ExpectTrue(default.resultData
-        .GetAssociativeArrayByPointer(P("/web-app/servlet/0/init-param"))
+        .GetAssociativeArrayBy(P("/web-app/servlet/0/init-param"))
         .GetLength() == 42);
     TEST_ExpectTrue(default.resultData
-        .GetTextByPointer(P("/web-app/servlet/2/servlet-class"))
+        .GetTextBy(P("/web-app/servlet/2/servlet-class"))
         .ToPlainString() == "org.cofax.cds.AdminServlet");
     TEST_ExpectFalse(default.resultData
-        .GetBoolByPointer(P("/web-app/servlet/0/init-param/useJSP")));
+        .GetBoolBy(P("/web-app/servlet/0/init-param/useJSP")));
     TEST_ExpectTrue(default.resultData
-        .GetIntByPointer(P("/web-app/servlet/0/init-param/dataStoreMaxConns"))
+        .GetIntBy(P("/web-app/servlet/0/init-param/dataStoreMaxConns"))
         == 100);
 }
 
@@ -599,14 +599,14 @@ protected static function SubTest_WritingDataCheck(LocalDatabaseInstance db)
     TEST_ExpectTrue(default.resultType == DBR_Success);
     TEST_ExpectTrue(default.resultData.GetLength() == 2);
     TEST_ExpectTrue(
-            default.resultData.GetTextByPointer(P("/B/A/1//2")).ToPlainString()
+            default.resultData.GetTextBy(P("/B/A/1//2")).ToPlainString()
         ==  "huh");
     TEST_ExpectTrue(
-            default.resultData.GetTextByPointer(P("/A")).ToPlainString()
+            default.resultData.GetTextBy(P("/A")).ToPlainString()
         ==  "simpleValue");
-    TEST_ExpectTrue(default.resultData.GetFloatByPointer(P("/B/B")) == 11.12);
-    TEST_ExpectTrue(default.resultData.GetBoolByPointer(P("/B/A/0"), false));
-    TEST_ExpectNone(default.resultData.GetItemByPointer(P("/B/A/1//1")));
+    TEST_ExpectTrue(default.resultData.GetFloatBy(P("/B/B")) == 11.12);
+    TEST_ExpectTrue(default.resultData.GetBoolBy(P("/B/A/0"), false));
+    TEST_ExpectNone(default.resultData.GetItemBy(P("/B/A/1//1")));
 }
 
 protected static function SubTest_WritingDataCheck_Immutable(
@@ -617,16 +617,16 @@ protected static function SubTest_WritingDataCheck_Immutable(
     //  Full db read
     ReadFromDB(db, "");
     TEST_ExpectTrue(
-            default.resultData.GetItemByPointer(P("/B/A/1//2")).class
+            default.resultData.GetItemBy(P("/B/A/1//2")).class
         ==  class'Text');
     TEST_ExpectTrue(
-            default.resultData.GetItemByPointer(P("/A")).class
+            default.resultData.GetItemBy(P("/A")).class
         ==  class'Text');
     TEST_ExpectTrue(
-            default.resultData.GetItemByPointer(P("/B/B")).class
+            default.resultData.GetItemBy(P("/B/B")).class
         ==  class'FloatBox');
     TEST_ExpectTrue(
-            default.resultData.GetItemByPointer(P("/B/A/0")).class
+            default.resultData.GetItemBy(P("/B/A/0")).class
         ==  class'BoolBox');
 }
 
@@ -640,16 +640,16 @@ protected static function SubTest_WritingDataCheck_Mutable(
     task.connect = DBReadingHandler;
     task.TryCompleting();
     TEST_ExpectTrue(
-            default.resultData.GetItemByPointer(P("/B/A/1//2")).class
+            default.resultData.GetItemBy(P("/B/A/1//2")).class
         ==  class'MutableText');
     TEST_ExpectTrue(
-            default.resultData.GetItemByPointer(P("/A")).class
+            default.resultData.GetItemBy(P("/A")).class
         ==  class'MutableText');
     TEST_ExpectTrue(
-            default.resultData.GetItemByPointer(P("/B/B")).class
+            default.resultData.GetItemBy(P("/B/B")).class
         ==  class'FloatRef');
     TEST_ExpectTrue(
-            default.resultData.GetItemByPointer(P("/B/A/0")).class
+            default.resultData.GetItemBy(P("/B/A/0")).class
         ==  class'BoolRef');
 }
 
@@ -1086,12 +1086,12 @@ protected static function SubTest_IncrementArray(LocalDatabaseInstance db)
 protected static function CheckValuesAfterIncrement(AssociativeArray root)
 {
     local DynamicArray jsonArray;
-    TEST_ExpectTrue(root.GetBoolByPointer(P("/D")));
-    TEST_ExpectTrue(root.GetFloatByPointer(P("/B/B")) == 10.12);
+    TEST_ExpectTrue(root.GetBoolBy(P("/D")));
+    TEST_ExpectTrue(root.GetFloatBy(P("/B/B")) == 10.12);
     TEST_ExpectTrue(
-            root.GetTextByPointer(P("/A")).ToPlainString()
+            root.GetTextBy(P("/A")).ToPlainString()
         ==  "simpleValue!?");
-    jsonArray = root.GetDynamicArrayByPointer(P("/B/A"));
+    jsonArray = root.GetDynamicArrayBy(P("/B/A"));
     TEST_ExpectTrue(jsonArray.GetBool(0));
     TEST_ExpectNotNone(jsonArray.GetAssociativeArray(1));
     TEST_ExpectTrue(jsonArray.GetText(2).ToPlainString() == "huh");
