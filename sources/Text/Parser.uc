@@ -936,7 +936,7 @@ public final function Parser MUntilMany(
  */
 public final function Parser MUntilManyS(
     out string      result,
-    array<Text>     endWords,
+    array<Text>     separators,
     optional bool   whitespacesBreak,
     optional bool   quotesBreak)
 {
@@ -944,7 +944,7 @@ public final function Parser MUntilManyS(
     if (!Ok()) return self;
 
     wrapper = _.text.Empty();
-    MUntilMany(wrapper, endWords, whitespacesBreak, quotesBreak);
+    MUntilMany(wrapper, separators, whitespacesBreak, quotesBreak);
     result = wrapper.ToPlainString();
     wrapper.FreeSelf();
     return self;
