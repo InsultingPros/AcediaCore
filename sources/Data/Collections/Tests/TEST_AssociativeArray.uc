@@ -25,6 +25,7 @@ protected static function TESTS()
     Test_GetSet();
     Test_HasKey();
     Test_GetKeys();
+    Test_CopyTextKeys();
     Test_Remove();
     Test_CreateItem();
     Test_Empty();
@@ -125,6 +126,37 @@ protected static function Test_GetKeys()
     for (i = 0; i < 2; i += 1) {
         TEST_ExpectTrue(keys[i] == key2 || keys[i] == key3);
     }
+}
+
+protected static function Test_CopyTextKeys()
+{
+    local array<AcediaObject>   allKeys;
+    local array<Text>           keys;
+    local AssociativeArray      array;
+    array = AssociativeArray(__().memory.Allocate(class'AssociativeArray'));
+    Context("Testing `CopyTextKeys()` method for `AssociativeArray`.");
+    array.SetItem(__().text.FromString("key"), __().text.FromString("value"));
+    array.SetItem(__().box.int(13), __().text.FromString("value #2"));
+    array.SetItem(__().box.float(-925.274), __().text.FromString("value #2"));
+    array.SetItem(__().text.FromString("second key"), __().box.bool(true));
+
+    Issue("`CopyTextKeys()` does not return correct set of keys.");
+    keys = array.CopyTextKeys();
+    TEST_ExpectTrue(keys.length == 2);
+    TEST_ExpectTrue(
+                (keys[0].ToPlainString() == "key"
+            &&  keys[1].ToPlainString() == "second key")
+        ||      (keys[0].ToPlainString() == "second key"
+            &&  keys[1].ToPlainString() == "key"));
+
+    Issue("Deallocating keys returned by `CopyTextKeys()` affects their"
+        @ "source collection.");
+    allKeys = array.GetKeys();
+    TEST_ExpectTrue(allKeys.length == 4);
+    TEST_ExpectNotNone(array.GetItem(__().text.FromString("key")));
+    TEST_ExpectNotNone(array.GetItem(__().text.FromString("second key")));
+    TEST_ExpectTrue(
+        array.GetText(__().text.FromString("key")).ToPlainString() == "value");
 }
 
 protected static function Test_Remove()

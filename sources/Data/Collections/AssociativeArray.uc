@@ -464,7 +464,12 @@ public function Empty(optional bool deallocateKeys)
  *
  *  Collecting all keys from the `AssociativeArray` is O(<number_of_elements>).
  *
+ *  See also `CopyTextKeys()` methods.
+ *
  *  @return Array of all the caller `AssociativeArray`'s keys.
+ *      This method does not return copies of keys, but actual keys instead -
+ *      deallocating them will remove their item from
+ *      the caller `AssociativeArray`.
  */
 public final function array<AcediaObject> GetKeys()
 {
@@ -477,6 +482,43 @@ public final function array<AcediaObject> GetKeys()
         nextEntry = hashTable[i].entries;
         for (j = 0; j < nextEntry.length; j += 1) {
             result[result.length] = nextEntry[j].key;
+        }
+    }
+    return result;
+}
+
+/**
+ *  Returns copies of `Text` key of all properties inside caller
+ *  `AssociativeArray`. Keys that have a different class (even if they are
+ *  a child class for `Text`) are not returned.
+ *
+ *  This method exists to provide alternative to `GetKeys()` method that would
+ *  return copies of keys instead of actually used references: we cannot make
+ *  a copy of an arbitrary `AcediaObject`, but we can of `Text`.
+ *  Which is also a most common type for the keys.
+ *
+ *  Collecting all keys from the `AssociativeArray` is O(<number_of_elements>).
+ *
+ *  @return Array of all the caller `AssociativeArray`'s keys that have exactly
+ *      `Text` class.
+ */
+public final function array<Text> CopyTextKeys()
+{
+    local int           i, j;
+    local Text          nextKeyAsText;
+    local array<Text>   result;
+    local array<Entry>  nextEntry;
+    for (i = 0; i < hashTable.length; i += 1)
+    {
+        CleanBucket(hashTable[i]);
+        nextEntry = hashTable[i].entries;
+        for (j = 0; j < nextEntry.length; j += 1)
+        {
+            nextKeyAsText = Text(nextEntry[j].key);
+            if (nextKeyAsText != none && nextKeyAsText.class == class'Text')
+            {
+                result[result.length] = nextKeyAsText.Copy();
+            }
         }
     }
     return result;
