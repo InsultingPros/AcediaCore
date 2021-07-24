@@ -173,7 +173,7 @@ private final function CleanBucket(out Bucket bucketToClean)
         if (nextEntry.key.GetLifeVersion() != nextEntry.keyLifeVersion)
         {
             if (bucketEntries[i].value != none && bucketEntries[i].managed) {
-                bucketEntries[i].value.FreeSelf(nextEntry.keyLifeVersion);
+                bucketEntries[i].value.FreeSelf(nextEntry.valueLifeVersion);
             }
             bucketEntries.Remove(i, 1);
             //  We'll update the count, but won't trigger hash table size update

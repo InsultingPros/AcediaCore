@@ -282,6 +282,47 @@ protected static function Test_Managed()
 
 protected static function Test_DeallocationHandling()
 {
+    Context("Testing how `AssociativeArray` deals with external deallocation of"
+        @ "keys and managed objects.");
+    SubTest_DeallocationHandlingKeys();
+    SubTest_DeallocationHandlingManagedObjects();
+}
+
+protected static function SubTest_DeallocationHandlingKeys()
+{
+    local IntBox                key1;
+    local BoolBox               key2;
+    local Text                  key3;
+    local AssociativeArray      array;
+    local array<AcediaObject>   keys;
+    key1 = __().box.int(3881);
+    key2 = __().box.bool(true);
+    key3 = __().text.FromString("Text key, bay bee");
+    array = AssociativeArray(__().memory.Allocate(class'AssociativeArray'));
+    class'MockItem'.default.objectCount = 0;
+    array.SetItem(key1, NewMockItem());
+    array.SetItem(key2, __().box.float(32.31), true);
+    array.SetItem(key3, NewMockItem(), true);
+
+    Issue("Deallocating keys does not remove them from `AssociativeArray`.");
+    key1.FreeSelf();
+    key3.FreeSelf();
+    keys = array.GetKeys();
+    TEST_ExpectTrue(keys.length == 1);
+    TEST_ExpectTrue(keys[0] == key2);
+
+    Issue("`AssociativeArray` does not deallocate managed objects, even though"
+        @ "their keys were deallocated");
+    TEST_ExpectTrue(class'MockItem'.default.objectCount < 2);
+    TEST_ExpectNone(array.GetItem(__().box.int(3881)));
+
+    Issue("`AssociativeArray` deallocates unmanaged objects, when"
+        @ "their keys were deallocated");
+    TEST_ExpectTrue(class'MockItem'.default.objectCount > 0);
+}
+
+protected static function SubTest_DeallocationHandlingManagedObjects()
+{
     local MockItem          exampleItem;
     local AssociativeArray  array;
     class'MockItem'.default.objectCount = 0;
@@ -292,8 +333,6 @@ protected static function Test_DeallocationHandling()
     array.SetItem(__().box.int(23), NewMockItem());
     array.SetItem(__().box.int(242), NewMockItem(), true);
     array.CreateItem(__().box.int(24532), class'MockItem');
-    Context("Testing how `AssociativeArray` deals with external deallocation of"
-        @ "managed objects.");
     Issue("`AssociativeArray` does not return `none` even though stored object"
         @ "was already deallocated.");
     array.GetItem(__().box.int(23)).FreeSelf();
