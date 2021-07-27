@@ -1,6 +1,8 @@
 /**
  *      Class for encoding Acedia's `MutableText` value into UTF8 byte
  *  representation.
+ *      This is a separate object instead of just a method to match design of
+ *  `Utf8Decoder`.
  *      See [wiki page](https://en.wikipedia.org/wiki/UTF-8) for details.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
@@ -38,69 +40,68 @@ var private int lastSixBits;
  *  code points - this method will return empty array.
  *
  *  @param  text    `Text` object to encode.
- *  @return UTF8 representation of passed `text` as an array of `byte`s.
- *      Empty array if `text == none` or `text` contains invalid Unicode
+ *  @return UTF8 representation of passed `text` inside `ByteArrayRef`.
+ *      `none` iff `text == none` or `text` contains invalid Unicode
  *      code points.
  */
-public final function array<byte> Encode(Text text)
+public final function ByteArrayRef Encode(Text text)
 {
     local int           i, nextCodepoint, textLength;
-    local array<byte>   buffer;
+    local ByteArrayRef  buffer;
     if (__().text.IsEmpty(text)) {
-        return buffer; // empty array
+        return none; // empty array
     }
+    buffer = ByteArrayRef(_.memory.Allocate(class'ByteArrayRef'));
     textLength = text.GetLength();
     for (i = 0; i < textLength; i += 1)
     {
         nextCodepoint = text.GetCharacter(i).codePoint;
         if (nextCodepoint <= utfLimit1) {
-            buffer[buffer.length] = nextCodepoint;
+            buffer.AddItem(nextCodepoint);
         }
         else if (nextCodepoint <= utfLimit2)
         {
             //  Drop 6 bits that will be recorded inside second byte and
             //  add 2-byte sequence mask
-            buffer[buffer.length] = utfMask2 | (nextCodepoint >> 6);
+            buffer.AddItem(utfMask2 | (nextCodepoint >> 6));
             //  Take only last 6 bits for the second (last) byte
             //  + add inner-byte sequence mask
-            buffer[buffer.length] = utfMaskIn | (nextCodepoint & lastSixBits);
+            buffer.AddItem(utfMaskIn | (nextCodepoint & lastSixBits));
         }
         else if (nextCodepoint <= utfLimit3)
         {
             //  Drop 12 bits that will be recorded inside second and third bytes
             //  and add 3-byte sequence mask
-            buffer[buffer.length] = utfMask3 | (nextCodepoint >> 12);
+            buffer.AddItem(utfMask3 | (nextCodepoint >> 12));
             //  Drop 6 bits that will be recorded inside third byte and
             //  add inner-byte sequence mask
-            buffer[buffer.length] =
-                utfMaskIn | ((nextCodepoint >> 6) & lastSixBits);
+            buffer.AddItem(utfMaskIn | ((nextCodepoint >> 6) & lastSixBits));
             //  Take only last 6 bits for the third (last) byte
             //  + add inner-byte sequence mask
-            buffer[buffer.length] = utfMaskIn | (nextCodepoint & lastSixBits);
+            buffer.AddItem(utfMaskIn | (nextCodepoint & lastSixBits));
         }
         else if (nextCodepoint <= utfLimit4)
         {
             //  Drop 18 bits that will be recorded inside second, third and
             //  fourth bytes, then add 4-byte sequence mask
-            buffer[buffer.length] = utfMask4 | (nextCodepoint >> 18);
+            buffer.AddItem(utfMask4 | (nextCodepoint >> 18));
             //  Drop 12 bits that will be recorded inside third and fourth bytes
             //  and add inner-byte sequence mask
-            buffer[buffer.length] =
-                utfMaskIn | ((nextCodepoint >> 12) & lastSixBits);
+            buffer.AddItem(utfMaskIn | ((nextCodepoint >> 12) & lastSixBits));
             //  Drop 6 bits that will be recorded inside fourth byte
             //  and add inner-byte sequence mask
-            buffer[buffer.length] =
-                utfMaskIn | ((nextCodepoint >> 6) & lastSixBits);
+            buffer.AddItem(utfMaskIn | ((nextCodepoint >> 6) & lastSixBits));
             //  Take only last 6 bits for the fourth (last) byte
             //  + add inner-byte sequence mask
-            buffer[buffer.length] = utfMaskIn | (nextCodepoint & lastSixBits);
+            buffer.AddItem(utfMaskIn | (nextCodepoint & lastSixBits));
         }
         else
         {
             //      Outside of known Unicode range
             //      Should not be possible, since `Text` is expected to
             //  contain only correct Unicode
-            buffer.length = 0;
+            _.memory.Free(buffer);
+            buffer = none;
             break;
         }
     }
