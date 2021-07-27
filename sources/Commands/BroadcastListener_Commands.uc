@@ -27,17 +27,18 @@ static function bool HandleText(
     out string      message,
     optional name   messageType)
 {
-    local Text          messageAsText;
-    local APlayer       callerPlayer;
-    local Parser        parser;
-    local Commands      commandFeature;
-    local PlayerService service;
+    local Text              messageAsText;
+    local APlayer           callerPlayer;
+    local Parser            parser;
+    local Commands_Feature  commandFeature;
+    local PlayerService     service;
     //  We only want to catch chat messages
     //  and only if `Commands` feature is active
-    if (messageType != 'Say')           return true;
-    commandFeature = Commands(class'Commands'.static.GetInstance());
-    if (commandFeature == none)         return true;
-    if (!commandFeature.useChatInput)   return true;
+    if (messageType != 'Say')               return true;
+    commandFeature =
+        Commands_Feature(class'Commands_Feature'.static.GetInstance());
+    if (commandFeature == none)             return true;
+    if (!commandFeature.UsingChatInput())   return true;
     //  We are only interested in messages that start with "!"
     parser = __().text.ParseString(message);
     if (!parser.Match(P("!")).Ok())

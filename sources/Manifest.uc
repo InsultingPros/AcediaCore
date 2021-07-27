@@ -22,7 +22,7 @@
 
 defaultproperties
 {
-    features(0)     = class'Commands'
+    features(0)     = class'Commands_Feature'
     commands(0)     = class'ACommandHelp'
     commands(1)     = class'ACommandDosh'
     commands(2)     = class'ACommandNick'
@@ -55,4 +55,5 @@ defaultproperties
     testCases(20)   = class'TEST_CommandDataBuilder'
     testCases(21)   = class'TEST_LogMessage'
     testCases(22)   = class'TEST_LocalDatabase'
+    testCases(23)   = class'TEST_FeatureConfig'
 }

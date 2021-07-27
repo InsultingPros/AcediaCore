@@ -1,5 +1,5 @@
 /**
- *      Config object for `Commands_Feature`.
+ *  Mock object for testing config functionality of Acedia's `Feature`s.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,33 +17,33 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Commands extends FeatureConfig
+class MockFeature extends FeatureConfig
     perobjectconfig
-    config(AcediaSystem);
+    config(AcediaMockFeature);
 
-var private config bool useChatInput;
+var public config int value;
 
 protected function AssociativeArray ToData()
 {
     local AssociativeArray data;
     data = __().collections.EmptyAssociativeArray();
-    data.SetBool(__().text.FromString("useChatInput"), useChatInput, true);
+    data.SetInt(P("value").Copy(), value, true);
     return data;
 }
 
 protected function FromData(AssociativeArray source)
 {
     if (source != none) {
-        useChatInput = source.GetBool(P("useChatInput"));
+        value = source.GetIntBy(P("/value"));
     }
 }
 
-protected function Reset()
+protected function DefaultIt()
 {
-    useChatInput = true;
+    value = 13;
 }
 
 defaultproperties
 {
-    configName = "AcediaSystem"
+    configName = "AcediaMockFeature"
 }

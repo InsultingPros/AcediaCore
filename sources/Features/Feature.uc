@@ -8,6 +8,11 @@
  *  and `Finalizer()` one should use `OnEnabled() and `OnDisabled()` methods.
  *  Any instances created through other means will be automatically deallocated,
  *  enforcing `Singleton`-like behavior for the `Feature` class.
+ *      `Feature`s store their configuration in a different object
+ *  `FeatureConfig`, that uses per-object-config and allows users to define
+ *  several different versions of `Feature`'s settings. Each `Feature` must be
+ *  in 1-to-1 relationship with one sub-class of `FeatureConfig`, that should be
+ *  defined in `configClass` variable.
  *      Copyright 2019 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -33,6 +38,17 @@ class Feature extends AcediaObject
 var private Feature activeInstance;
 var private int     activeInstanceLifeVersion;
 
+//      Variables that store name and data from the config object that was
+//  chosen for this `Feature`.
+//      Data is expected to be in format that allows for JSON deserialization
+//  (see `JSONAPI.IsCompatible()` for details).
+var private Text                currentConfigName;
+var private AssociativeArray    currentConfig;
+
+//  Class of this `Feature`'s config objects. Classes must be in 1-to-1
+//  correspondence.
+var protected const class<FeatureConfig> configClass;
+
 //      Setting default value of this variable to 'true' prevents creation of
 //  a `Feature`, even if no instances of it exist. This is used to ensure active
 //  `Feature`s can only be created through the proper means and behave like
@@ -52,6 +68,19 @@ var public const array< class<Listener> > requiredListeners;
 //  One should never launch or shut down this service manually.
 var protected const class<FeatureService> serviceClass;
 
+var private string defaultConfigName;
+
+var private LoggerAPI.Definition errorBadConfigData;
+
+public static function StaticConstructor()
+{
+    if (StaticConstructorGuard()) return;
+    super.StaticConstructor();
+    if (default.configClass != none) {
+        default.configClass.static.Initialize();
+    }
+}
+
 protected function Constructor()
 {
     local FeatureService myService;
@@ -67,6 +96,8 @@ protected function Constructor()
     if (myService != none) {
         myService.SetOwnerFeature(self);
     }
+    ApplyConfig(default.currentConfigName);
+    default.currentConfigName = none;
     OnEnabled();
 }
 
@@ -84,7 +115,46 @@ protected function Finalizer()
     if (service != none) {
         service.Destroy();
     }
+    if (currentConfig != none) {
+        currentConfig.Empty(true);
+    }
+    _.memory.Free(currentConfigName);
+    _.memory.Free(currentConfig);
+    default.currentConfigName   = none;
+    currentConfigName           = none;
+    currentConfig               = none;
     default.activeInstance = none;
+}
+
+/**
+ *  Changes config for the caller `Feature` class.
+ *
+ *  This method should only be called when caller `Feature` is enabled
+ *  (allocated). To set initial config on this `Feature`'s start - specify it
+ *  as a parameter to `EnableMe()` method.
+ *
+ *  @param  newConfigName   Name of the config to apply to the caller `Feature`.
+ */
+public final function ApplyConfig(Text newConfigName)
+{
+    local AssociativeArray newConfigData;
+    newConfigData = configClass.static.LoadData(newConfigName);
+    if (newConfigData == none)
+    {
+        _.logger.Auto(errorBadConfigData).ArgClass(class);
+        //  Fallback to "default" config
+        newConfigName = _.text.FromString(defaultConfigName);
+        configClass.static.NewConfig(newConfigName);
+        newConfigData = configClass.static.LoadData(newConfigName);
+    }
+    SwapConfig(currentConfig, newConfigData);
+    if (currentConfig != none) {
+        currentConfig.Empty(true);
+    }
+    _.memory.Free(currentConfigName);
+    _.memory.Free(currentConfig);
+    currentConfigName   = newConfigName.Copy();
+    currentConfig       = newConfigData;
 }
 
 /**
@@ -125,14 +195,18 @@ public final function Service GetService()
 }
 
 /**
- *  Checks if caller `Feature` should be auto-enabled on game starting.
+ *  Returns name of the config that is configured to be auto-enabled for
+ *  the caller `Feature`.
  *
- *  @return `true` if caller `Feature` should be auto-enabled and
- *      `false` otherwise.
+ *  "Auto-enabled" means that `Feature` must be enabled at the server's start,
+ *  unless launcher is instructed to skip it for a particular game mode.
+ *
+ *  @return Name of the config configured to be auto-enabled for
+ *      the caller `Feature`. `none` means `Feature` should not be auto-enabled.
  */
-public static final function bool IsAutoEnabled()
+public static final function Text GetAutoEnabledConfig()
 {
-    return default.autoEnable;
+    return default.configClass.static.GetAutoEnabledConfig();
 }
 
 /**
@@ -154,12 +228,17 @@ public static final function bool IsEnabled()
  *
  *  @return Active instance of the caller `Feature` class.
  */
-public static final function Feature EnableMe()
+public static final function Feature EnableMe(Text configName)
 {
     local Feature newInstance;
     if (IsEnabled()) {
         return GetInstance();
     }
+    //      This value will be copied and forgotten in `Constructor()`,
+    //  so we do not actually retain `configName` reference and it can be freed
+    //  right after `EnableMe()` method call ends.
+    //      Copying it here will mean doing extra work.
+    default.currentConfigName = configName;
     default.blockSpawning = false;
     newInstance = Feature(__().memory.Allocate(default.class));
     default.activeInstance              = newInstance;
@@ -192,7 +271,7 @@ public static final function bool DisableMe()
  *
  *  AVOID MANUALLY CALLING IT.
  */
-protected function OnEnabled(){}
+protected function OnEnabled() { }
 
 /**
  *  When using proper methods for enabling a `Feature`,
@@ -200,7 +279,24 @@ protected function OnEnabled(){}
  *
  *  AVOID MANUALLY CALLING IT.
  */
-protected function OnDisabled(){}
+protected function OnDisabled() { }
+
+/**
+ *  Will be called whenever caller `Feature` class must change it's config
+ *  parameters. This can be done both when the `Feature` is enabled or disabled.
+ *
+ *  @param  previousConfigData  Config data that was previously set for this
+ *      `Feature` class. `none` is passed iff config is set for the first time.
+ *  @param  newConfigData       New config data that caller `Feature`'s class
+ *      must use. Guaranteed to not be `none`.
+ *
+ *  AVOID MANUALLY CALLING IT.
+ *  DO NOT DEALLOCATE PASSED VALUES.
+ *  DO NOT USE PASSED VALUES OUTSIDE OF THIS METHOD CALL.
+ */
+protected function SwapConfig(
+    AssociativeArray previousConfigData,
+    AssociativeArray newConfigData) { }
 
 private static function SetListenersActiveStatus(bool newStatus)
 {
@@ -216,5 +312,10 @@ defaultproperties
 {
     autoEnable      = false
     blockSpawning   = true
+    configClass     = none
     serviceClass    = none
+
+    defaultConfigName = "default"
+
+    errorBadConfigData = (l=LOG_Error,m="Bad config value was provided for `%1`. Falling back to the \"default\".")
 }

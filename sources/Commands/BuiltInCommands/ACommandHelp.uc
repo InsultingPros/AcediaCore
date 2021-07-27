@@ -70,14 +70,15 @@ protected function Executed(CommandCall callInfo)
 
 private final function DisplayCommandList(APlayer player)
 {
-    local int           i;
-    local ConsoleWriter console;
-    local Command       nextCommand;
-    local Command.Data  nextData;
-    local array<Text>   commandNames;
-    local Commands      commandsFeature;
+    local int               i;
+    local ConsoleWriter     console;
+    local Command           nextCommand;
+    local Command.Data      nextData;
+    local array<Text>       commandNames;
+    local Commands_Feature  commandsFeature;
     if (player == none)             return;
-    commandsFeature = Commands(class'Commands'.static.GetInstance());
+    commandsFeature =
+        Commands_Feature(class'Commands_Feature'.static.GetInstance());
     if (commandsFeature == none)    return;
 
     console = player.Console();
@@ -101,11 +102,12 @@ private final function DisplayCommandHelpPages(
     APlayer         player,
     DynamicArray    commandList)
 {
-    local int       i;
-    local Command   nextCommand;
-    local Commands  commandsFeature;
+    local int               i;
+    local Command           nextCommand;
+    local Commands_Feature  commandsFeature;
     if (player == none)             return;
-    commandsFeature = Commands(class'Commands'.static.GetInstance());
+    commandsFeature =
+        Commands_Feature(class'Commands_Feature'.static.GetInstance());
     if (commandsFeature == none)    return;
 
     //  If arguments were empty - at least display our own help page
