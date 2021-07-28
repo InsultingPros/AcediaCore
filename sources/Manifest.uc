@@ -57,4 +57,5 @@ defaultproperties
     testCases(21)   = class'TEST_LogMessage'
     testCases(22)   = class'TEST_LocalDatabase'
     testCases(23)   = class'TEST_UTF8EncoderDecoder'
+    testCases(24)   = class'TEST_AvariceStreamReader'
 }
