@@ -80,13 +80,11 @@ public final function NativeActorRef Set(Actor newValue)
 
 public function bool IsEqual(Object other)
 {
-    local NativeActorRef    otherBox;
-    local ActorService      service;
+    local NativeActorRef otherBox;
     otherBox = NativeActorRef(other);
-    if (otherBox == none)   return false;
-    service = ActorService(class'ActorService'.static.Require());
-    if (service == none)    return false;
-
+    if (otherBox == none) {
+        return false;
+    }
     return Get() == otherBox.Get();
 }
 

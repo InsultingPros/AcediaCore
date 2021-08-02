@@ -319,13 +319,23 @@ public final function Entry TakeEntry(AcediaObject key)
  *  Returned value is no longer managed by the `AssociativeArray` (if it was)
  *  and must be deallocated once you do not need it anymore.
  *
- *  @param  key Key for which to return value.
+ *  @param  key     Key for which to return value.
+ *  @param  freeKey Setting this to `true` will also free the key item was
+ *      stored with. Passed argument `key` will not be deallocated, unless it is
+ *      the exact same object as item's key inside caller collection.
  *  @return Value, stored with given key `key`. If there is no value with
  *      such a key method will return `none`.
  */
-public final function AcediaObject TakeItem(AcediaObject key)
+public final function AcediaObject TakeItem(
+    AcediaObject    key,
+    optional bool   freeKey)
 {
-    return TakeEntry(key).value;
+    local Entry entry;
+    entry = TakeEntry(key);
+    if (freeKey) {
+        _.memory.Free(entry.key);
+    }
+    return entry.value;
 }
 
 /**
