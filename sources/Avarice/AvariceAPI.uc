@@ -1,4 +1,5 @@
 /**
+ *  API for Avarice functionality of Acedia.
  *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -18,35 +19,56 @@
  */
 class AvariceAPI extends AcediaObject;
 
-public final function AvariceMessage MessageFromText(Text message)
+/**
+ *  Method that returns all the `AvariceLink` created by `Avarice` feature.
+ *
+ *  @return Array of links created by this feature.
+ *      Guaranteed to not contain `none` values.
+ *      Empty if `Avarice` feature is currently disabled.
+ */
+public final function array<AvariceLink> GetAllLinks()
 {
-    local Parser            parser;
-    local AvariceMessage    result;
-    local AssociativeArray  parsedMessage;
-    if (message == none) return none;
-    parser = _.text.Parse(message);
-    parsedMessage = _.json.ParseObjectWith(parser);
-    parser.FreeSelf();
-    if (!HasNecessaryMessageKeys(parsedMessage))
-    {
-        _.memory.Free(parsedMessage);
-        return none;
+    local Avarice               avariceFeature;
+    local array<AvariceLink>    emptyResult;
+    avariceFeature = Avarice(class'Avarice'.static.GetInstance());
+    if (avariceFeature != none) {
+        return avariceFeature.GetAllLinks();
     }
-    result = AvariceMessage(_.memory.Allocate(class'AvariceMessage'));
-    result.SetID(parsedMessage.GetText(P("i")));
-    result.SetGroup(parsedMessage.GetText(P("g")));
-    result.data = parsedMessage.TakeItem(P("p"));
-    _.memory.Free(parsedMessage);
-    return result;
+    return emptyResult;
 }
 
-private final function bool HasNecessaryMessageKeys(AssociativeArray message)
+/**
+ *  Finds and returns `AvariceLink` by its name, specified in "AcediaAvarice"
+ *  config, if it exists.
+ *
+ *  @param  linkName    Name of the `AvariceLink` to find.
+ *  @return `AvariceLink` corresponding to name `linkName`.
+ *      If `linkName == none` or `AvariceLink` with such name does not exist -
+ *      returns `none`.
+ */
+public final function AvariceLink GetLink(Text linkName)
 {
-    if (message == none)            return false;
-    if (!message.HasKey(P("i")))    return false;
-    if (!message.HasKey(P("g")))    return false;
-
-    return true;
+    local int                   i;
+    local Text                  nextName;
+    local array<AvariceLink>    allLinks;
+    if (linkName == none) {
+        return none;
+    }
+    allLinks = GetAllLinks();
+    for (i = 0; i < allLinks.length; i += 1)
+    {
+        if (allLinks[i] == none) {
+            continue;
+        }
+        nextName = allLinks[i].GetName();
+        if (linkName.Compare(nextName, SCASE_INSENSITIVE))
+        {
+            _.memory.Free(nextName);
+            return allLinks[i];
+        }
+        _.memory.Free(nextName);
+    }
+    return none;
 }
 
 defaultproperties

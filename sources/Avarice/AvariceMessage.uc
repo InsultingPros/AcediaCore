@@ -1,11 +1,43 @@
+/**
+ *      Object that represents a message received from Avarice.
+ *      For performance's sake it does not provide a getter/setter interface and
+ *  exposes public fields instead. However, for Acedia to correctly function
+ *  you are not supposed modify those fields in any way, only using them to
+ *  read necessary data.
+ *      All `AvariceMessage`'s fields will be automatically deallocated, so if
+ *  you need their data - you have to make a copy, instead of simply storing
+ *  a reference to them.
+ *      Copyright 2021 Anton Tarasenko
+ *------------------------------------------------------------------------------
+ * This file is part of Acedia.
+ *
+ * Acedia is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Acedia is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
+ */
 class AvariceMessage extends AcediaObject;
 
-var private Text messageID;
-var private Text messageGroup;
-
-var public AcediaObject data;
+//  Every message from Avarice has following structure:
+//  { "s": "<service_name>", "t": "<command_type>", "p": <any_json_value> }
+//  Value of the "s" field
+var public Text         service;
+//  Value of the "t" field
+var public Text         type;
+//  Value of the "p" field
+var public AcediaObject parameters;
 
 var private AssociativeArray messageTemplate;
+
+var private const int TS, TT, TP;
 
 public static function StaticConstructor()
 {
@@ -18,12 +50,12 @@ public static function StaticConstructor()
 
 protected function Finalizer()
 {
-    __().memory.Free(messageID);
-    __().memory.Free(messageGroup);
-    __().memory.Free(data);
-    messageID = none;
-    messageGroup = none;
-    data = none;
+    __().memory.Free(type);
+    __().memory.Free(service);
+    __().memory.Free(parameters);
+    type = none;
+    service = none;
+    parameters = none;
 }
 
 private static final function ResetTemplate(AssociativeArray template)
@@ -31,63 +63,35 @@ private static final function ResetTemplate(AssociativeArray template)
     if (template == none) {
         return;
     }
-    template.SetItem(P("i"), none);
-    template.SetItem(P("g"), none);
-    template.SetItem(P("p"), none);
-}
-
-public final function SetID(Text id)
-{
-    _.memory.Free(messageID);
-    messageID = none;
-    if (id != none) {
-        messageID = id.Copy();
-    }
-}
-
-public final function Text GetID()
-{
-    if (messageID != none) {
-        return messageID.Copy();
-    }
-    return none;
-}
-
-public final function SetGroup(Text group)
-{
-    _.memory.Free(messageGroup);
-    messageGroup = none;
-    if (group != none) {
-        messageGroup = group.Copy();
-    }
-}
-
-public final function Text GetGroup()
-{
-    if (messageGroup != none) {
-        return messageGroup.Copy();
-    }
-    return none;
+    template.SetItem(T(default.TS), none);
+    template.SetItem(T(default.TT), none);
+    template.SetItem(T(default.TP), none);
 }
 
 public final function MutableText ToText()
 {
     local MutableText       result;
     local AssociativeArray  template;
-    if (messageID == none)      return none;
-    if (messageGroup == none)   return none;
+    if (type == none)       return none;
+    if (service == none)    return none;
 
     template = default.messageTemplate;
-    template.SetItem(P("i"), messageID);
-    template.SetItem(P("g"), messageGroup);
-    if (data != none) {
-        template.SetItem(P("p"), data);
+    ResetTemplate(template);
+    template.SetItem(T(TT), type);
+    template.SetItem(T(TS), service);
+    if (parameters != none) {
+        template.SetItem(T(TP), parameters);
     }
     result = _.json.Print(template);
-    ResetTemplate(template);
     return result;
 }
 
 defaultproperties
 {
+    TS = 0
+    stringConstants(0) = "s"
+    TT = 1
+    stringConstants(1) = "t"
+    TP = 2
+    stringConstants(2) = "p"
 }
