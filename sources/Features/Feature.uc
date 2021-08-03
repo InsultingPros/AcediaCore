@@ -72,10 +72,14 @@ var private string defaultConfigName;
 
 var private LoggerAPI.Definition errorBadConfigData;
 
-public static function StaticConstructor()
+/**
+ *  Loads all configs defined for the caller `Feature`'s class into internal
+ *  collections.
+ *
+ *  This method must be called only once, by initialization routines.
+ */
+public static final function LoadConfigs()
 {
-    if (StaticConstructorGuard()) return;
-    super.StaticConstructor();
     if (default.configClass != none) {
         default.configClass.static.Initialize();
     }
