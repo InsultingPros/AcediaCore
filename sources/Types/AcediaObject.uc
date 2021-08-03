@@ -115,7 +115,9 @@ public final function _constructor()
         default._ = class'Global'.static.GetInstance();
         _ = default._;
     }
-    if (!default._staticConstructorWasCalled) {
+    if (!default._staticConstructorWasCalled)
+    {
+        CreateTextCache();
         StaticConstructor();
         default._staticConstructorWasCalled = true;
     }
@@ -166,7 +168,7 @@ protected function Constructor(){}
 /**
  *  When using proper methods for creating objects (`MemoryAPI`),
  *  this method is guaranteed to be called after object of this (or it's child)
- *  class is deallocated.
+ *  class is allocated.
  *
  *  If you overload this method, first two lines must always be
  *  ____________________________________________________________________________
@@ -175,22 +177,27 @@ protected function Constructor(){}
  *  |___________________________________________________________________________
  *  otherwise behavior of constructors should be considered undefined.
  */
-public static function StaticConstructor()
+public static function StaticConstructor(){}
+
+//      By default this method will only create `TextCache` instance if it
+//  is needed, which is detected by checking whether `stringConstantsCopy` array
+//  is empty.
+//      However even if it is - class might make use of `P()`, `C()` or `F()`
+//  methods that also use `TextCache`. To force creating `TextCache` for them -
+//  set `forceCreation` parameter to `true`.
+private final static function CreateTextCache(optional bool forceCreation)
 {
     local int           i;
     local array<string> stringConstantsCopy;
-    if (StaticConstructorGuard())               return;
+    //  Cache already created
+    if (default._textCache != none)                             return;
+    //  Do not do it for the cache itself
+    if (default.class == class'TextCache')                      return;
     //  If there is no string constants to convert into `Text`s,
     //  then this constructor has nothing to do.
-    if (default.stringConstants.length <= 0)    return;
-    //  Since `TextCache` does not have any string constants to convert,
-    //  this check should never fail, but still do check to make extra sure
-    //  there would not be any infinite loops if someone decided to add them.
-    if (default.class == class'TextCache')      return;
+    if (!forceCreation && default.stringConstants.length <= 0)  return;
 
-    if (default._textCache == none) {
-        default._textCache = TextCache(__().memory.Allocate(class'TextCache'));
-    }
+    default._textCache = TextCache(__().memory.Allocate(class'TextCache'));
     //  Create `Text` constants
     stringConstantsCopy = default.stringConstants;
     for (i = 0; i < stringConstantsCopy.length; i += 1) {
@@ -340,9 +347,8 @@ public final function int GetLifeVersion()
  */
 public static final function Text T(int index)
 {
-    if (default._textCache == none) {
-        default._textCache = TextCache(__().memory.Allocate(class'TextCache'));
-    }
+    //  Here cache should already be created, but make extra sure
+    CreateTextCache(true);
     return default._textCache.GetIndexedText(index);
 }
 
@@ -361,9 +367,7 @@ public static final function Text T(int index)
  */
 public static final function Text P(string string)
 {
-    if (default._textCache == none) {
-        default._textCache = TextCache(__().memory.Allocate(class'TextCache'));
-    }
+    CreateTextCache(true);
     return default._textCache.GetPlainText(string);
 }
 
@@ -383,9 +387,7 @@ public static final function Text P(string string)
  */
 public static final function Text C(string string)
 {
-    if (default._textCache == none) {
-        default._textCache = TextCache(__().memory.Allocate(class'TextCache'));
-    }
+    CreateTextCache(true);
     return default._textCache.GetColoredText(string);
 }
 
@@ -405,9 +407,7 @@ public static final function Text C(string string)
  */
 public static final function Text F(string string)
 {
-    if (default._textCache == none) {
-        default._textCache = TextCache(__().memory.Allocate(class'TextCache'));
-    }
+    CreateTextCache(true);
     return default._textCache.GetFormattedText(string);
 }
 
