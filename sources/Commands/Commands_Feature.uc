@@ -54,14 +54,14 @@ protected function OnDisabled()
     commandDelimiters.length    = 0;
 }
 
-protected function SwapConfig(
-    AssociativeArray previousConfigData,
-    AssociativeArray newConfigData)
+protected function SwapConfig(FeatureConfig config)
 {
-    if (newConfigData == none) {
+    local Commands newConfig;
+    newConfig = Commands(config);
+    if (newConfig == none) {
         return;
     }
-    useChatInput = newConfigData.GetBool(P("useChatInput"));
+    useChatInput = newConfig.useChatInput;
 }
 
 /**

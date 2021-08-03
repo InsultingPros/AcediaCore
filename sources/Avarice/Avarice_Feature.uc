@@ -90,49 +90,17 @@ protected function OnDisabled()
     _.memory.FreeMany(createdLinks);
 }
 
-protected function SwapConfig(
-    AssociativeArray previousConfigData,
-    AssociativeArray newConfigData)
+protected function SwapConfig(FeatureConfig config)
 {
-    local int                       i;
-    local Text                      nextText;
-    local DynamicArray              linksArray;
-    local AssociativeArray          nextLink;
-    local Avarice.AvariceLinkRecord nextRecord;
-    //  Simply restart all the links
-    for (i = 0; i < createdLinks.length; i += 1)
-    {
-        if (createdLinks[i] != none) {
-            createdLinks[i].FreeSelf();
-        }
-    }
-    createdLinks.length = 0;
-    link.length         = 0;
-    if (newConfigData == none) {
+    local Avarice newConfig;
+    newConfig = Avarice(config);
+    if (newConfig == none) {
         return;
     }
-    reconnectTime = newConfigData.GetFloat(P("reconnectTime"));
+    link            = newConfig.link;
+    reconnectTime   = newConfig.reconnectTime;
+    //  For static `GetReconnectTime()` method
     default.reconnectTime = reconnectTime;
-    linksArray = newConfigData.GetDynamicArray(P("link"));
-    if (linksArray == none) {
-        return;
-    }
-    for (i = 0; i < linksArray.GetLength(); i += 1)
-    {
-        nextLink = linksArray.GetAssociativeArray(i);
-        if (nextLink == none) {
-            continue;
-        }
-        nextText = nextLink.GetText(P("name"));
-        if (nextText != none) {
-            nextRecord.name = nextText.ToPlainString();
-        }
-        nextText = nextLink.GetText(P("address"));
-        if (nextText != none) {
-            nextRecord.address = nextText.ToPlainString();
-        }
-        link[i] = nextRecord;
-    }
 }
 
 //  Reply back any messages from "echo" service

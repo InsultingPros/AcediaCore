@@ -32,7 +32,7 @@ struct AvariceLinkRecord
 //  can be used in other configs to point at each link.
 //      `address` must have form "host:port", where "host" is either ip or
 //  domain name and "port" is a numerical port value.
-var private config array<AvariceLinkRecord> link;
+var public config array<AvariceLinkRecord> link;
 
 //      In case Avarice utility is launched after link started trying open
 //  the connection - that connection attempt will fail. To fix that link must
@@ -41,7 +41,7 @@ var private config array<AvariceLinkRecord> link;
 //  re-attempt opening connection. Setting value too low can prevent any
 //  connection from opening, setting it too high might make you wait for
 //  connection too long.
-var private config float reconnectTime;
+var public config float reconnectTime;
 
 protected function AssociativeArray ToData()
 {

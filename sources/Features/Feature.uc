@@ -137,28 +137,31 @@ protected function Finalizer()
  *  (allocated). To set initial config on this `Feature`'s start - specify it
  *  as a parameter to `EnableMe()` method.
  *
+ *  Method will do nothing if `newConfigName` parameter is set to `none`.
+ *
  *  @param  newConfigName   Name of the config to apply to the caller `Feature`.
  */
 public final function ApplyConfig(Text newConfigName)
 {
-    local AssociativeArray newConfigData;
-    newConfigData = configClass.static.LoadData(newConfigName);
-    if (newConfigData == none)
+    local FeatureConfig newConfig;
+    if (newConfigName == none) {
+        return;
+    }
+    newConfig = configClass.static.GetConfigInstance(newConfigName);
+    if (newConfig == none)
     {
         _.logger.Auto(errorBadConfigData).ArgClass(class);
         //  Fallback to "default" config
         newConfigName = _.text.FromString(defaultConfigName);
         configClass.static.NewConfig(newConfigName);
-        newConfigData = configClass.static.LoadData(newConfigName);
+        newConfig = configClass.static.GetConfigInstance(newConfigName);
     }
-    SwapConfig(currentConfig, newConfigData);
-    if (currentConfig != none) {
-        currentConfig.Empty(true);
+    else {
+        newConfigName = newConfigName.Copy();
     }
+    SwapConfig(newConfig);
     _.memory.Free(currentConfigName);
-    _.memory.Free(currentConfig);
-    currentConfigName   = newConfigName.Copy();
-    currentConfig       = newConfigData;
+    currentConfigName = newConfigName;
 }
 
 /**
@@ -275,7 +278,7 @@ public static final function bool DisableMe()
  *
  *  AVOID MANUALLY CALLING IT.
  */
-protected function OnEnabled() { }
+protected function OnEnabled(){}
 
 /**
  *  When using proper methods for enabling a `Feature`,
@@ -283,24 +286,21 @@ protected function OnEnabled() { }
  *
  *  AVOID MANUALLY CALLING IT.
  */
-protected function OnDisabled() { }
+protected function OnDisabled(){}
 
 /**
  *  Will be called whenever caller `Feature` class must change it's config
  *  parameters. This can be done both when the `Feature` is enabled or disabled.
  *
- *  @param  previousConfigData  Config data that was previously set for this
- *      `Feature` class. `none` is passed iff config is set for the first time.
- *  @param  newConfigData       New config data that caller `Feature`'s class
- *      must use. Guaranteed to not be `none`.
+ *  @param  newConfigData   New config that caller `Feature`'s class must use.
+ *      We pass `FeatureConfig` value for performance and simplicity reasons,
+ *      but to keep Acedia working correctly and in an expected way you
+ *      MUST AVOID MODIFYING THIS VALUE IN ANY WAY WHATSOEVER.
+ *      Guaranteed to not be `none`.
  *
- *  AVOID MANUALLY CALLING IT.
- *  DO NOT DEALLOCATE PASSED VALUES.
- *  DO NOT USE PASSED VALUES OUTSIDE OF THIS METHOD CALL.
+ *  AVOID MANUALLY CALLING THIS METHOD.
  */
-protected function SwapConfig(
-    AssociativeArray previousConfigData,
-    AssociativeArray newConfigData) { }
+protected function SwapConfig(FeatureConfig newConfig){}
 
 private static function SetListenersActiveStatus(bool newStatus)
 {

@@ -21,13 +21,13 @@ class Commands extends FeatureConfig
     perobjectconfig
     config(AcediaSystem);
 
-var private config bool useChatInput;
+var public config bool useChatInput;
 
 protected function AssociativeArray ToData()
 {
     local AssociativeArray data;
     data = __().collections.EmptyAssociativeArray();
-    data.SetBool(__().text.FromString("useChatInput"), useChatInput, true);
+    data.SetBool(P("useChatInput"), useChatInput, true);
     return data;
 }
 
@@ -38,7 +38,7 @@ protected function FromData(AssociativeArray source)
     }
 }
 
-protected function Reset()
+protected function DefaultIt()
 {
     useChatInput = true;
 }

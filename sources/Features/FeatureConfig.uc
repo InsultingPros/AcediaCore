@@ -17,9 +17,11 @@
  *  }
  *  ```
  *
- *  You should only define a new child class, along with implementing it's
- *  `FromData()`, `ToData()` and `DefaultIt()` methods and otherwise avoid
- *  directly using objects of this class.
+ *  For each `Feature` you need to define a new child class, along with
+ *  implementing it's `FromData()`, `ToData()` and `DefaultIt()` methods.
+ *  You will also need to implement `Feature`'s `SwapConfig()` method that take
+ *  an instance of `FeatureConfig` as a parameter. Other than that you should
+ *  avoid directly using objects of this class.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -206,6 +208,27 @@ public static function array<Text> AvailableConfigs()
 }
 
 /**
+ *  Returns `FeatureConfig` of caller class with name `name`.
+ *
+ *  @param  name    Name of the config object, whos settings data is to
+ *      be loaded. Case-insensitive.
+ *  @return `FeatureConfig` of caller class with name `name`.
+ */
+public final static function FeatureConfig GetConfigInstance(Text name)
+{
+    local FeatureConfig requiredConfig;
+    if (default.existingConfigs == none) {
+        return none;
+    }
+    if (name != none) {
+        name = name.LowerCopy();
+    }
+    requiredConfig = FeatureConfig(default.existingConfigs.GetItem(name));
+    __().memory.Free(name);
+    return requiredConfig;
+}
+
+/**
  *  Loads Acedia's representation of settings data of a particular config
  *  object, given by the `name`.
  *
@@ -221,17 +244,10 @@ public final static function AssociativeArray LoadData(Text name)
 {
     local AssociativeArray  result;
     local FeatureConfig     requiredConfig;
-    if (default.existingConfigs == none) {
-        return none;
-    }
-    if (name != none) {
-        name = name.LowerCopy();
-    }
-    requiredConfig = FeatureConfig(default.existingConfigs.GetItem(name));
+    requiredConfig = GetConfigInstance(name);
     if (requiredConfig != none) {
         result = requiredConfig.ToData();
     }
-    __().memory.Free(name);
     return result;
 }
 
