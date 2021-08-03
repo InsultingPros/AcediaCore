@@ -246,7 +246,7 @@ public final function StartUp()
         return;
     }
     tcpStream.Set(newStream);
-    newStream.StartUp(self, class'Avarice'.static.GetReconnectTime());
+    newStream.StartUp(self, class'Avarice_Feature'.static.GetReconnectTime());
 }
 
 /**

@@ -28,9 +28,10 @@ class AvariceAPI extends AcediaObject;
  */
 public final function array<AvariceLink> GetAllLinks()
 {
-    local Avarice               avariceFeature;
+    local Avarice_Feature       avariceFeature;
     local array<AvariceLink>    emptyResult;
-    avariceFeature = Avarice(class'Avarice'.static.GetInstance());
+    avariceFeature =
+        Avarice_Feature(class'Avarice_Feature'.static.GetInstance());
     if (avariceFeature != none) {
         return avariceFeature.GetAllLinks();
     }

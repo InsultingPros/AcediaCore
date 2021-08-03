@@ -23,7 +23,7 @@
 defaultproperties
 {
     features(0)     = class'Commands_Feature'
-    features(1)     = class'Avarice'
+    features(1)     = class'Avarice_Feature'
     commands(0)     = class'ACommandHelp'
     commands(1)     = class'ACommandDosh'
     commands(2)     = class'ACommandNick'
