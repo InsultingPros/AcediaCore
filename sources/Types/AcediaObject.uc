@@ -167,8 +167,8 @@ protected function Constructor(){}
 
 /**
  *  When using proper methods for creating objects (`MemoryAPI`),
- *  this method is guaranteed to be called after object of this (or it's child)
- *  class is allocated.
+ *  this method is guaranteed to be called after object of this class is
+ *  allocated.
  *
  *  If you overload this method, first two lines must always be
  *  ____________________________________________________________________________
