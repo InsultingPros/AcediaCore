@@ -50,12 +50,6 @@ var private const int TECHO, TEND, TCOLON;
 
 var private LoggerAPI.Definition errorBadAddress;
 
-public static function StaticConstructor()
-{
-    if (StaticConstructorGuard()) return;
-    super.StaticConstructor();
-}
-
 protected function OnEnabled()
 {
     local int           i;
