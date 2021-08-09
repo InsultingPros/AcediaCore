@@ -472,6 +472,40 @@ public final function MutableText UpperMutableCopy(
 }
 
 /**
+ *  Checks if caller `Text` contains a valid name for a config object or not.
+ *
+ *  Valid names contain only ASCII characters, digits and '.' / '_' characters.
+ *  Empty `Text` is not considered a valid name.
+ *
+ *  @return `true` if caller `Text` contains a valid config object name and
+ *      `false` otherwise.
+ */
+public final function bool IsValidConfigName()
+{
+    local int       i;
+    local int       codePoint;
+    local bool      isValidCodePoint;
+    local Character nextCharacter;
+    if (IsEmpty()) {
+        return false;
+    }
+    for (i = 0; i < GetLength(); i += 1)
+    {
+        nextCharacter = GetCharacter(i);
+        codePoint = nextCharacter.codePoint;
+        isValidCodePoint =
+                ( (codePoint == 0x2E) || (codePoint == 0x5F)    //  '.' or '_'
+            ||  (0x30 <= codePoint && codePoint <= 0x39)        //  '0' to '9'
+            ||  (0x41 <= codePoint && codePoint <= 0x5A)        //  'A' to 'Z'
+            ||  (0x61 <= codePoint && codePoint <= 0x7A));      //  'a' to 'z'
+        if (!isValidCodePoint) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  *  Auxiliary function that converts case of the caller `Text` object.
  *  As `Text` is supposed to be immutable, cannot be public.
  *
@@ -480,7 +514,7 @@ public final function MutableText UpperMutableCopy(
  */
 protected final function ConvertCase(bool toLower)
 {
-    local int i;
+    local int       i;
     local Character nextCharacter;
     for (i = 0; i < GetLength(); i += 1)
     {
