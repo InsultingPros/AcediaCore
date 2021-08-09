@@ -39,7 +39,8 @@ The topic of this document is only AcediaCore - a base class library.
 
 ## Functionality of AcediaCore
 
-A lot of its API are fairly independent from each other and can be skipped or
-learned depending on your needs. The only exception to that is Acedia's
-type system and object management. So go read about them
-[here](./essential/index.md) before anything else.
+First of all, go read about [safety rules](./safety.md).
+They don't go into much detail, so don't worry if you don't understand
+everything - you can read on each specific topic later.
+But they make a good introduction and will warn you about otherwise very likely
+mistakes that could lead to rather nasty consequences.

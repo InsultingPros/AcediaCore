@@ -1,3 +1,0 @@
-# Acedia's essentials
-
-As was said on the introduction page...
