@@ -289,6 +289,24 @@ public final function AcediaObject GetItem(AcediaObject key)
 
 /**
  *  Returns entry corresponding to a given key `key` in the caller
+ *  `AssociativeArray`.
+ *
+ *  @param  key Key for which to return entry.
+ *  @return Entry (key/value pair + indicator of whether values was managed
+ *      by `AssociativeArray`) with the given key `key`.
+ */
+public final function Entry GetEntry(AcediaObject key)
+{
+    local Entry emptyEntry;
+    local int   bucketIndex, entryIndex;
+    if (!FindEntryIndices(key, bucketIndex, entryIndex)) {
+        return emptyEntry;
+    }
+    return hashTable[bucketIndex].entries[entryIndex];
+}
+
+/**
+ *  Returns entry corresponding to a given key `key` in the caller
  *  `AssociativeArray`, removing it from the caller `AssociativeArray`.
  *
  *  Returned value is no longer managed by the `AssociativeArray` (if it was)
