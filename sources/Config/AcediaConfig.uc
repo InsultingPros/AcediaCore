@@ -31,7 +31,7 @@ class AcediaConfig extends AcediaObject
 
 /**
  *      This class deals with several issues related to use of such objects,
- *  steming from the lack of documentation:
+ *  stemming from the lack of documentation:
  *
  *  1. Not all `Object` names are a usable.
  *      [Beyond Unreal wiki](
@@ -74,9 +74,9 @@ var public const bool supportsDataConversion;
  *  variables inside an `AssociativeArray` collection. How exactly to store
  *  them is up to each config class to decide, as long as it allows conversion
  *  into JSON (see `JSONAPI.IsCompatible()` for details).
- *      Note that values reference `FromData()` receives is not necessarily
- *  the one your `ToData()` method returns - any particular value boxes can be
- *  replaced with value references and vice versa.
+ *      Note that `AssociativeArray` reference `FromData()` receives is
+ *  not necessarily the same one your `ToData()` method returns - any particular
+ *  value boxes can be replaced with value references and vice versa.
  *      NOTE: DO NOT use `P()`, `C()`, `F()` or `T()` methods for keys or
  *  values in collections you return. All keys and values will be automatically
  *  deallocated when necessary, so these methods for creating `Text` values are
@@ -222,6 +222,7 @@ public final static function DeleteConfig(Text name)
  *  Returns array containing names of all available config objects.
  *
  *  @return Array with names of all available config objects.
+ *      Guaranteed to not contain `none` values.
  */
 public static function array<Text> AvailableConfigs()
 {
