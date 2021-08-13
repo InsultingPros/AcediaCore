@@ -147,14 +147,16 @@ public final function ApplyConfig(Text newConfigName)
     if (newConfigName == none) {
         return;
     }
-    newConfig = configClass.static.GetConfigInstance(newConfigName);
+    newConfig =
+        FeatureConfig(configClass.static.GetConfigInstance(newConfigName));
     if (newConfig == none)
     {
         _.logger.Auto(errorBadConfigData).ArgClass(class);
         //  Fallback to "default" config
         newConfigName = _.text.FromString(defaultConfigName);
         configClass.static.NewConfig(newConfigName);
-        newConfig = configClass.static.GetConfigInstance(newConfigName);
+        newConfig =
+            FeatureConfig(configClass.static.GetConfigInstance(newConfigName));
     }
     else {
         newConfigName = newConfigName.Copy();

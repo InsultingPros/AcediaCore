@@ -56,8 +56,7 @@ defaultproperties
     testCases(20)   = class'TEST_CommandDataBuilder'
     testCases(21)   = class'TEST_LogMessage'
     testCases(22)   = class'TEST_LocalDatabase'
-    testCases(23)   = class'TEST_FeatureConfig'
-    testCases(24)   = class'TEST_AcediaConfig'
-    testCases(25)   = class'TEST_UTF8EncoderDecoder'
-    testCases(26)   = class'TEST_AvariceStreamReader'
+    testCases(23)   = class'TEST_AcediaConfig'
+    testCases(24)   = class'TEST_UTF8EncoderDecoder'
+    testCases(25)   = class'TEST_AvariceStreamReader'
 }
