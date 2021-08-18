@@ -29,17 +29,18 @@ If you are interested in the explanation of why, you can read discussion
 
 This isn't really a problem in most mutators, since they store references
 to actors (`KFMonster`, `KFPlayerController`, ...)
-inside other actors (`Mutator`, `GameType`, ...).
-However in Acedia almost everything is a non-actor object, which can cause
+inside other actors (`Mutator`, `GameType`, ...);
+however, in Acedia almost everything is a non-actor object, which can cause
 a lot of trouble, since even a simple check like `myActor != none`
 can lead to a crash.
 
 Acedia's goal is to provide you with enough wrapper API, so that you don't have
 to reference actors directly.
 We are a long way away from that goal, so for whenever these API are not enough,
-Acedia provides a way to work with actors safely.
+Acedia provides a way to work with actors safely
+(see [Actor references with `NativeActorRef`](./objects.md)).
 
-## Take care to explicitly free unneeded objects, with example of `Text`
+## Take care to explicitly free unneeded objects
 
 We'll illustrate this point with `Text` - Acedia's own type that is used as
 a replacement for `string`. Consider following simple code:
@@ -93,7 +94,7 @@ function MyFunction()
 
 Here `FreeSelf()` call marks `message` as an unneeded object, making it
 available to be reused.
-In fact, if you call `MyFunction()` as we've wrote it several times in a row:
+In fact, if you call new `MyFunction()` several times in a row:
 
 ```unrealscript
 MyFunction()
@@ -127,10 +128,12 @@ function MyFunction()
 ```
 
 Deallocating a `message` does not make an actual object go away and,
-without setting `message` variable to `none`, you risk continuing to use it.
-However some other piece of code might re-allocate that object
+without setting `message` variable to `none`, you risk continuing to use it;
+however, some other piece of code might re-allocate that object
 and use it for something completely different.
-This means unpredictalbe and undefined behavior for both of you -
-a situation that has to be avoided.
+This means unpredictable and undefined behavior for everybody.
 To avoid creating with this problem - everyone must always make sure to
 *forget* about objects you've deallocated by setting your references to `none`.
+
+> **NOTE:** This also means that you should not deallocate the same object
+> more than once.
