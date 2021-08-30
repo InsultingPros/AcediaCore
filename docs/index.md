@@ -1,21 +1,23 @@
 # Acedia for mod making
 
-This document aims to guide you through all of Acedia's features and
-capabilities from the mod maker's perspective.
+This document describes Acedia from the mod maker's perspective:
+how to use it to create new mods and how it works internally.
 It consists of a brief overview of how different components fit together and
 then somewhat detailed look at each of them.
 
 This document is not a reference documentation that lists and describes
-every single class and method. Unfortunately, such a document does not exist
-right now. The closest substitute for it would be Acedia's source code -
-most of the methods and classes are given brief descriptions in the comments.
+every single class and method.
+Unfortunately, such a document does not exist right now.
+The closest substitute for it would be Acedia's source code - most of
+the methods and classes are given brief descriptions in the comments.
 They might somewhat lack in quality, since having a peer review for them
-would not have been viable, but that is all I can offer. Any corrections to
-them are always welcome.
+would not have been viable, but that is all we can offer.
+Any corrections to them are always welcome.
 
-We assume that our audience is at least familiar with UnrealScript:
-Acedia's API is not stable enough for us to recommend using it to people new
-to the Killing Floor modding anyway.
+We assume that our audience is at least familiar with UnrealScript and we cannot
+recommend using it to people new to the modding anyway:
+Acedia's API is not stable enough and has certain quirks that can lead to nasty,
+hard-to-catch bugs.
 
 ## What the hell is all of this?
 
@@ -28,7 +30,7 @@ It would have been an overkill if bug fixing was all Acedia would ever do and
 now `Feature` is one of the Acedia's main... features, that is supposed to take
 the role of the `Mutator` class.
 
-What was Acedia before now is broken into three different packages:
+What Acedia was before is now broken into three different packages:
 
 * AcediaCore - package that defines base classes, required for other
 Acedia packages to work correctly;
@@ -41,14 +43,12 @@ The topic of this document is only AcediaCore - a base class library.
 ## Getting started
 
 First of all, go read about [safety rules](./safety.md).
-They don't go into much detail, so don't worry if you don't understand
-everything - you can read on each specific topic later.
-But they make a good introduction and will warn you about otherwise very likely
+They make a good introduction and will warn you about otherwise very likely
 mistakes that could lead to rather nasty consequences.
 
 After you've familiarized yourself with safety rules, you can skip to reading
-any topic of interest, but we strongly recommend that you first read up on
+about any topic of interest, but we strongly recommend that you first read up on
 the fundamental topics:
 [what is API](./api.md),
 at least non-advanced topics of [Acedia's objects / actors](./objects.md)
-about and signal / slot system.
+and about signal / slot system.

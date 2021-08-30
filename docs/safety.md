@@ -1,9 +1,5 @@
 # Acedia's safety rules
 
-To work with Acedia it is necessary to understand its object management:
-what it is and why it exists.
-Our aim here is to provide a brief introduction using `Text` as an example.
-
 When working with UnrealScript one can distinguish between following types
 of variables:
 
@@ -11,36 +7,36 @@ of variables:
 2. Actors: objects that have `Actor` as their parent;
 3. Non-actor objects: object of any class not derived derived from the `Actor`.
 
-Most of the mods mainly use first and second type, but Acedia makes heavy use of
+Most of the mods mainly use first and second type, but we make heavy use of
 the third one.
 This allows Acedia to provide convenient interfaces for its functionality and
 simplify implementation of its features.
 However it also creates several new problems, normally not encountered by
 other mods.
-Here we will introduce and briefly explain several rules that should be followed
-to properly use Acedia.
+Here we will introduce and briefly explain three main rules that you need
+to keep in mind when working with Acedia.
 
-## Do not store references to actors in non-actor objects
+## Rule 1: Do not store references to actors in non-actor objects
 
 Storing actors in non-actor objects is a bad idea and can lead to
 game/server crashes.
 If you are interested in the explanation of why, you can read discussion
 [here](https://wiki.beyondunreal.com/Legacy:Creating_Actors_And_Objects).
-
 This isn't really a problem in most mutators, since they store references
 to actors (`KFMonster`, `KFPlayerController`, ...)
-inside other actors (`Mutator`, `GameType`, ...);
-however, in Acedia almost everything is a non-actor object, which can cause
-a lot of trouble, since even a simple check like `myActor != none`
-can lead to a crash.
+inside other actors (`Mutator`, `GameType`, ...).
+However, in Acedia almost everything is a non-actor object, so simply having
+actor variables can be volatile:
+even a simple check `myActor != none` can lead to a crash if `myActor`
+was destroyed recently enough.
 
-Acedia's goal is to provide you with enough wrapper API, so that you don't have
-to reference actors directly.
-We are a long way away from that goal, so for whenever these API are not enough,
-Acedia provides a way to work with actors safely
+Acedia's end goal is to provide you with enough wrappers,
+so that you don't have to reference actors directly.
+We are a long way away from that, so for whenever our API is not enough,
+we also provide a safer way to work with actors inside objects
 (see [Actor references with `NativeActorRef`](./objects.md)).
 
-## Take care to explicitly free unneeded objects
+## Rule 2: Take care to explicitly free unneeded objects
 
 We'll illustrate this point with `Text` - Acedia's own type that is used as
 a replacement for `string`. Consider following simple code:
@@ -110,7 +106,12 @@ This concerns not only `Text`, but almost every single Acedia's object.
 To efficiently use Acedia, you must learn to deallocate objects that are
 not going to be used anymore.
 
-## You should *never ever* use anything you've deallocated
+## Rule 3: You should *never ever* use anything you've deallocated
+
+> **IMPORTANT:**
+> This is the most important rule - violating will create bugs that
+> are extremely hard to catch.
+> And possibility of such bugs is the biggest downside of using Acedia.
 
 If `Text` variable from above wasn't local, but global variable, then we'd have
 to add one more instruction `message = none`:
@@ -133,7 +134,7 @@ however, some other piece of code might re-allocate that object
 and use it for something completely different.
 This means unpredictable and undefined behavior for everybody.
 To avoid creating with this problem - everyone must always make sure to
-*forget* about objects you've deallocated by setting your references to `none`.
+*forget* about objects you've deallocated by setting their references to `none`.
 
 > **NOTE:** This also means that you should not deallocate the same object
 > more than once.

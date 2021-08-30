@@ -4,22 +4,21 @@ Acedia's API is our way of solving the problem of adding new *global functions*.
 Examples of *global functions* are `Log()`, `Caps()`, `Abs()`, `VSize()`
 and a multitude of others that you can call from anywhere in UnrealScript.
 They can be accessed from anywhere because they are all declared as
-static methods inside `Object` - a base class for any other object,
-including actors.
+static methods inside `Object` - a base class for any other class.
 Problem is, since we cannot add our own methods to the `Object`,
 then we also can't add new global functions.
 The best we can do is declare new static methods in our own classes,
 but calling them would be cumbersome: `class'glb'.static.DoIt()`.
 
-Idea that we've used to solve this problem for Acedia is to define
-a separate class that would contain all our global functions.
-If we save an instance of this class in some local variable
-`glb`, then we can simply write `glb.DoIt()` instead of
-`class'glb'.static.DoIt()`.
+Idea that we've used to solve this problem for Acedia is to provide every single
+Acedia object with an instance of a class that would contain all our
+global functions.
+We save an instance of this class in a local variable
+`_`, which allows us to simply write `_.DoIt()`.
 
 In actuality we don't just dump all of Acedia's global functions into
 one object, but group them into different APIs that can be accessed
-through `_` variable, defined in every `AcediaObject` and `AcediaActor`:
+through `_` variable:
 
 ```unrealscript
 _.text.FromString("I am here!");        // Text API
@@ -45,7 +44,7 @@ Any class you make that derives from either `AcediaObject` or `AcediaActor`
 will have `_` and `__()` defined.
 If you need to create a class that does not derive from Acedia's classes,
 but you want to make Acedia's API be available inside it,
-then you simply need to redefine them:
+then you simply need to redefine `_` and `__()`:
 
 ```unrealscript
 var Global _;

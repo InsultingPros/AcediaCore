@@ -1,34 +1,37 @@
 # `AcediaObject` and `AcediaActor`
 
-Acedia defines its own base classes for both actor (`AcediaActor`)
-and non-actor objects (`AcediaObject`), better integrated into
-Acedia's infrastructure.
-Here we will go over everything you need to understand them.`Object` and `Actor`.
+Acedia defines its own base classes for both actor and non-actor objects
+(`AcediaActor` and `AcediaObject` respectively).
+Both of them are better integrated into Acedia's infrastructure than regular
+objects and actors.
+`AcediaObject` is especially important, since it provides support for
+*object deallocation*.
+In this document we will go over everything you need to know about
+these classes.
 
 ## Who is responsible for objects?
 
-If you've already read [safety rules](./safety.md) (and you should have),
+If you have read [safety rules](./safety.md) document (and you should have),
 then you already know about the importance of deallocation.
 But which objects exactly are you supposed to deallocate?
-Understanding what objects you are responsible for is likely the most important
-concept to get when working with Acedia.
+Understanding what objects you are responsible for is one of the most important
+concepts to get when working with Acedia.
 There are two main guidelines:
 
 * **If function returns an object (as a return value or as an `out` argument) -
     then this object must be deallocated by
     whoever called that function.**
     If you've called `_.text.Empty()`, then you must deallocate
-    the `MutableText`object it returned.
+    the `MutableText`object it has returned.
     Conversely, if you are implementing function that returns an object,
     then you must not deallocate it yourself.
-    In fact, you are expected not to use that object at all,
-    since now you can't know when it will be deallocated.
+    In fact, you are expected to not use that object at all after returning it,
+    since you cannot know when it will be deallocated.
 * **Functions do not deallocate their arguments.**
     If you pass an object as an argument to a function - you can expect
-    that it won't be deallocated during that call.
-    It might get *modified*, but not *deallocated*.
-    And, again, when implementing your own function - you should not deallocate
-    its arguments either.
+    that said object won't be deallocated during function's execution.
+    When implementing your own function - you should not deallocate
+    objects passed as its arguments.
 
 However, these guidelines should be treated as *default assumptions* and
 not *hard rules*.
@@ -36,16 +39,15 @@ not *hard rules*.
 ### Exceptions
 
 First guideline, for example, can be broken if returned object is supposed to
-be shared: `_.players.GetPlayers()` returns array with references to
-*player objects* (`array<APLayer>`) that aren't supposed to ever be deallocated.
+be shared: `_.players.GetPlayers()` returns `array<APLayer>` with references to
+*player objects* that aren't supposed to ever be deallocated.
 Similarly, Acedia's collections operate by different rules:
 they might still consider themselves responsible for objects returned with
 `GetItem()`.
 
 Second guideline can also be broken by some of the methods for the sake of
 convenience.
-If you need to turn a `Text` object `textToConvert` into a `string`,
-then you can either do:
+If you need to turn a `Text` object into a `string`, then you can either do:
 
 ```unrealscript
 if (textToConvert != none)
@@ -58,10 +60,11 @@ if (textToConvert != none)
 or simply call `_.text.ToString()` that automatically deallocates its argument:
 `result = _.text.ToString(textToConvert)`.
 
+> **NOTE:**
 > Any such exceptions are documented (or at least should be), so simply read
-> the docs for functions you're using.
-> If they don't mention anything about how their arguments or return values
-> should be treated - assume above stated guidelines.
+> the comment docs in source code for functions you're using.
+> If they don't mention anything about how arguments or return values
+> should be treated - assume above stated default guidelines.
 
 ## `MemoryAPI`
 
@@ -69,14 +72,12 @@ The majority, if not all, of the Acedia's objects you will be using are going to
 be created by specialized methods like `_.text.FromString()`,
 `_.collections.EmptyDynamicArray()` or `_.time.StartTimer()`
 and can be deallocated with `self.FreeSelf()` method.
-However, that won't be enough if you want to create and allocate your own
-classes, for that you'll need the help of `MemoryAPI`.
+However, if you want to allocate instances of your own classes,
+you'll need the help of `MemoryAPI`'s methods:
+`_.memory.Allocate()` and `_.memory.Free()`.
 
-They are less powerful than `new` keyword and `Spawn()` function, but perform
-certain background work, necessary for Acedia to function and
-**you should always use them for creating Acedia's objects**.
-Ultimately, all Acedia's objects and actors are created with
-`_.memory.Allocate()` and "destroyed" with `_.memory.Free()`.
+Ultimately, all Acedia's objects and actors must be created with
+`_.memory.Allocate()` and destroyed with `_.memory.Free()`.
 For example, here is how new `Parser` is created with `_.text.NewParser()`:
 
 ```unrealscript
@@ -99,22 +100,26 @@ public final function FreeSelf(optional int lifeVersion)
 }
 ```
 
-These two functions are the most important ones in `MemoryAPI`,
-but it contains several more useful ones:
+If you create your own classes, derived from either
+`AcediaObject` or `AcediaActor`, you must also use these functions to
+create and destroy their instances.
+
+`MemoryAPI` contains a few more useful functions:
 
 | Function | Description |
 | -------- | ----------- |
 | `Allocate(class<Object>, optional bool)` | Creates a new `Object` / `Actor` of a given class. `bool` argument allows to forbid reallocation, forcing creation of a new object.
 | `LoadClass(Text)` | Creates a class instance from its textual representation. |
 | `AllocateByReference(Text, optional bool)` | Same as `Allocate()`, but takes textual representation of the class as an argument. |
-| `Free(Object)` | Deallocates provided object. |
-| `FreeMany(array<Object>)` | Deallocates every object inside given array. |
-| `CollectGarbage(optional bool)` | Forces garbage collection. By default also includes all deallocated (but not destroyed) objects. `bool` argument allows to skip collecting them.
+| `Free(Object)` | Deallocates provided object. Does not produce errors if its argument is `none`. |
+| `FreeMany(array<Object>)` | Deallocates every object inside given array. Does not produce errors if some (or all) of them are `none`. |
+| `CollectGarbage(optional bool)` | Forces garbage collection. By default also includes all deallocated (but not destroyed) objects and `bool` argument allows to skip collecting them.
 
-> **NOTE:** `MemoryAPI` can also be used for creating objects that do not
-> derive from either `AcediaObject` or `AcediaActor`, but there is no point in
+> **NOTE:** While `MemoryAPI` can also be used for creating objects that do not
+> derive from either `AcediaObject` or `AcediaActor`, there is no point in
 > using them over `new` or `Spawn()`:
-> Acedia will not reallocate non-Acedia objects.
+> Acedia's methods are overall less powerful and will not provide any benefits
+> for non-Acedia objects.
 
 ## Constructors and finalizers
 
@@ -125,12 +130,11 @@ and
 [finalizers](https://en.wikipedia.org/wiki/Finalizer).
 *Constructor* is a method that's called on object after it's created,
 preparing it for use.
-In Acedia *Finalizer* is a method that's called when object is deallocated
+*Finalizer* is a method that's called when object is deallocated
 (or actor is destroyed) and can be used to clean up any used resources.
 
 > Technically, right now *destructor* might be a better terminology for Acedia's
-> finalizers, but, if development is not halted, current name would eventually
-> become a better fit.
+> finalizers.
 
 A good and simple example is from the `ATradingComponent` that
 allocates necessary objects inside its constructor and deallocates them in
@@ -166,10 +170,11 @@ overload `Constructor()` and `Finalizer()` methods (they are defined in both
 
 ## Object equality and object hash
 
-Comparing object variable with `==` operator simply checks if they refer to
-the exact same object.
-But sometimes we want a comparison that compares the content of two objects
-instead: like checking that two different `Text`s store the exact same data.
+Comparing object variables with `==` operator checks *reference equality*:
+whether variables refer to the exact same object.
+But sometimes we want to implement *value equality* check - a comparison for
+the contents of two objects, e.g. checking that two different `Text`s
+store the exact same data.
 Acedia provides an alternative way to compare two objects - `IsEqual()` method.
 Its default implementation corresponds to that of `==` operator:
 
@@ -180,15 +185,17 @@ public function bool IsEqual(Object other)
 }
 ```
 
-but can be redefined, as long as it obeys following rules:
+But it can be redefined, as long as it obeys following rules:
 
 * `a.IsEqual(a) == true`;
 * `a.IsEqual(b)` if and only if `b.IsEqual(a)`;
+* `none` is only equal to `none;
 * Result of `a.IsEqual(b)` does not change unless one of the objects gets
     deallocated.
 
-Because of last rule two `MutableText`s cannot be compared base on their content
-since their contents can change without deallocation.
+Because of the last rule, `IsEqual()` cannot compare two `MutableText`s based on
+their contents, since they can change without deallocation
+(unlike contents of an immutable `Text`).
 
 Reimplementing `IsEqual()` method also requires you to reimplement how object's
 [hash value](https://en.wikipedia.org/wiki/Hash_function) is calculated.
@@ -196,7 +203,8 @@ Reimplementing `IsEqual()` method also requires you to reimplement how object's
 Several different objects can have the same hash value and equal objects *must*
 have the same hash value.
 
-By default, Acedia's objects simply use randomly generated value as their hash.
+By default, Acedia's objects simply use randomly generated value as their hash,
+determined at the moment of their creation.
 This can be changed by reimplementing `CalculateHashCode()` method.
 Every object will only call it once to cache it for `GetHashCode()`:
 
@@ -230,28 +238,34 @@ protected function int CalculateHashCode()
 }
 ```
 
+This makes sure that two `Text`s with equal contents have the same hash value.
+
 ## Boxing
 
 Last important topic to go over is
 [boxing](
-https://en.wikipedia.org/wiki/Object_type_(object-oriented_programming)#Boxing),
+https://en.wikipedia.org/wiki/Object_type_(object-oriented_programming)#Boxing):
 a process of turning primitive types such as `bool`, `byte`, `int` or `float`
 into objects.
-The concept is very simple - we create a *box* object, which is just an object
-that stores a single primitive value and could be implemented kind of like that:
+The concept is very simple, we create a *box* object - an object
+that stores a single primitive value.
+It could be implemented like that:
 
 ```unrealscript
 class MyBox extends Object;
 var float value;
 ```
 
-Except Acedia's boxes are *immutable* - their value cannot change once
+However, Acedia's boxes are *immutable* - their value cannot change once
 the box was created.
+This means that they store their value in the private field and provide access
+to it through the appropriate getter method.
 
 Boxes were introduced because they allowed creation of general collections:
-Acedia's collections can only store `AcediaObject`, but thanks to boxing
-any value can be turned into `AcediaObject` and stored in the collection.
-For native primitive types they can be created with either `BoxAPI` or manually:
+Acedia's collections can only store `AcediaObject`, but, thanks to boxing,
+any value can be turned into an `AcediaObject` and stored in the collection.
+For native primitive types boxes can be created with either `BoxAPI` or
+manually:
 
 ```unrealscript
 local IntBox    box1;
@@ -284,10 +298,10 @@ Log("Int value:" @ ref1.Get());     // Int value: -89
 Log("Float value:" @ ref2.Get());   // Float value: 0.56
 ```
 
-The most important difference between boxes and references concerns how their
-`IsEqual()` and `GetHash()` are implemented:
+The most important difference between boxes and references concerns
+implementation of their `IsEqual()` and `GetHash()` methods:
 
-* Since boxes redefine `IsEqual()` and `GetHash()` to depend on the stored value.
+* Boxes redefine `IsEqual()` and `GetHash()` to depend on the stored value.
     Since value inside the box cannot change, then there is no problem to base
     equality and hash on it.
 * References do not redefine `IsEqual()` / `GetHash()` and behave like any
@@ -312,13 +326,15 @@ Log("Refs hash equality:" @ (ref1.GetHash() == ref2.GetHash()));
 ```
 
 > **NOTE:** For `string`s the role of boxes and references is performed by
-> `Text` and `MutableText` classes that are discussed separately.
+> `Text` and `MutableText` classes that are discussed elsewhere.
 
 ### Actor references with `NativeActorRef`
 
 As was explained in [safety rules](./safety.md), storing references to actors
-inside objects is a bad idea.
-Actor boxes and references provide us with a safe way to do that:
+directly inside objects is a bad idea.
+The safe way to do it are *actor references*:
+`ActorRef` for Acedia's actors and `NativeActorRef` for any kind of actors.
+Actor returned by their `Get()` method is guaranteed to be safe to use:
 
 ```unrealscript
 class MyObject extends AcediaObject;
@@ -363,14 +379,16 @@ function DoWork()
     // <Some code that might `Destroy()` our pawn>
     // ^ After destroying a pawn,
     //  `myPawn` local variable might go "bad" and cause crashes,
-    //  so it's a good idea to update it from safe `pawnReference`:
+    //  so it's a good idea to "update" it from the safe `pawnReference`:
     myPawn = GetMyPawn();
-    myPawn.health += 10;
+    if (myPawn != none) {
+        myPawn.health += 10;
+    }
 }
 ```
 
-Actor boxes do not exist, since we cannot guarantee that value stored inside
-them will never change - destroying stored actor will always reset it to `none`.
+Actor boxes do not exist, since we cannot guarantee that value inside them will
+never change - destroying stored actor will always reset it to `none`.
 
 ### Array boxes and references
 
@@ -379,8 +397,8 @@ of value, including `array<...>`s and `struct`s.
 Acedia provides such classes for arrays of primitive types out of the box.
 They can be useful for passing huge arrays between objects and functions
 by reference, without copying their entire data every time.
-They also provide quite a few several convenience methods.
-Here is a list for `FloatArrayRef` as an example:
+They also provide several convenience methods - here is a list for
+`FloatArrayRef`'s methods as an example:
 
 | Method | Description |
 | ------ | ----------- |
@@ -392,7 +410,7 @@ Here is a list for `FloatArrayRef` as an example:
 | `SetLength(int)` | Resizes stored array, doing nothing on negative input. |
 | `Empty()` | Empties stored array. |
 | `Add(int)` | Increases length of the array by adding specified amount of new elements at the end. |
-| `Insert(int index, int count)` | Inserts `count` empty elements into the array at specified position. The indices of the following elements are increased by `count` in order to make room for the new elements. |
+| `Insert(int index, int count)` | Inserts `count` zeroes into the array at specified position. The indices of the following elements are increased by `count` in order to make room for the new elements. |
 | `Remove(int index, int count)` | Removes number elements from the array, starting at `index`. All elements before position and from `index + count` on are not changed, but the element indices change, - they shift to close the gap, created by removed elements. |
 | `RemoveIndex(int)` | Removes value at a given index, shifting all the elements that come after one place backwards. |
 | `AddItem(float)` | Adds given `float` at the end of the array, expanding it by 1 element. |
@@ -413,7 +431,7 @@ Static constructor is called for each class only once:
 * Whenever first object of such class is created,
     before its constructor is called;
 * If you want static initialization to be done earlier,
-    it is allowed to call static constructor manually:
+    it is possible to call static constructor manually:
     `class'...'.static.StaticConstructor()`.
 
 > **NOTE:** Static constructor being called for your class does not guarantee it
@@ -442,7 +460,7 @@ To have a clean level change it is important that you undo as many changes to
 game's objects as you reasonably can.
 It is especially important to reset default values, unless their change is
 deliberate.
-Here is an example used in the base `AcediaObject` class at some point:
+Here is an example that was used in the base `AcediaObject` class at some point:
 
 ```unrealscript
 protected static function StaticFinalizer()
@@ -461,13 +479,14 @@ protected static function StaticFinalizer()
 
 ### How allocation and deallocation works
 
-UnrealScript lacks any practical way to destroy objects on demand:
+UnrealScript lacks any practical way to destroy non-actor objects on demand:
 the best one can do is remove any references to the object and wait for
 garbage collection.
 But garbage collection itself is too slow and causes noticeable lag spikes
 for players, making it suitable only for cleaning objects when switching levels.
 To alleviate this problem, there exists a standard class `ObjectPool`
-that stores unused objects inside dynamic array until they are needed.
+that stores unused objects (mostly resources such as textures) inside
+dynamic array until they are needed.
 
 Unfortunately, using a single `ObjectPool` for a large volume of objects is
 impractical from performance perspective, since it stores objects of
@@ -475,6 +494,7 @@ all classes together and each object allocation from the pool can potentially
 require going through the whole array:
 
 ```unrealscript
+//  FILE: Engine/ObjectPool.uc
 simulated function Object AllocateObject(class ObjectClass)
 {
     local Object    Result;
@@ -535,7 +555,7 @@ first deallocated and then allocated again by some other code.
 Then `IsAllocate()` will return `true` even though your reference is
 no longer valid.
 
-This issue can be solved with *life version* - `int` value that changes
+This issue can be solved with a *life version* - `int` value that changes
 each time object is reallocated:
 
 ```unrealscript
@@ -568,8 +588,8 @@ remember its life version value right after allocation
 and then compare it to the `GetLifeVersion()`'s result.
 Value returned by `GetLifeVersion()` changes after each reallocation
 and won't repeat for the same object.
-The only guarantee about life versions of deallocated objects is that they will
-be negative.
+The only guarantee about life versions of objects,
+that aren't currently allocated, is that they will be negative.
 
 ### Customizing object pools for your classes
 
