@@ -180,6 +180,20 @@ public final function IntArrayRef EmptyIntArray()
     return IntArrayRef(_.memory.Allocate(class'IntArrayRef'));
 }
 
+/**
+ *  Creates reference object to store an `Actor` value.
+ *
+ *  @param  value   Initial value to store in reference.
+ *  @return `ActorRef`, containing `value`.
+ */
+public final function ActorRef Actor(optional AcediaActor value)
+{
+    local ActorRef ref;
+    ref = ActorRef(_.memory.Allocate(class'ActorRef'));
+    ref.Set(value);
+    return ref;
+}
+
 defaultproperties
 {
 }
