@@ -2,7 +2,7 @@
  *      This service is meant to perform auxiliary functions for `MemoryAPI`.
  *  It's main task is to keep track of all `AcediaObjectPool`s to force them to
  *  get rid of object references before garbage collection.
- *      Copyright 2019 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -24,12 +24,12 @@ class MemoryService extends Service;
 var private array<AcediaObjectPool> registeredPools;
 
 /**
- *  Registers new object pool to auto-clean upon Acedia's garbage collection.
+ *  Registers new object pool to auto-clean before Acedia's garbage collection.
  *
  *  Registered `AcediaObjectPool`s will persist even if `MemoryService` is
  *  destroyed and re-created.
  *
- *  @param  newPool Pool that service must clean upon a `ClearAll()` call.
+ *  @param  newPool Pool that service must clean during a `ClearAll()` call.
  *  @return `true` if `newPool` was registered,
  *      `false` if `newPool == none` or was already registered.
  */

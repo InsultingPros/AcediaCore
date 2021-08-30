@@ -1,9 +1,9 @@
 /**
  *      Acedia's implementation for object pool that can only store objects of
- *  one specific class to allow for their faster allocation.
- *      Allows to set a maximum capacity and can handle properly storing,
- *  auto-cleaning destroyed ones.
- *      Copyright 2020 Anton Tarasenko
+ *  one specific class to allow for both faster allocation and
+ *  faster deallocation.
+ *      Allows to set a maximum capacity.
+ *      Copyright 2020-2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -25,16 +25,16 @@ class AcediaObjectPool extends Object
 
 //  Class of objects that this `AcediaObjectPool` stores.
 //  if `== none`, - object pool is considered uninitialized.
-var private class<Object>   storedClass;
+var private class<AcediaObject> storedClass;
 //  Actual storage, functions on LIFO principle.
-var private array<Object>   objectPool;
+var public array<AcediaObject>  objectPool;
 
 //      This struct and it's associated array `poolSizeOverwrite` allows
 //  server admins to rewrite the pool capacity for each class.
 struct PoolSizeSetting
 {
-    var class<Object>   objectClass;
-    var int             maxPoolSize;
+    var class<AcediaObject> objectClass;
+    var int                 maxPoolSize;
 };
 var private config const array<PoolSizeSetting> poolSizeOverwrite;
 //  Capacity for object pool that we are using.
@@ -51,15 +51,14 @@ var private int usedMaxPoolSize;
  *  @param  forcedPoolSize  Max pool size for the caller `AcediaObjectPool`.
  *      Leaving it at default `0` value will cause method to auto-determine
  *      the size: gives priority to the `poolSizeOverwrite` config array;
- *      if not specified, for `AcediaActor`s and `AcediaObject`s uses their
- *      `defaultMaxPoolSize` (ignoring `usesActorPool` setting),
- *      for other objects uses `-1`, to remove the capacity limit.
+ *      if not specified, uses `AcediaObject`'s `defaultMaxPoolSize`
+ *      (ignoring `usesObjectPool` setting).
  *  @return `true` if initialization completed, `false` otherwise
  *      (including if it was already completed with passed `initStoredClass`).
  */
 public final function bool Initialize(
-    class<Object>   initStoredClass,
-    optional int    forcedPoolSize)
+    class<AcediaObject> initStoredClass,
+    optional int        forcedPoolSize)
 {
     if (storedClass != none)        return false;
     if (initStoredClass == none)    return false;
@@ -80,27 +79,22 @@ public final function bool Initialize(
 }
 
 //  Determines default object pool size for the initialization.
-private final function int GetMaxPoolSizeForClass(class<Object> classToCheck)
+private final function int GetMaxPoolSizeForClass(
+    class<AcediaObject> classToCheck)
 {
-    local int                   i;
-    local int                   result;
-    local class<AcediaObject>   classAsAcediaObject;
-    local class<AcediaActor>    classAsAcediaActor;
-    //  Get hard-coded value
-    classAsAcediaObject = class<AcediaObject>(classToCheck);
-    classAsAcediaActor  = class<AcediaActor>(classToCheck);
-    if (classAsAcediaActor != none) {
-        result = classAsAcediaActor.default.defaultMaxPoolSize;
-    }
-    if (classAsAcediaObject != none) {
-        result = classAsAcediaObject.default.defaultMaxPoolSize;
+    local int i;
+    local int result;
+    if (classToCheck != none) {
+        result = classToCheck.default.defaultMaxPoolSize;
     }
     else {
         result = -1;
     }
     //  Try to replace it with server's settings
-    for (i = 0; i < poolSizeOverwrite.length; i += 1) {
-        if (poolSizeOverwrite[i].objectClass == classToCheck) {
+    for (i = 0; i < poolSizeOverwrite.length; i += 1)
+    {
+        if (poolSizeOverwrite[i].objectClass == classToCheck)
+        {
             result = poolSizeOverwrite[i].maxPoolSize;
             break;
         }
@@ -114,37 +108,18 @@ private final function int GetMaxPoolSizeForClass(class<Object> classToCheck)
  *  @return class of objects inside caller the caller object pool;
  *      `none` means object pool was not initialized.
  */
-public final function class<Object> GetClassOfStoredObjects()
+public final function class<AcediaObject> GetClassOfStoredObjects()
 {
     return storedClass;
 }
 
 /**
- *  Clear the storage of all it's contents. In case of stored actors also
- *  destroys them.
+ *  Clear the storage of all it's contents.
  *
  *  Can be used before UnrealEngine's garbage collection to free pooled objects.
  */
 public final function Clear()
 {
-    local int   i;
-    local Actor nextActor;
-    if (storedClass != none) {
-        return;
-    }
-    if (class<Actor>(storedClass) == none)
-    {
-        //  We can't destroy non-actors, so just get rid of references
-        objectPool.length = 0;
-        return;
-    }
-    for (i = 0; i < objectPool.length; i += 1)
-    {
-        nextActor = Actor(objectPool[i]);
-        if (nextActor != none) {
-            nextActor.Destroy();
-        }
-    }
     objectPool.length = 0;
 }
 
@@ -152,36 +127,24 @@ public final function Clear()
  *  Adds object to the caller storage
  *  (that needs to be initialized to store `newObject.class` classes).
  *
+ *  For performance purposes does not do duplicates checks,
+ *  this should be verified from outside `AcediaObjectPool`.
+ *
+ *  Does type checks and only allows objects of the class that caller
+ *  `AcediaObjectPool` was initialized for.
+ *
  *  @param  newObject   Object to put inside caller pool. Must be not `none` and
  *      have precisely the class this object pool was initialized to store.
  *  @return `true` on success and `false` on failure
  *      (can happen if passed `newObject` reference was invalid, caller storage
  *      is not initialized yet or reached it's capacity).
  */
-public final function bool Store(Object newObject)
+public final function bool Store(AcediaObject newObject)
 {
-    local int i;
     if (newObject == none)              return false;
     if (newObject.class != storedClass) return false;
 
-    //  Check for duplicates and clear dead references
-    while (i < objectPool.length)
-    {
-        if (objectPool[i] == newObject) {
-            return false;
-        }
-        //  Getting `none` in object pool is expected to be rare and abnormal
-        //  occurrence (since objects and actors put in the pool are
-        //  not supposed to be touched), so filtering `none` values here
-        //  should be negligible performance-wise, even if it's expensive.
-        if (objectPool[i] == none) {
-            objectPool.Remove(i, 1);
-        }
-        else {
-            i += 1;
-        }
-    }
-    if (usedMaxPoolSize >= 0 && objectPool.length < usedMaxPoolSize) {
+    if (usedMaxPoolSize >= 0 && objectPool.length >= usedMaxPoolSize) {
         return false;
     }
     objectPool[objectPool.length] = newObject;
@@ -189,34 +152,21 @@ public final function bool Store(Object newObject)
 }
 
 /**
- *  Extracts last stored last not destroyed object (can happen for actors)
- *  from the pool.
- *
- *  Returned object is no longer stored in the pool.
+ *  Extracts last stored object from the pool. Returned object will no longer
+ *  be stored in the pool.
  *
  *  @return Reference to the last (not destroyed) stored object.
- *      Only returns `none` if either empty or not initialized.
+ *      Only returns `none` if caller `AcediaObjectPool` is either empty or
+ *      not initialized.
  */
-public final function Object Fetch()
+public final function AcediaObject Fetch()
 {
-    local int       i;
-    local int       validObjectIndex;
-    local Object    result;
-    if (storedClass == none) {
-        return none;
-    }
-    validObjectIndex = -1;
-    for (i = objectPool.length - 1; i >= 0; i -= 1)
-    {
-        if (objectPool[i] == none) continue;
-        validObjectIndex = i;
-        break;
-    }
-    if (validObjectIndex < 0) {
-        return none;
-    }
-    result = objectPool[validObjectIndex];
-    objectPool.length = validObjectIndex;
+    local AcediaObject result;
+    if (storedClass == none)    return none;
+    if (objectPool.length <= 0) return none;
+
+    result = objectPool[objectPool.length - 1];
+    objectPool.length = objectPool.length - 1;
     return result;
 }
 

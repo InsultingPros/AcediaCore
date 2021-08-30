@@ -1,8 +1,8 @@
 /**
- *      API that provides methods for managing objects and actors by providing
- *  simple and general means to create and destroy them in a way that is managed
- *  by Acedia and allows to use object pools, constructors and finalizers.
- *      These methods should be used for all Acedia's objects and actors.
+ *      API that provides functions for managing objects and actors that make
+ *  use of Acedia's object pools and perform Acedia-specific initialization and
+ *  cleanup procedures.
+ *      This API's functions should be used for all Acedia's objects and actors.
  *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -23,12 +23,12 @@
 class MemoryAPI extends AcediaObject;
 
 /**
- *  Creates a class instance from it's string representation.
+ *  Creates a class instance from its string representation.
  *
  *  Does not generate log messages upon failure.
  *
  *  @param  classReference  String representation of the class to return.
- *  @return Loaded class, corresponding to it's name from `classReference`.
+ *  @return Loaded class, corresponding to its name from `classReference`.
  */
 public final function class<Object> LoadClass(Text classReference)
 {
@@ -45,10 +45,10 @@ public final function class<Object> LoadClass(Text classReference)
  *  If uses a proper spawning mechanism for both objects (`new`)
  *  and actors (`Spawn`).
  *
- *  For Acedia's objects / actors makes use of their object pools and
- *  calls constructors.
+ *  For Acedia's objects / actors calls constructors.
+ *  For Acedia's objects tries to make use of their object pools.
  *
- *  If Acedia's object / actor does make use of object pools, -
+ *  If Acedia's object does make use of object pools, -
  *  guarantees to return last pooled object (in a LIFO queue),
  *  unless `forceNewInstance == true`.
  *
@@ -68,8 +68,9 @@ public final function Object Allocate(
     local class<AcediaObject>   acediaObjectClassToAllocate;
     local class<AcediaActor>    acediaActorClassToAllocate;
     local class<Actor>          actorClassToAllocate;
-    if (classToAllocate == none) return none;
-
+    if (classToAllocate == none) {
+        return none;
+    }
     //  Try using pool first (only if new instance is not required)
     acediaObjectClassToAllocate = class<AcediaObject>(classToAllocate);
     acediaActorClassToAllocate  = class<AcediaActor>(classToAllocate);
@@ -77,9 +78,6 @@ public final function Object Allocate(
     {
         if (acediaObjectClassToAllocate != none) {
             relevantPool = acediaObjectClassToAllocate.static._getPool();
-        }
-        if (acediaActorClassToAllocate != none) {
-            relevantPool = acediaActorClassToAllocate.static._getPool();
         }
         //  `relevantPool == none` is expected if object / actor of is setup to
         //  not use object pools.
@@ -101,30 +99,30 @@ public final function Object Allocate(
             allocatedObject = (new classToAllocate);
         }
     }
-    //  Call constructors (also do it for actors, just in case)
+    //  Call constructors
     if (acediaObjectClassToAllocate != none) {
         AcediaObject(allocatedObject)._constructor();
     }
-    if (acediaActorClassToAllocate != none) {
-        //  Despite `_constructor()` being called during `PreBeginPlay()` event,
-        //  we must also call it here for `Actor`s that we did not spawn anew,
-        //  but took from object pool.
+    if (acediaActorClassToAllocate != none)
+    {
+        //  Call it here, just in case, to make sure constructor is called
+        //  as soon as possible
         AcediaActor(allocatedObject)._constructor();
     }
     return allocatedObject;
 }
 
 /**
- *  Creates a new `Object` / `Actor` of a class, given by it's
+ *  Creates a new `Object` / `Actor` of a class, given by its
  *  string representation.
  *
  *  If uses a proper spawning mechanism for both objects (`new`)
  *  and actors (`Spawn`).
  *
- *  For Acedia's objects / actors makes use of their object pools and
- *  calls constructors.
+ *  For Acedia's objects / actors calls constructors.
+ *  For Acedia's objects tries to make use of their object pools.
  *
- *  If Acedia's object / actor does make use of object pools, -
+ *  If Acedia's object does make use of object pools, -
  *  guarantees to return last pooled object (in a LIFO queue),
  *  unless `forceNewInstance == true`.
  *
@@ -143,24 +141,28 @@ public final function Object AllocateByReference(
 }
 
 /**
- *  Frees given `Object` / `Actor` resource.
+ *  Deallocates given `Object` / `Actor` resource, calling finalizers for
+ *  Acedia's objects and actors.
  *
- *  If Acedia's object or actor is passed, method will try to store it
+ *  If Acedia's object is passed, method will try to store it
  *  in an object pool.
  *
- *  @param  objectToDelete  `Object` / `Actor` that must be freed.
+ *  Actors will be destroyed.
+ *
+ *  @param  objectToDeallocate  `Object` / `Actor` to deallocate.
  */
-public final function Free(Object objectToDelete)
+public final function Free(Object objectToDeallocate)
 {
     local AcediaObjectPool  relevantPool;
     local Actor             objectAsActor;
     local AcediaActor       objectAsAcediaActor;
     local AcediaObject      objectAsAcediaObject;
-    if (objectToDelete == none) return;
-
+    if (objectToDeallocate == none) {
+        return;
+    }
     //  Call finalizers for Acedia's objects and actors
-    objectAsAcediaObject    = AcediaObject(objectToDelete);
-    objectAsAcediaActor     = AcediaActor(objectToDelete); 
+    objectAsAcediaObject    = AcediaObject(objectToDeallocate);
+    objectAsAcediaActor     = AcediaActor(objectToDeallocate); 
     if (objectAsAcediaObject != none)
     {
         if (!objectAsAcediaObject.IsAllocated()) {
@@ -174,15 +176,14 @@ public final function Free(Object objectToDelete)
         if (!objectAsAcediaActor.IsAllocated()) {
             return;
         }
-        relevantPool = objectAsAcediaActor._getPool();
         objectAsAcediaActor._finalizer();
     }
     //  Try to store freed object in a pool
-    if (relevantPool != none && relevantPool.Store(objectToDelete)) {
+    if (relevantPool != none && relevantPool.Store(objectAsAcediaObject)) {
         return;
     }
     //  Otherwise destroy actors and forget about objects
-    objectAsActor = Actor(objectToDelete);
+    objectAsActor = Actor(objectToDeallocate);
     if (objectAsActor != none) {
         objectAsActor.Destroy();
     }
@@ -205,7 +206,7 @@ public final function FreeMany(array<Object> objectsToDelete)
 }
 
 /**
- *  Forces Unreal Engine to do garbage collection.
+ *  Forces Unreal Engine to perform garbage collection.
  *  By default also cleans up all the objects pools registered in
  *  `MemoryService`, which includes all of the pools for
  *  Acedia's built-in classes.

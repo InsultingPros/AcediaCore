@@ -1,7 +1,7 @@
 /**
  *  Set of tests related to `MemoryAPI` class and the chain of events related to
  *  creating/destroying Acedia's objects / actors.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -26,25 +26,21 @@ protected static function TESTS()
     Test_ObjectConstructorsFinalizers();
     Test_ActorConstructorsFinalizers();
     Test_ObjectPoolUsage();
-    Test_ActorPoolUsage();
     Test_LifeVersionIsUnique();
 }
 
 protected static function Test_LifeVersionIsUnique()
 {
-    local int               i, j;
-    local int               nextVersion;
-    local MockObject        obj;
-    local MockActorWithPool act;
-    local array<int>        objectVersions;
-    local array<int>        actorVersions;
-    local bool              versionsRepeated;
+    local int           i, j;
+    local int           nextVersion;
+    local MockObject    obj;
+    local array<int>    objectVersions;
+    local bool          versionsRepeated;
     //      Deallocate and reallocate same object/actor a bunch of times and
     //  ensure that every single time a unique number is returned.
     //      Not a comprehensive test of uniqueness, but such is impossible.
     for (i = 0; i < 1000 && !versionsRepeated; i += 1)
     {
-        //  Object
         obj = MockObject(__().memory.Allocate(class'MockObject'));
         nextVersion = obj.GetLifeVersion();
         for (j = 0; j < objectVersions.length; j += 1)
@@ -57,19 +53,6 @@ protected static function Test_LifeVersionIsUnique()
         }
         objectVersions[objectVersions.length] = nextVersion;
         __().memory.Free(obj);
-        //  Actor
-        act = MockActorWithPool(__().memory.Allocate(class'MockActorWithPool'));
-        nextVersion = act.GetLifeVersion();
-        for (j = 0; j < actorVersions.length; j += 1)
-        {
-            if (nextVersion == actorVersions[j])
-            {
-                versionsRepeated = true;
-                break;
-            }
-        }
-        actorVersions[actorVersions.length] = nextVersion;
-        __().memory.Free(act);
     }
     Context("Testing that `GetLifeVersion()` returns unique value for Acedia's"
         @ "actors/objects after each reallocation.");
@@ -83,6 +66,7 @@ protected static function Test_ObjectConstructorsFinalizers()
     Context("Testing that Acedia object's constructors and finalizers are"
         @ "called properly.");
     Issue("Object's constructor is not called.");
+    class'MockObject'.default.objectCount = 0;
     obj1 = MockObject(__().memory.Allocate(class'MockObject'));
     TEST_ExpectTrue(class'MockObject'.default.objectCount == 1);
     obj2 = MockObject(__().memory.Allocate(class'MockObject'));
@@ -109,8 +93,7 @@ protected static function Test_ObjectConstructorsFinalizers()
 
 protected static function Test_ActorConstructorsFinalizers()
 {
-    local MockActor         act1, act2;
-    local MockActorWithPool poolActor;
+    local MockActor act1, act2;
     Context("Testing that Acedia actor's constructors and finalizers are"
         @ "called properly.");
     Issue("Actor's constructor is not called.");
@@ -125,13 +108,6 @@ protected static function Test_ActorConstructorsFinalizers()
 
     Issue("`IsAllocated()` returns `false` for allocated actors.");
     TEST_ExpectTrue(act2.IsAllocated());
-
-    Issue("`IsAllocated()` returns `true` for deallocated actors.");
-    poolActor =
-        MockActorWithPool(__().memory.Allocate(class'MockActorWithPool'));
-    __().memory.Free(poolActor);
-    TEST_ExpectNotNone(poolActor);
-    TEST_ExpectFalse(poolActor.IsAllocated());
 
     Issue("Actor's finalizer is called for already freed object.");
     __().memory.Free(act1);
@@ -186,56 +162,6 @@ protected static function Test_ObjectPoolUsage()
     __().memory.Free(obj1);
     obj2 = MockObjectNoPool(__().memory.Allocate(class'MockObjectNoPool'));
     TEST_ExpectTrue(obj1 != obj2);
-}
-/*Test case [Memory] AllocationDeallocation: failed!
-    Testing usage of object pools by `MockActor`s.
-        Object pool is not utilized enough. [1]
-    Testing that `GetLifeVersion()` returns unique value for Acedia's actors/objects after each reallocation.
-        `GetLifeVersion()` repeats the same version within 1000 attempts. [1]*/
-protected static function Test_ActorPoolUsage()
-{
-    local bool                      allocatedNewActor;
-    local int                       i, j;
-    local MockActorWithPool         temp;
-    local array<MockActorWithPool>  actors;
-    local MockActor                 noPoolActor;
-    Context("Testing usage of object pools by `MockActor`s.");
-    Issue("Object pool is not utilized enough.");
-    for (i = 0; i < 200; i += 1)
-    {
-        actors[actors.length] =
-            MockActorWithPool(__().memory.Allocate(class'MockActorWithPool'));
-    }
-    for (i = 0; i < 200; i += 1) {
-        __().memory.Free(actors[i]);
-    }
-    for (i = 0; i < 200; i += 1)
-    {
-        temp =
-            MockActorWithPool(__().memory.Allocate(class'MockActorWithPool'));
-        //  Have to find just allocated object among already free ones
-        j = 0;
-        allocatedNewActor = true;
-        while (j < actors.length)
-        {
-            if (actors[j] == temp)
-            {
-                allocatedNewActor = false;
-                actors.Remove(j, 1);
-                break;
-            }
-            j += 1;
-        }
-        if (allocatedNewActor) {
-            break;
-        }
-    }
-    TEST_ExpectFalse(allocatedNewActor);
-
-    Issue("Disabling pool for a class does not prevent pooling actors.");
-    noPoolActor = MockActor(__().memory.Allocate(class'MockActor'));
-    __().memory.Free(noPoolActor);
-    TEST_ExpectNone(noPoolActor);
 }
 
 defaultproperties
