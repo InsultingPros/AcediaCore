@@ -51,4 +51,4 @@ about any topic of interest, but we strongly recommend that you first read up on
 the fundamental topics:
 [what is API](./api.md),
 at least non-advanced topics of [Acedia's objects / actors](./objects.md)
-and about signal / slot system.
+and about [signal / slot system](./events.md).
