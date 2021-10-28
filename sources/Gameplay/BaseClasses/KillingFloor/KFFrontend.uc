@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class KFFrontend extends BaseBackend
+class KFFrontend extends BaseFrontend
     abstract;
 
 var private config class<ATradingComponent> tradingClass;
@@ -33,6 +33,7 @@ protected function Constructor()
 protected function Finalizer()
 {
     _.memory.Free(trading);
+    trading = none;
 }
 
 defaultproperties

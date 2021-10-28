@@ -1008,7 +1008,7 @@ public final function MutableText PrintObject(AssociativeArray toPrint)
 /**
  *  "Prints" given `AcediaObject` value, saving it in JSON format.
  *
- *  "Prints" given `AcediaObject` in a human-readable, for a minimal output
+ *  "Prints" given `AcediaObject` in a human-readable way. For a minimal output
  *  use `Print()` method.
  *
  *  Only certain classes (the same as the ones that can be parsed from JSON

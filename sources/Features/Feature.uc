@@ -61,9 +61,6 @@ var protected bool blockSpawning;
 //      Only it's default value is ever used.
 var private config bool autoEnable;
 
-//  Listeners listed here will be automatically activated.
-var public const array< class<Listener> > requiredListeners;
-
 //  `Service` that will be launched and shut down along with this `Feature`.
 //  One should never launch or shut down this service manually.
 var protected const class<FeatureService> serviceClass;
@@ -93,14 +90,15 @@ protected function Constructor()
         FreeSelf();
         return;
     }
-    SetListenersActiveStatus(true);
     if (serviceClass != none) {
         myService = FeatureService(serviceClass.static.Require());
     }
     if (myService != none) {
         myService.SetOwnerFeature(self);
     }
+    currentConfigName = none;
     ApplyConfig(default.currentConfigName);
+    _.memory.Free(default.currentConfigName);
     default.currentConfigName = none;
     OnEnabled();
 }
@@ -111,7 +109,6 @@ protected function Finalizer()
     if (GetInstance() != self) {
         return;
     }
-    SetListenersActiveStatus(false);
     OnDisabled();
     if (serviceClass != none) {
         service = FeatureService(serviceClass.static.GetInstance());
@@ -243,11 +240,7 @@ public static final function Feature EnableMe(Text configName)
     if (IsEnabled()) {
         return GetInstance();
     }
-    //      This value will be copied and forgotten in `Constructor()`,
-    //  so we do not actually retain `configName` reference and it can be freed
-    //  right after `EnableMe()` method call ends.
-    //      Copying it here will mean doing extra work.
-    default.currentConfigName = configName;
+    default.currentConfigName = configName.Copy();
     default.blockSpawning = false;
     newInstance = Feature(__().memory.Allocate(default.class));
     default.activeInstance              = newInstance;
@@ -303,16 +296,6 @@ protected function OnDisabled(){}
  *  AVOID MANUALLY CALLING THIS METHOD.
  */
 protected function SwapConfig(FeatureConfig newConfig){}
-
-private static function SetListenersActiveStatus(bool newStatus)
-{
-    local int i;
-    for (i = 0; i < default.requiredListeners.length; i += 1)
-    {
-        if (default.requiredListeners[i] == none) continue;
-        default.requiredListeners[i].static.SetActive(newStatus);
-    }
-}
 
 defaultproperties
 {

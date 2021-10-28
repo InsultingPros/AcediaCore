@@ -1,5 +1,6 @@
 /**
- *      Config object for `Commands_Feature`.
+ *  Signal class implementation for `BroadcastAPI`'s `OnHandleLocalized`
+ *  signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,34 +18,33 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Commands extends FeatureConfig
-    perobjectconfig
-    config(AcediaSystem);
+class Broadcast_OnHandleLocalized_Signal extends Signal
+    dependson(BroadcastAPI);
 
-var public config bool useChatInput;
-
-protected function AssociativeArray ToData()
+public final function bool Emit(
+    Actor                           sender,
+    BroadcastAPI.LocalizedMessage   packedMessage)
 {
-    local AssociativeArray data;
-    data = __().collections.EmptyAssociativeArray();
-    data.SetBool(P("useChatInput"), useChatInput, true);
-    return data;
-}
-
-protected function FromData(AssociativeArray source)
-{
-    if (source != none) {
-        useChatInput = source.GetBool(P("useChatInput"));
+    local Slot  nextSlot;
+    local bool  nextReply;
+    StartIterating();
+    nextSlot = GetNextSlot();
+    while (nextSlot != none)
+    {
+        nextReply = Broadcast_OnHandleLocalized_Slot(nextSlot)
+            .connect(sender, packedMessage);
+        if (!nextReply && !nextSlot.IsEmpty())
+        {
+            CleanEmptySlots();
+            return false;
+        }
+        nextSlot = GetNextSlot();
     }
-}
-
-protected function DefaultIt()
-{
-    useChatInput = true;
+    CleanEmptySlots();
+    return true;
 }
 
 defaultproperties
 {
-    configName = "AcediaSystem"
-    useChatInput = true
+    relatedSlotClass = class'Broadcast_OnHandleLocalized_Slot'
 }

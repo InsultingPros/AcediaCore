@@ -165,6 +165,47 @@ protected function Constructor()
     dataBuilder = none;
 }
 
+protected function Finalizer()
+{
+    local int               i;
+    local array<SubCommand> subCommands;
+    local array<Option>     options;
+    _.memory.Free(commandData.name);
+    _.memory.Free(commandData.summary);
+    subCommands = commandData.subCommands;
+    for (i = 0; i < options.length; i += 1)
+    {
+        _.memory.Free(subCommands[i].name);
+        _.memory.Free(subCommands[i].description);
+        CleanParameters(subCommands[i].required);
+        CleanParameters(subCommands[i].optional);
+        subCommands[i].required.length = 0;
+        subCommands[i].optional.length = 0;
+    }
+    commandData.subCommands.length = 0;
+    options = commandData.options;
+    for (i = 0; i < options.length; i += 1)
+    {
+        _.memory.Free(options[i].longName);
+        _.memory.Free(options[i].description);
+        CleanParameters(options[i].required);
+        CleanParameters(options[i].optional);
+        options[i].required.length = 0;
+        options[i].optional.length = 0;
+    }
+    commandData.options.length = 0;
+}
+
+private final function CleanParameters(array<Parameter> parameters)
+{
+    local int i;
+    for (i = 0; i < parameters.length; i += 1)
+    {
+        _.memory.Free(parameters[i].displayName);
+        _.memory.Free(parameters[i].variableName);
+    }
+}
+
 /**
  *  Overload this method to use `builder` to define parameters and options for
  *  your command.

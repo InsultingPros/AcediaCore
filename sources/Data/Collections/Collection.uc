@@ -22,7 +22,7 @@
 class Collection extends AcediaObject
     abstract;
 
-var class<Iter> iteratorClass;
+var protected class<Iter> iteratorClass;
 
 /**
  *  Method that must be overloaded for `GetItemByPointer()` to properly work.

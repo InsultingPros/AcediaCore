@@ -91,6 +91,12 @@ protected function FromData(AssociativeArray source) {}
  */
 protected function DefaultIt() {}
 
+protected static function StaticFinalizer()
+{
+    __().memory.Free(default.existingConfigs);
+    default.existingConfigs = none;
+}
+
 /**
  *      This reads all of the `AcediaConfig`'s settings objects into internal
  *  storage. Must be called before any other methods. Actual loading might be
@@ -104,6 +110,8 @@ public static function Initialize()
     if (default.existingConfigs != none) {
         return;
     }
+    CoreService(class'CoreService'.static.GetInstance())
+        ._registerObjectClass(default.class);
     default.existingConfigs = __().collections.EmptyAssociativeArray();
     names = GetPerObjectNames(  default.configName, string(default.class.name),
                                 MaxInt);
@@ -160,6 +168,7 @@ public final static function bool NewConfig(Text name)
     }
     newConfig =
         new(none, NameToStorageVersion(name.ToPlainString())) default.class;
+    newConfig._ = __();
     newConfig.DefaultIt();
     newConfig.SaveConfig();
     default.existingConfigs.SetItem(name, newConfig);
@@ -254,6 +263,7 @@ public final static function AcediaConfig GetConfigInstance(Text name)
     {
         configEntry.value =
             new(none, NameToStorageVersion(name.ToPlainString())) default.class;
+        configEntry.value._ = __();
         default.existingConfigs.SetItem(configEntry.key, configEntry.value);
     }
     __().memory.Free(name);

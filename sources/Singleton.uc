@@ -25,12 +25,17 @@ class Singleton extends AcediaActor
 
 //      Default value of this variable will store one and only existing version
 //  of actor of this class.
-var private Singleton activeInstance;
+var public Singleton activeInstance;
 
 //      Setting default value of this variable to 'true' prevents creation of
 //  a singleton, even if no instances of it exist.
 //      Only a default value is ever used.
 var protected bool blockSpawning;
+
+protected static function StaticFinalizer()
+{
+    default.activeInstance = none;
+}
 
 public final static function Singleton GetInstance(optional bool spawnIfMissing)
 {
@@ -87,12 +92,12 @@ event PreBeginPlay()
 //  first call this version of the method.
 event Destroyed()
 {
-    super.Destroyed();
     if (self == default.activeInstance)
     {
         OnDestroyed();
         default.activeInstance = none;
     }
+    super.Destroyed();
 }
 
 defaultproperties

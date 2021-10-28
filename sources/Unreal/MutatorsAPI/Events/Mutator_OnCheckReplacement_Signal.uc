@@ -1,5 +1,5 @@
 /**
- *      Config object for `Commands_Feature`.
+ *  Signal class implementation for `MutatorAPI`'s `OnCheckReplacement` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,34 +17,30 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Commands extends FeatureConfig
-    perobjectconfig
-    config(AcediaSystem);
+class Mutator_OnCheckReplacement_Signal extends Signal;
 
-var public config bool useChatInput;
-
-protected function AssociativeArray ToData()
+public final function bool Emit(Actor other, out byte isSuperRelevant)
 {
-    local AssociativeArray data;
-    data = __().collections.EmptyAssociativeArray();
-    data.SetBool(P("useChatInput"), useChatInput, true);
-    return data;
-}
-
-protected function FromData(AssociativeArray source)
-{
-    if (source != none) {
-        useChatInput = source.GetBool(P("useChatInput"));
+    local bool isRelevant;
+    local Slot nextSlot;
+    StartIterating();
+    nextSlot = GetNextSlot();
+    while (nextSlot != none)
+    {
+        isRelevant = Mutator_OnCheckReplacement_Slot(nextSlot)
+            .connect(other, isSuperRelevant);
+        if (!isRelevant && !nextSlot.IsEmpty())
+        {
+            CleanEmptySlots();
+            return false;
+        }
+        nextSlot = GetNextSlot();
     }
-}
-
-protected function DefaultIt()
-{
-    useChatInput = true;
+    CleanEmptySlots();
+    return true;
 }
 
 defaultproperties
 {
-    configName = "AcediaSystem"
-    useChatInput = true
+    relatedSlotClass = class'Mutator_OnCheckReplacement_Slot'
 }

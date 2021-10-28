@@ -46,7 +46,9 @@ protected function Finalizer()
 {
     super.Finalizer();
     _.unreal.OnTick(self).Disconnect();
+    _.memory.Free(lastSelectedTrader);
     _.memory.FreeMany(registeredTraders);
+    lastSelectedTrader = none;
     registeredTraders.length = 0;
 }
 

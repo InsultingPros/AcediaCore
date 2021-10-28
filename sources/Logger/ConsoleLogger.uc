@@ -36,6 +36,12 @@ public function Write(Text message, LoggerAPI.LogLevel messageLevel)
     }
 }
 
+protected static function StaticFinalizer()
+{
+    default.loadedLoggers = none;
+}
+
+
 defaultproperties
 {
 }

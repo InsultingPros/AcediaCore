@@ -1,5 +1,5 @@
 /**
- *      Config object for `Commands_Feature`.
+ *  Signal class implementation for `GameRulesAPI`'s `OnScoreKill` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,34 +17,22 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Commands extends FeatureConfig
-    perobjectconfig
-    config(AcediaSystem);
+class GameRules_OnScoreKill_Signal extends Signal;
 
-var public config bool useChatInput;
-
-protected function AssociativeArray ToData()
+public final function Emit(Controller killer, Controller killed)
 {
-    local AssociativeArray data;
-    data = __().collections.EmptyAssociativeArray();
-    data.SetBool(P("useChatInput"), useChatInput, true);
-    return data;
-}
-
-protected function FromData(AssociativeArray source)
-{
-    if (source != none) {
-        useChatInput = source.GetBool(P("useChatInput"));
+    local Slot nextSlot;
+    StartIterating();
+    nextSlot = GetNextSlot();
+    while (nextSlot != none)
+    {
+        GameRules_OnScoreKill_Slot(nextSlot).connect(killer, killed);
+        nextSlot = GetNextSlot();
     }
-}
-
-protected function DefaultIt()
-{
-    useChatInput = true;
+    CleanEmptySlots();
 }
 
 defaultproperties
 {
-    configName = "AcediaSystem"
-    useChatInput = true
+    relatedSlotClass = class'GameRules_OnScoreKill_Slot'
 }

@@ -28,8 +28,10 @@ var protected NativeActorRef    myShopVolume;
 
 protected function Finalizer()
 {
+    _.memory.Free(myName);
     _.memory.Free(myShopVolume);
     myShopVolume = none;
+    myName = none;
 }
 
 /**

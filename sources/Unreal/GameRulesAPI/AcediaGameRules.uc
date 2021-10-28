@@ -26,24 +26,42 @@ var private GameRules_OnCheckEndGame_Signal         onCheckEndGameSignal;
 var private GameRules_OnCheckScore_Signal           onCheckScoreSignal;
 var private GameRules_OnOverridePickupQuery_Signal  onOverridePickupQuery;
 var private GameRules_OnNetDamage_Signal            onNetDamage;
+var private GameRules_OnPreventDeath_Signal         onPreventDeath;
+var private GameRules_OnScoreKill_Signal            onScoreKill;
 
-public final function Initialize(unrealService service)
+public final function Initialize(UnrealService service)
 {
     if (service == none) {
         return;
     }
-    onFindPlayerStartSignal = GameRules_OnFindPlayerStart_Signal(
+    onFindPlayerStartSignal     = GameRules_OnFindPlayerStart_Signal(
         service.GetSignal(class'GameRules_OnFindPlayerStart_Signal'));
-    onHandleRestartGameSignal = GameRules_OnHandleRestartGame_Signal(
+    onHandleRestartGameSignal   = GameRules_OnHandleRestartGame_Signal(
         service.GetSignal(class'GameRules_OnHandleRestartGame_Signal'));
-    onCheckEndGameSignal = GameRules_OnCheckEndGame_Signal(
+    onCheckEndGameSignal        = GameRules_OnCheckEndGame_Signal(
         service.GetSignal(class'GameRules_OnCheckEndGame_Signal'));
-    onCheckScoreSignal = GameRules_OnCheckScore_Signal(
+    onCheckScoreSignal          = GameRules_OnCheckScore_Signal(
         service.GetSignal(class'GameRules_OnCheckScore_Signal'));
-    onOverridePickupQuery   = GameRules_OnOverridePickupQuery_Signal(
+    onOverridePickupQuery       = GameRules_OnOverridePickupQuery_Signal(
         service.GetSignal(class'GameRules_OnOverridePickupQuery_Signal'));
-    onNetDamage             = GameRules_OnNetDamage_Signal(
+    onNetDamage                 = GameRules_OnNetDamage_Signal(
         service.GetSignal(class'GameRules_OnNetDamage_Signal'));
+    onPreventDeath              = GameRules_OnPreventDeath_Signal(
+        service.GetSignal(class'GameRules_OnPreventDeath_Signal'));
+    onScoreKill                 = GameRules_OnScoreKill_Signal(
+        service.GetSignal(class'GameRules_OnScoreKill_Signal'));
+}
+
+public final function Cleanup()
+{
+    onFindPlayerStartSignal     = none;
+    onHandleRestartGameSignal   = none;
+    onCheckEndGameSignal        = none;
+    onCheckScoreSignal          = none;
+    onOverridePickupQuery       = none;
+    onNetDamage                 = none;
+    onPreventDeath              = none;
+    onScoreKill                 = none;
 }
 
 function string GetRules()
@@ -62,6 +80,7 @@ function NavigationPoint FindPlayerStart(
     optional string incomingName)
 {
     local NavigationPoint result;
+    //  Use first value returned by anything
     if (onFindPlayerStartSignal != none) {
         result = onFindPlayerStartSignal.Emit(player, inTeam, incomingName);
     }
@@ -74,6 +93,8 @@ function NavigationPoint FindPlayerStart(
 function bool HandleRestartGame()
 {
     local bool result;
+    //  `true` return value needs to override `false` values returned by any
+    //  other sources
     if (onHandleRestartGameSignal != none) {
         result = onHandleRestartGameSignal.Emit();
     }
@@ -87,10 +108,12 @@ function bool CheckEndGame(PlayerReplicationInfo winner, string reason)
 {
     local bool result;
     result = true;
+    //  `false` return value needs to override `true` values returned by any
+    //  other sources
     if (onCheckEndGameSignal != none) {
         result = onCheckEndGameSignal.Emit(winner, reason);
     }
-    if (nextGameRules != none && !nextGameRules.HandleRestartGame()) {
+    if (nextGameRules != none && !nextGameRules.CheckEndGame(winner, reason)) {
         return false;
     }
     return result;
@@ -99,6 +122,8 @@ function bool CheckEndGame(PlayerReplicationInfo winner, string reason)
 function bool CheckScore(PlayerReplicationInfo scorer)
 {
     local bool result;
+    //  `true` return value needs to override `false` values returned by any
+    //  other sources
     if (onCheckScoreSignal != none) {
         result = onCheckScoreSignal.Emit(scorer);
     }
@@ -148,6 +173,38 @@ function int NetDamage(
                                         damageType);
     }
     return damage;
+}
+
+function bool PreventDeath(
+    Pawn                killed,
+    Controller          killer,
+    class<DamageType>   damageType,
+    Vector              hitLocation)
+{
+    local bool shouldPrevent;
+    if (onPreventDeath != none)
+    {
+        shouldPrevent = onPreventDeath.Emit(killed, killer,
+                                            damageType, hitLocation);
+    }
+    if (shouldPrevent) {
+        return true;
+    }
+    if (nextGameRules != none)
+    {
+        return nextGameRules.PreventDeath(  killed, killer,
+                                            damageType, hitLocation);
+    }
+    return false;
+}
+
+function ScoreKill(Controller killer, Controller killed)
+{
+    if (onScoreKill != none) {
+        onScoreKill.Emit(killer, killed);
+    }
+	if (nextGameRules != none)
+		nextGameRules.ScoreKill(killer, killed);
 }
 
 defaultproperties

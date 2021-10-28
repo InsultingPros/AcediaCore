@@ -68,6 +68,13 @@ protected function OnCreated()
     HashValidAliasesFromPerObjectConfig();
 }
 
+protected function OnDestroyed()
+{
+    loadedAliasObjects.length = 0;
+    _.memory.Free(aliasHash);
+    aliasHash = none;
+}
+
 //  Ensures that our `Aliases` class is properly linked with this
 //  source's class. Logs failure otherwise.
 private final function bool AssertAliasesClassIsOwnedByThisSource()

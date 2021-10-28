@@ -21,17 +21,17 @@
 class Service extends Singleton
     abstract;
 
-//  Listeners listed here will be automatically activated.
-var public const array< class<Listener> > requiredListeners;
+//  `Service`s can use this as a receiver for signal functions
+var protected ServiceAnchor _self;
 
-var LoggerAPI.Definition errNoService;
+//  Log messages
+var private LoggerAPI.Definition errNoService;
 
 //  Enables feature of given class.
 public static final function Service Require()
 {
     local Service newInstance;
-    if (IsRunning())
-    {
+    if (IsRunning()) {
         return Service(GetInstance());
     }
     default.blockSpawning = false;
@@ -55,25 +55,15 @@ protected function OnShutdown(){}
 protected function OnCreated()
 {
     default.blockSpawning = true;
-    SetListenersActiveSatus(true);
+    _self = ServiceAnchor(_.memory.Allocate(class'ServiceAnchor'));
     OnLaunch();
 }
 
 protected function OnDestroyed()
 {
-    SetListenersActiveSatus(false);
     OnShutdown();
-}
-
-//  Set listeners' status
-private static function SetListenersActiveSatus(bool newStatus)
-{
-    local int i;
-    for (i = 0; i < default.requiredListeners.length; i += 1)
-    {
-        if (default.requiredListeners[i] == none) continue;
-        default.requiredListeners[i].static.SetActive(newStatus);
-    }
+    _.memory.Free(_self);
+    _self = none;
 }
 
 defaultproperties

@@ -1,5 +1,6 @@
 /**
- *      Config object for `Commands_Feature`.
+ *  Slot class implementation for `BroadcastAPI`'s `OnHandleLocalizedFor`
+ *  signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,34 +18,29 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Commands extends FeatureConfig
-    perobjectconfig
-    config(AcediaSystem);
+class Broadcast_OnHandleLocalizedFor_Slot extends Slot
+    dependson(BroadcastAPI);
 
-var public config bool useChatInput;
-
-protected function AssociativeArray ToData()
+delegate bool connect(
+    PlayerController                receiver,
+    Actor                           sender,
+    BroadcastAPI.LocalizedMessage   packedMessage)
 {
-    local AssociativeArray data;
-    data = __().collections.EmptyAssociativeArray();
-    data.SetBool(P("useChatInput"), useChatInput, true);
-    return data;
+    DummyCall();
+    return true;
 }
 
-protected function FromData(AssociativeArray source)
+protected function Constructor()
 {
-    if (source != none) {
-        useChatInput = source.GetBool(P("useChatInput"));
-    }
+    connect = none;
 }
 
-protected function DefaultIt()
+protected function Finalizer()
 {
-    useChatInput = true;
+    super.Finalizer();
+    connect = none;
 }
 
 defaultproperties
 {
-    configName = "AcediaSystem"
-    useChatInput = true
 }

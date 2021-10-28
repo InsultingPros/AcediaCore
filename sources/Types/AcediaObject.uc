@@ -440,6 +440,9 @@ public static final function Global __()
  */
 public static function _cleanup()
 {
+    if (default._staticConstructorWasCalled) {
+        StaticFinalizer();
+    }
     default._textCache  = none;
     default._objectPool = none;
     default._staticConstructorWasCalled = false;

@@ -37,6 +37,9 @@ protected function Finalizer()
     _.memory.Free(onStartSignal);
     _.memory.Free(onEndSignal);
     _.memory.Free(onTraderSelectSignal);
+    onStartSignal           = none;
+    onEndSignal             = none;
+    onTraderSelectSignal    = none;
 }
 
 /**

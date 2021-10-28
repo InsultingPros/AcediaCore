@@ -79,3 +79,31 @@ protected function Initialize()
     kf          = KFFrontend(memory.Allocate(class'KF1_Frontend'));
     json.StaticConstructor();
 }
+
+public function DropGameplayAPI()
+{
+    memory.Free(kf);
+    kf = none;
+}
+
+public function DropCoreAPI()
+{
+    memory      = none;
+    ref         = none;
+    box         = none;
+    text        = none;
+    collections = none;
+    unreal.DropAPI();
+    unreal      = none;
+    time        = none;
+    logger      = none;
+    alias       = none;
+    console     = none;
+    color       = none;
+    users       = none;
+    players     = none;
+    json        = none;
+    db          = none;
+    avarice     = none;
+    default.myself = none;
+}

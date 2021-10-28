@@ -96,8 +96,11 @@ protected function Finalizer()
     //  Defaulting variables is not necessary, since this class does not
     //  use object pool.
     CompleteAllTasks();
+    rootRecord = none;
     _.unreal.OnTick(self).Disconnect();
     _.memory.Free(diskUpdateTimer);
+    diskUpdateTimer = none;
+    configEntry = none;
 }
 
 //  It only has parameters so that it can be used as a `Tick()` event handler.

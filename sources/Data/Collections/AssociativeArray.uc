@@ -46,15 +46,20 @@ var private array<Bucket> hashTable;
 //      If one of the keys was deallocated outside of `AssociativeArray`,
 //  this value may overestimate actual amount of elements.
 var private int storedElementCount;
+//  Lower limit on hash table capacity, can be changed by the user.
+var private int minimalCapacity;
 
-//  Lower and upper limits on hash table capacity.
-var private const int MINIMUM_CAPACITY;
-var private const int MAXIMUM_CAPACITY;
+//  hard lower and upper limits on hash table size, constant.
+var private const int MINIMUM_SIZE;
+var private const int MAXIMUM_SIZE;
 //      Minimum and maximum allowed density of elements
 //  (`storedElementCount / hashTable.length`).
 //      If density falls outside this range, - we have to resize hash table to
 //  get into (MINIMUM_DENSITY; MAXIMUM_DENSITY) bounds, as long as it does not
-//  violate capacity restrictions.
+//  violate hard size restrictions.
+//      Actual size changes in multipliers of 2, so
+//  `MINIMUM_DENSITY * 2 < MAXIMUM_DENSITY` must hold or we will constantly
+//  oscillate outside of (MINIMUM_DENSITY; MAXIMUM_DENSITY) bounds.
 var private const float MINIMUM_DENSITY;
 var private const float MAXIMUM_DENSITY;
 
@@ -71,7 +76,7 @@ struct Index
 
 protected function Constructor()
 {
-    UpdateHashTableCapacity();
+    UpdateHashTableSize();
 }
 
 protected function Finalizer()
@@ -187,31 +192,36 @@ private final function CleanBucket(out Bucket bucketToClean)
     bucketToClean.entries = bucketEntries;
 }
 
-//  Checks if we need to change our current capacity and does so if needed
-private final function UpdateHashTableCapacity()
+//  Checks if we need to change our current hash table size
+//  and does so if needed
+private final function UpdateHashTableSize()
 {
-    local int oldCapacity, newCapacity;
-    oldCapacity = hashTable.length;
-    //  Calculate new capacity (and whether it is needed) based on amount of
-    //  stored properties and current capacity
-    newCapacity = oldCapacity;
-    if (storedElementCount < newCapacity * MINIMUM_DENSITY) {
-        newCapacity /= 2;
+    local int oldSize, newSize;
+    oldSize = hashTable.length;
+    //  Calculate new size (and whether it is needed) based on amount of
+    //  stored properties and current size
+    newSize = oldSize;
+    if (storedElementCount < newSize * MINIMUM_DENSITY) {
+        newSize /= 2;
     }
-    if (storedElementCount > newCapacity * MAXIMUM_DENSITY) {
-        newCapacity *= 2;
+    else if (storedElementCount > newSize * MAXIMUM_DENSITY) {
+        newSize *= 2;
     }
-    //  Enforce our limits
-    newCapacity = Clamp(newCapacity, MINIMUM_CAPACITY, MAXIMUM_CAPACITY);
+    //  `table_density = items_amount / table_size`, so to store at least
+    //  `items_amount = minimalCapacity` without making table too dense we need
+    //  `table_size = minimalCapacity / MAXIMUM_DENSITY`.
+    newSize = Max(newSize, Ceil(minimalCapacity / MAXIMUM_DENSITY));
+    //  But everything must fall into the set hard limits
+    newSize = Clamp(newSize, MINIMUM_SIZE, MAXIMUM_SIZE);
     //  Only resize if difference is huge enough or table does not exists yet
-    if (newCapacity != oldCapacity) {
-        ResizeHashTable(newCapacity);
+    if (newSize != oldSize) {
+        ResizeHashTable(newSize);
     }
 }
 
 //      Changes size of the hash table, does not check any limits,
-//  does not check if `newCapacity` is a valid capacity (`newCapacity > 0`).
-private final function ResizeHashTable(int newCapacity)
+//  does not check if `newSize` is a valid size (`newSize > 0`).
+private final function ResizeHashTable(int newSize)
 {
     local int           i, j;
     local int           newBucketIndex, newEntryIndex;
@@ -220,17 +230,55 @@ private final function ResizeHashTable(int newCapacity)
     oldHashTable = hashTable;
     //  Clean current hash table
     hashTable.length = 0;
-    hashTable.length = newCapacity;
+    hashTable.length = newSize;
     for (i = 0; i < oldHashTable.length; i += 1)
     {
         CleanBucket(oldHashTable[i]);
         bucketEntries = oldHashTable[i].entries;
-        for (j = 0; j < bucketEntries.length; j += 1) {
+        for (j = 0; j < bucketEntries.length; j += 1)
+        {
             newBucketIndex = GetBucketIndex(bucketEntries[j].key);
             newEntryIndex = hashTable[newBucketIndex].entries.length;
             hashTable[newBucketIndex].entries[newEntryIndex] = bucketEntries[j];
         }
     }
+}
+
+/**
+ *  Returns minimal capacity of the caller associative array.
+ *
+ *  See `SetMinimalCapacity()` for details.
+ *
+ *  @return Minimal capacity of the caller associative array. Default is zero.
+ */
+public final function int GetMinimalCapacity()
+{
+    return minimalCapacity;
+}
+
+/**
+ *  Returns minimal capacity of the caller associative array.
+ *
+ *      This associative array works like a hash table and needs to allocate
+ *  sufficiently large dynamic array as a storage for its items.
+ *  If you keep adding new items that storage will eventually become too small
+ *  for hash table to work efficiently and we will have to reallocate and
+ *  re-fill it. If you want to add a huge enough amount of items, this process
+ *  can be repeated several times.
+ *      This is not ideal, since it means doing a lot of iteration, each
+ *  increasing infinite loop counter (game will crash if it gets high enough).
+ *      Setting minimal capacity to the (higher) amount of items you expect to
+ *  store in the caller array can remove the need for reallocating the storage.
+ *
+ *  @param  newMinimalCapacity  New minimal capacity of this associative array.
+ *      It's recommended to set it to the max amount of items you expect to
+ *      store in this associative array
+ *      (you will be still allowed to store more).
+ */
+public final function SetMinimalCapacity(int newMinimalCapacity)
+{
+    minimalCapacity = newMinimalCapacity;
+    UpdateHashTableSize();
 }
 
 /**
@@ -326,7 +374,7 @@ public final function Entry TakeEntry(AcediaObject key)
     entryToTake = hashTable[bucketIndex].entries[entryIndex];
     hashTable[bucketIndex].entries.Remove(entryIndex, 1);
     storedElementCount = Max(0, storedElementCount - 1);
-    UpdateHashTableCapacity();
+    UpdateHashTableSize();
     return entryToTake;
 }
 
@@ -441,7 +489,7 @@ public final function AssociativeArray RemoveItem(AcediaObject key)
     entryToRemove = hashTable[bucketIndex].entries[entryIndex];
     hashTable[bucketIndex].entries.Remove(entryIndex, 1);
     storedElementCount = Max(0, storedElementCount - 1);
-    UpdateHashTableCapacity();
+    UpdateHashTableSize();
     if (entryToRemove.managed && entryToRemove.value != none) {
         entryToRemove.value.FreeSelf(entryToRemove.valueLifeVersion);
     }
@@ -484,7 +532,7 @@ public function Empty(optional bool deallocateKeys)
     }
     hashTable.length = 0;
     storedElementCount = 0;
-    UpdateHashTableCapacity();
+    UpdateHashTableSize();
 }
 
 /**
@@ -950,8 +998,11 @@ public final function DynamicArray GetDynamicArray(AcediaObject key)
 defaultproperties
 {
     iteratorClass = class'AssociativeArrayIterator'
-    MINIMUM_CAPACITY    = 50
-    MAXIMUM_CAPACITY    = 10000
-    MINIMUM_DENSITY     = 0.25
-    MAXIMUM_DENSITY     = 0.75
+    minimalCapacity = 0
+    MINIMUM_SIZE    = 50
+    MAXIMUM_SIZE    = 20000
+    //  `MINIMUM_DENSITY * 2 < MAXIMUM_DENSITY` must hold for `AssociativeArray`
+    //  to work properly
+    MINIMUM_DENSITY = 0.25
+    MAXIMUM_DENSITY = 0.75
 }

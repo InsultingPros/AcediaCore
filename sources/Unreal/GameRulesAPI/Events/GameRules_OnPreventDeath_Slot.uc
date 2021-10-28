@@ -1,5 +1,6 @@
 /**
- *      Config object for `Commands_Feature`.
+ *  Slot class implementation for `GameRulesAPI`'s
+ *  `OnPreventDeathSignal` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,34 +18,30 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Commands extends FeatureConfig
-    perobjectconfig
-    config(AcediaSystem);
+class GameRules_OnPreventDeath_Slot extends Slot;
 
-var public config bool useChatInput;
-
-protected function AssociativeArray ToData()
+delegate bool connect(
+    Pawn                killed,
+    Controller          killer,
+    class<DamageType>   damageType,
+    Vector              hitLocation)
 {
-    local AssociativeArray data;
-    data = __().collections.EmptyAssociativeArray();
-    data.SetBool(P("useChatInput"), useChatInput, true);
-    return data;
+    DummyCall();
+    //  Do not override pickup queue by default
+    return false;
 }
 
-protected function FromData(AssociativeArray source)
+protected function Constructor()
 {
-    if (source != none) {
-        useChatInput = source.GetBool(P("useChatInput"));
-    }
+    connect = none;
 }
 
-protected function DefaultIt()
+protected function Finalizer()
 {
-    useChatInput = true;
+    super.Finalizer();
+    connect = none;
 }
 
 defaultproperties
 {
-    configName = "AcediaSystem"
-    useChatInput = true
 }

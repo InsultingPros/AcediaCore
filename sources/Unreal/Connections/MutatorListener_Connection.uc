@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class MutatorListener_Connection extends MutatorListenerBase
+class MutatorListener_Connection extends Object
     abstract;
 
 static function bool CheckReplacement(Actor other, out byte isSuperRelevant)
@@ -49,5 +49,4 @@ static function bool CheckReplacement(Actor other, out byte isSuperRelevant)
 
 defaultproperties
 {
-    relatedEvents = class'MutatorEvents'
 }

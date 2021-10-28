@@ -25,22 +25,42 @@ struct SignalRecord
     var class<Signal>   signalClass;
     var Signal          instance;
 };
-var private array<SignalRecord> serviceSignals;
-var private Unreal_OnTick_Signal onTickSignal;
+var private array<SignalRecord>     serviceSignals;
+var private Unreal_OnTick_Signal    onTickSignal;
+var private AcediaGameRules         gameRules;
 
 protected function OnLaunch()
 {
-    local AcediaGameRules gameRules;
+    local BroadcastEventsObserver broadcastObserver;
     CreateSignals();
-    _.unreal.gameRules.Add(class'AcediaGameRules');
-    gameRules = AcediaGameRules(
-        _.unreal.gameRules.FindInstance(class'AcediaGameRules'));
-    gameRules.Initialize(self);
+    //  Create broadcast handler
+    broadcastObserver = BroadcastEventsObserver(_.unreal.broadcasts.Add(
+        class'BroadcastEventsObserver',
+        class'BroadcastEventsObserver'.default.usedInjectionLevel));
+    if (broadcastObserver != none) {
+        broadcastObserver.Initialize(self);
+    }
+    //  Create game rules
+    gameRules = AcediaGameRules(_.unreal.gameRules.Add(class'AcediaGameRules'));
+    if (gameRules != none) {
+        gameRules.Initialize(self);
+    }
 }
 
 protected function OnShutdown()
 {
+    local int i;
+    if (gameRules != none) {
+        gameRules.Cleanup();
+    }
+    _.unreal.broadcasts.Remove(class'BroadcastEventsObserver');
     _.unreal.gameRules.Remove(class'AcediaGameRules');
+    for (i = 0; i < serviceSignals.length; i += 1) {
+        _.memory.Free(serviceSignals[i].instance);
+    }
+    _.memory.Free(onTickSignal);
+    serviceSignals.length = 0;
+    onTickSignal = none;
 }
 
 private final function CreateSignals()
@@ -86,10 +106,17 @@ public event Tick(float delta)
 
 defaultproperties
 {
-    serviceSignals(0) = (signalClass=class'GameRules_OnFindPlayerStart_Signal')
-    serviceSignals(1) = (signalClass=class'GameRules_OnHandleRestartGame_Signal')
-    serviceSignals(2) = (signalClass=class'GameRules_OnCheckEndGame_Signal')
-    serviceSignals(3) = (signalClass=class'GameRules_OnCheckScore_Signal')
-    serviceSignals(4) = (signalClass=class'GameRules_OnOverridePickupQuery_Signal')
-    serviceSignals(5) = (signalClass=class'GameRules_OnNetDamage_Signal')
+    serviceSignals(0)   = (signalClass=class'GameRules_OnFindPlayerStart_Signal')
+    serviceSignals(1)   = (signalClass=class'GameRules_OnHandleRestartGame_Signal')
+    serviceSignals(2)   = (signalClass=class'GameRules_OnCheckEndGame_Signal')
+    serviceSignals(3)   = (signalClass=class'GameRules_OnCheckScore_Signal')
+    serviceSignals(4)   = (signalClass=class'GameRules_OnOverridePickupQuery_Signal')
+    serviceSignals(5)   = (signalClass=class'GameRules_OnNetDamage_Signal')
+    serviceSignals(6)   = (signalClass=class'Broadcast_OnBroadcastCheck_Signal')
+    serviceSignals(7)   = (signalClass=class'Broadcast_OnHandleLocalized_Signal')
+    serviceSignals(8)   = (signalClass=class'Broadcast_OnHandleLocalizedFor_Signal')
+    serviceSignals(9)   = (signalClass=class'Broadcast_OnHandleText_Signal')
+    serviceSignals(10)  = (signalClass=class'Broadcast_OnHandleTextFor_Signal')
+    serviceSignals(11)  = (signalClass=class'Mutator_OnCheckReplacement_Slot')
+    serviceSignals(12)  = (signalClass=class'Mutator_OnMutate_Signal')
 }

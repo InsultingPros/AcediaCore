@@ -20,13 +20,24 @@
  */
 class UnrealAPI extends AcediaObject;
 
+var public MutatorAPI   mutator;
 var public GameRulesAPI gameRules;
+var public BroadcastAPI broadcasts;
 
 var private LoggerAPI.Definition fatalNoStalker;
 
 protected function Constructor()
 {
-    gameRules = GameRulesAPI(_.memory.Allocate(class'GameRulesAPI'));
+    mutator     = MutatorAPI(_.memory.Allocate(class'MutatorAPI'));
+    gameRules   = GameRulesAPI(_.memory.Allocate(class'GameRulesAPI'));
+    broadcasts  = BroadcastAPI(_.memory.Allocate(class'BroadcastAPI'));
+}
+
+public function DropAPI()
+{
+    mutator     = none;
+    gameRules   = none;
+    broadcasts  = none;
 }
 
 /**

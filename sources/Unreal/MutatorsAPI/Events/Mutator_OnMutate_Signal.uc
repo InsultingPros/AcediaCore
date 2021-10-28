@@ -1,5 +1,5 @@
 /**
- *      Config object for `Commands_Feature`.
+ *  Signal class implementation for `MutatorAPI`'s `OnMutate` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,34 +17,22 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Commands extends FeatureConfig
-    perobjectconfig
-    config(AcediaSystem);
+class Mutator_OnMutate_Signal extends Signal;
 
-var public config bool useChatInput;
-
-protected function AssociativeArray ToData()
+public final function Emit(string command, PlayerController sendingPlayer)
 {
-    local AssociativeArray data;
-    data = __().collections.EmptyAssociativeArray();
-    data.SetBool(P("useChatInput"), useChatInput, true);
-    return data;
-}
-
-protected function FromData(AssociativeArray source)
-{
-    if (source != none) {
-        useChatInput = source.GetBool(P("useChatInput"));
+    local Slot nextSlot;
+    StartIterating();
+    nextSlot = GetNextSlot();
+    while (nextSlot != none)
+    {
+        Mutator_OnMutate_Slot(nextSlot).connect(command, sendingPlayer);
+        nextSlot = GetNextSlot();
     }
-}
-
-protected function DefaultIt()
-{
-    useChatInput = true;
+    CleanEmptySlots();
 }
 
 defaultproperties
 {
-    configName = "AcediaSystem"
-    useChatInput = true
+    relatedSlotClass = class'Mutator_OnMutate_Slot'
 }

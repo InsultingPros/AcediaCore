@@ -1,5 +1,5 @@
 /**
- *      Config object for `Commands_Feature`.
+ *  Signal class implementation for `GameRulesAPI`'s `OnCheckScore` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,34 +17,27 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Commands extends FeatureConfig
-    perobjectconfig
-    config(AcediaSystem);
+class GameRules_OnCheckScore_Signal extends Signal;
 
-var public config bool useChatInput;
-
-protected function AssociativeArray ToData()
+public final function bool Emit(PlayerReplicationInfo scorer)
 {
-    local AssociativeArray data;
-    data = __().collections.EmptyAssociativeArray();
-    data.SetBool(P("useChatInput"), useChatInput, true);
-    return data;
-}
-
-protected function FromData(AssociativeArray source)
-{
-    if (source != none) {
-        useChatInput = source.GetBool(P("useChatInput"));
+    local Slot  nextSlot;
+    local bool  result, nextReply;
+    StartIterating();
+    nextSlot = GetNextSlot();
+    while (nextSlot != none)
+    {
+        nextReply = GameRules_OnCheckScore_Slot(nextSlot).connect(scorer);
+        if (!nextReply && !nextSlot.IsEmpty()) {
+            result = result || nextReply;
+        }
+        nextSlot = GetNextSlot();
     }
-}
-
-protected function DefaultIt()
-{
-    useChatInput = true;
+    CleanEmptySlots();
+    return result;
 }
 
 defaultproperties
 {
-    configName = "AcediaSystem"
-    useChatInput = true
+    relatedSlotClass = class'GameRules_OnCheckScore_Slot'
 }

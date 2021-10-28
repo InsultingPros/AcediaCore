@@ -1,5 +1,6 @@
 /**
- *  Signal class implementation for `GameRulesAPI`'s `OnCheckScore` signal.
+ *  Does nothing. Exists only so that `Service`s can use its instances as
+ *  receivers when connecting to `Signal`s.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,28 +18,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class GameRules_OnCheckScore_Signal extends Signal;
-
-public final function bool Emit(PlayerReplicationInfo scorer)
-{
-    local Slot  nextSlot;
-    local bool  result, nextReply;
-    StartIterating();
-    nextSlot = GetNextSlot();
-    result = true;
-    while (nextSlot != none)
-    {
-        nextReply = GameRules_OnCheckScore_Slot(nextSlot).connect(scorer);
-        if (!nextReply && !nextSlot.IsEmpty()) {
-            result = result && nextReply;
-        }
-        nextSlot = GetNextSlot();
-    }
-    CleanEmptySlots();
-    return result;
-}
+class ServiceAnchor extends AcediaObject;
 
 defaultproperties
 {
-    relatedSlotClass = class'GameRules_OnCheckScore_Slot'
 }

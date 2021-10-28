@@ -37,6 +37,7 @@ var LoggerAPI.Definition errCommandDuplicate;
 protected function OnEnabled()
 {
     registeredCommands = _.collections.EmptyAssociativeArray();
+    _.unreal.broadcasts.OnHandleText(self).connect = HandleText;
     //  Macro selector
     commandDelimiters[0] = P("@");
     //  Key selector
@@ -49,6 +50,7 @@ protected function OnEnabled()
 
 protected function OnDisabled()
 {
+    _.unreal.broadcasts.OnHandleText(self).Disconnect();
     _.memory.Free(registeredCommands);
     registeredCommands          = none;
     commandDelimiters.length    = 0;
@@ -175,9 +177,44 @@ public final function HandleInput(Parser parser, APlayer callerPlayer)
     }
 }
 
+function bool HandleText(
+    Actor       sender,
+    out string  message,
+    name        messageType,
+    bool        teamMessage)
+{
+    local Text              messageAsText;
+    local APlayer           callerPlayer;
+    local Parser            parser;
+    local PlayerService     service;
+    //  We only want to catch chat messages
+    //  and only if `Commands` feature is active
+    if (messageType != 'Say')   return true;
+    if (!UsingChatInput())      return true;
+    //  We are only interested in messages that start with "!"
+    parser = __().text.ParseString(message);
+    if (!parser.Match(P("!")).Ok())
+    {
+        parser.FreeSelf();
+        //  Convert color tags into colors
+        messageAsText = __().text.FromFormattedString(message);
+        message = messageAsText.ToColoredString(,, __().color.White);
+        messageAsText.FreeSelf();
+        return true;
+    }
+    //  Extract `APlayer` from the `sender`
+    service = PlayerService(class'PlayerService'.static.Require());
+    if (service != none) {
+        callerPlayer = service.GetPlayer(PlayerController(sender));
+    }
+    //  Pass input to command feature
+    HandleInput(parser, callerPlayer);
+    parser.FreeSelf();
+    return false;
+}
+
 defaultproperties
 {
     configClass = class'Commands'
-    requiredListeners(0) = class'BroadcastListener_Commands'
     errCommandDuplicate = (l=LOG_Error,m="Command `%1` is already registered with name '%2'. Command `%3` with the same name will be ignored.")
 }

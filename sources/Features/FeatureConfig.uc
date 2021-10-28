@@ -54,7 +54,7 @@ public static function Initialize()
     {
         nextConfig = FeatureConfig(GetConfigInstance(names[i]));
         if (nextConfig == none)     continue;
-        if (nextConfig.autoEnable)  continue;
+        if (!nextConfig.autoEnable) continue;
         if (default.autoEnabledConfig == none) {
             default.autoEnabledConfig = names[i].Copy();
         }

@@ -58,6 +58,8 @@ public final function GameRules_OnFindPlayerStart_Slot OnFindPlayerStart(
  *  bool <slot>()
  *
  *  @return `true` if you want to prevent game restart and `false` otherwise.
+ *      `true` returned by one of the handlers overrides `false` values returned
+ *      by others.
  */
 /* SIGNAL */
 public final function GameRules_OnHandleRestartGame_Slot OnHandleRestartGame(
@@ -82,7 +84,8 @@ public final function GameRules_OnHandleRestartGame_Slot OnHandleRestartGame(
  *  @param  winner  Replication info of the supposed winner of the game.
  *  @param  reason  String with a description about how/why `winner` has won.
  *  @return `false` if you want to prevent game from ending
- *      and `false` otherwise.
+ *      and `true` otherwise. `false` returned by one of the handlers overrides
+ *      `true` values returned by others.
  */
 /* SIGNAL */
 public final function GameRules_OnCheckEndGame_Slot OnCheckEndGame(
@@ -95,21 +98,21 @@ public final function GameRules_OnCheckEndGame_Slot OnCheckEndGame(
     return GameRules_OnCheckEndGame_Slot(signal.NewSlot(receiver));
 }
 
-/* CheckScore()
-
-*/
 /**
  *  Check if this score means the game ends.
  *
  *  Return `true` to override `GameInfo`'s `CheckScore()`, or if game was ended
  *  (with a call to `Level.Game.EndGame()`).
  *
+ *  This signal will always be propagated to all registered slots.
+ *
  *  [Signature]
  *  bool <slot>(PlayerReplicationInfo scorer)
  *
  *  @param  scorer  For whom to do a score check.
  *  @return `true` to override `GameInfo`'s `CheckScore()`, or if game was ended
- *      and `false` otherwise.
+ *      and `false` otherwise. `true` returned by one of the handlers overrides
+ *      `false` values returned by others.
  */
 /* SIGNAL */
 public final function GameRules_OnCheckScore_Slot OnCheckScore(
@@ -123,8 +126,8 @@ public final function GameRules_OnCheckScore_Slot OnCheckScore(
 }
 
 /**
- *      When pawn wants to pickup something, `GameRule`s are given a chance to
- *  modify it.  If one of the `Slot`s returns `true`, `allowPickup` will
+ *      When pawn wants to pick something up, `GameRule`s are given a chance to
+ *  modify it. If one of the `Slot`s returns `true`, `allowPickup` will
  *  determine if the object can be picked up.
  *      Overriding via this method allows to completely bypass check against
  *  `Pawn`'s inventory's `HandlePickupQuery()` method.
@@ -154,24 +157,34 @@ public final function GameRules_OnOverridePickupQuery_Slot
 }
 
 /**
- *      When pawn wants to pickup something, `GameRule`s are given a chance to
- *  modify it.  If one of the `Slot`s returns `true`, `allowPickup` will
- *  determine if the object can be picked up.
- *      Overriding via this method allows to completely bypass check against
- *  `Pawn`'s inventory's `HandlePickupQuery()` method.
+ *      When pawn gets damaged, `GameRule`s are given a chance to modify that
+ *  damage.
  *
  *  [Signature]
- *  bool <slot>(Pawn other, Pickup item, out byte allowPickup)
+ *  int <slot>(
+ *      int                 originalDamage,
+ *      int                 damage,
+ *      Pawn                injured,
+ *      Pawn                instigatedBy,
+ *      Vector              hitLocation,
+ *      out Vector          momentum,
+ *      class<DamageType>   damageType)
  *
- *  @param  other       Pawn which will potentially pickup `item`.
- *  @param  item        Pickup which `other` might potentially pickup.
- *  @param  allowPickup `true` if you want to force `other` to pickup an item
- *      and `false` otherwise. This parameter is ignored if returned value of
- *      your slot call is `false`.
- *  @return `true` if you wish to override decision about pickup with
- *      `allowPickup` and `false` if you do not want to make that decision.
- *      If you do decide to override decision by returning `true` - this signal
- *      will not be propagated to the rest of the slots.
+ *  @param  originalDamage  Damage that was originally meant to be dealt to
+ *      the `Pawn`, before any of th `GameRules`' modifications.
+ *  @param  damage          Damage value to be dealt to the `Pawn` as it was
+ *      modified so fat by other `GameRules` and `OnNetDamage()`'s handlers.
+ *  @param  injured         `Pawn` that will be dealt damage in question.
+ *  @param  instigatedBy    `Pawn` that deals this damage.
+ *  @param  hitLocation     "Location of the damage", e.g. place where `injured`
+ *      was hit by a bullet.
+ *  @param  momentum        Momentum that this damage source should inflict on
+ *      the `injured`. Can also be modified.
+ *  @param  damageType      Type of the damage that will be dealt to
+ *      the `injured`.
+ *  @return Damage value you want to be dealt to the `injured` instead of
+ *      `damage`, given all of  he above parameters. Note that it can be further
+ *      modified by other handlers or `GameRules`.
  */
 /* SIGNAL */
 public final function GameRules_OnNetDamage_Slot OnNetDamage(
@@ -185,21 +198,74 @@ public final function GameRules_OnNetDamage_Slot OnNetDamage(
 }
 
 /**
+ *      When pawn is about to die, `GameRule`s are given a chance to
+ *  prevent that.
+ *
+ *  [Signature]
+ *  bool <slot>(
+ *      Pawn                killed,
+ *      Controller          killer,
+ *      class<DamageType>   damageType,
+ *      Vector              hitLocation)
+ *
+ *  @param  killed      `Pawn` that is about to be killed.
+ *  @param  killer      `Pawn` that dealt the blow that has caused death.
+ *  @param  damageType  `DamageType` with which finishing blow was dealt.
+ *  @param  hitLocation "Location of the damage", e.g. place where `injured`
+ *      was hit by a bullet that caused death.
+ *  @return Return `true` if you want to prevent death of the `killed` and
+ *      `false` otherwise.
+ *      If you do decide to prevent death by returning `true` - this signal
+ *      will not be propagated to the rest of the slots.
+ */
+/* SIGNAL */
+public final function GameRules_OnPreventDeath_Slot OnPreventDeath(
+    AcediaObject receiver)
+{
+    local Signal        signal;
+    local UnrealService service;
+    service = UnrealService(class'UnrealService'.static.Require());
+    signal = service.GetSignal(class'GameRules_OnPreventDeath_Signal');
+    return GameRules_OnPreventDeath_Slot(signal.NewSlot(receiver));
+}
+
+/**
+ *  Called when one `Pawn` kills another.
+ *
+ *  [Signature]
+ *  void <slot>(Controller killer, Controller killed)
+ *
+ *  @param  killer  `Pawn` that caused death.
+ *  @param  killed  Killed `Pawn`.
+ */
+/* SIGNAL */
+public final function GameRules_OnScoreKill_Slot OnScoreKill(
+    AcediaObject receiver)
+{
+    local Signal        signal;
+    local UnrealService service;
+    service = UnrealService(class'UnrealService'.static.Require());
+    signal = service.GetSignal(class'GameRules_OnScoreKill_Signal');
+    return GameRules_OnScoreKill_Slot(signal.NewSlot(receiver));
+}
+
+/**
  *  Adds new `GameRules` class to the current `GameInfo`.
- *  Does nothing if give `GameRules` class was already added before.
+ *  Does nothing if given `GameRules` class was already added before.
  *
  *  @param  newRulesClass   Class of rules to add.
- *  @return `true` if `GameRules` were added and `false` otherwise
- *      (because they were already active.)
+ *  @return `GameRules` instance if it was added and `none` otherwise
+ *      (can happen if rules of this class were already added).
  */
-public final function bool Add(class<GameRules> newRulesClass)
+public final function GameRules Add(class<GameRules> newRulesClass)
 {
+    local GameRules newGameRules;
     if (AreAdded(newRulesClass)) {
-        return false;
+        return none;
     }
-    _.unreal.GetGameType()
-        .AddGameModifier(GameRules(_.memory.Allocate(newRulesClass)));
-    return true;
+    newGameRules = GameRules(_.memory.Allocate(newRulesClass));
+    _.unreal.GetGameType().AddGameModifier(newGameRules);
+    return newGameRules;
 }
 
 /**
@@ -249,8 +315,9 @@ public final function bool Remove(class<GameRules> rulesClassToRemove)
  *  Returns `none` otherwise.
  *
  *  @param  rulesClassToFind    Class of rules to find.
- *  @return `GameRules` of given class `rulesClassToFind` instance added to
- *      `GameInfo`'s records and `none` if no such rules are currently added.
+ *  @return `GameRules` instance of given class `rulesClassToFind`, that is
+ *      added to `GameInfo`'s records and `none` if no such rules are
+ *      currently added.
  */
 public final function GameRules FindInstance(
     class<GameRules> rulesClassToFind)

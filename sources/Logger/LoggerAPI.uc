@@ -234,7 +234,8 @@ public final function LogMessage Auto(out Definition definition)
         instance.Initialize(definition);
         definition.instance = instance;
     }
-    return instance.Reset();
+    instance.Reset().TryLogging();
+    return instance;
 }
 
 /**

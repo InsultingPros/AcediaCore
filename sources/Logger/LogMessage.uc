@@ -210,7 +210,6 @@ private final function NormalizeArguments(array<int> argumentsOrder)
  */
 public final function LogMessage Arg(Text argument)
 {
-    local Text assembledMessage;
     if (IsArgumentListFull()) {
         return self;
     }
@@ -220,15 +219,23 @@ public final function LogMessage Arg(Text argument)
     }
     default.dirtyLogMessage = self; //  `self` is dirty with arguments now
     collectedArguments[collectedArguments.length] = argument;
+    TryLogging();
+    return self;
+}
+
+/**
+ *  Outputs a message at appropriate level, if all of its arguments were filled.
+ */
+public final function TryLogging()
+{
+    local Text assembledMessage;
     if (IsArgumentListFull())
     {
         //  Last argument - have to log what we have collected
         assembledMessage = Collect();
         _.logger.LogAtLevel(assembledMessage, myLevel);
         assembledMessage.FreeSelf();
-        return self;
     }
-    return self;
 }
 
 //  Check whether we have enough arguments to completely make log message:

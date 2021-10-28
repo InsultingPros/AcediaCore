@@ -23,13 +23,18 @@ class UserDatabase extends AcediaObject
 
 //  This is used as a global variable only (`default.activeDatabase`) to store
 //  a reference to main database for persistent data, used by Acedia.
-var private UserDatabase    activeDatabase;
+var public UserDatabase    activeDatabase;
 //  `User` records that were stored this session
 var private array<User>     sessionUsers;
 //  `UserID`s generated during this session.
 //  Instead of constantly creating new ones - just reuse already created.
 //  This array should not grow too large under normal circumstances.
 var private array<UserID>   storedUserIDs;
+
+protected static function StaticFinalizer()
+{
+    default.activeDatabase = none;
+}
 
 /**
  *  Provides a reference to the database of user records that Acedia was

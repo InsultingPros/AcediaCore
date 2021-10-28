@@ -24,9 +24,11 @@ class ConnectionService extends Service;
 //  Stores basic information about a connection
 struct Connection
 {
+    var public  PlayerController        controllerReference;
+    //  Remember these for the time `controllerReference` dies
+    //  and becomes `none`.
     var public  string                  networkAddress;
     var public  string                  idHash;
-    var public  PlayerController        controllerReference;
     //  Reference to `AcediaReplicationInfo` for this client,
     //  in case it was created.
     var private AcediaReplicationInfo   acediaRI;
@@ -71,6 +73,7 @@ protected function OnLaunch()
 {
     local Controller        nextController;
     local PlayerController  nextPlayerController;
+    _.unreal.mutator.OnCheckReplacement(_self).connect = TryAddingController;
     onConnectionEstablishedSignal =
         Connection_Signal(_.memory.Allocate(class'Connection_Signal'));
     onConnectionLostSignal =
@@ -92,6 +95,8 @@ protected function OnShutdown()
     default.activeConnections = activeConnections;
     _.memory.Free(onConnectionEstablishedSignal);
     _.memory.Free(onConnectionLostSignal);
+    onConnectionEstablishedSignal = none;
+    onConnectionLostSignal = none;
 }
 
 //      Returning `true` guarantees that `controllerToCheck != none`
@@ -164,7 +169,9 @@ public final function Connection GetConnection(PlayerController player)
     local int           connectionIndex;
     local Connection    emptyConnection;
     connectionIndex = GetConnectionIndex(player);
-    if (connectionIndex < 0) return emptyConnection;
+    if (connectionIndex < 0) {
+        return emptyConnection;
+    }
     return activeConnections[connectionIndex];
 }
 
@@ -217,6 +224,26 @@ public final function array<Connection> GetActiveConnections(
     return activeConnections;
 }
 
+function bool TryAddingController(Actor other, out byte isSuperRelevant)
+{
+    //      We are looking for `KFSteamStatsAndAchievements` instead of
+    //  `PlayerController` because, by the time they it's created,
+    //  controller should have a valid reference to `PlayerReplicationInfo`,
+    //  as well as valid network address and IDHash (steam id).
+    //      However, neither of those are properly initialized at the point when
+    //  `CheckReplacement` is called for `PlayerController`.
+    //
+    //      Since `KFSteamStatsAndAchievements`
+    //  is created soon after (at the same tick)
+    //  for each new `PlayerController`,
+    //  we will be detecting new users right after server
+    //  detected and properly initialized them.
+    if (KFSteamStatsAndAchievements(other) == none) {
+        RegisterConnection(PlayerController(other.owner));
+    }
+    return true;
+}
+
 //  Check if connections are still active every tick.
 //  Should not take any noticeable time when no players are disconnecting.
 event Tick(float delta)
@@ -226,5 +253,4 @@ event Tick(float delta)
 
 defaultproperties
 {
-    requiredListeners(0) = class'MutatorListener_Connection'
 }

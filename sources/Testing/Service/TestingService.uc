@@ -47,10 +47,6 @@ var public config const bool    filterTestsByGroup;
 var public config const string  requiredName;
 var public config const string  requiredGroup;
 
-//  Shortcut to `TestingEvents`, so that we don't have to write
-//  class'TestingEvents' every time.
-var const class<TestingEvents> events;
-
 var LoggerAPI.Definition warnDuplicateTestCases;
 /**
  *  Registers another `TestCase` class for later testing.
@@ -207,12 +203,10 @@ public final function bool Run()
         return false;
     }
     nextTestCase                = 0;
-    runningTests                = true;
     summarizedResults.length    = 0;
-    events.static.CallTestingBegan(testCasesToRun);
-    if (testCasesToRun.length <= 0) {
-        runningTests = false;
-        events.static.CallTestingEnded(testCasesToRun, summarizedResults);
+    runningTests                = (testCasesToRun.length > 0);
+    if (!runningTests) {
+        ReportTestingResult();
     }
     return true;
 }
@@ -224,14 +218,29 @@ private final function DoTestingStep()
     {
         runningTests                = false;
         default.summarizedResults   = summarizedResults;
-        events.static.CallTestingEnded(testCasesToRun, summarizedResults);
+        ReportTestingResult();
         return;
     }
     testCasesToRun[nextTestCase].static.PerformTests();
     newResult = testCasesToRun[nextTestCase].static.GetSummary();
-    events.static.CallCaseTested(testCasesToRun[nextTestCase], newResult);
     summarizedResults[summarizedResults.length] = newResult;
     nextTestCase += 1;
+}
+
+private function ReportTestingResult()
+{
+    local int           i;
+    local MutableText   nextLine;
+    local array<string> textSummary;
+    nextLine = __().text.Empty();
+    textSummary = class'TestCaseSummary'.static
+        .GenerateStringSummary(summarizedResults);
+    for (i = 0; i < textSummary.length; i += 1)
+    {
+        nextLine.Clear();
+        nextLine.AppendFormattedString(textSummary[i]);
+        Log(nextLine.ToPlainString());
+    }
 }
 
 event Tick(float delta)
@@ -248,6 +257,5 @@ event Tick(float delta)
 defaultproperties
 {
     runTestsOnStartUp = false
-    events = class'TestingEvents'
     warnDuplicateTestCases = (l=LOG_Fatal,m="Two different test cases with name \"%1\" in the same group \"%2\"have been registered: \"%3\" and \"%4\". This can lead to issues and it is not something you can fix, - contact developers of the relevant packages.")
 }

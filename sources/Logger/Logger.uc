@@ -2,6 +2,13 @@
  *      Base class for implementing "loggers" - objects that actually write log
  *  messages somewhere. To use it - simply implement `Write()` method,
  *  preferably making use of `GetPrefix()` method.
+ *      Note that any child class must clean up its loaded loggers:
+ *
+ *  protected static function StaticFinalizer()
+ *  {
+ *      default.loadedLoggers = none;
+ *  }
+ *
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -26,7 +33,7 @@ class Logger extends AcediaObject
     abstract;
 
 //  Named loggers are stored here to avoid recreating them
-var private AssociativeArray loadedLoggers;
+var protected AssociativeArray loadedLoggers;
 
 //  Should `Logger` display prefix indicating it's a log message from Acedia?
 var protected config bool acediaStamp;
@@ -37,6 +44,11 @@ var protected config bool levelStamp;
 
 var protected const int TDEBUG, TINFO, TWARNING, TERROR, TFATAL, TTIME, TACEDIA;
 var protected const int TSPACE;
+
+protected static function StaticFinalizer()
+{
+    default.loadedLoggers = none;
+}
 
 /**
  *  Method for creating named `Logger`s that can have their settings prepared
@@ -52,19 +64,16 @@ public final static function Logger GetLogger(Text loggerName)
 {
     local Logger    loggerInstance;
     local Text      loggerKey;
-    if (default.loadedLoggers == none)
-    {
-        //  TODO: do this in static constructor
-        default.loadedLoggers = __().collections.EmptyAssociativeArray();
-    }
     if (loggerName == none) {
         return none;
+    }
+    if (default.loadedLoggers == none) {
+        default.loadedLoggers = __().collections.EmptyAssociativeArray();
     }
     loggerKey = loggerName.LowerCopy();
     loggerInstance = Logger(default.loadedLoggers.GetItem(loggerKey));
     if (loggerInstance == none)
     {
-        //  TODO: important to redo this via `MemoryAPI` to call constructors
         loggerInstance = new(none, loggerName.ToPlainString()) default.class;
         loggerInstance._constructor();
         default.loadedLoggers.SetItem(loggerKey, loggerInstance);

@@ -179,6 +179,20 @@ private final static function CreateTextCache(optional bool forceCreation)
 }
 
 /**
+ *  Acedia actors cannot be deallocated into an object pool, but they still
+ *  support constructors and destructors and, therefore, track their own
+ *  allocation status (`AcediaActor` is considered allocated between constructor
+ *  and finalizer calls).
+ *
+ *  @return `true` if actor is allocated and ready to use, `false` otherwise
+ *      (`Destroy()` was called for it directly or through deallocation method).
+ */
+public final function bool IsAllocated()
+{
+    return _isAllocated;
+}
+
+/**
  *  Deallocates caller `AcediaActor`, calling its finalizer and then
  *  destroying it.
  */
@@ -374,6 +388,9 @@ event Destroyed()
  */
 public static function _cleanup()
 {
+    if (default._staticConstructorWasCalled) {
+        StaticFinalizer();
+    }
     default._textCache = none;
     default._staticConstructorWasCalled = false;
 }

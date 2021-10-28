@@ -1,6 +1,6 @@
 /**
- *  Listener for events related to testing.
- *      Copyright 2020 Anton Tarasenko
+ *  Slot class implementation for `MutatorAPI`'s `OnCheckReplacement` signal.
+ *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -17,18 +17,25 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class TestingListenerBase extends Listener
-    abstract;
+class Mutator_OnCheckReplacement_Slot extends Slot;
 
-static function TestingBegan(array< class<TestCase> > testQueue) {}
+delegate bool connect(Actor other, out byte isSuperRelevant)
+{
+    DummyCall();
+    return true;
+}
 
-static function CaseTested(class<TestCase> testCase, TestCaseSummary result) {}
+protected function Constructor()
+{
+    connect = none;
+}
 
-static function TestingEnded(
-    array< class<TestCase> >    testQueue,
-    array<TestCaseSummary>      results) {}
+protected function Finalizer()
+{
+    super.Finalizer();
+    connect = none;
+}
 
 defaultproperties
 {
-    relatedEvents = class'TestingEvents'
 }
