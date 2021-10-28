@@ -48,7 +48,14 @@ mistakes that could lead to rather nasty consequences.
 
 After you've familiarized yourself with safety rules, you can skip to reading
 about any topic of interest, but we strongly recommend that you first read up on
+
 the fundamental topics:
 [what is API](./api.md),
 at least non-advanced topics of [Acedia's objects / actors](./objects.md)
 and about [signal / slot system](./events.md).
+
+| Topics        | Documentation |
+| ------------- | ------------- |
+| `Text`, `MutableText`, 3 types of `string`s and json support | [Link](./API/text.md) |
+| Collections, `DynamicArray`, `AssociativeArray` | [Link](./API/collections.md) |
+| Low-level UnrealScript functions and events | [Link](./API/unreal.md) |

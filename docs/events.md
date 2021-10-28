@@ -11,14 +11,14 @@ with Acedia's signal/slot system, handler can be added with a single line:
 _.unreal.gameRules.OnNetDamage(self).connect = NetDamageHandler;
 ```
 
-`OnNetDamage()` is a *signal function* responsible for adding new handlers
+`OnNetDamage()` here is a *signal function* responsible for adding new handlers
 for the `NetDamage` event.
 Function `NetDamageHandler` has to have an appropriate signature
 (parameters and return value types) for the event and will be called each time
-`NetDamage` event occurs, starting from the next occurrence.
+`NetDamage` event occurs.
 
 Unlike raw `delegate`s, that can each only store one function, signal/slot
-system allows us to have however many handlers we need:
+system allows us to have however many handlers we want:
 
 ```unrealscript
 //  All of those will be called on `NetDamage` event
@@ -28,18 +28,21 @@ _.unreal.gameRules.OnNetDamage(self).connect = NetDamageRevolution;
 _.unreal.gameRules.OnNetDamage(self).connect = NetDamageEvolutionR;
 ```
 
-`self` argument is necessary for the cleanup and refers to the object that is
-responsible for the added handler - if it gets deallocated, then all of
-the associated handlers will be automatically removed:
+`self` parameter defines a *receiver object* for each handler.
+Receiver is responsible for the added handler and helps Acedia to cleanup unused
+ones - if receiver gets deallocated, then all of the associated handlers will be
+automatically removed:
 
 ```unrealscript
 //  This assumes that `someObj` is a child class of `AcediaObject`
 _.unreal.gameRules.OnNetDamage(someObj).connect = NetDamageHandler;
-_.memory.Free(someObj); // After this line `NetDamageHandler()` won't be used
+_.memory.Free(someObj); // After this line `NetDamageHandler()` won't be called.
 ```
 
-Most of the time this parameter is going to be `self`, since normally each
+Most of the time receiver is going to be `self`, since normally each
 object adds its own functions as event handlers.
+Passing `none` for a receiver will make Acedia do a bunch of additional work,
+while not actually connecting your handler, so avoid doing that.
 
 Once you no longer need to handle an event, you can *disconnect* from it:
 
@@ -67,6 +70,23 @@ is not recommended.
 > however, what they are and how they work is different and shouldn't
 > be mixed up.
 
+## Are handlers guaranteed to be called?
+
+As a rule of thumb, all handlers, connected to a signal, are expected to
+be called when that `signal` is emitted.
+Exceptions are frowned upon and mostly exist for wrappers for existing
+UnrealScript's event (for mutators, game rules, etc.) to provide the same
+kind of interface.
+If `signal` allows handlers to prevent its propagation to other handlers, then
+this must be specified in documentation for event's `signal` function.
+
+However note that `signal` only calls handlers that were added before its
+emission began.
+For example, if you add a new handler for `OnTick()` while handling that event,
+the new one will only be called on the next tick.
+However, removing existing handlers will prevent them from being called even if
+they were connected to a `signal` when emission has already began.
+
 ## [Advanced] How signals and slots work
 
 ### Delegates overview
@@ -84,7 +104,7 @@ delegate MyDelegate()
 }
 ```
 
-then assign a function to them and any time a delegate is called - an assigned
+then assign a function to them and any time a delegate is called an assigned
 function will be called instead:
 
 ```unrealscript
@@ -102,32 +122,32 @@ obj.MyDelegate = none;  // Reset delegate to its default state
 obj.MyDelegate();       // "Empty message" is logged
 ```
 
-However they have their limitations, main one being that you can neither assign
-several functions to a `delegate` nor can you create an array of `delegate`s to
-have several handlers for your events.
+However they have their limitations, main one being that out of the box they
+do not support multiple event handlers: you can neither assign several functions
+to a `delegate` nor can you create an array of `delegate`s.
 
-### `Slot`s are boxed `delegate`s, `Signal`s are arrays of `Slot`s
+### `slot`s are boxed `delegate`s, `Signal`s are arrays of `slot`s
 
 Acedia bypasses this limitation by essentially boxing `delegate`s.
-If you are unfamiliar with the concept of boxing, it is discussed
+If you are unfamiliar with the concept of boxing, it is somewhat discussed
 [here](./objects.md).
-`Slot` is just an object that contains a single `delegate` (usually called
-`connect()`) with some extra code to support cleanup of no longer needed
-`Slot`s.
-Wrapping `delegate`s into `Slot`s allows us to store them in arrays represented
+`slot` is just an object that contains a single `delegate`
+(convention is to call it `connect()`) with some extra code to support
+cleanup of no longer needed `slot`s.
+Wrapping `delegate`s into `slot`s allows us to store them in arrays represented
 by `Signal`s: each `Signal` is usually associated with some sort of an event and
-can refer (be connected to) several `Slot`s, therefore supporting several
-different handlers for its event.
+can refer (be connected to) several `slot`s, therefore supporting several
+different event handlers.
 
-`Signal`s are usually declared as internal variables and are different from
-*signal function* like `_.unreal.gameRules.OnNetDamage()`.
+`Signal`s are usually declared as internal variables and are distinct entities
+from *signal function* like `_.unreal.gameRules.OnNetDamage()`.
 Connecting a handler to an event with line like
 `OnNetDamage(self).connect = NetDamage`
-actually results in performing following steps:
+actually means performing following steps:
 
-1. Appropriate `Signal` object is found / accessed;
-2. New `Slot` object for that `Singal` is created and returned;
-3. `connect` delegate for returned `Slot` gets assigned with a handler function
+1. Found / access appropriate `Signal` object;
+2. Created and return new `slot` object for that `Singal`;
+3. Assign `connect` delegate for returned `slot` to a handler function
     (`NetDamage` in above example).
 
 ```unrealscript
@@ -135,35 +155,35 @@ actually results in performing following steps:
 public final function GameRules_OnNetDamage_Slot OnNetDamage(
     AcediaObject receiver)
 {
-    local Signal        signal;
+    local signal        signal;
     local UnrealService service;
     //  These two lines are implementation detail for `OnNetDamage()`,
     //  you can store your `signal` object wherever you need.
     service = UnrealService(class'UnrealService'.static.Require());
     signal = service.GetSignal(class'GameRules_OnNetDamage_Signal');
-    //  This is the important line that creates new slot
+    //  This corresponds to the second step of creating new slot
     return GameRules_OnNetDamage_Slot(signal.NewSlot(receiver));
 }
 
 //  [FixFFHack.uc]
-//  `connect` is simply a delegate defined inside
-//  `GameRules_OnNetDamage_Slot` object
+//  `connect` is simply a delegate variable defined inside
+//  object of class `GameRules_OnNetDamage_Slot`
 _.unreal.gameRules.OnNetDamage(self).connect = NetDamage;
 
 ```
 
-If returned signal is not assigned any function, then it will be automatically
-cleaned up at some later point.
+If returned `slot` is not assigned to any function, then it will be
+automatically cleaned up at some later point.
 We cannot directly check whether a `delegate` was assigned some value, but
 `connect`'s default implementation calls special protected method `DummyCall()`
-that tells us that its slot is empty.
+that marks caller `slot` as empty.
 
 ### Disconnecting
 
 So how does `_.unreal.gameRules.OnNetDamage(someObj).Disconnect()` work?
 Same as above, `_.unreal.gameRules.OnNetDamage(someObj)` creates a new empty
-slot associated with `someObj`.
-This slot is aware of both `signal` its connected to and associated `someObj`.
+`slot`, associated with `someObj`.
+This `slot` has references to both `signal` its connected to and `someObj`.
 `Disconnect()` method makes our `slot` inform its `signal` that all `slot`s
 related to `someObj` (including itself) must be disconnected and deallocated.
 
@@ -177,6 +197,7 @@ the task that shouldn't be performed often enough to affect performance.
 
 Providing support for your own signals and slots actually takes quite a bit more
 work that using them.
+It is definitely more work than with listener-type objects.
 Here we will consider main use cases.
 
 ### Simple notification events
@@ -206,7 +227,7 @@ public function SimpleSlot OnMyEvent(AcediaObject receiver)
     return SimpleSlot(onMyEventSignal.NewSlot(receiver));
 }
 
-//  Suppose you want to emit the signal when this function is called...
+//  Suppose you want to emit the `signal` when this function is called...
 public function SimpleSlot FireOffMyEvent(AcediaObject receiver)
 {
     //  ...simply call this and all the slots will have their handlers called
@@ -279,7 +300,7 @@ defaultproperties
 ```
 
 where you can use any set of parameters instead of `<PARAMETERS>`.
-You can check out `Unreal_OnTick_Signal` and `Unreal_OnTick_Slot` as
+You can check out `Unreal_OnTick_Signal` and `Unreal_OnTick_Slot` for
 an example.
 
 ### Events with return values
@@ -290,7 +311,7 @@ You can either allow them to modify input parameters (e.g. by declaring them as
 `OnNetDamage()`, for example, is allowed to modify incoming damage by returning
 a new value.
 
-To add signals / slots that handle return value use following templates:
+To add `signal`s / `slot`s that handle return value use following templates:
 
 ```unrealscript
 class MySignal extends Signal;
@@ -304,7 +325,7 @@ public final function <RETURN_TYPE> Emit(<PARAMETERS>)
     while (nextSlot != none)
     {
         newValue = <SLOT_CLASS>(nextSlot).connect(<PARAMETERS>);
-        //  This check if necessary before using returned value
+        //  This check is necessary before using returned value
         if (!nextSlot.IsEmpty())
         {
             //  Now handle `newValue` however you see fit
@@ -352,7 +373,7 @@ For working example you can check out `GameRules_OnNetDamage_Signal` and
 ## [Advanced] How to remove particular `slot`
 
 In our very first example we've seen that we can remove all `slot`s for
-`OnNetDamage()`, associated with `someObj` by calling
+`OnNetDamage()`, associated with `someObj`, by calling
 `_.unreal.gameRules.OnNetDamage(someObj).Disconnect()`.
 But sometimes it might be necessary to remove only one slot.
 In that case you'll have to store that slot in a separate variable:
@@ -378,7 +399,7 @@ trackedSlot.FreeSelf(trackedSlotLifeVersion);
 trackedSlot = none;
 ```
 
-Here we record *life version* because it is `signal` and not us that is
+Here we record *life version* because it is `signal`, and not us, that is
 responsible for the deallocation of `slot`s.
 If we don't check life versions, we might use `slot` reallocated for a different
 purpose.
@@ -389,4 +410,4 @@ Not accessing separate `slot`s is even safer.
 
 > **NOTE:**
 > `singal`s themselves also track `slot`'s life versions and will be able to
-> tell if you've deallocated them.
+> tell if you've deallocated them on your own.
