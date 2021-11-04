@@ -117,6 +117,6 @@ defaultproperties
     serviceSignals(8)   = (signalClass=class'Broadcast_OnHandleLocalizedFor_Signal')
     serviceSignals(9)   = (signalClass=class'Broadcast_OnHandleText_Signal')
     serviceSignals(10)  = (signalClass=class'Broadcast_OnHandleTextFor_Signal')
-    serviceSignals(11)  = (signalClass=class'Mutator_OnCheckReplacement_Slot')
+    serviceSignals(11)  = (signalClass=class'Mutator_OnCheckReplacement_Signal')
     serviceSignals(12)  = (signalClass=class'Mutator_OnMutate_Signal')
 }
