@@ -109,8 +109,10 @@ create and destroy their instances.
 | Function | Description |
 | -------- | ----------- |
 | `Allocate(class<Object>, optional bool)` | Creates a new `Object` / `Actor` of a given class. `bool` argument allows to forbid reallocation, forcing creation of a new object.
-| `LoadClass(Text)` | Creates a class instance from its textual representation. |
-| `AllocateByReference(Text, optional bool)` | Same as `Allocate()`, but takes textual representation of the class as an argument. |
+| `LoadClass(Text)` | Creates a class instance from its `Text` representation. |
+| `LoadClassS(string)` | Creates a class instance from its `string` representation. |
+| `AllocateByReference(Text, optional bool)` | Same as `Allocate()`, but takes `Text` representation of the class as an argument. |
+| `AllocateByReferenceS(string, optional bool)` | Same as `Allocate()`, but takes `string` representation of the class as an argument. |
 | `Free(Object)` | Deallocates provided object. Does not produce errors if its argument is `none`. |
 | `FreeMany(array<Object>)` | Deallocates every object inside given array. Does not produce errors if some (or all) of them are `none`. |
 | `CollectGarbage(optional bool)` | Forces garbage collection. By default also includes all deallocated (but not destroyed) objects and `bool` argument allows to skip collecting them.
