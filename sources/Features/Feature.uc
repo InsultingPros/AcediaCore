@@ -229,24 +229,38 @@ public static final function bool IsEnabled()
 /**
  *  Enables the feature and returns it's active instance.
  *
- *  Cannot fail. Any checks on whether it's appropriate to enable `Feature`
- *  must be done separately, before calling this method.
+ *  Does nothing if passed `configName` is `none`.
  *
+ *  Cannot fail as long as `configName != none`. Any checks on whether it's
+ *  appropriate to enable `Feature` must be done separately, before calling
+ *  this method.
+ *
+ *  If `Feature` is already enabled - changes its config to `configName`
+ *  (unless it's `none`).
+ *
+ *  @param  configName  Name of the config to use for this `Feature`.
+ *      Passing `none` will make caller `Feature` use "default" config.
  *  @return Active instance of the caller `Feature` class.
  */
 public static final function Feature EnableMe(Text configName)
 {
-    local Feature newInstance;
-    if (IsEnabled()) {
-        return GetInstance();
+    local Feature myInstance;
+    if (configName == none) {
+        return;
+    }
+    myInstance = GetInstance();
+    if (myInstance != none)
+    {
+        myInstance.ApplyConfig(configName);
+        return myInstance;
     }
     default.currentConfigName = configName.Copy();
     default.blockSpawning = false;
-    newInstance = Feature(__().memory.Allocate(default.class));
-    default.activeInstance              = newInstance;
-    default.activeInstanceLifeVersion   = newInstance.GetLifeVersion();
+    myInstance = Feature(__().memory.Allocate(default.class));
+    default.activeInstance              = myInstance;
+    default.activeInstanceLifeVersion   = myInstance.GetLifeVersion();
     default.blockSpawning = true;
-    return newInstance;
+    return myInstance;
 }
 
 /**
