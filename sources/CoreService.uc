@@ -33,7 +33,16 @@ var private array< class<AcediaActor> >     usedActorClasses;
 //  the rest of the classes.
 var private array< class<Singleton> >       usedSingletonClasses;
 
-var array<string> packagesToLoad;
+var private array< class<_manifest> >       availableManifests;
+
+var private array<string> packagesToLoad;
+
+struct FeatureConfigPair
+{
+    var public class<Feature>   featureClass;
+    var public Text             configName;
+};
+var private array<FeatureConfigPair> automaticConfigs;
 
 var private LoggerAPI.Definition infoLoadingPackage;
 var private LoggerAPI.Definition infoBootingUp, infoBootingUpFinished;
@@ -138,6 +147,7 @@ private final function BootUp()
             _.logger.Auto(errorNoManifest).Arg(nextPackageName.Copy());
             continue;
         }
+        availableManifests[availableManifests.length] = nextManifest;
         LoadManifest(nextManifest);
         _.memory.Free(nextPackageName);
     }
@@ -152,15 +162,22 @@ private final function BootUp()
 
 private final function LoadManifest(class<_manifest> manifestClass)
 {
-    local int i;
+    local int               i;
+    local FeatureConfigPair nextPair;
     for (i = 0; i < manifestClass.default.aliasSources.length; i += 1)
     {
         if (manifestClass.default.aliasSources[i] == none) continue;
         _.memory.Allocate(manifestClass.default.aliasSources[i]);
     }
-    LaunchServicesAndFeatures(manifestClass);
-    if (class'Commands_Feature'.static.IsEnabled()) {
-        RegisterCommands(manifestClass);
+    LaunchManifestServices(manifestClass);
+    for (i = 0; i < manifestClass.default.features.length; i += 1)
+    {
+        if (manifestClass.default.features[i] == none) continue;
+        manifestClass.default.features[i].static.LoadConfigs();
+        nextPair.featureClass   = manifestClass.default.features[i];
+        nextPair.configName     = manifestClass.default.features[i].static
+            .GetAutoEnabledConfig();
+        automaticConfigs[automaticConfigs.length] = nextPair;
     }
     for (i = 0; i < manifestClass.default.testCases.length; i += 1)
     {
@@ -169,46 +186,34 @@ private final function LoadManifest(class<_manifest> manifestClass)
     }
 }
 
+public final function array<FeatureConfigPair> GetAutoConfigurationInfo()
+{
+    local int i;
+    local array<FeatureConfigPair> result;
+    for (i = 0; i < automaticConfigs.length; i += 1)
+    {
+        result[i] = automaticConfigs[i];
+        if (result[i].configName != none) {
+            result[i].configName = result[i].configName.Copy();
+        }
+    }
+    return result;
+}
+
 private final function class<_manifest> LoadManifestClass(string packageName)
 {
     return class<_manifest>(DynamicLoadObject(  packageName $ manifestSuffix,
                                                 class'Class', true));
 }
 
-private final function RegisterCommands(class<_manifest> manifestClass)
+private final function LaunchManifestServices(class<_manifest> manifestClass)
 {
-    local int               i;
-    local Commands_Feature  commandsFeature;
-    commandsFeature =
-        Commands_Feature(class'Commands_Feature'.static.GetInstance());
-    for (i = 0; i < manifestClass.default.commands.length; i += 1)
-    {
-        if (manifestClass.default.commands[i] == none) continue;
-        commandsFeature.RegisterCommand(manifestClass.default.commands[i]);
-    }
-}
-
-private final function LaunchServicesAndFeatures(class<_manifest> manifestClass)
-{
-    local int   i;
-    local Text  autoConfigName;
-    //  Services
+    local int i;
     for (i = 0; i < manifestClass.default.services.length; i += 1)
     {
-        if (manifestClass.default.services[i] == none) continue;
-        manifestClass.default.services[i].static.Require();
-    }
-    //  Features
-    for (i = 0; i < manifestClass.default.features.length; i += 1)
-    {
-        if (manifestClass.default.features[i] == none) continue;
-        manifestClass.default.features[i].static.LoadConfigs();
-        autoConfigName =
-            manifestClass.default.features[i].static.GetAutoEnabledConfig();
-        if (autoConfigName != none) {
-            manifestClass.default.features[i].static.EnableMe(autoConfigName);
+        if (manifestClass.default.services[i] != none) {
+            manifestClass.default.services[i].static.Require();
         }
-        _.memory.Free(autoConfigName);
     }
 }
 
