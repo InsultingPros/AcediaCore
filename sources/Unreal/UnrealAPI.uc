@@ -165,6 +165,28 @@ public final function KFGameType GetKFGameType()
 }
 
 /**
+ *  Searches all `Actor`s on the level for an instance of specific class and
+ *  returns it.
+ *
+ *  @param  classToFind Class we want to find an instance of.
+ *  @result A pre-existing instance of class `classToFind`, `none` if
+ *      no instances exist at the moment of this method's call.
+ */
+public final function Actor FindActorInstance(class<Actor> classToFind)
+{
+    local Actor result;
+    local Service service;
+    service = class'CoreService'.static.Require();
+    foreach service.AllActors(classToFind, result)
+    {
+        if (result != none) {
+            break;
+        }
+    }
+    return result;
+}
+
+/**
  *  Returns current local player's `Controller`. Useful because `level`
  *  is not accessible inside objects.
  *

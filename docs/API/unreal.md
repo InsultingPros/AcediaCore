@@ -49,6 +49,7 @@ any regular `Service`:
 |`GetKFGameRI()` | Returns current game's `GameReplicationInfo` as `KFGameReplicationInfo`. |
 |`GetGameType()` | Returns current game's `GameInfo`. |
 |`GetKFGameType()` | Returns current game's `GameInfo` as `KFGameType`. |
+|`FindActorInstance(class<Actor>)` | Searches all `Actor`s on the level for an instance of specific class and returns it. |
 |`GetLocalPlayer()` | Returns current local player's `Controller`. |
 |`GetInventoryFrom(class<Inventory>, Inventory, optional bool)` | Convenience method for finding a first inventory entry of the given class in the given inventory chain. |
 |`GetAllInventoryFrom(class<Inventory>, Inventory, optional bool)` | Convenience method for finding a all inventory entries of the given class in the given inventory chain. |
