@@ -47,7 +47,7 @@ var private AssociativeArray    currentConfig;
 
 //  Class of this `Feature`'s config objects. Classes must be in 1-to-1
 //  correspondence.
-var protected const class<FeatureConfig> configClass;
+var public const class<FeatureConfig> configClass;
 
 //      Setting default value of this variable to 'true' prevents creation of
 //  a `Feature`, even if no instances of it exist. This is used to ensure active
@@ -138,7 +138,7 @@ protected function Finalizer()
  *
  *  @param  newConfigName   Name of the config to apply to the caller `Feature`.
  */
-public final function ApplyConfig(Text newConfigName)
+private final function ApplyConfig(Text newConfigName)
 {
     local FeatureConfig newConfig;
     if (newConfigName == none) {
