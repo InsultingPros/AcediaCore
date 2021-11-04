@@ -23,11 +23,11 @@
 class MemoryAPI extends AcediaObject;
 
 /**
- *  Creates a class instance from its string representation.
+ *  Creates a class instance from its `Text` representation.
  *
  *  Does not generate log messages upon failure.
  *
- *  @param  classReference  String representation of the class to return.
+ *  @param  classReference  Text representation of the class to return.
  *  @return Loaded class, corresponding to its name from `classReference`.
  */
 public final function class<Object> LoadClass(Text classReference)
@@ -37,6 +37,19 @@ public final function class<Object> LoadClass(Text classReference)
     }
     return class<Object>(   DynamicLoadObject(classReference.ToPlainString(),
                             class'Class', true));
+}
+
+/**
+ *  Creates a class instance from its `string` representation.
+ *
+ *  Does not generate log messages upon failure.
+ *
+ *  @param  classReference  `string` representation of the class to return.
+ *  @return Loaded class, corresponding to its name from `classReference`.
+ */
+public final function class<Object> LoadClassS(string classReference)
+{
+    return class<Object>(DynamicLoadObject(classReference, class'Class', true));
 }
 
 /**
@@ -126,8 +139,8 @@ public final function Object Allocate(
  *  guarantees to return last pooled object (in a LIFO queue),
  *  unless `forceNewInstance == true`.
  *
- *  @param  classToAllocate     Class of the `Object` / `Actor` that this method
- *      must create.
+ *  @param  refToClassToAllocate    `Text` representation of the class of
+ *      the `Object` / `Actor` that this method must create.
  *  @param  forceNewInstance    Set this to `true` if you require this method to
  *      create a new instance, bypassing any object pools.
  *  @return Newly created object,
@@ -138,6 +151,34 @@ public final function Object AllocateByReference(
     optional bool   forceNewInstance)
 {
     return Allocate(LoadClass(refToClassToAllocate), forceNewInstance);
+}
+
+/**
+ *  Creates a new `Object` / `Actor` of a class, given by its
+ *  string representation.
+ *
+ *  If uses a proper spawning mechanism for both objects (`new`)
+ *  and actors (`Spawn`).
+ *
+ *  For Acedia's objects / actors calls constructors.
+ *  For Acedia's objects tries to make use of their object pools.
+ *
+ *  If Acedia's object does make use of object pools, -
+ *  guarantees to return last pooled object (in a LIFO queue),
+ *  unless `forceNewInstance == true`.
+ *
+ *  @param  classToAllocate `string` representation of the class of
+ *      the `Object` / `Actor` that this method must create.
+ *  @param  forceNewInstance    Set this to `true` if you require this method to
+ *      create a new instance, bypassing any object pools.
+ *  @return Newly created object,
+ *      `none` if creation has failed (only possible for actors).
+ */
+public final function Object AllocateByReferenceS(
+    string          refToClassToAllocate,
+    optional bool   forceNewInstance)
+{
+    return Allocate(LoadClassS(refToClassToAllocate), forceNewInstance);
 }
 
 /**
