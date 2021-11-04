@@ -514,23 +514,23 @@ public function Empty(optional bool deallocateKeys)
         {
             if (!nextEntries[j].managed)      continue;
             if (nextEntries[j].value == none) continue;
-            if (    nextEntries[j].value.GetLifeVersion()
-                !=  nextEntries[j].valueLifeVersion) {
-                continue;
-            }
-            if (deallocateKeys)
-            {
-                subCollection = Collection(nextEntries[j].value);
-                if (subCollection != none) {
-                    subCollection.Empty(true);
-                }
-            }
             nextEntries[j].value.FreeSelf(nextEntries[j].valueLifeVersion);
         }
         if (deallocateKeys)
         {
             for (j = 0; j < nextEntries.length; j += 1)
             {
+                if (nextEntries[j].key == none) {
+                    continue;
+                }
+                if (    nextEntries[j].key.GetLifeVersion()
+                    !=  nextEntries[j].keyLifeVersion) {
+                    continue;
+                }
+                subCollection = Collection(nextEntries[j].value);
+                if (subCollection != none) {
+                    subCollection.Empty(true);
+                }
                 if (nextEntries[j].key != none) {
                     nextEntries[j].key.FreeSelf(nextEntries[j].keyLifeVersion);
                 }
