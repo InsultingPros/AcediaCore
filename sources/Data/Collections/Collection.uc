@@ -61,6 +61,22 @@ public final function Iter Iterate()
 }
 
 /**
+ *  Completely clears caller `Collections` of all stored entries,
+ *  deallocating any stored managed values.
+ *
+ *  @param  deallocateKeys  Setting this to `true` will force this method to
+ *      also deallocate all keys from the caller `Collection`, if it uses them.
+ *      If this parameter is set to `true`, then `Empty()` call will also be
+ *      made recursively for all stored `Collection`, also causing them to
+ *      deallocate their keys.
+ *      For Acedia keys are only used by `AssociativeArray`.
+ *      Since we do not record whether `Collection` manages keys like it
+ *      does values - all keys will be deallocated, so use this parameter with
+ *      caution.
+ */
+public function Empty(optional bool deallocateKeys) {}
+
+/**
  *  Returns stored `AcediaObject` from the caller storage
  *  (or from it's sub-storages) via given `JSONPointer` path.
  *

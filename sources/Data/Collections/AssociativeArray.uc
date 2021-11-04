@@ -474,10 +474,13 @@ public final function AssociativeArray CreateItem(
  *  Removed values are deallocated if they are managed. If you wish to avoid
  *  that, use `TakeItem()` or `TakeEntry()` methods.
  *
- *  @param  key Key for which to remove value.
+ *  @param  key             Key for which to remove value.
+ *  @param  deallocateKey   Should key be also deallocated?
  *  @return Caller `AssociativeArray` to allow for method chaining.
  */
-public final function AssociativeArray RemoveItem(AcediaObject key)
+public final function AssociativeArray RemoveItem(
+    AcediaObject    key,
+    optional bool   deallocateKey)
 {
     local Entry entryToRemove;
     local int   bucketIndex, entryIndex;
@@ -493,23 +496,16 @@ public final function AssociativeArray RemoveItem(AcediaObject key)
     if (entryToRemove.managed && entryToRemove.value != none) {
         entryToRemove.value.FreeSelf(entryToRemove.valueLifeVersion);
     }
+    if (deallocateKey && entryToRemove.key != none) {
+        entryToRemove.key.FreeSelf(entryToRemove.keyLifeVersion);
+    }
     return self;
 }
 
-/**
- *  Completely clears caller `AssociativeArray` of all stored entries,
- *  deallocating any stored managed values.
- *
- *  @param  deallocateKeys  Setting this to `true` will force this method to
- *      also deallocate all keys from the caller `AssociativeArray`.
- *      Since we do not record whether `AssociativeArray` manages keys like it
- *      does values - all keys will be deallocated, so use this parameter with
- *      caution.
- *  @return Caller `AssociativeArray` to allow for method chaining.
- */
 public function Empty(optional bool deallocateKeys)
 {
     local int           i, j;
+    local Collection    subCollection;
     local array<Entry>  nextEntries;
     for (i = 0; i < hashTable.length; i += 1)
     {
@@ -518,6 +514,17 @@ public function Empty(optional bool deallocateKeys)
         {
             if (!nextEntries[j].managed)      continue;
             if (nextEntries[j].value == none) continue;
+            if (    nextEntries[j].value.GetLifeVersion()
+                !=  nextEntries[j].valueLifeVersion) {
+                continue;
+            }
+            if (deallocateKeys)
+            {
+                subCollection = Collection(nextEntries[j].value);
+                if (subCollection != none) {
+                    subCollection.Empty(true);
+                }
+            }
             nextEntries[j].value.FreeSelf(nextEntries[j].valueLifeVersion);
         }
         if (deallocateKeys)

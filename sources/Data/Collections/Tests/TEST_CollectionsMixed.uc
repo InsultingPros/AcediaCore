@@ -27,6 +27,8 @@ protected static function TESTS()
     Context("Testing accessing collections by JSON pointers.");
     Test_GetBy();
     Test_GetTypeBy();
+    Context("Testing erasing collections with keys via `Empty()` method.");
+    Test_EmptyWithKeys();
 }
 
 protected static function Test_GetBy()
@@ -94,6 +96,33 @@ protected static function Test_GetTypeBy()
             .GetFloatBy(P("/innerObject/array"), 2.34)
         ==  2.34);
     TEST_ExpectNone(obj.GetTextBy(P("")));
+}
+
+protected static function Test_EmptyWithKeys()
+{
+    local Text              outerKey, innerKey1, innerKey2, innerKey3;
+    local DynamicArray      middleArray;
+    local AssociativeArray  outerObject, innerObject1, innerObject2;
+    outerKey = __().text.FromString("first");
+    innerKey1 = __().text.FromString("third?");
+    innerKey2 = __().text.FromString("Or not?");
+    innerKey3 = __().text.FromString("Like hell if I know!!!1111");
+    outerObject = __().collections.EmptyAssociativeArray();
+    innerObject1 = __().collections.EmptyAssociativeArray();
+    innerObject2 = __().collections.EmptyAssociativeArray();
+    middleArray = __().collections.EmptyDynamicArray();
+    innerObject1.SetItem(innerKey1, __().box.int(4));
+    innerObject1.SetItem(innerKey2, __().box.float(-4.6));
+    innerObject2.SetItem(innerKey2, __().ref.bool(true));
+    innerObject2.SetItem(innerKey3, none);
+    middleArray.AddItem(innerObject1).AddItem(innerObject2);
+    outerObject.SetItem(outerKey, middleArray);
+    outerObject.Empty(true);
+    Issue("Collection keys are not deallocated by `Empty(true)` method");
+    TEST_ExpectFalse(outerKey.IsAllocated());
+    TEST_ExpectFalse(innerKey1.IsAllocated());
+    TEST_ExpectFalse(innerKey2.IsAllocated());
+    TEST_ExpectFalse(innerKey3.IsAllocated());
 }
 
 defaultproperties

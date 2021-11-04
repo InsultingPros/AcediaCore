@@ -114,16 +114,21 @@ protected final function DynamicArray FreeManagedItem(int index)
     return self;
 }
 
-/**
- *  Empties caller `DynamicArray`, erasing it's contents.
- *  All managed objects will be deallocated.
- *
- *  @return Reference to the caller `DynamicArray` to allow for method chaining.
- */
-public final function DynamicArray Empty()
+public function Empty(optional bool deallocateKeys)
 {
+    local int           i;
+    local Collection    subCollection;
+    if (deallocateKeys)
+    {
+        for (i = 0; i < storedObjects.length; i += 1)
+        {
+            subCollection = Collection(GetItem(i));
+            if (subCollection != none) {
+                subCollection.Empty(true);
+            }
+        }
+    }
     SetLength(0);
-    return self;
 }
 
 /**
