@@ -246,7 +246,7 @@ public static final function Feature EnableMe(Text configName)
 {
     local Feature myInstance;
     if (configName == none) {
-        return;
+        return none;
     }
     myInstance = GetInstance();
     if (myInstance != none)
