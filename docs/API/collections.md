@@ -10,14 +10,14 @@ and associative arrays (collection of key-value pairs with quick access to
 values via `AcediaObject` keys).
 Using them is fairly straightforward, but, since they're dealing with objects,
 some explanation about their memory management is needed.
-Below we attempt to give a detailed description of everything you need to
-efficiently use Acedia's collections.
+Below we attempt to give a detailed description of everything you need to know
+to efficiently use Acedia's collections.
 
 ## Usage examples
 
 ### Dynamic arrays
 
-Dynamics arrays can be created via either of
+Dynamic arrays can be created via either of
 `_.collections.EmptyDynamicArray()` / `_.collections.NewDynamicArray()` methods.
 `_.collections.NewDynamicArray()` takes an `array<Acedia>` argument and
 populates returned `DynamicArray` with it's items, while
@@ -29,8 +29,8 @@ several differences:
 1. They're passed by reference, rather than by value (no additional copies are
 made when passing `DynamicArray` as an argument to a function or assigning it
 to another variable);
-2. It has richer interface;
-3. It automatically handles necessary object deallocations.
+2. They have richer interface;
+3. They automatically handle necessary object deallocations.
 
 As an example to illustrate basic usage of `DynamicArray` let's create
 a trivial class that remembers players' nicknames:
@@ -68,7 +68,7 @@ public function IsRegisteredID(Text toCheck)
 public function ForgetNick(Text toForget)
 {
     //  This method removes all instances of `toForget` in `storage`;
-    //  Optionally there's a flag to only remove the first one.
+    //  There's also an optional flag to only remove the first one.
     storage.RemoveItem(toForget);
 }
 ```
@@ -90,7 +90,6 @@ TEST_ExpectTrue(storage.GetItem(0) == item);
 
 //  Now let's deallocate `item`
 item.FreeSelf();
-
 //  Suddenly things are different:
 TEST_ExpectNotNone(item); // `item` deallocated, but not dereferenced
 TEST_ExpectNone(storage.GetItem(0)); // but it is gone from the collection
@@ -99,17 +98,18 @@ TEST_ExpectFalse(storage.GetItem(0) == item);
 
 Let's explain what's changed after deallocation:
 
-1. Even though we've deallocated `item`, it's reference still points at
+1. Even though we've deallocated `item`, its reference still points at
 the `Text` object.
-This is because deallocation is an Acedia's concept and actual UnrealScript
-objects are not destroyed by it;
+This happens because object being *deallocated* is simply Acedia's flag for it
+and, from the Unreal Engine's point of view, `item` still exists and
+is being used;
 2. `storage.GetItem(0)` no longer points at that `Text` object.
-Unlike a simple `array<AcediaObject>`, `DynamicObject` tracks status of it's
+Unlike a simple `array<AcediaObject>`, `DynamicObject` tracks status of its
 items and replaces their values with `none` when they're deallocated.
 This kind of cleanup is something we cannot do with simple `FreeSelf()` or even
 `_.memory.Deallocate()` for object stored in a regular array, but can for
-objects stored in collections.
-3. Since collection forgot about `item` after it was deallocated,
+objects stored in Acedia's `Collection`s.
+3. Since our collection has forgotten about `item` after it was deallocated,
 `storage.GetItem(0) == item` will be false.
 
 #### What happens if we remove an item from our `DynamicArray` collection?
@@ -122,7 +122,7 @@ Suppose that to avoid items disappearing from our collections, we put in their
 copies instead.
 For `Text` it can be accomplished with a simple `Copy()` method:
 `storage.AddItem(item.Copy())`.
-This creates a problem - `storage`, as we've explained before, won't actually
+This creates a problem - `storage`, as we've just explained, won't actually
 deallocate this item if we simply remove it. We will have to do so manually to
 prevent memory leaks:
 
@@ -155,10 +155,11 @@ TEST_ExpectFalse(item.IsAllocated());
 ```
 
 Whether you would want your collection to auto-deallocate your items or not
-depends only on your needs.
+depends only on how you plan to use your collections.
 
 > **NOTE:**
-> The same collection can contain both managed and unmanaged items.
+> The same collection can technically contain both managed and unmanaged items,
+> but it is best you avoid mixing these types of items.
 
 Let's rewrite `RegisterNick()` method of `PlayerDB` to make it independent from
 whether `Text` objects passed to it are deallocated:
@@ -169,11 +170,21 @@ public function RegisterNick(Text newNickName)
 {
     if (newNickName == none)            return;
     if (storage.Find(newNickName) >= 0) return;
-    //  Store an independent, managed copy
+    //  Store an independent, but managed copy,
+    //  that will be gone along with the `storage`
     storage.AddItem(newNickName.Copy(), true);
 }
 ...
 ```
+
+> **IMPORTANT:**
+> While items added to collections aren't managed by *default*,
+> it is a convention that if you return a collection from your function and
+> make another piece of code responsible for it - that piece of code also
+> becomes responsible for that collection's items
+> (meaning that it must deallocate them when they are no longer needed).
+> If you expect a different behavior - you must specify so in the function's
+> description.
 
 ### Associative arrays
 
@@ -206,15 +217,15 @@ TEST_ExpectTrue(Text(item).ToString() == "What year it is?");
 
 In above example we've created separate text instances (with the same contents)
 to store and retrieve items in `AssociativeArray`.
-However it is inefficient to each time create `Text` anew:
+However it is inefficient to each time create `Text` anew just to get an item:
 
 1. It defeats the purpose of using `Text` over `string`, since
 (after initial creation cost) `Text` allows for a cheaper access to
 individual characters and also allows us to compute `Text`'s hash only once,
-caching it.
+caching it for later use.
 But if we create `Text` object every time we want to access value in
 `AssociativeArray` we will only get more overhead without any benefits.
-2. It leads to creation of useless objects, that we didn't deallocate in
+2. It leads to creation of useless objects, that we didn't even deallocate in
 the above example.
 
 So it is recommended that, whenever possible, your class would define reusable
@@ -269,7 +280,7 @@ methods.
 A question specific for `AssociativeArray`s is whether they deallocate
 their keys.
 And the answer is: they do not.
-`AssociativeArray` will never deallocate its keys, even if a managed value is
+`AssociativeArray` will not deallocate its keys, even if a managed value is
 recorded with them.
 This way one can use the same pre-allocated key in several different
 `AssociativeArray`s.
@@ -290,6 +301,12 @@ struct Entry
 
 This method also always removes stored value from `AssociativeArray` without
 deallocating it, even if it was managed, making you responsible for it.
+
+Another way is to completely clear your collection along with any keys inside
+with `Empty(true)` method.
+This method recursively clears your collection (also making `Empty()` calls on
+any collections stored inside yours) and passing it `true` as a parameter makes
+it deallocate any key objects used in these collections.
 
 In case of the opposite situation, where one deallocates an `AcediaObject` used
 as a key, `AssociativeArray` will automatically remove appropriate entry
@@ -316,7 +333,7 @@ noticeable time and increasing infinite loop counter
 `SetMinimalCapacity()` method to force it to pre-allocate enough space for
 the expected amount of items.
 Setting minimal capacity to the maximum amount of items you expect to store in
-the caller `AssociativeArray` can remove any need for reallocating the storage.
+the caller `AssociativeArray` will remove any need for reallocating the storage.
 
 > **NOTE:**
 > `AssociativeArray` always allocates storage array with length of at least
@@ -328,7 +345,7 @@ the caller `AssociativeArray` can remove any need for reallocating the storage.
 #### [Advanced] Associative arrays' keys
 
 `AssociativeArray` allows to store `AcediaObject` values by `AcediaObject` keys.
-Object of any class (derived from `AcediaObject`) can be used for either, but
+Ultimately, any `AcediaObject` can be used for either, but
 behavior of the `AssociativeArray` regarding its key depends on how key's
 `IsEqual()` and `GetHashCode()` methods are implemented.
 
@@ -348,9 +365,8 @@ TEST_ExpectTrue(t1.GetHashCode() == t2.GetHashCode());  //  same hashes
 TEST_ExpectTrue(t1 != t2);                              //  different objects
 ```
 
-Therefore, if you used one `Text` as a key, then you will be able to obtain it's
+Therefore, if you used one `Text` as a key, then you will be able to obtain its
 value with another `Text` that contains the same `string`.
-
 However `MutableText`'s contents can change dynamically, so it cannot afford to
 base its equality and hash on its contents:
 
@@ -384,7 +400,7 @@ As far as base Acedia's classes go, only `Text` and boxed
 (immutable ones, not refs) values are a good fit to be used as
 contents-dependent keys.
 
-## More accessors
+## Better accessors
 
 While you can store simple values inside these arrays in a straightforward
 manner of `storage.SetItem(_.text.FromString("year"), _.ref.int(2021))`,

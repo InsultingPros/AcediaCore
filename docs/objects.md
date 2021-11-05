@@ -33,6 +33,11 @@ There are two main guidelines:
     When implementing your own function - you should not deallocate
     objects passed as its arguments.
 
+> **NOTE:**
+> If you're responsible for Acedia's [collection](./API/collections.md) -
+> you are also considered responsible for its items,
+> unless explicitly stated otherwise.
+
 However, these guidelines should be treated as *default assumptions* and
 not *hard rules*.
 
