@@ -162,7 +162,7 @@ public final function MutableText Append(
  *      By default defines 'null' formatting (no color set).
  *  @return Caller `MutableText` to allow for method chaining.
  */
-public final function MutableText AppendPlainString(
+public final function MutableText AppendString(
     string              source,
     optional Formatting defaultFormatting)
 {
@@ -282,7 +282,8 @@ private final function SplitFormattedStringIntoBlocks(string source)
     local FormattedBlock    nextBlock;
     splitBlocks.length = 0;
     parser = _.text.ParseString(source);
-    while (!parser.HasFinished()) {
+    while (!parser.HasFinished())
+    {
         parser.MCharacter(nextCharacter);
         //  New formatted block by "{<color>"
         if (_.text.IsCodePoint(nextCharacter, CODEPOINT_OPEN_FORMAT))

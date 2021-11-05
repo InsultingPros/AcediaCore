@@ -164,7 +164,7 @@ protected final function ReformatRange(
     local array<FormattingChunk>    newFormattingChunks;
     start   = Max(start, 0);
     end     = Min(GetLength() - 1, end);
-    //  Formatting right after `end`, te end of re-formatted segment
+    //  Formatting right after `end`, the end of re-formatted segment
     formattingAfterChangedSegment = GetFormatting(end + 1);
     //  1. Copy old formatting before `start`
     for (i = 0; i < formattingChunks.length; i += 1)
@@ -222,7 +222,7 @@ public static final function Text ConstFromPlainString(string source)
     local MutableText   builder;
     local Text          result;
     builder = MutableText(__().memory.Allocate(class'MutableText'));
-    result = builder.AppendPlainString(source).Copy();
+    result = builder.AppendString(source).Copy();
     builder.FreeSelf();
     return result;
 }
@@ -807,7 +807,7 @@ public final function bool CompareToString(
     local MutableText   builder;
     local bool          result;
     builder = MutableText(_.memory.Allocate(class'MutableText'));
-    builder.AppendPlainString(stringToCompare);
+    builder.AppendString(stringToCompare);
     result = Compare(builder, caseSensitivity, formatSensitivity);
     builder.FreeSelf();
     return result;

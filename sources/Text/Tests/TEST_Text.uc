@@ -531,7 +531,7 @@ protected static function Test_AppendStringGet()
     defaultTag = __().color.GetColorTagRGB(1, 1, 1);
     colorTag = __().color.GetColorTag(testColor);
     greenTag = __().color.GetColorTagRGB(0, 255, 0);
-    txt.AppendPlainString("Prepare to ");
+    txt.AppendString("Prepare to ");
     txt.AppendColoredString(colorTag $ "DIE");
     txt.AppendFormattedString(" and be {#00ff00 reborn}!");
     TEST_ExpectTrue(    txt.ToString()
@@ -901,7 +901,7 @@ protected static function SubTest_ReplaceEdgeCases(Text.FormatSensitivity flag)
     TEST_ExpectTrue(builder.Replace(P(""), P(""),, flag).ToString() == "");
     TEST_ExpectTrue(
         builder.Replace(P(""), P("huh"),, flag).ToString() == "");
-    builder.AppendPlainString("word");
+    builder.AppendString("word");
     TEST_ExpectTrue(
         builder.Replace(P(""), P(""),, flag).ToString() == "word");
     TEST_ExpectTrue(
@@ -919,7 +919,7 @@ protected static function SubTest_ReplaceEdgeCases(Text.FormatSensitivity flag)
             .Replace(F("Just {#54af4c something}"), P("Nothing really"),, flag)
             .ToString()
         ==  "Nothing really");
-    TEST_ExpectTrue(builder.Clear().AppendPlainString("CraZy")
+    TEST_ExpectTrue(builder.Clear().AppendString("CraZy")
             .Replace(P("CRaZy"), P("calm"), SCASE_INSENSITIVE, flag)
             .ToString()
         ==  "calm");
@@ -940,17 +940,17 @@ protected static function SubTest_ReplaceMainCases(Text.FormatSensitivity flag)
         ==  "Mate eight said");
 
     Issue("`Replace()` replaces sub-`Text` incorrectly.");
-    builder.Clear().AppendPlainString("Do it bay bee");
+    builder.Clear().AppendString("Do it bay bee");
     TEST_ExpectTrue(builder.Replace(P("it"), P("this"),, flag).ToString()
         ==  "Do this bay bee");
-    builder.Clear().AppendPlainString("dO It bAy BEe");
+    builder.Clear().AppendString("dO It bAy BEe");
     TEST_ExpectTrue(
             builder.Replace(P("it"), P("tHis"), SCASE_INSENSITIVE, flag)
             .ToString()
         ==  "dO tHis bAy BEe");
 
     Issue("`Replace()` replaces sub-`Text` incorrectly.");
-    builder.Clear().AppendPlainString("he and she and it");
+    builder.Clear().AppendString("he and she and it");
     TEST_ExpectTrue(builder.Replace(P("and"), P("OR"),, flag)
             .ToString()
         ==  "he OR she OR it");

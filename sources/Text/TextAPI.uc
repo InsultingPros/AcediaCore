@@ -659,7 +659,7 @@ public final function MutableText FromStringM(string source)
 {
     local MutableText newText;
     newText = MutableText(_.memory.Allocate(class'MutableText'));
-    return newText.AppendPlainString(source);
+    return newText.AppendString(source);
 }
 
 /**

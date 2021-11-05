@@ -60,7 +60,7 @@ public static function array<KF1_Trader> WrapVanillaShops()
         {
             nextTrader = KF1_Trader(__().memory.Allocate(class'KF1_Trader'));
             nextTrader.myShopVolume = __().unreal.ActorRef(nextShopVolume);
-            textBuilder.Clear().AppendPlainString("trader" $ shopCounter);
+            textBuilder.Clear().AppendString("trader" $ shopCounter);
             nextTrader.myName = textBuilder.Copy();
             allTraders[allTraders.length] = nextTrader;
             shopCounter += 1;
