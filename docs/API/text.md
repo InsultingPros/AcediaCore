@@ -95,7 +95,7 @@ auxiliary = _.text.FromFormattedString("{$gold Hello}, {$crimson world}!");
 // Produces a string colored with 4-byte codes, a native way for UnrealScript
 auxiliary.ToColoredString();
 // Strings all color and produces "Hello, world!"
-auxiliary.ToPlainString();
+auxiliary.ToString();
 // Don't forget the cleanup!
 _.memory.Free(auxiliary);
 ```
@@ -145,7 +145,7 @@ text variants from a plain `string` and their analogues
 for colored and formatted `string`s.
 
 You can also get a `string` back by calling either of
-`self.ToPlainString()` / `self.ToColoredString()` / `self.ToFormattedString()`
+`self.ToString()` / `self.ToColoredString()` / `self.ToFormattedString()`
 methods.
 
 To duplicate `Text` / `MutableText` themselves you can use `Copy()`

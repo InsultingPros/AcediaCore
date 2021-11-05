@@ -59,9 +59,9 @@ protected static function Test_Plain()
                     ||  lifeVersion != newText.GetLifeVersion());
 
     Issue("Cache returns `Text` with wrong data.");
-    TEST_ExpectTrue(    cache.GetPlainText("First string").ToPlainString()
+    TEST_ExpectTrue(    cache.GetPlainText("First string").ToString()
                     ==  "First string");
-    TEST_ExpectTrue(    cache.GetPlainText("New string").ToPlainString()
+    TEST_ExpectTrue(    cache.GetPlainText("New string").ToString()
                     ==  "New string");
 }
 

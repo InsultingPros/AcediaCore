@@ -52,7 +52,7 @@ If you need to turn a `Text` object into a `string`, then you can either do:
 ```unrealscript
 if (textToConvert != none)
 {
-    result = textToConvert.ToPlainString();
+    result = textToConvert.ToString();
     textToConvert.FreeSelf();
 }
 ```

@@ -31,7 +31,7 @@ public function Write(Text message, LoggerAPI.LogLevel messageLevel)
     {
         builder = GetPrefix(messageLevel);
         builder.Append(message);
-        Log(builder.ToPlainString());
+        Log(builder.ToString());
         builder.FreeSelf();
     }
 }

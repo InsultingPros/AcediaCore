@@ -167,7 +167,7 @@ public final static function bool NewConfig(Text name)
         return false;
     }
     newConfig =
-        new(none, NameToStorageVersion(name.ToPlainString())) default.class;
+        new(none, NameToStorageVersion(name.ToString())) default.class;
     newConfig._ = __();
     newConfig.DefaultIt();
     newConfig.SaveConfig();
@@ -262,7 +262,7 @@ public final static function AcediaConfig GetConfigInstance(Text name)
     if (configEntry.value == none && configEntry.key != none)
     {
         configEntry.value =
-            new(none, NameToStorageVersion(name.ToPlainString())) default.class;
+            new(none, NameToStorageVersion(name.ToString())) default.class;
         configEntry.value._ = __();
         default.existingConfigs.SetItem(configEntry.key, configEntry.value);
     }

@@ -55,7 +55,7 @@ protected static function Command.SubCommand GetSubCommand(
     local Command.SubCommand    emptySubCommand;
     for (i = 0; i < data.subcommands.length; i += 1)
     {
-        if (data.subcommands[i].name.CompareToPlainString(subCommandName)) {
+        if (data.subcommands[i].name.CompareToString(subCommandName)) {
             return data.subcommands[i];
         }
     }
@@ -70,7 +70,7 @@ protected static function Command.Option GetOption(
     local Command.Option    emptyOption;
     for (i = 0; i < data.options.length; i += 1)
     {
-        if (data.options[i].longName.CompareToPlainString(subCommandName)) {
+        if (data.options[i].longName.CompareToString(subCommandName)) {
             return data.options[i];
         }
     }
@@ -113,9 +113,9 @@ protected static function Test_Full()
     TEST_ExpectTrue(data.requiresTarget);
     //  Test empty sub command.
     Issue("\"empty\" command was filled incorrectly.");
-    TEST_ExpectTrue(    GetSubCommand(data, "empty").name.ToPlainString()
+    TEST_ExpectTrue(    GetSubCommand(data, "empty").name.ToString()
                     ==  "empty");
-    TEST_ExpectTrue(    GetSubCommand(data, "empty").description.ToPlainString()
+    TEST_ExpectTrue(    GetSubCommand(data, "empty").description.ToString()
                     ==  "Empty one!");
     TEST_ExpectTrue(GetSubCommand(data, "empty").required.length == 0);
     TEST_ExpectTrue(GetSubCommand(data, "empty").optional.length == 0);
@@ -133,26 +133,26 @@ protected static function SubTest_DefaultSubCommand(Command.Data data)
     Issue("Default sub-command was filled incorrectly.");
     subCommand = GetSubCommand(data, "");
     TEST_ExpectTrue(subCommand.name.IsEmpty());
-    TEST_ExpectTrue(subCommand.description.ToPlainString() == "Simple command");
+    TEST_ExpectTrue(subCommand.description.ToString() == "Simple command");
     TEST_ExpectTrue(subCommand.required.length == 2);
     TEST_ExpectTrue(subCommand.optional.length == 1);
     //  Required
-    TEST_ExpectTrue(    subCommand.required[0].displayName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[0].displayName.ToString()
                     ==  "var");
-    TEST_ExpectTrue(    subCommand.required[0].variableName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[0].variableName.ToString()
                     ==  "var");
     TEST_ExpectTrue(subCommand.required[0].type == CPT_Number);
     TEST_ExpectFalse(subCommand.required[0].allowsList);
-    TEST_ExpectTrue(    subCommand.required[1].displayName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[1].displayName.ToString()
                     ==   "str_var");
-    TEST_ExpectTrue(    subCommand.required[1].variableName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[1].variableName.ToString()
                     ==  "otherName");
     TEST_ExpectTrue(subCommand.required[1].type == CPT_Text);
     TEST_ExpectFalse(subCommand.required[1].allowsList);
     //  Optional
-    TEST_ExpectTrue(    subCommand.optional[0].displayName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.optional[0].displayName.ToString()
                     ==  "list");
-    TEST_ExpectTrue(    subCommand.optional[0].variableName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.optional[0].variableName.ToString()
                     ==  "list");
     TEST_ExpectTrue(subCommand.optional[0].type == CPT_Boolean);
     TEST_ExpectTrue(subCommand.optional[0].booleanFormat == PBF_OnOff);
@@ -164,27 +164,27 @@ protected static function SubTest_subSubCommand(Command.Data data)
     local Command.SubCommand subCommand;
     Issue("\"sub\" sub-command was filled incorrectly.");
     subCommand = GetSubCommand(data, "sub");
-    TEST_ExpectTrue(subCommand.name.ToPlainString() == "sub");
-    TEST_ExpectTrue(    subCommand.description.ToPlainString()
+    TEST_ExpectTrue(subCommand.name.ToString() == "sub");
+    TEST_ExpectTrue(    subCommand.description.ToString()
                     ==  "Alternative command! Updated!");
     TEST_ExpectTrue(subCommand.required.length == 3);
     TEST_ExpectTrue(subCommand.optional.length == 0);
     //  Required
-    TEST_ExpectTrue(    subCommand.required[0].displayName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[0].displayName.ToString()
                     ==  "array_var");
-    TEST_ExpectTrue(    subCommand.required[0].variableName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[0].variableName.ToString()
                     ==  "array_var");
     TEST_ExpectTrue(subCommand.required[0].type == CPT_Array);
     TEST_ExpectFalse(subCommand.required[0].allowsList);
-    TEST_ExpectTrue(    subCommand.required[1].displayName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[1].displayName.ToString()
                     ==  "int");
-    TEST_ExpectTrue(    subCommand.required[1].variableName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[1].variableName.ToString()
                     ==  "int");
     TEST_ExpectTrue(subCommand.required[1].type == CPT_Integer);
     TEST_ExpectTrue(subCommand.required[1].allowsList);
-    TEST_ExpectTrue(    subCommand.required[2].displayName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[2].displayName.ToString()
                     ==  "one_more");
-    TEST_ExpectTrue(    subCommand.required[2].variableName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[2].variableName.ToString()
                     ==  "but");
     TEST_ExpectTrue(subCommand.required[2].type == CPT_Object);
     TEST_ExpectTrue(subCommand.required[2].allowsList);
@@ -195,14 +195,14 @@ protected static function SubTest_huhSubCommand(Command.Data data)
     local Command.SubCommand subCommand;
     Issue("\"huh\" sub-command was filled incorrectly.");
     subCommand = GetSubCommand(data, "huh");
-    TEST_ExpectTrue(subCommand.name.ToPlainString() == "huh");
+    TEST_ExpectTrue(subCommand.name.ToString() == "huh");
     TEST_ExpectNone(subCommand.description);
     TEST_ExpectTrue(subCommand.required.length == 1);
     TEST_ExpectTrue(subCommand.optional.length == 0);
     //  Required
-    TEST_ExpectTrue(    subCommand.required[0].displayName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[0].displayName.ToString()
                     ==  "list");
-    TEST_ExpectTrue(    subCommand.required[0].variableName.ToPlainString()
+    TEST_ExpectTrue(    subCommand.required[0].variableName.ToString()
                     ==  "list");
     TEST_ExpectTrue(subCommand.required[0].type == CPT_Number);
     TEST_ExpectFalse(subCommand.required[0].allowsList);
@@ -213,9 +213,9 @@ protected static function SubTest_silentOption(Command.Data data)
     local Command.Option option;
     Issue("\"silent\" option was filled incorrectly.");
     option = GetOption(data, "silent");
-    TEST_ExpectTrue(option.longName.ToPlainString() == "silent");
+    TEST_ExpectTrue(option.longName.ToString() == "silent");
     TEST_ExpectTrue(option.shortName.codePoint == 0x73);   // s
-    TEST_ExpectTrue(    option.description.ToPlainString()
+    TEST_ExpectTrue(    option.description.ToString()
                     ==  "Just an option, I dunno.");
     TEST_ExpectTrue(option.required.length == 0);
     TEST_ExpectTrue(option.optional.length == 0);
@@ -226,21 +226,21 @@ protected static function SubTest_ParamsOption(Command.Data data)
     local Command.Option option;
     Issue("\"Params\" option was filled incorrectly.");
     option = GetOption(data, "Params");
-    TEST_ExpectTrue(option.longName.ToPlainString() == "Params");
+    TEST_ExpectTrue(option.longName.ToString() == "Params");
     TEST_ExpectTrue(option.shortName.codePoint == 0x64);
     TEST_ExpectNone(option.description);
     TEST_ExpectTrue(option.required.length == 1);
     TEST_ExpectTrue(option.optional.length == 1);
     //  Required
-    TEST_ExpectTrue(option.required[0].displayName.ToPlainString() == "www");
-    TEST_ExpectTrue(    option.required[0].variableName.ToPlainString()
+    TEST_ExpectTrue(option.required[0].displayName.ToString() == "www");
+    TEST_ExpectTrue(    option.required[0].variableName.ToString()
                     ==  "random");
     TEST_ExpectTrue(option.required[0].type == CPT_Boolean);
     TEST_ExpectTrue(option.required[0].booleanFormat == PBF_YesNo);
     TEST_ExpectFalse(option.required[0].allowsList);
     //  Optional
-    TEST_ExpectTrue(option.optional[0].displayName.ToPlainString() == "www2");
-    TEST_ExpectTrue(option.optional[0].variableName.ToPlainString() == "www2");
+    TEST_ExpectTrue(option.optional[0].displayName.ToString() == "www2");
+    TEST_ExpectTrue(option.optional[0].variableName.ToString() == "www2");
     TEST_ExpectTrue(option.optional[0].type == CPT_Integer);
     TEST_ExpectTrue(option.optional[0].allowsList);
 }

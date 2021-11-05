@@ -50,7 +50,7 @@ protected static function Test_GetBy()
         @ "'~'-escaped sequences.");    
     result = obj.GetItemBy(P("/another~01var"));
     TEST_ExpectNotNone(Text(result));
-    TEST_ExpectTrue(Text(result).ToPlainString() == "aye!");
+    TEST_ExpectTrue(Text(result).ToString() == "aye!");
     result = obj.GetItemBy(P("/innerObject/one more/no~1pe"));
     TEST_ExpectNotNone(IntBox(result));
     TEST_ExpectTrue(IntBox(result).Get() == 324532);
@@ -83,7 +83,7 @@ protected static function Test_GetTypeBy()
             .GetFloatBy(P("/innerObject/array/4"), 2.34)
         ==  56.6);
     TEST_ExpectTrue(obj
-            .GetTextBy(P("/innerObject/one more/o rly?")).ToPlainString()
+            .GetTextBy(P("/innerObject/one more/o rly?")).ToString()
         ==  "ya rly");
     Issue("`Get<Type>By()` methods do not return default value for"
         @ "incorrect pointers.");

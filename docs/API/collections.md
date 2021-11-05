@@ -201,7 +201,7 @@ storage.SetItem(    _.text.FromString("comment"),
 item = storage.GetItem(_.text.FromString("year"));
 TEST_ExpectTrue(IntRef(item).Get() == 2021);
 item = storage.GetItem(_.text.FromString("comment"));
-TEST_ExpectTrue(Text(item).ToPlainString() == "What year it is?");
+TEST_ExpectTrue(Text(item).ToString() == "What year it is?");
 ```
 
 In above example we've created separate text instances (with the same contents)

@@ -250,7 +250,7 @@ protected static function SubTest_LoadingPreparedSuccessRoot(
         .GetLength() == 42);
     TEST_ExpectTrue(default.resultData
         .GetTextBy(P("/web-app/servlet/2/servlet-class"))
-        .ToPlainString() == "org.cofax.cds.AdminServlet");
+        .ToString() == "org.cofax.cds.AdminServlet");
     TEST_ExpectFalse(default.resultData
         .GetBoolBy(P("/web-app/servlet/0/init-param/useJSP")));
     TEST_ExpectTrue(default.resultData
@@ -266,19 +266,19 @@ protected static function SubTest_LoadingPreparedSuccessSubValues(
     TEST_ExpectTrue(default.resultType == DBR_Success);
     TEST_ExpectTrue(default.resultData.GetLength() == 5);
     TEST_ExpectTrue(
-        default.resultData.GetText(P("cofaxCDS")).ToPlainString() == "/");
+        default.resultData.GetText(P("cofaxCDS")).ToString() == "/");
     TEST_ExpectTrue(
-            default.resultData.GetText(P("cofaxEmail")).ToPlainString()
+            default.resultData.GetText(P("cofaxEmail")).ToString()
         ==  "/cofaxutil/aemail/*");
     TEST_ExpectTrue(
-            default.resultData.GetText(P("cofaxAdmin")).ToPlainString()
+            default.resultData.GetText(P("cofaxAdmin")).ToString()
         ==  "/admin/*");
 
     Issue("Simple values are being read incorrectly.");
     ReadFromDB(db, "/web-app/servlet/3/servlet-class");
     TEST_ExpectTrue(default.resultType == DBR_Success);
     TEST_ExpectTrue(
-            Text(default.resultObject).ToPlainString()
+            Text(default.resultObject).ToString()
         ==  "org.cofax.cds.FileServlet");
     ReadFromDB(db, "/web-app/servlet/4/init-param/adminGroupID");
     TEST_ExpectTrue(default.resultType == DBR_Success);
@@ -409,7 +409,7 @@ protected static function SubTest_LoadingPreparedGetKeysSuccess(
     task.TryCompleting();
     for (i = 0; i < default.resultKeys.GetLength(); i += 1)
     {
-        nextKey = default.resultKeys.GetText(i).ToPlainString();
+        nextKey = default.resultKeys.GetText(i).ToString();
         if (nextKey == "cofaxCDS")      rCDS = true;
         if (nextKey == "cofaxEmail")    rEmail = true;
         if (nextKey == "cofaxAdmin")    rAdmin = true;
@@ -599,10 +599,10 @@ protected static function SubTest_WritingDataCheck(LocalDatabaseInstance db)
     TEST_ExpectTrue(default.resultType == DBR_Success);
     TEST_ExpectTrue(default.resultData.GetLength() == 2);
     TEST_ExpectTrue(
-            default.resultData.GetTextBy(P("/B/A/1//2")).ToPlainString()
+            default.resultData.GetTextBy(P("/B/A/1//2")).ToString()
         ==  "huh");
     TEST_ExpectTrue(
-            default.resultData.GetTextBy(P("/A")).ToPlainString()
+            default.resultData.GetTextBy(P("/A")).ToString()
         ==  "simpleValue");
     TEST_ExpectTrue(default.resultData.GetFloatBy(P("/B/B")) == 11.12);
     TEST_ExpectTrue(default.resultData.GetBoolBy(P("/B/A/0"), false));
@@ -745,7 +745,7 @@ protected static function SubTest_TaskChaining(LocalDatabaseInstance db)
     Issue("Chaining several tasks for the database leads to a failure.");
     TEST_ExpectTrue(default.resultType == DBR_Success);
     TEST_ExpectTrue(default.resultObject.class == class'Text');
-    TEST_ExpectTrue(Text(default.resultObject).ToPlainString() == "huh");
+    TEST_ExpectTrue(Text(default.resultObject).ToString() == "huh");
     ReadFromDB(db, "/B/2");
     TEST_ExpectTrue(default.resultType == DBR_Success);
     TEST_ExpectTrue(default.resultObject.class == class'DynamicArray');
@@ -820,7 +820,7 @@ protected static function SubTest_RemovalCheckValuesAfter(
         default.resultData.GetDynamicArray(P("A")).GetLength() == 2);
     TEST_ExpectTrue(default.resultData.GetDynamicArray(P("A")).GetBool(0));
     TEST_ExpectTrue(default.resultData.GetDynamicArray(P("A"))
-            .GetText(1).ToPlainString()
+            .GetText(1).ToString()
         ==  "huh");
 }
 
@@ -979,7 +979,7 @@ protected static function SubTest_IncrementString(LocalDatabaseInstance db)
     TEST_ExpectTrue(default.resultType == DBR_Success);
     ReadFromDB(db, "/A");
     TEST_ExpectTrue(
-        Text(default.resultObject).ToPlainString() == "simpleValue");
+        Text(default.resultObject).ToString() == "simpleValue");
     task = db.IncrementData(__().json.Pointer(P("/A")),
                             __().text.FromString("!"));
     task.connect = DBIncrementHandler;
@@ -987,7 +987,7 @@ protected static function SubTest_IncrementString(LocalDatabaseInstance db)
     TEST_ExpectTrue(default.resultType == DBR_Success);
     ReadFromDB(db, "/A");
     TEST_ExpectTrue(
-        Text(default.resultObject).ToPlainString() == "simpleValue!");
+        Text(default.resultObject).ToString() == "simpleValue!");
     task = db.IncrementData(__().json.Pointer(P("/A")),
                             __().text.FromStringM("?"));
     task.connect = DBIncrementHandler;
@@ -995,7 +995,7 @@ protected static function SubTest_IncrementString(LocalDatabaseInstance db)
     TEST_ExpectTrue(default.resultType == DBR_Success);
     ReadFromDB(db, "/A");
     TEST_ExpectTrue(
-        Text(default.resultObject).ToPlainString() == "simpleValue!?");
+        Text(default.resultObject).ToString() == "simpleValue!?");
 }
 
 protected static function AssociativeArray GetHelperObject()
@@ -1022,7 +1022,7 @@ protected static function SubTest_IncrementObject(LocalDatabaseInstance db)
     TEST_ExpectTrue(default.resultData.GetLength() == 4);
     //  Check that value was not overwritten
     TEST_ExpectTrue(
-        default.resultData.GetText(P("A")).ToPlainString() == "simpleValue!?");
+        default.resultData.GetText(P("A")).ToString() == "simpleValue!?");
     task = db.IncrementData(__().json.Pointer(P("")),
                             GetHelperObject());
     task.connect = DBIncrementHandler;
@@ -1032,13 +1032,13 @@ protected static function SubTest_IncrementObject(LocalDatabaseInstance db)
     TEST_ExpectNotNone(default.resultData);
     TEST_ExpectTrue(default.resultData.GetLength() == 6);
     TEST_ExpectTrue(
-        default.resultData.GetText(P("E")).ToPlainString() == "str");
+        default.resultData.GetText(P("E")).ToString() == "str");
     TEST_ExpectTrue(default.resultData.GetFloat(P("F")) == 45);
     TEST_ExpectTrue(
         default.resultData.GetItem(P("B")).class == class'AssociativeArray');
     Issue("Incrementing JSON objects can overwrite existing data.");
     TEST_ExpectTrue(
-        default.resultData.GetText(P("A")).ToPlainString() == "simpleValue!?");
+        default.resultData.GetText(P("A")).ToString() == "simpleValue!?");
 }
 
 protected static function DynamicArray GetHelperArray()
@@ -1064,7 +1064,7 @@ protected static function SubTest_IncrementArray(LocalDatabaseInstance db)
     ReadFromDB(db, "/B/A");
     TEST_ExpectTrue(DynamicArray(default.resultObject).GetLength() == 3);
     TEST_ExpectTrue(
-        DynamicArray(default.resultObject).GetText(2).ToPlainString() == "huh");
+        DynamicArray(default.resultObject).GetText(2).ToString() == "huh");
     task = db.IncrementData(__().json.Pointer(P("/B/A")),
                             GetHelperArray());
     task.connect = DBIncrementHandler;
@@ -1076,9 +1076,9 @@ protected static function SubTest_IncrementArray(LocalDatabaseInstance db)
     TEST_ExpectNotNone(
         DynamicArray(default.resultObject).GetAssociativeArray(1));
     TEST_ExpectTrue(
-        DynamicArray(default.resultObject).GetText(2).ToPlainString() == "huh");
+        DynamicArray(default.resultObject).GetText(2).ToString() == "huh");
     TEST_ExpectTrue(
-            DynamicArray(default.resultObject).GetText(3).ToPlainString()
+            DynamicArray(default.resultObject).GetText(3).ToString()
         ==  "complexString");
     TEST_ExpectTrue(DynamicArray(default.resultObject).GetFloat(4) == 45);
     TEST_ExpectNone(DynamicArray(default.resultObject).GetItem(5));
@@ -1091,23 +1091,23 @@ protected static function CheckValuesAfterIncrement(AssociativeArray root)
     TEST_ExpectTrue(root.GetBoolBy(P("/D")));
     TEST_ExpectTrue(root.GetFloatBy(P("/B/B")) == 10.12);
     TEST_ExpectTrue(
-            root.GetTextBy(P("/A")).ToPlainString()
+            root.GetTextBy(P("/A")).ToString()
         ==  "simpleValue!?");
     jsonArray = root.GetDynamicArrayBy(P("/B/A"));
     TEST_ExpectTrue(jsonArray.GetBool(0));
     TEST_ExpectNotNone(jsonArray.GetAssociativeArray(1));
-    TEST_ExpectTrue(jsonArray.GetText(2).ToPlainString() == "huh");
-    TEST_ExpectTrue(jsonArray.GetText(3).ToPlainString() ==  "complexString");
+    TEST_ExpectTrue(jsonArray.GetText(2).ToString() == "huh");
+    TEST_ExpectTrue(jsonArray.GetText(3).ToString() ==  "complexString");
     TEST_ExpectTrue(jsonArray.GetFloat(4) == 45);
     TEST_ExpectNone(jsonArray.GetItem(5));
     TEST_ExpectTrue(jsonArray.GetBool(6));
     //  Test root itself
     TEST_ExpectTrue(root.GetLength() == 6);
-    TEST_ExpectTrue(root.GetText(P("A")).ToPlainString() == "simpleValue!?");
+    TEST_ExpectTrue(root.GetText(P("A")).ToString() == "simpleValue!?");
     TEST_ExpectTrue(root.GetItem(P("B")).class == class'AssociativeArray');
     TEST_ExpectTrue(root.GetFloat(P("C")) == 5.5);
     TEST_ExpectTrue(root.GetBool(P("D")));
-    TEST_ExpectTrue(root.GetText(P("E")).ToPlainString() == "str");
+    TEST_ExpectTrue(root.GetText(P("E")).ToString() == "str");
     TEST_ExpectTrue(root.GetFloat(P("F")) == 45);
 }
 

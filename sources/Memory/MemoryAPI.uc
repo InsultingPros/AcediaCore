@@ -35,7 +35,7 @@ public final function class<Object> LoadClass(Text classReference)
     if (classReference == none) {
         return none;
     }
-    return class<Object>(   DynamicLoadObject(classReference.ToPlainString(),
+    return class<Object>(   DynamicLoadObject(classReference.ToString(),
                             class'Class', true));
 }
 

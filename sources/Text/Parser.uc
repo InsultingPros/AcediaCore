@@ -747,7 +747,7 @@ public final function Parser MStringLiteralS(out string result)
 
     wrapper = _.text.Empty();
     if (MStringLiteral(wrapper).Ok()) {
-        result = wrapper.ToPlainString();
+        result = wrapper.ToString();
     }
     wrapper.FreeSelf();
     return self;
@@ -833,7 +833,7 @@ public final function Parser MUntilS(
 
     wrapper = _.text.Empty();
     MUntil(wrapper, characterBreak, whitespacesBreak, quotesBreak);
-    result = wrapper.ToPlainString();
+    result = wrapper.ToString();
     wrapper.FreeSelf();
     return self;
 }
@@ -945,7 +945,7 @@ public final function Parser MUntilManyS(
 
     wrapper = _.text.Empty();
     MUntilMany(wrapper, separators, whitespacesBreak, quotesBreak);
-    result = wrapper.ToPlainString();
+    result = wrapper.ToString();
     wrapper.FreeSelf();
     return self;
 }
@@ -1008,7 +1008,7 @@ public final function Parser MStringS(out string result)
 
     wrapper = _.text.Empty();
     MString(wrapper);
-    result = wrapper.ToPlainString();
+    result = wrapper.ToString();
     wrapper.FreeSelf();
     return self;
 }
@@ -1067,7 +1067,7 @@ public final function Parser MWhitespacesS(out string result)
 
     wrapper = _.text.Empty();
     MWhitespaces(wrapper);
-    result = wrapper.ToPlainString();
+    result = wrapper.ToString();
     wrapper.FreeSelf();
     return self;
 }

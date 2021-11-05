@@ -40,14 +40,14 @@ protected static function Test_UserID()
     TEST_ExpectFalse(testID.Initialize(P("76561198044316328")));
 
     Issue("`UserID` incorrectly handles SteamID.");
-    TEST_ExpectTrue(    testID.GetUniqueID().ToPlainString()
+    TEST_ExpectTrue(    testID.GetUniqueID().ToString()
                     ==  "76561198025127722");
-    TEST_ExpectTrue(    testID.GetSteamIDString().ToPlainString()
+    TEST_ExpectTrue(    testID.GetSteamIDString().ToString()
                     ==  "STEAM_1:0:32430997");
-    TEST_ExpectTrue(    testID.GetSteamID3String().ToPlainString()
+    TEST_ExpectTrue(    testID.GetSteamID3String().ToString()
                     ==  "U:1:64861994");
     TEST_ExpectTrue(testID.GetSteamID32() == 64861994);
-    TEST_ExpectTrue(    testID.GetSteamID64String().ToPlainString()
+    TEST_ExpectTrue(    testID.GetSteamID64String().ToString()
                     ==  "76561198025127722");
 
     Issue("Two `UserID` equality check is incorrect.");
@@ -65,7 +65,7 @@ protected static function Test_UserID()
     TEST_ExpectTrue(SteamID.universe == 1);
     TEST_ExpectTrue(SteamID.instance == 1);
     TEST_ExpectTrue(SteamID.steamID32 == 84050600);
-    TEST_ExpectTrue(SteamID.steamID64.ToPlainString() == "76561198044316328");
+    TEST_ExpectTrue(SteamID.steamID64.ToString() == "76561198044316328");
 }
 
 defaultproperties

@@ -87,11 +87,11 @@ protected function FromData(AssociativeArray source)
         }
         nextText = nextLink.GetText(P("name"));
         if (nextText != none) {
-            nextRecord.name = nextText.ToPlainString();
+            nextRecord.name = nextText.ToString();
         }
         nextText = nextLink.GetText(P("address"));
         if (nextText != none) {
-            nextRecord.address = nextText.ToPlainString();
+            nextRecord.address = nextText.ToString();
         }
         link[i] = nextRecord;
     }

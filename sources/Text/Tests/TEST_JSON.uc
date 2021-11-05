@@ -54,22 +54,22 @@ protected static function SubTest_PointerCreate()
     Issue("Normal JSON pointers are not handled correctly.");
     pointer = __().json.Pointer(P("/a~1b/c%d/e^f//g|h/i\\j/m~0n/"));
     TEST_ExpectTrue(pointer.GetLength() == 8);
-    TEST_ExpectTrue(pointer.GetComponent(0).ToPlainString() == "a/b");
-    TEST_ExpectTrue(pointer.GetComponent(1).ToPlainString() == "c%d");
-    TEST_ExpectTrue(pointer.GetComponent(2).ToPlainString() == "e^f");
-    TEST_ExpectTrue(pointer.GetComponent(3).ToPlainString() == "");
-    TEST_ExpectTrue(pointer.GetComponent(4).ToPlainString() == "g|h");
-    TEST_ExpectTrue(pointer.GetComponent(5).ToPlainString() == "i\\j");
-    TEST_ExpectTrue(pointer.GetComponent(6).ToPlainString() == "m~n");
-    TEST_ExpectTrue(pointer.GetComponent(7).ToPlainString() == "");
+    TEST_ExpectTrue(pointer.GetComponent(0).ToString() == "a/b");
+    TEST_ExpectTrue(pointer.GetComponent(1).ToString() == "c%d");
+    TEST_ExpectTrue(pointer.GetComponent(2).ToString() == "e^f");
+    TEST_ExpectTrue(pointer.GetComponent(3).ToString() == "");
+    TEST_ExpectTrue(pointer.GetComponent(4).ToString() == "g|h");
+    TEST_ExpectTrue(pointer.GetComponent(5).ToString() == "i\\j");
+    TEST_ExpectTrue(pointer.GetComponent(6).ToString() == "m~n");
+    TEST_ExpectTrue(pointer.GetComponent(7).ToString() == "");
 
     Issue("Initializing JSON pointers with values, not starting with \"/\","
         @ "is not handled correctly.");
     pointer = __().json.Pointer(P("huh/send~0/pics~1"));
     TEST_ExpectTrue(pointer.GetLength() == 3);
-    TEST_ExpectTrue(pointer.GetComponent(0).ToPlainString() ==  "huh");
-    TEST_ExpectTrue(pointer.GetComponent(1).ToPlainString() ==  "send~");
-    TEST_ExpectTrue(pointer.GetComponent(2).ToPlainString() ==  "pics/");
+    TEST_ExpectTrue(pointer.GetComponent(0).ToString() ==  "huh");
+    TEST_ExpectTrue(pointer.GetComponent(1).ToString() ==  "send~");
+    TEST_ExpectTrue(pointer.GetComponent(2).ToString() ==  "pics/");
 }
 
 protected static function SubTest_PointerToText()
@@ -77,15 +77,15 @@ protected static function SubTest_PointerToText()
     local JSONPointer pointer;
     Issue("`JSONPointer` is not converted to `Text` correctly.");
     pointer = __().json.Pointer(P(""));
-    TEST_ExpectTrue(pointer.ToText().ToPlainString() == "");
-    TEST_ExpectTrue(pointer.ToTextM().ToPlainString() == "");
+    TEST_ExpectTrue(pointer.ToText().ToString() == "");
+    TEST_ExpectTrue(pointer.ToTextM().ToString() == "");
     pointer = __().json.Pointer(P("///"));
-    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "///");
-    TEST_ExpectTrue(pointer.ToTextM().ToPlainString() ==  "///");
+    TEST_ExpectTrue(pointer.ToText().ToString() ==  "///");
+    TEST_ExpectTrue(pointer.ToTextM().ToString() ==  "///");
     pointer = __().json.Pointer(P("/a~1b/c%d/e^f//g|h/i\\j/m~0n/"));
-    TEST_ExpectTrue(    pointer.ToText().ToPlainString()
+    TEST_ExpectTrue(    pointer.ToText().ToString()
                     ==  "/a~1b/c%d/e^f//g|h/i\\j/m~0n/");
-    TEST_ExpectTrue(    pointer.ToTextM().ToPlainString()
+    TEST_ExpectTrue(    pointer.ToTextM().ToString()
                     ==  "/a~1b/c%d/e^f//g|h/i\\j/m~0n/");
 
     pointer = __().json.Pointer(P("/a/b/c"));
@@ -103,31 +103,31 @@ protected static function SubTest_PointerPushPop()
     Issue("`Push()`/`PushNumeric()` incorrectly affect `JSONPointer`.");
     pointer = __().json.Pointer(P("//lets/go"));
     pointer.Push(P("one")).PushNumeric(404).Push(P("More"));
-    TEST_ExpectTrue(    pointer.ToText().ToPlainString()
+    TEST_ExpectTrue(    pointer.ToText().ToString()
                     ==  "//lets/go/one/404/More");
 
     Issue("`Pop()` incorrectly affects `JSONPointer`.");
     value6 = pointer.Pop();
-    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "//lets/go/one/404");
+    TEST_ExpectTrue(pointer.ToText().ToString() ==  "//lets/go/one/404");
     value5 = pointer.Pop();
-    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "//lets/go/one");
+    TEST_ExpectTrue(pointer.ToText().ToString() ==  "//lets/go/one");
     value4 = pointer.Pop();
-    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "//lets/go");
+    TEST_ExpectTrue(pointer.ToText().ToString() ==  "//lets/go");
     value3 = pointer.Pop();
-    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "//lets");
+    TEST_ExpectTrue(pointer.ToText().ToString() ==  "//lets");
     value2 = pointer.Pop();
-    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "/");
+    TEST_ExpectTrue(pointer.ToText().ToString() ==  "/");
     value1 = pointer.Pop();
-    TEST_ExpectTrue(pointer.ToText().ToPlainString() ==  "");
+    TEST_ExpectTrue(pointer.ToText().ToString() ==  "");
     value0 = pointer.Pop();
 
     Issue("`Pop()` returns incorrect value.");
-    TEST_ExpectTrue(value6.ToPlainString() == "More");
-    TEST_ExpectTrue(value5.ToPlainString() == "404");
-    TEST_ExpectTrue(value4.ToPlainString() == "one");
-    TEST_ExpectTrue(value3.ToPlainString() == "go");
-    TEST_ExpectTrue(value2.ToPlainString() == "lets");
-    TEST_ExpectTrue(value1.ToPlainString() == "");
+    TEST_ExpectTrue(value6.ToString() == "More");
+    TEST_ExpectTrue(value5.ToString() == "404");
+    TEST_ExpectTrue(value4.ToString() == "one");
+    TEST_ExpectTrue(value3.ToString() == "go");
+    TEST_ExpectTrue(value2.ToString() == "lets");
+    TEST_ExpectTrue(value1.ToString() == "");
     TEST_ExpectNone(value0);
 }
 
@@ -171,20 +171,20 @@ protected static function SubTest_PopWithoutRemoving()
     local JSONPointer   pointer;
     Issue("`Pop(true)` removes the value from the pointer.");
     pointer = __().json.Pointer(P("/just/a/simple/test"));
-    TEST_ExpectTrue(pointer.Pop(true).ToPlainString() == "test");
-    TEST_ExpectTrue(pointer.Pop(true).ToPlainString() == "test");
+    TEST_ExpectTrue(pointer.Pop(true).ToString() == "test");
+    TEST_ExpectTrue(pointer.Pop(true).ToString() == "test");
 
     Issue("`Pop(true)` returns actually stored value instead of a copy.");
     pointer.Pop(true).FreeSelf();
-    TEST_ExpectTrue(pointer.Pop(true).ToPlainString() == "test");
+    TEST_ExpectTrue(pointer.Pop(true).ToString() == "test");
     component = pointer.Pop();
     TEST_ExpectNotNone(component);
-    TEST_ExpectTrue(component.ToPlainString() == "test");
+    TEST_ExpectTrue(component.ToString() == "test");
     TEST_ExpectTrue(component.IsAllocated());
 
     Issue("`Pop(true)` breaks after regular `Pop()` call.");
-    TEST_ExpectTrue(pointer.Pop(true).ToPlainString() == "simple");
-    TEST_ExpectTrue(pointer.Pop(true).ToPlainString() == "simple");
+    TEST_ExpectTrue(pointer.Pop(true).ToString() == "simple");
+    TEST_ExpectTrue(pointer.Pop(true).ToString() == "simple");
 }
 
 protected static function Test_Print()
@@ -198,8 +198,8 @@ protected static function SubTest_SimplePrint()
 {
     local string complexString;
     Issue("Simple JSON values are not printed as expected.");
-    TEST_ExpectTrue(__().json.Print(none).ToPlainString() == "null");
-    TEST_ExpectTrue(    __().json.Print(__().box.bool(false)).ToPlainString()
+    TEST_ExpectTrue(__().json.Print(none).ToString() == "null");
+    TEST_ExpectTrue(    __().json.Print(__().box.bool(false)).ToString()
                     ==  "false");
     TEST_ExpectTrue(    __().json.Print(__().ref.bool(true)).ToFormattedString()
                     ==  "true");
@@ -207,11 +207,11 @@ protected static function SubTest_SimplePrint()
                     ==  "-752");
     TEST_ExpectTrue(    __().json.Print(__().ref.int(36235)).ToFormattedString()
                     ==  "36235");
-    TEST_ExpectTrue(    __().json.Print(__().box.float(5.673)).ToPlainString()
+    TEST_ExpectTrue(    __().json.Print(__().box.float(5.673)).ToString()
                     ==  "5.673");
-    TEST_ExpectTrue(    __().json.Print(__().ref.float(-3.502)).ToPlainString()
+    TEST_ExpectTrue(    __().json.Print(__().ref.float(-3.502)).ToString()
                     ==  "-3.502");
-    TEST_ExpectTrue(    __().json.Print(F("{#ff000 col}ored")).ToPlainString()
+    TEST_ExpectTrue(    __().json.Print(F("{#ff000 col}ored")).ToString()
                     ==  "\"colored\"");
     TEST_ExpectTrue(    __().json.Print(P("simple text")).ToFormattedString()
                     ==  "\"simple text\"");
@@ -239,10 +239,10 @@ protected static function SubTest_ArrayPrint()
     array.AddItem(__().text.FromString("	"));
     Issue("JSON arrays are not printed as expected.");
     TEST_ExpectTrue(
-            __().json.PrintArray(array).ToPlainString()
+            __().json.PrintArray(array).ToString()
         ==  "[34.1,null,[-752,true,3.44,\"\\\"quoted text\\\"\"],\"\\t\"]");
     TEST_ExpectTrue(
-            __().json.Print(array).ToPlainString()
+            __().json.Print(array).ToString()
         ==  "[34.1,null,[-752,true,3.44,\"\\\"quoted text\\\"\"],\"\\t\"]");
 }
 
@@ -432,10 +432,10 @@ protected static function SubTest_ParseString()
 {
     local Parser parser;
     Issue("`ParseString()` fails to parse correct JSON strings.");
-    TEST_ExpectTrue(    __().json.ParseString(P("\"string !\"")).ToPlainString()
+    TEST_ExpectTrue(    __().json.ParseString(P("\"string !\"")).ToString()
                     ==  "string !");
     TEST_ExpectTrue(
-            MutableText(__().json.ParseString(P("\"\""), true)).ToPlainString()
+            MutableText(__().json.ParseString(P("\"\""), true)).ToString()
         ==  "");
 
     Issue("`ParseString()` returns non-`none` values for invalid"
@@ -446,9 +446,9 @@ protected static function SubTest_ParseString()
 
     parser = __().text.Parse(P("\"str\"\" also a kind `of` a string\"not"));
     Issue("`ParseStringWith()` fails to parse correct JSON strings.");
-    TEST_ExpectTrue(__().json.ParseStringWith(parser).ToPlainString() == "str");
+    TEST_ExpectTrue(__().json.ParseStringWith(parser).ToString() == "str");
     TEST_ExpectTrue(
-            MutableText(__().json.ParseStringWith(parser, true)).ToPlainString()
+            MutableText(__().json.ParseStringWith(parser, true)).ToString()
         ==  " also a kind `of` a string");
     TEST_ExpectTrue(parser.Ok());
 
@@ -479,7 +479,7 @@ protected static function SubTest_ParseArraySuccess()
     TEST_ExpectTrue(result.GetLength() == 5);
     TEST_ExpectTrue(BoolBox(result.GetItem(0)).Get());
     TEST_ExpectTrue(FloatBox(result.GetItem(1)).Get() == 76.4);
-    TEST_ExpectTrue(Text(result.GetItem(2)).ToPlainString() == "val");
+    TEST_ExpectTrue(Text(result.GetItem(2)).ToString() == "val");
     TEST_ExpectNone(result.GetItem(3));
     TEST_ExpectTrue(IntBox(result.GetItem(4)).Get() == 5);
 
@@ -491,7 +491,7 @@ protected static function SubTest_ParseArraySuccess()
     TEST_ExpectTrue(result.GetLength() == 5);
     TEST_ExpectTrue(BoolRef(result.GetItem(0)).Get());
     TEST_ExpectTrue(FloatRef(result.GetItem(1)).Get() == 76.4);
-    TEST_ExpectTrue(MutableText(result.GetItem(2)).ToPlainString() == "val");
+    TEST_ExpectTrue(MutableText(result.GetItem(2)).ToString() == "val");
     TEST_ExpectNone(result.GetItem(3));
     TEST_ExpectTrue(IntRef(result.GetItem(4)).Get() == 5);
 }
@@ -532,7 +532,7 @@ protected static function SubTest_ParseSimpleValueSuccess()
     TEST_ExpectTrue(IntRef(api.ParseWith(parser, true)).Get() == 42);
     parser.MatchS(",").Skip();
     TEST_ExpectTrue(
-            MutableText(api.ParseWith(parser, true)).ToPlainString()
+            MutableText(api.ParseWith(parser, true)).ToString()
         ==  "hmmm");
     parser.MatchS(",").Skip();
     TEST_ExpectNone(api.ParseWith(parser));
@@ -576,7 +576,7 @@ protected static function SubTest_ParseObjectSuccess()
     TEST_ExpectTrue(result.GetLength() == 4);
     TEST_ExpectTrue(IntBox(result.GetItem(P("var"))).Get() == 13);
     TEST_ExpectTrue(BoolBox(result.GetItem(P("another"))).Get() == true);
-    TEST_ExpectTrue(    Text(result.GetItem(P("string one"))).ToPlainString()
+    TEST_ExpectTrue(    Text(result.GetItem(P("string one"))).ToString()
                     ==  "string!");
     TEST_ExpectNone(MutableText(result.GetItem(P("string one"))));
     TEST_ExpectNone(result.GetItem(P("last")));
@@ -588,7 +588,7 @@ protected static function SubTest_ParseObjectSuccess()
     TEST_ExpectTrue(IntRef(result.GetItem(P("var"))).Get() == 13);
     TEST_ExpectTrue(BoolRef(result.GetItem(P("another"))).Get() == true);
     TEST_ExpectTrue(
-            MutableText(result.GetItem(P("string one"))).ToPlainString()
+            MutableText(result.GetItem(P("string one"))).ToString()
         ==  "string!");
     TEST_ExpectNone(result.GetItem(P("last")));
 }
@@ -627,7 +627,7 @@ protected static function SubTest_ParseComplex()
     root = AssociativeArray(__().json.ParseWith(parser));
     TEST_ExpectTrue(root.GetLength() == 3);
     TEST_ExpectTrue(FloatBox(root.GetItem(P("some_var"))).Get() == -7.32);
-    TEST_ExpectTrue(    Text(root.GetItem(P("another_var"))).ToPlainString()
+    TEST_ExpectTrue(    Text(root.GetItem(P("another_var"))).ToString()
                     ==  "aye!");
     mainObj = AssociativeArray(root.GetItem(P("innerObject")));
     TEST_ExpectTrue(root.GetLength() == 3);
@@ -638,15 +638,15 @@ protected static function SubTest_ParseComplex()
     TEST_ExpectTrue(subObj.GetLength() == 3);
     TEST_ExpectTrue(IntBox(subObj.GetItem(P("nope"))).Get() == 324532);
     TEST_ExpectTrue(BoolBox(subObj.GetItem(P("whatever"))).Get() == false);
-    TEST_ExpectTrue(    Text(subObj.GetItem(P("o rly?"))).ToPlainString()
+    TEST_ExpectTrue(    Text(subObj.GetItem(P("o rly?"))).ToString()
                     ==  "ya rly");
     inner = AssociativeArray(subArr.GetItem(3));
-    TEST_ExpectTrue(Text(subArr.GetItem(0)).ToPlainString() == "Engine.Actor");
+    TEST_ExpectTrue(Text(subArr.GetItem(0)).ToString() == "Engine.Actor");
     TEST_ExpectTrue(BoolBox(subArr.GetItem(1)).Get() == false);
     TEST_ExpectNone(subArr.GetItem(2));
     TEST_ExpectTrue(FloatBox(subArr.GetItem(4)).Get() == 56.6);
     TEST_ExpectTrue(
-            Text(inner.GetItem(P("something \"here\""))).ToPlainString()
+            Text(inner.GetItem(P("something \"here\""))).ToString()
         ==  "yes");
     TEST_ExpectTrue(FloatBox(inner.GetItem(P("maybe"))).Get() == 0.003);
 }

@@ -297,7 +297,7 @@ public final function string ToString(Text toConvert)
 {
     local string result;
     if (toConvert != none) {
-        result = toConvert.ToPlainString();
+        result = toConvert.ToString();
     }
     _.memory.Free(toConvert);
     return result;

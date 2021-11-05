@@ -39,7 +39,7 @@ protected static function Test_QuickText()
     formatted = "{#ff0000 Plain str}i{#00ff00 ng}";
     Context("Testing `P()`/`C()`/`F()` methods for creating texts.");
     Issue("Methods return `Text`s with incorrect data.");
-    TEST_ExpectTrue(P(plain).ToPlainString() == "Plain string");
+    TEST_ExpectTrue(P(plain).ToString() == "Plain string");
     TEST_ExpectTrue(C(colored).ToFormattedString()
         ==  "Colored {rgb(1,1,128) string!}");
     TEST_ExpectTrue(F(formatted).ToFormattedString()
@@ -72,11 +72,11 @@ protected static function Test_Constants()
     Context("Testing `T()` for returning `Text` generated from"
         @ "`stringConstants`.");
     Issue("Expected `Text`s are not correctly generated.");
-    TEST_ExpectTrue(T(0).ToPlainString() == default.stringConstants[0]);
-    TEST_ExpectTrue(T(1).ToPlainString() == default.stringConstants[1]);
-    TEST_ExpectTrue(T(2).ToPlainString() == default.stringConstants[2]);
-    TEST_ExpectTrue(T(3).ToPlainString() == default.stringConstants[3]);
-    TEST_ExpectTrue(T(4).ToPlainString() == default.stringConstants[4]);
+    TEST_ExpectTrue(T(0).ToString() == default.stringConstants[0]);
+    TEST_ExpectTrue(T(1).ToString() == default.stringConstants[1]);
+    TEST_ExpectTrue(T(2).ToString() == default.stringConstants[2]);
+    TEST_ExpectTrue(T(3).ToString() == default.stringConstants[3]);
+    TEST_ExpectTrue(T(4).ToString() == default.stringConstants[4]);
 
     Issue("`T()` does not return `none` for invalid indices.");
     TEST_ExpectNone(T(-1));

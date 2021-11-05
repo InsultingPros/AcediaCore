@@ -271,7 +271,7 @@ public final static function DBRecord NewRecord(Text dbPackageName)
     if (dbPackageName == none) {
         return none;
     }
-    return NewRecordFor(dbPackageName.ToPlainString());
+    return NewRecordFor(dbPackageName.ToString());
 }
 
 //  Auxiliary method that does what `NewRecord()` does, but for `string`
@@ -309,8 +309,8 @@ public final static function DBRecord LoadRecord(
     if (dbPackageName == none)  return none;
     if (recordName == none)     return none;
 
-    return LoadRecordFor(   recordName.ToPlainString(),
-                            dbPackageName.ToPlainString());
+    return LoadRecordFor(   recordName.ToString(),
+                            dbPackageName.ToString());
 }
 
 //  Auxiliary method that does what `LoadRecord()` does, but for `string`
@@ -921,7 +921,7 @@ private final function FromAssociativeArray(AssociativeArray source)
         if (iter.GetKey() == none) {
             continue;
         }
-        nextKey = Text(iter.GetKey()).ToPlainString();
+        nextKey = Text(iter.GetKey()).ToString();
         isNewKey = true;
         for (i = 0; i < originalStorageLength; i += 1)
         {
@@ -945,7 +945,7 @@ private final function StorageItem ConvertObjectToItem(AcediaObject data)
     if (Text(data) != none)
     {
         result.t = DBAT_String;
-        result.s = Text(data).ToPlainString();
+        result.s = Text(data).ToString();
     }
     else if(Collection(data) != none)
     {
@@ -1052,7 +1052,7 @@ private final function bool IncrementItemByObject(
     }
     else if (item.t == DBAT_String && Text(object) != none)
     {
-        item.s $= Text(object).ToPlainString();
+        item.s $= Text(object).ToString();
         return true;
     }
     else if(item.t == DBAT_Reference && Collection(object) != none)

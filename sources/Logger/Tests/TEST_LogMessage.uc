@@ -52,28 +52,28 @@ protected static function Test_SimpleArgumentCollection()
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("Message %1and%2: %3"));
     message.Arg(A("umbra")).Arg(A("mumbra")).Arg(A("eleven! "));
-    TEST_ExpectTrue(    message.Collect().ToPlainString()
+    TEST_ExpectTrue(    message.Collect().ToString()
                     ==  "Message umbraandmumbra: eleven! ");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("%1 - was pasted."));
     message.Arg(A("Heheh"));
-    TEST_ExpectTrue(message.Collect().ToPlainString() == "Heheh - was pasted.");
+    TEST_ExpectTrue(message.Collect().ToString() == "Heheh - was pasted.");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("This %%%1 and that %2"));
     message.Arg(A("one")).Arg(A("two"));
-    TEST_ExpectTrue(    message.Collect().ToPlainString()
+    TEST_ExpectTrue(    message.Collect().ToString()
                     ==  "This %%one and that two");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("%1%2"));
     message.Arg(A("one")).Arg(A("two"));
-    TEST_ExpectTrue(message.Collect().ToPlainString() == "onetwo");
+    TEST_ExpectTrue(message.Collect().ToString() == "onetwo");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("%1"));
     message.Arg(A("only"));
-    TEST_ExpectTrue(message.Collect().ToPlainString() == "only");
+    TEST_ExpectTrue(message.Collect().ToString() == "only");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("Just some string."));
-    TEST_ExpectTrue(message.Collect().ToPlainString() == "Just some string.");
+    TEST_ExpectTrue(message.Collect().ToString() == "Just some string.");
 }
 
 protected static function Test_ArgumentCollection()
@@ -83,7 +83,7 @@ protected static function Test_ArgumentCollection()
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("This %1 and that %2"));
     message.Arg(A("one")).Arg(A("two")).Reset().Arg(A("huh")).Arg(A("muh"));
-    TEST_ExpectTrue(    message.Collect().ToPlainString()
+    TEST_ExpectTrue(    message.Collect().ToString()
                         == "This huh and that muh");
 
     Issue("`Text` arguments are not correctly collected after specifying"
@@ -92,22 +92,22 @@ protected static function Test_ArgumentCollection()
     message.Initialize(DEF("Just %1, %2, %3, %4 and %5"));
     message.Arg(A("1")).Arg(A("2")).Arg(A("3")).Arg(A("4")).Arg(A("5"))
         .Arg(A("6")).Arg(A("7"));
-    TEST_ExpectTrue(    message.Collect().ToPlainString()
+    TEST_ExpectTrue(    message.Collect().ToString()
                         == "Just 1, 2, 3, 4 and 5");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("Just"));
-    TEST_ExpectTrue(message.Arg(A("arg")).Collect().ToPlainString() == "Just");
+    TEST_ExpectTrue(message.Arg(A("arg")).Collect().ToString() == "Just");
 
     Issue("`Text` arguments are not correctly collected after specifying"
         @ "too little.");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("Just %1, %2, %3, %4 and %5"));
     message.Arg(A("1")).Arg(A("2")).Arg(A("3"));
-    TEST_ExpectTrue(    message.Collect().ToPlainString()
+    TEST_ExpectTrue(    message.Collect().ToString()
                         == "Just 1, 2, 3,  and ");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("Maybe %1"));
-    TEST_ExpectTrue(message.Collect().ToPlainString() == "Maybe ");
+    TEST_ExpectTrue(message.Collect().ToString() == "Maybe ");
 }
 
 protected static function Test_ArgumentCollectionOrder()
@@ -118,12 +118,12 @@ protected static function Test_ArgumentCollectionOrder()
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("This %2 and that %1"));
     message.Arg(A("huh")).Arg(A("muh"));
-    TEST_ExpectTrue(    message.Collect().ToPlainString()
+    TEST_ExpectTrue(    message.Collect().ToString()
                         == "This muh and that huh");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("Just %5, %3, %4, %1 and %2"));
     message.Arg(A("1")).Arg(A("2")).Arg(A("3")).Arg(A("4")).Arg(A("5"));
-    TEST_ExpectTrue(    message.Collect().ToPlainString()
+    TEST_ExpectTrue(    message.Collect().ToString()
                         == "Just 5, 3, 4, 1 and 2");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
 
@@ -131,7 +131,7 @@ protected static function Test_ArgumentCollectionOrder()
         @ "in order and not enough of them was specified.");
     message.Initialize(DEF("Just %5, %3, %4, %1 and %2"));
     message.Arg(A("1")).Arg(A("2")).Arg(A("3"));
-    TEST_ExpectTrue(    message.Collect().ToPlainString()
+    TEST_ExpectTrue(    message.Collect().ToString()
                         == "Just , 3, , 1 and 2");
 }
 
@@ -141,26 +141,26 @@ protected static function Test_TypedArgumentCollection()
     Issue("`int` arguments are not correctly collected.");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("Int: %1"));
-    TEST_ExpectTrue(message.ArgInt(-7).Collect().ToPlainString()
+    TEST_ExpectTrue(message.ArgInt(-7).Collect().ToString()
                         == "Int: -7");
 
     Issue("`float` arguments are not correctly collected.");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("Float: %1"));
-    TEST_ExpectTrue(message.ArgFloat(3.14).Collect().ToPlainString()
+    TEST_ExpectTrue(message.ArgFloat(3.14).Collect().ToString()
                         == "Float: 3.14");
 
     Issue("`bool` arguments are not correctly collected.");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("Bool: %1 and %2"));
     TEST_ExpectTrue(message.ArgBool(true).ArgBool(false).Collect()
-        .ToPlainString() == "Bool: true and false");
+        .ToString() == "Bool: true and false");
 
     Issue("`Class` arguments are not correctly collected.");
     message = LogMessage(__().memory.Allocate(class'LogMessage'));
     message.Initialize(DEF("Class: %1"));
     TEST_ExpectTrue(message.ArgClass(class'M14EBRBattleRifle').Collect()
-        .ToPlainString() == "Class: KFMod.M14EBRBattleRifle");
+        .ToString() == "Class: KFMod.M14EBRBattleRifle");
 }
 
 defaultproperties

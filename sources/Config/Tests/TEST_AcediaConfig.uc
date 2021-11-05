@@ -42,7 +42,7 @@ protected static function TEST_AvailableConfigs()
     Issue("Configs with incorrect names or values are loaded.");
     for (i = 0; i < configNames.length; i += 1)
     {
-        if (configNames[i].CompareToPlainString("default", SCASE_INSENSITIVE)) {
+        if (configNames[i].CompareToString("default", SCASE_INSENSITIVE)) {
             foundConfig = true;
         }
     }
@@ -50,7 +50,7 @@ protected static function TEST_AvailableConfigs()
     foundConfig = false;
     for (i = 0; i < configNames.length; i += 1)
     {
-        if (configNames[i].CompareToPlainString("other", SCASE_INSENSITIVE)) {
+        if (configNames[i].CompareToString("other", SCASE_INSENSITIVE)) {
             foundConfig = true;
         }
     }
@@ -58,7 +58,7 @@ protected static function TEST_AvailableConfigs()
     foundConfig = false;
     for (i = 0; i < configNames.length; i += 1)
     {
-        if (configNames[i].CompareToPlainString("another.config",
+        if (configNames[i].CompareToString("another.config",
                                                 SCASE_INSENSITIVE)) {
             foundConfig = true;
         }

@@ -44,7 +44,7 @@ protected static function Test_GetSet()
     TEST_ExpectTrue(array.GetLength() == 3);
     TEST_ExpectTrue(IntBox(array.GetItem(0)).Get() == -9);
     TEST_ExpectNone(array.GetItem(1));
-    TEST_ExpectTrue(Text(array.GetItem(2)).ToPlainString() == "text");
+    TEST_ExpectTrue(Text(array.GetItem(2)).ToString() == "text");
 
     Issue("Setters do not correctly overwrite items of `DynamicArray`.");
     array.SetItem(1, __().box.float(34.76));
@@ -67,7 +67,7 @@ protected static function Test_CreateItem()
     array.CreateItem(4, class'BoolBox');
     TEST_ExpectNone(array.GetItem(0));
     TEST_ExpectNone(array.GetItem(2));
-    TEST_ExpectTrue(Text(array.GetItem(1)).ToPlainString() == "");
+    TEST_ExpectTrue(Text(array.GetItem(1)).ToString() == "");
     TEST_ExpectTrue(IntRef(array.GetItem(3)).Get() == 0);
     TEST_ExpectFalse(BoolBox(array.GetItem(4)).Get());
 

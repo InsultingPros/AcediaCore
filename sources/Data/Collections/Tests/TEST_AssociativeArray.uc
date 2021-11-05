@@ -48,7 +48,7 @@ protected static function Test_GetSet()
     array.SetItem(__().text.FromString("key"), textObject);
     array.SetItem(__().box.int(13), __().text.FromString("value #2"));
     array.SetItem(__().box.float(345.2), __().box.bool(true));
-    TEST_ExpectTrue(    Text(array.GetItem(__().box.int(13))).ToPlainString()
+    TEST_ExpectTrue(    Text(array.GetItem(__().box.int(13))).ToString()
                     ==  "value #2");
     TEST_ExpectTrue(array.GetItem(__().text.FromString("key")) == textObject);
     TEST_ExpectTrue(BoolBox(array.GetItem(__().box.float(345.2))).Get());
@@ -58,7 +58,7 @@ protected static function Test_GetSet()
     array.SetItem(__().box.int(13), __().box.int(11));
     TEST_ExpectFalse(array.GetItem(__().text.FromString("key")) == textObject);
     TEST_ExpectTrue(    Text(array.GetItem(__().text.FromString("key")))
-        .ToPlainString() ==  "value");
+        .ToString() ==  "value");
     TEST_ExpectTrue(    IntBox(array.GetItem(__().box.int(13))).Get()
                     ==  11);
 
@@ -144,10 +144,10 @@ protected static function Test_CopyTextKeys()
     keys = array.CopyTextKeys();
     TEST_ExpectTrue(keys.length == 2);
     TEST_ExpectTrue(
-                (keys[0].ToPlainString() == "key"
-            &&  keys[1].ToPlainString() == "second key")
-        ||      (keys[0].ToPlainString() == "second key"
-            &&  keys[1].ToPlainString() == "key"));
+                (keys[0].ToString() == "key"
+            &&  keys[1].ToString() == "second key")
+        ||      (keys[0].ToString() == "second key"
+            &&  keys[1].ToString() == "key"));
 
     Issue("Deallocating keys returned by `CopyTextKeys()` affects their"
         @ "source collection.");
@@ -156,7 +156,7 @@ protected static function Test_CopyTextKeys()
     TEST_ExpectNotNone(array.GetItem(__().text.FromString("key")));
     TEST_ExpectNotNone(array.GetItem(__().text.FromString("second key")));
     TEST_ExpectTrue(
-        array.GetText(__().text.FromString("key")).ToPlainString() == "value");
+        array.GetText(__().text.FromString("key")).ToString() == "value");
 }
 
 protected static function Test_Remove()
@@ -193,7 +193,7 @@ protected static function Test_CreateItem()
     array.CreateItem(__().box.float(17.895), class'IntRef');
     array.CreateItem(__().text.FromString("key #2"), class'BoolBox');
     TEST_ExpectTrue(Text(array.GetItem(__().text.FromString("key")))
-        .ToPlainString() == "");
+        .ToString() == "");
     TEST_ExpectTrue(    IntRef(array.GetItem(__().box.float(17.895))).Get()
                     ==  0);
     TEST_ExpectFalse(BoolBox(array.GetItem(__().text.FromString("key #2")))

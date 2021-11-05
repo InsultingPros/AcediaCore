@@ -52,7 +52,7 @@ protected static function Test_TextCreation()
     plainString = "Prepare to DIE and be reborn!";
     plain = class'Text'.static.ConstFromPlainString(plainString);
     TEST_ExpectNotNone(plain);
-    TEST_ExpectTrue(plain.ToPlainString() == plainString);
+    TEST_ExpectTrue(plain.ToString() == plainString);
 
     Issue("`Text` object is not properly created from the colored string.");
     coloredString = __().color.GetColorTagRGB(0, 0, 0) $ "Prepare to "
@@ -92,7 +92,7 @@ protected static function SubTest_TextCompleteCopy()
     formatted = class'Text'.static.ConstFromFormattedString(formattedString);
 
     Issue("`Text` object is not properly copied (immutable).");
-    TEST_ExpectTrue(plain.Copy().ToPlainString() == plainString);
+    TEST_ExpectTrue(plain.Copy().ToString() == plainString);
     TEST_ExpectTrue(colored.Copy().ToColoredString() == coloredString);
     TEST_ExpectTrue(formatted.Copy().ToFormattedString() == formattedString);
     TEST_ExpectNone(MutableText(plain));
@@ -103,7 +103,7 @@ protected static function SubTest_TextCompleteCopy()
     TEST_ExpectFalse(formatted.Copy() == formatted);
 
     Issue("`Text` object is not properly copied (mutable).");
-    TEST_ExpectTrue(plain.MutableCopy().ToPlainString() == plainString);
+    TEST_ExpectTrue(plain.MutableCopy().ToString() == plainString);
     TEST_ExpectTrue(colored.MutableCopy().ToColoredString() == coloredString);
     TEST_ExpectFalse(plain.class == class'MutableText');
     TEST_ExpectFalse(colored.class == class'MutableText');
@@ -127,18 +127,18 @@ protected static function SubTest_TextSubCopy()
     Issue("Part of `Text`'s contents is not properly copied (immutable).");
     TEST_ExpectTrue(    formatted.Copy(-2, 100).ToFormattedString()
                     ==  formattedString);
-    TEST_ExpectTrue(plain.Copy(-2, 5).ToPlainString() == "Pre");
+    TEST_ExpectTrue(plain.Copy(-2, 5).ToString() == "Pre");
     TEST_ExpectTrue(    formatted.Copy(13, -10).ToFormattedString()
                     ==  "{rgb(255,0,0) E} and be reborn!");
-    TEST_ExpectTrue(formatted.Copy(32).ToPlainString() == "");
+    TEST_ExpectTrue(formatted.Copy(32).ToString() == "");
 
     Issue("Part of `Text`'s contents is not properly copied (mutable).");
     TEST_ExpectTrue(    formatted.MutableCopy(-2, 100).ToFormattedString()
                     ==  formattedString);
-    TEST_ExpectTrue(plain.MutableCopy(-2, 5).ToPlainString() == "Pre");
+    TEST_ExpectTrue(plain.MutableCopy(-2, 5).ToString() == "Pre");
     TEST_ExpectTrue(    formatted.MutableCopy(13, -10).ToFormattedString()
                     ==  "{rgb(255,0,0) E} and be reborn!");
-    TEST_ExpectTrue(formatted.MutableCopy(32).ToPlainString() == "");
+    TEST_ExpectTrue(formatted.MutableCopy(32).ToString() == "");
 }
 
 protected static function SubTest_TextLowerCompleteCopy()
@@ -154,7 +154,7 @@ protected static function SubTest_TextLowerCompleteCopy()
     formatted = class'Text'.static.ConstFromFormattedString(formattedString);
 
     Issue("`Text` object is not properly copied (immutable) in lower case.");
-    TEST_ExpectTrue(plain.LowerCopy().ToPlainString() == Locs(plainString));
+    TEST_ExpectTrue(plain.LowerCopy().ToString() == Locs(plainString));
     TEST_ExpectTrue(    colored.LowerCopy().ToColoredString()
                     ==  Locs(coloredString));
     TEST_ExpectTrue(    formatted.LowerCopy().ToFormattedString()
@@ -167,7 +167,7 @@ protected static function SubTest_TextLowerCompleteCopy()
     TEST_ExpectFalse(formatted.LowerCopy() == formatted);
 
     Issue("`Text` object is not properly copied (mutable) in lower case.");
-    TEST_ExpectTrue(    plain.LowerMutableCopy().ToPlainString()
+    TEST_ExpectTrue(    plain.LowerMutableCopy().ToString()
                     ==  Locs(plainString));
     TEST_ExpectTrue(    colored.LowerMutableCopy().ToColoredString()
                     ==  Locs(coloredString));
@@ -194,19 +194,19 @@ protected static function SubTest_TextLowerSubCopy()
         @ "lower case.");
     TEST_ExpectTrue(    formatted.LowerCopy(-2, 100).ToFormattedString()
                     ==  Locs(formattedString));
-    TEST_ExpectTrue(plain.LowerCopy(-2, 5).ToPlainString() == "pre");
+    TEST_ExpectTrue(plain.LowerCopy(-2, 5).ToString() == "pre");
     TEST_ExpectTrue(    formatted.LowerCopy(13, -10).ToFormattedString()
                     ==  "{rgb(255,0,0) e} and be reborn!");
-    TEST_ExpectTrue(formatted.LowerCopy(32).ToPlainString() == "");
+    TEST_ExpectTrue(formatted.LowerCopy(32).ToString() == "");
 
     Issue("Part of `Text`'s contents is not properly copied (mutable) in"
         @ "lower case.");
     TEST_ExpectTrue(    formatted.LowerMutableCopy(-2, 100).ToFormattedString()
                     ==  Locs(formattedString));
-    TEST_ExpectTrue(plain.LowerMutableCopy(-2, 5).ToPlainString() == "pre");
+    TEST_ExpectTrue(plain.LowerMutableCopy(-2, 5).ToString() == "pre");
     TEST_ExpectTrue(    formatted.LowerMutableCopy(13, -10).ToFormattedString()
                     ==  "{rgb(255,0,0) e} and be reborn!");
-    TEST_ExpectTrue(formatted.LowerMutableCopy(32).ToPlainString() == "");
+    TEST_ExpectTrue(formatted.LowerMutableCopy(32).ToString() == "");
 }
 
 protected static function SubTest_TextUpperCompleteCopy()
@@ -222,7 +222,7 @@ protected static function SubTest_TextUpperCompleteCopy()
     formatted = class'Text'.static.ConstFromFormattedString(formattedString);
 
     Issue("`Text` object is not properly copied (immutable) in upper case.");
-    TEST_ExpectTrue(plain.UpperCopy().ToPlainString() == Caps(plainString));
+    TEST_ExpectTrue(plain.UpperCopy().ToString() == Caps(plainString));
     TEST_ExpectTrue(    colored.UpperCopy().ToColoredString()
                     ==  Caps(coloredString));
     TEST_ExpectNone(MutableText(plain));
@@ -233,7 +233,7 @@ protected static function SubTest_TextUpperCompleteCopy()
     TEST_ExpectFalse(formatted.UpperCopy() == formatted);
 
     Issue("`Text` object is not properly copied (mutable) in upper case.");
-    TEST_ExpectTrue(    plain.UpperMutableCopy().ToPlainString()
+    TEST_ExpectTrue(    plain.UpperMutableCopy().ToString()
                     ==  Caps(plainString));
     TEST_ExpectTrue(    colored.UpperMutableCopy().ToColoredString()
                     ==  Caps(coloredString));
@@ -258,17 +258,17 @@ protected static function SubTest_TextUpperSubCopy()
 
     Issue("Part of `Text`'s contents is not properly copied (immutable) in"
         @ "lower case.");
-    TEST_ExpectTrue(plain.UpperCopy(-2, 5).ToPlainString() == "PRE");
+    TEST_ExpectTrue(plain.UpperCopy(-2, 5).ToString() == "PRE");
     TEST_ExpectTrue(    formatted.UpperCopy(13, -10).ToFormattedString()
                     ==  "{rgb(255,0,0) E} AND BE REBORN!");
-    TEST_ExpectTrue(formatted.UpperCopy(32).ToPlainString() == "");
+    TEST_ExpectTrue(formatted.UpperCopy(32).ToString() == "");
 
     Issue("Part of `Text`'s contents is not properly copied (mutable) in"
         @ "upper case.");
-    TEST_ExpectTrue(plain.UpperMutableCopy(-2, 5).ToPlainString() == "PRE");
+    TEST_ExpectTrue(plain.UpperMutableCopy(-2, 5).ToString() == "PRE");
     TEST_ExpectTrue(    formatted.UpperMutableCopy(13, -10).ToFormattedString()
                     ==  "{rgb(255,0,0) E} AND BE REBORN!");
-    TEST_ExpectTrue(formatted.UpperMutableCopy(32).ToPlainString() == "");
+    TEST_ExpectTrue(formatted.UpperMutableCopy(32).ToString() == "");
 }
 
 protected static function Test_TextLength()
@@ -364,15 +364,15 @@ protected static function SubTest_EqualityCaseFormatting()
 protected static function SubTest_EqualityStringSimple()
 {
     Issue("Comparisons with empty `Text` are not working as expected.");
-    TEST_ExpectTrue(default.emptyText.CompareToPlainString(""));
+    TEST_ExpectTrue(default.emptyText.CompareToString(""));
     TEST_ExpectTrue(default.emptyText.CompareToColoredString(""));
     TEST_ExpectFalse(default.emptyText.
-        CompareToPlainString(default.justString));
-    TEST_ExpectFalse(default.justText.CompareToPlainString(""));
+        CompareToString(default.justString));
+    TEST_ExpectFalse(default.justText.CompareToString(""));
 
     Issue("Simple case-sensitive check is not working as expected.");
-    TEST_ExpectTrue(default.justText.CompareToPlainString(default.justString));
-    TEST_ExpectFalse(default.justText.CompareToPlainString(default.altString));
+    TEST_ExpectTrue(default.justText.CompareToString(default.justString));
+    TEST_ExpectFalse(default.justText.CompareToString(default.altString));
     TEST_ExpectFalse(default.justText.
         CompareToFormattedString(default.rndCaseString));
     TEST_ExpectTrue(default.bothText.
@@ -384,9 +384,9 @@ protected static function SubTest_EqualityStringSimple()
 protected static function SubTest_EqualityStringCaseFormatting()
 {
     Issue("Case-insensitive check are not working as expected.");
-    TEST_ExpectTrue(default.justText.CompareToPlainString(  default.justString,
+    TEST_ExpectTrue(default.justText.CompareToString(  default.justString,
                                                             SCASE_INSENSITIVE));
-    TEST_ExpectFalse(default.justText.CompareToPlainString( default.altString,
+    TEST_ExpectFalse(default.justText.CompareToString( default.altString,
                                                             SCASE_INSENSITIVE));
     TEST_ExpectTrue(default.justText.CompareToColoredString(
         default.rndCaseString, SCASE_INSENSITIVE));
@@ -396,7 +396,7 @@ protected static function SubTest_EqualityStringCaseFormatting()
     Issue("Format-sensitive check are not working as expected.");
     TEST_ExpectTrue(default.justText.CompareToColoredString(
         default.justString,, SFORM_SENSITIVE));
-    TEST_ExpectTrue(default.justText.CompareToPlainString(
+    TEST_ExpectTrue(default.justText.CompareToString(
         default.rndCaseString, SCASE_INSENSITIVE, SFORM_SENSITIVE));
     TEST_ExpectFalse(default.justText.CompareToFormattedString(
         default.formattedString,, SFORM_SENSITIVE));
@@ -462,8 +462,8 @@ protected static function Test_Substring()
     txt.AppendFormattedString("Prepare to {rgb(198,23,7) DIE} and"
         @ "be {rgb(0,255,0) reborn}!");
     Issue("Substrings are not extracted as expected.");
-    TEST_ExpectTrue(txt.ToPlainString(3, 5) == "pare ");
-    TEST_ExpectTrue(txt.ToPlainString(100, 200) == "");
+    TEST_ExpectTrue(txt.ToString(3, 5) == "pare ");
+    TEST_ExpectTrue(txt.ToString(100, 200) == "");
     TEST_ExpectTrue(    txt.ToColoredString(1, 9)
                     ==  (defaultTag $ "repare to"));
     TEST_ExpectTrue(    txt.ToColoredString(9, 3)
@@ -477,7 +477,7 @@ protected static function Test_Substring()
                     ==  "{rgb(198,23,7) E} and be {rgb(0,255,0) re}");
     TEST_ExpectTrue(    txt.ToFormattedString(-20, 34)
                     ==  "Prepare to {rgb(198,23,7) DIE}");
-    TEST_ExpectTrue(    txt.ToPlainString(-2, 100)
+    TEST_ExpectTrue(    txt.ToString(-2, 100)
                     ==  "Prepare to DIE and be reborn!");
 }
 
@@ -502,7 +502,7 @@ protected static function Test_AppendGet()
     part4 = __().text.FromFormattedString(" Also {rgb(0,255,0) this}.");
     txt.Append(part1).Append(part2).Append(part3).Append(none);
     txt.Append(part4, __().text.FormattingFromColor(testColor));
-    TEST_ExpectTrue(    txt.ToPlainString()
+    TEST_ExpectTrue(    txt.ToString()
                     ==  "Prepare to DIE and be reborn! Also this.");
     TEST_ExpectTrue(    txt.ToColoredString()
                     ==  (   defaultTag $ "Prepare to " $ colorTag $ "DIE"
@@ -523,7 +523,7 @@ protected static function Test_AppendStringGet()
     Context("Testing functionality of `MutableText` to append strings.");
     txt = MutableText(__().memory.Allocate(class'MutableText'));
     Issue("New `Text` returns non-empty string as a result.");
-    TEST_ExpectTrue(txt.ToPlainString() == "");
+    TEST_ExpectTrue(txt.ToString() == "");
     TEST_ExpectTrue(txt.ToColoredString() == "");
 
     Issue("Appended strings are not returned as expected.");
@@ -534,7 +534,7 @@ protected static function Test_AppendStringGet()
     txt.AppendPlainString("Prepare to ");
     txt.AppendColoredString(colorTag $ "DIE");
     txt.AppendFormattedString(" and be {#00ff00 reborn}!");
-    TEST_ExpectTrue(    txt.ToPlainString()
+    TEST_ExpectTrue(    txt.ToString()
                     ==  "Prepare to DIE and be reborn!");
     TEST_ExpectTrue(    txt.ToColoredString()
                     ==  (   defaultTag $ "Prepare to " $ colorTag $ "DIE"
@@ -557,14 +557,14 @@ protected static function Test_SeparateByCharacter()
 
     Issue("Returned `MutableText`s have incorrect text content.");
     TEST_ExpectTrue(slashResult.length == 4);
-    TEST_ExpectTrue(slashResult[0].CompareToPlainString(""));
-    TEST_ExpectTrue(slashResult[1].CompareToPlainString("usr"));
-    TEST_ExpectTrue(slashResult[2].CompareToPlainString("bin"));
-    TEST_ExpectTrue(slashResult[3].CompareToPlainString("stuff"));
+    TEST_ExpectTrue(slashResult[0].CompareToString(""));
+    TEST_ExpectTrue(slashResult[1].CompareToString("usr"));
+    TEST_ExpectTrue(slashResult[2].CompareToString("bin"));
+    TEST_ExpectTrue(slashResult[3].CompareToString("stuff"));
     TEST_ExpectTrue(fResult.length == 3);
-    TEST_ExpectTrue(fResult[0].CompareToPlainString("/usr/bin/stu"));
-    TEST_ExpectTrue(fResult[1].CompareToPlainString(""));
-    TEST_ExpectTrue(fResult[2].CompareToPlainString(""));
+    TEST_ExpectTrue(fResult[0].CompareToString("/usr/bin/stu"));
+    TEST_ExpectTrue(fResult[1].CompareToString(""));
+    TEST_ExpectTrue(fResult[2].CompareToString(""));
 
     Issue("Returned `MutableText`s have incorrect formatting.");
     TEST_ExpectTrue(slashResult[1].CompareToFormattedString("{#ff0000 usr}"));
@@ -898,30 +898,30 @@ protected static function SubTest_ReplaceEdgeCases(Text.FormatSensitivity flag)
     local MutableText builder;
     builder = __().text.Empty();
     Issue("`Replace()` works incorrectly when replacing empty `Text`s.");
-    TEST_ExpectTrue(builder.Replace(P(""), P(""),, flag).ToPlainString() == "");
+    TEST_ExpectTrue(builder.Replace(P(""), P(""),, flag).ToString() == "");
     TEST_ExpectTrue(
-        builder.Replace(P(""), P("huh"),, flag).ToPlainString() == "");
+        builder.Replace(P(""), P("huh"),, flag).ToString() == "");
     builder.AppendPlainString("word");
     TEST_ExpectTrue(
-        builder.Replace(P(""), P(""),, flag).ToPlainString() == "word");
+        builder.Replace(P(""), P(""),, flag).ToString() == "word");
     TEST_ExpectTrue(
-        builder.Replace(P(""), P("huh"),, flag).ToPlainString() == "word");
+        builder.Replace(P(""), P("huh"),, flag).ToString() == "word");
 
     Issue("`Replace()` works incorrectly when replacing something inside"
         @ "an empty `Text`s.");
     builder.Clear();
     TEST_ExpectTrue(
-        builder.Replace(P("huh"), P(""),, flag).ToPlainString() == "");
+        builder.Replace(P("huh"), P(""),, flag).ToString() == "");
 
     Issue("`Replace()` cannot replace whole `Text`s.");
     TEST_ExpectTrue(builder.Clear()
             .AppendFormattedString("Just {#54af4c something}")
             .Replace(F("Just {#54af4c something}"), P("Nothing really"),, flag)
-            .ToPlainString()
+            .ToString()
         ==  "Nothing really");
     TEST_ExpectTrue(builder.Clear().AppendPlainString("CraZy")
             .Replace(P("CRaZy"), P("calm"), SCASE_INSENSITIVE, flag)
-            .ToPlainString()
+            .ToString()
         ==  "calm");
 }
 
@@ -932,31 +932,31 @@ protected static function SubTest_ReplaceMainCases(Text.FormatSensitivity flag)
     Issue("`Replace()` works incorrectly changes `Text` when replacing"
         @ "non-existent sub-`Text`.");
     TEST_ExpectTrue(builder.Replace(P("word"), P("another"),, flag)
-            .ToPlainString()
+            .ToString()
         ==  "Mate eight said");
     TEST_ExpectTrue(builder
             .Replace(P("word"), P("another"), SCASE_INSENSITIVE, flag)
-            .ToPlainString()
+            .ToString()
         ==  "Mate eight said");
 
     Issue("`Replace()` replaces sub-`Text` incorrectly.");
     builder.Clear().AppendPlainString("Do it bay bee");
-    TEST_ExpectTrue(builder.Replace(P("it"), P("this"),, flag).ToPlainString()
+    TEST_ExpectTrue(builder.Replace(P("it"), P("this"),, flag).ToString()
         ==  "Do this bay bee");
     builder.Clear().AppendPlainString("dO It bAy BEe");
     TEST_ExpectTrue(
             builder.Replace(P("it"), P("tHis"), SCASE_INSENSITIVE, flag)
-            .ToPlainString()
+            .ToString()
         ==  "dO tHis bAy BEe");
 
     Issue("`Replace()` replaces sub-`Text` incorrectly.");
     builder.Clear().AppendPlainString("he and she and it");
     TEST_ExpectTrue(builder.Replace(P("and"), P("OR"),, flag)
-            .ToPlainString()
+            .ToString()
         ==  "he OR she OR it");
     builder.Clear().AppendFormattedString("{#54af4c HE} aNd sHe aND iT");
     TEST_ExpectTrue(builder.Replace(P("AND"), P("Or"), SCASE_INSENSITIVE, flag)
-            .ToPlainString()
+            .ToString()
         ==  "HE Or sHe Or iT");
 }
 

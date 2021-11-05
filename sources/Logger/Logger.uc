@@ -74,7 +74,7 @@ public final static function Logger GetLogger(Text loggerName)
     loggerInstance = Logger(default.loadedLoggers.GetItem(loggerKey));
     if (loggerInstance == none)
     {
-        loggerInstance = new(none, loggerName.ToPlainString()) default.class;
+        loggerInstance = new(none, loggerName.ToString()) default.class;
         loggerInstance._constructor();
         default.loadedLoggers.SetItem(loggerKey, loggerInstance);
     }

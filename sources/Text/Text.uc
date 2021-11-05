@@ -799,7 +799,7 @@ private final function bool CompareFormatting(Text otherText)
  *  @return `true` if the caller `Text` is equal to the `stringToCompare` under
  *      specified parameters and `false` otherwise.
  */
-public final function bool CompareToPlainString(
+public final function bool CompareToString(
     string                      stringToCompare,
     optional CaseSensitivity    caseSensitivity,
     optional FormatSensitivity  formatSensitivity)
@@ -1121,7 +1121,7 @@ private final function NormalizeFormatting()
  *  @return Plain `string` representation of the caller `Text`,
  *      i.e. `string` without any color information inside.
  */
-public final function string ToPlainString(
+public final function string ToString(
     optional int startIndex,
     optional int maxLength)
 {

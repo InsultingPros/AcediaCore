@@ -50,7 +50,7 @@ var protected config array<string> alias;
 //  `ToStorageVersion()` and `ToActualVersion()` do that.
 private final static function string ToStorageVersion(Text actualValue)
 {
-    return Repl(actualValue.ToPlainString(), ".", ":");
+    return Repl(actualValue.ToString(), ".", ":");
 }
 
 //  See comment to `ToStorageVersion()`.
@@ -147,11 +147,11 @@ public final function AddAlias(Text aliasToAdd)
     if (aliasToAdd == none) return;
     for (i = 0; i < alias.length; i += 1)
     {
-        if (aliasToAdd.CompareToPlainString(alias[i], SCASE_INSENSITIVE)) {
+        if (aliasToAdd.CompareToString(alias[i], SCASE_INSENSITIVE)) {
             return;
         }
     }
-    alias[alias.length] = aliasToAdd.ToPlainString();
+    alias[alias.length] = aliasToAdd.ToString();
     AliasService(class'AliasService'.static.Require())
         .PendingSaveObject(self);
 }
@@ -172,7 +172,7 @@ public final function RemoveAlias(Text aliasToRemove)
     if (aliasToRemove == none) return;
     while (i < alias.length)
     {
-        if (aliasToRemove.CompareToPlainString(alias[i], SCASE_INSENSITIVE))
+        if (aliasToRemove.CompareToString(alias[i], SCASE_INSENSITIVE))
         {
             alias.Remove(i, 1);
             removedAlias = true;

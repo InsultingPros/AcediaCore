@@ -464,7 +464,7 @@ private final function bool ParseBooleanValue(
     //  Try to match parsed literal to any recognizable boolean literals
     for (i = 0; i < booleanTrueEquivalents.length; i += 1)
     {
-        if (parsedLiteral.CompareToPlainString( booleanTrueEquivalents[i],
+        if (parsedLiteral.CompareToString( booleanTrueEquivalents[i],
                                                 SCASE_INSENSITIVE))
         {
             isValidBooleanLiteral   = true;
@@ -475,7 +475,7 @@ private final function bool ParseBooleanValue(
     for (i = 0; i < booleanFalseEquivalents.length; i += 1)
     {
         if (isValidBooleanLiteral) break;
-        if (parsedLiteral.CompareToPlainString( booleanFalseEquivalents[i],
+        if (parsedLiteral.CompareToString( booleanFalseEquivalents[i],
                                                 SCASE_INSENSITIVE))
         {
             isValidBooleanLiteral   = true;

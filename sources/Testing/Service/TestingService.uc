@@ -239,7 +239,7 @@ private function ReportTestingResult()
     {
         nextLine.Clear();
         nextLine.AppendFormattedString(textSummary[i]);
-        Log(nextLine.ToPlainString());
+        Log(nextLine.ToString());
     }
 }
 

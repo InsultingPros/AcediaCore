@@ -53,7 +53,7 @@ public final function SetRootName(Text rootName)
         return;
     }
     if (rootName != none) {
-        root = rootName.ToPlainString();
+        root = rootName.ToString();
     }
     else {
         root = "";
@@ -63,7 +63,7 @@ public final function SetRootName(Text rootName)
 public final static function LocalDatabase Load(Text databaseName)
 {
     if (!__().text.IsEmpty(databaseName)) {
-        return new(none, databaseName.ToPlainString()) class'LocalDatabase';
+        return new(none, databaseName.ToString()) class'LocalDatabase';
     }
     return none;
 }

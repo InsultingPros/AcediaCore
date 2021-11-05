@@ -32,14 +32,14 @@ protected static function SubTest_AliasLoadingCorrect()
     local AliasSource source;
     Issue("`Resolve()` fails to return alias value that should be loaded.");
     source = __().alias.GetCustomSource(class'MockAliasSource');
-    TEST_ExpectTrue(source.Resolve(P("Global")).ToPlainString() == "value");
-    TEST_ExpectTrue(source.Resolve(P("ford")).ToPlainString() == "car");
+    TEST_ExpectTrue(source.Resolve(P("Global")).ToString() == "value");
+    TEST_ExpectTrue(source.Resolve(P("ford")).ToString() == "car");
 
     Issue("`Resolve()` fails to return passed alias after failure to"
         @ "load it's value.");
-    TEST_ExpectTrue(    source.Resolve(P("nothinMuch"), true).ToPlainString()
+    TEST_ExpectTrue(    source.Resolve(P("nothinMuch"), true).ToString()
                     ==  "nothinMuch");
-    TEST_ExpectTrue(    source.Resolve(P("random"), true).ToPlainString()
+    TEST_ExpectTrue(    source.Resolve(P("random"), true).ToString()
                     ==  "random");
 
     Issue("`HasAlias()` reports alias, that should be present,"
@@ -48,13 +48,13 @@ protected static function SubTest_AliasLoadingCorrect()
     TEST_ExpectTrue(source.HasAlias(P("audi")));
 
     Issue("Aliases in per-object-configs incorrectly handle ':'.");
-    TEST_ExpectTrue(    source.Resolve(P("HardToBeAGod")).ToPlainString()
+    TEST_ExpectTrue(    source.Resolve(P("HardToBeAGod")).ToString()
                     ==  "sci.fi");
 
     Issue("Aliases with empty values in alias name or their value are handled"
         @ "incorrectly.");
-    TEST_ExpectTrue(source.Resolve(P("")).ToPlainString() == "empty");
-    TEST_ExpectTrue(source.Resolve(P("also")).ToPlainString() == "");
+    TEST_ExpectTrue(source.Resolve(P("")).ToString() == "empty");
+    TEST_ExpectTrue(source.Resolve(P("also")).ToString() == "");
 }
 
 protected static function SubTest_AliasLoadingIncorrect()

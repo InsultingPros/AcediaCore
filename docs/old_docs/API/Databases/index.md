@@ -75,7 +75,7 @@ private function DoPrint(DBQueryResult result, AcediaObject data)
     {
         nextNote = loadedArray.GetText(i);
         if (nextNote != none) {
-            Log("Note" @ (i+1) $ "." @ loadedArray.GetText(i).ToPlainString());
+            Log("Note" @ (i+1) $ "." @ loadedArray.GetText(i).ToString());
         }
         else {
             hadBadNotes = true;

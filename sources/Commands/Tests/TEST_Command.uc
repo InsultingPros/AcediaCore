@@ -96,13 +96,13 @@ protected static function SubTest_CommandCallErrorNoRequiredParam()
         .ProcessInput(PRS(default.queryAFailure1), none);
     TEST_ExpectFalse(result.IsSuccessful());
     TEST_ExpectTrue(result.GetError() == CET_NoRequiredParam);
-    TEST_ExpectTrue(    result.GetErrorCause().ToPlainString()
+    TEST_ExpectTrue(    result.GetErrorCause().ToString()
                     ==  "integer variable");
     result = class'MockCommandA'.static.GetInstance()
         .ProcessInput(PRS(default.queryAFailure2), none);
     TEST_ExpectFalse(result.IsSuccessful());
     TEST_ExpectTrue(result.GetError() == CET_NoRequiredParam);
-    TEST_ExpectTrue(    result.GetErrorCause().ToPlainString()
+    TEST_ExpectTrue(    result.GetErrorCause().ToString()
                     ==  "isItSimple?");
 }
 
@@ -114,7 +114,7 @@ protected static function SubTest_CommandCallErrorUnknownOption()
         .ProcessInput(PRS(default.queryBFailureUnknownOptionLong), none);
     TEST_ExpectFalse(result.IsSuccessful());
     TEST_ExpectTrue(result.GetError() == CET_UnknownOption);
-    TEST_ExpectTrue(    result.GetErrorCause().ToPlainString()
+    TEST_ExpectTrue(    result.GetErrorCause().ToString()
                     ==  "kest");
     Issue("`CET_UnknownShortOption` errors are incorrectly reported.");
     result = class'MockCommandB'.static.GetInstance()
@@ -132,7 +132,7 @@ protected static function SubTest_CommandCallErrorRepeatedOption()
         .ProcessInput(PRS(default.queryBFailure2), none);
     TEST_ExpectFalse(result.IsSuccessful());
     TEST_ExpectTrue(result.GetError() == CET_RepeatedOption);
-    TEST_ExpectTrue(    result.GetErrorCause().ToPlainString()
+    TEST_ExpectTrue(    result.GetErrorCause().ToString()
                     ==  "forced");
 }
 
@@ -144,7 +144,7 @@ protected static function SubTest_CommandCallErrorUnusedCommandParameters()
         .ProcessInput(PRS(default.queryBFailureUnused), none);
     TEST_ExpectFalse(result.IsSuccessful());
     TEST_ExpectTrue(result.GetError() == CET_UnusedCommandParameters);
-    TEST_ExpectTrue(    result.GetErrorCause().ToPlainString()
+    TEST_ExpectTrue(    result.GetErrorCause().ToString()
                     ==  "text -j");
 }
 
@@ -156,7 +156,7 @@ protected static function SubTest_CommandCallErrorMultipleOptionsWithParams()
         .ProcessInput(PRS(default.queryBFailure1), none);
     TEST_ExpectFalse(result.IsSuccessful());
     TEST_ExpectTrue(result.GetError() == CET_MultipleOptionsWithParams);
-    TEST_ExpectTrue(result.GetErrorCause().ToPlainString() == "tv");
+    TEST_ExpectTrue(result.GetErrorCause().ToString() == "tv");
 }
 
 protected static function SubTest_CommandCallErrorNoRequiredParamForOption()
@@ -167,12 +167,12 @@ protected static function SubTest_CommandCallErrorNoRequiredParamForOption()
         .ProcessInput(PRS(default.queryBFailureNoReqParamOption1), none);
     TEST_ExpectFalse(result.IsSuccessful());
     TEST_ExpectTrue(result.GetError() == CET_NoRequiredParamForOption);
-    TEST_ExpectTrue(result.GetErrorCause().ToPlainString() == "long");
+    TEST_ExpectTrue(result.GetErrorCause().ToString() == "long");
     result = class'MockCommandB'.static.GetInstance()
         .ProcessInput(PRS(default.queryBFailureNoReqParamOption2), none);
     TEST_ExpectFalse(result.IsSuccessful());
     TEST_ExpectTrue(result.GetError() == CET_NoRequiredParamForOption);
-    TEST_ExpectTrue(result.GetErrorCause().ToPlainString() == "values");
+    TEST_ExpectTrue(result.GetErrorCause().ToString() == "values");
 }
 
 protected static function Test_SubCommandName()
@@ -181,7 +181,7 @@ protected static function Test_SubCommandName()
     Issue("Cannot determine subcommands.");
     result = class'MockCommandA'.static.GetInstance()
         .ProcessInput(PRS(default.queryASuccess1), none);
-    TEST_ExpectTrue(result.GetSubCommand().ToPlainString() == "simple");
+    TEST_ExpectTrue(result.GetSubCommand().ToString() == "simple");
 
     Issue("Cannot determine when subcommands are missing.");
     result = class'MockCommandA'.static.GetInstance()
@@ -274,8 +274,8 @@ protected static function SubTest_MockAQ3()
     //  `Text`s
     paramArray = DynamicArray(result.GetItem(P("another list")));
     TEST_ExpectTrue(paramArray.GetLength() == 3);
-    TEST_ExpectTrue(Text(paramArray.GetItem(0)).ToPlainString() == "dk");
-    TEST_ExpectTrue(Text(paramArray.GetItem(1)).ToPlainString() == "someone");
+    TEST_ExpectTrue(Text(paramArray.GetItem(0)).ToString() == "dk");
+    TEST_ExpectTrue(Text(paramArray.GetItem(1)).ToString() == "someone");
     TEST_ExpectTrue(    Text(paramArray.GetItem(2)).ToFormattedString()
                     ==  "complex {rgb(123,45,72) string}");
 }
@@ -337,7 +337,7 @@ protected static function SubTest_MockBQ1()
     TEST_ExpectTrue(subArray.GetLength() == 2);
     TEST_ExpectTrue(IntBox(subArray.GetItem(0)).Get() == 7);
     TEST_ExpectNone(subArray.GetItem(1));
-    TEST_ExpectTrue(    Text(params.GetItem(P("just_text"))).ToPlainString()
+    TEST_ExpectTrue(    Text(params.GetItem(P("just_text"))).ToString()
                     ==  "text");
     options = result.GetOptions();
     TEST_ExpectTrue(options.GetLength() == 1);
@@ -372,7 +372,7 @@ protected static function SubTest_MockBQ2()
     TEST_ExpectTrue(options.HasKey(P("forced")));
     TEST_ExpectNone(options.GetItem(P("forced")));
     subObject = AssociativeArray(options.GetItem(P("type")));
-    TEST_ExpectTrue(    Text(subObject.GetItem(P("type"))).ToPlainString()
+    TEST_ExpectTrue(    Text(subObject.GetItem(P("type"))).ToString()
                     ==  "value");
     subObject = AssociativeArray(options.GetItem(P("Test")));
     TEST_ExpectTrue(Text(subObject.GetItem(P("to_test"))).IsEmpty());
@@ -398,7 +398,7 @@ protected static function SubTest_MockBQ3Remainder()
     TEST_ExpectTrue(options.GetLength() == 1);
     TEST_ExpectTrue(options.HasKey(P("remainder")));
     subObject = AssociativeArray(options.GetItem(P("remainder")));
-    TEST_ExpectTrue(    Text(subObject.GetItem(P("everything"))).ToPlainString()
+    TEST_ExpectTrue(    Text(subObject.GetItem(P("everything"))).ToString()
                     ==  "--type \"value\" -va 8 -sV --forced -T  \"\" 32");
 }
 // [1, 2, 3, 6]

@@ -242,8 +242,8 @@ public final function bool AddAlias(
     }
     else
     {
-        newPair.alias = aliasToAdd.ToPlainString();
-        newPair.value = aliasValue.ToPlainString();
+        newPair.alias = aliasToAdd.ToString();
+        newPair.value = aliasValue.ToString();
         record[record.length] = newPair;
     }
     aliasHash.SetItem(lowerCaseAlias, aliasValue);
@@ -281,7 +281,7 @@ public final function RemoveAlias(Text aliasToRemove)
     while (i < record.length)
     {
         isMatchingRecord = aliasToRemove
-            .CompareToPlainString(record[i].alias, SCASE_INSENSITIVE);
+            .CompareToString(record[i].alias, SCASE_INSENSITIVE);
         if (isMatchingRecord)
         {
             record.Remove(i, 1);
