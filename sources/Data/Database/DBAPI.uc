@@ -35,6 +35,69 @@ private final function CreateLocalDBMapIfMissing()
 }
 
 /**
+ *  Loads database based on the link.
+ *
+ *  Links have the form of "<type>:<db_name>", followed by the JSON pointer
+ *  (possibly empty one) to the object inside it. "<type>" can be either "local"
+ *  or "remote" and "<db_name>" refers to the database that we are expected
+ *  to load. This name has to consist of numbers and latin letters only.
+ *
+ *  @param  databaseLink    Link from which to extract database's name.
+ *  @return Database named "<db_name>" of type "<type>" from the `databaseLink`.
+ */
+public final function Database Load(Text databaseLink)
+{
+    local Parser        parser;
+    local Database      result;
+    local MutableText   databaseName;
+    if (databaseLink == none) {
+        return none;
+    }
+    parser = _.text.Parse(databaseLink);
+    //  Only local DBs are supported for now!
+    parser.Match(P("local:"));
+    if (!parser.Ok())
+    {
+        parser.FreeSelf();
+        return none;
+    }
+    parser.MUntil(databaseName, _.text.GetCharacter("/"));
+    result = LoadLocal(databaseName);
+    databaseName.FreeSelf();
+    return result;
+}
+
+/**
+ *  Extracts `JSONPointer` from the database path, given by `databaseLink`.
+ *
+ *  Links have the form of "<type>:<db_name>", followed by the JSON pointer
+ *  (possibly empty one) to the object inside it. "<type>" can be either "local"
+ *  or "remote" and "<db_name>" refers to the database that we are to use to
+ *  get the data, specified in the link.
+ *  This method returns `JSONPointer` that comes after type-name pair.
+ *
+ *  @param  Link from which to extract `JSONPointer`.
+ *  @return `JSONPointer` from the database link.
+ */
+public final function JSONPointer GetPointer(Text databaseLink)
+{
+    local int           slashIndex;
+    local Text          textPointer;
+    local JSONPointer   result;
+    if (databaseLink == none) {
+        return none;
+    }
+    slashIndex = databaseLink.IndexOf(P("/"));
+    if (slashIndex < 0) {
+        return JSONPointer(_.memory.Allocate(class'JSONPointer'));
+    }
+    textPointer = databaseLink.Copy(slashIndex);
+    result = _.json.Pointer(textPointer);
+    textPointer.FreeSelf();
+    return result;
+}
+
+/**
  *  Creates new local database with name `databaseName`.
  *
  *  This method will fail if:
