@@ -131,6 +131,10 @@ protected static function SubTest_TextSubCopy()
     TEST_ExpectTrue(    formatted.Copy(13, -10).ToFormattedString()
                     ==  "{rgb(255,0,0) E} and be reborn!");
     TEST_ExpectTrue(formatted.Copy(32).ToString() == "");
+    TEST_ExpectTrue(formatted.Copy(-30, -1).ToString() == plainString);
+    TEST_ExpectTrue(formatted.Copy(-20, -1).ToString() == plainString);
+    TEST_ExpectTrue(formatted.Copy(-30, 5).ToString() == "");
+    TEST_ExpectTrue(formatted.Copy(-29, 32).ToString() == "Pre");
 
     Issue("Part of `Text`'s contents is not properly copied (mutable).");
     TEST_ExpectTrue(    formatted.MutableCopy(-2, 100).ToFormattedString()
@@ -139,6 +143,10 @@ protected static function SubTest_TextSubCopy()
     TEST_ExpectTrue(    formatted.MutableCopy(13, -10).ToFormattedString()
                     ==  "{rgb(255,0,0) E} and be reborn!");
     TEST_ExpectTrue(formatted.MutableCopy(32).ToString() == "");
+    TEST_ExpectTrue(formatted.MutableCopy(-30, -1).ToString() == plainString);
+    TEST_ExpectTrue(formatted.MutableCopy(-20, -1).ToString() == plainString);
+    TEST_ExpectTrue(formatted.MutableCopy(-30, 5).ToString() == "");
+    TEST_ExpectTrue(formatted.MutableCopy(-29, 32).ToString() == "Pre");
 }
 
 protected static function SubTest_TextLowerCompleteCopy()

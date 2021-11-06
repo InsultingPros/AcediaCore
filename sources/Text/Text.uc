@@ -270,13 +270,14 @@ public static final function Text ConstFromFormattedString(string source)
 /**
  *  Makes an immutable copy (`class'Text'`) of the caller `Text`.
  *
- *  If provided parameters `startPosition` and `maxLength` define a range that
+ *  Copies characters in the range `[startIndex; startIndex + maxLength - 1]`
+ *  If provided parameters `startIndex` and `maxLength` define a range that
  *  goes beyond `[0; self.GetLength() - 1]`, then intersection with a valid
  *  range will be used.
  *
- *  @param  startPosition   Position of the first character to copy.
+ *  @param  startIndex  Position of the first character to copy.
  *      By default `0`, corresponding to the very first character.
- *  @param  maxLength       Max length of the extracted string. By default `0`,
+ *  @param  maxLength   Max length of the extracted string. By default `0`,
  *      - that and all negative values are replaces by `MaxInt`,
  *      effectively extracting as much of a string as possible.
  *  @return Immutable copy of the caller `Text` instance.
@@ -291,7 +292,7 @@ public final function Text Copy(
     local Text      copy;
     local Character nextCharacter;
     if (maxLength <= 0) {
-        maxLength = codePoints.length;
+        maxLength = codePoints.length - startIndex;
     }
     endIndex = startIndex + maxLength;
     copy = Text(_.memory.Allocate(class'Text'));
@@ -299,7 +300,7 @@ public final function Text Copy(
     if (endIndex <= 0) {
         return copy;
     }
-    if (startIndex <= 0 && maxLength >= startIndex + codePoints.length)
+    if (startIndex <= 0 && startIndex + maxLength >= codePoints.length)
     {
         copy.codePoints         = codePoints;
         copy.formattingChunks   = formattingChunks;
@@ -322,13 +323,13 @@ public final function Text Copy(
 /**
  *  Makes a mutable copy (`class'MutableText'`) of the caller text instance.
  *
- *  If provided parameters `startPosition` and `maxLength` define a range that
+ *  If provided parameters `startIndex` and `maxLength` define a range that
  *  goes beyond `[0; self.GetLength() - 1]`, then intersection with a valid
  *  range will be used.
  *
- *  @param  startPosition   Position of the first character to copy.
+ *  @param  startIndex  Position of the first character to copy.
  *      By default `0`, corresponding to the very first character.
- *  @param  maxLength       Max length of the extracted string. By default `0`,
+ *  @param  maxLength   Max length of the extracted string. By default `0`,
  *      - that and all negative values are replaces by `MaxInt`,
  *      effectively extracting as much of a string as possible.
  *  @return Mutable copy of the caller `Text` instance.
@@ -342,7 +343,7 @@ public final function MutableText MutableCopy(
     local int           i, endIndex;
     local MutableText   copy;
     if (maxLength <= 0) {
-        maxLength = codePoints.length;
+        maxLength = codePoints.length - startIndex;
     }
     endIndex = startIndex + maxLength;
     copy = MutableText(_.memory.Allocate(class'MutableText'));
@@ -350,7 +351,7 @@ public final function MutableText MutableCopy(
     if (endIndex <= 0 || startIndex >= codePoints.length) {
         return copy;
     }
-    if (startIndex <= 0 && maxLength >= startIndex + codePoints.length)
+    if (startIndex <= 0 && startIndex + maxLength >= codePoints.length)
     {
         copy.codePoints         = codePoints;
         copy.formattingChunks   = formattingChunks;
