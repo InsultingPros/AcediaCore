@@ -935,6 +935,7 @@ private final function FromAssociativeArray(AssociativeArray source)
             SetItem(storage.length, ConvertObjectToItem(iter.Get()), nextKey);
         }
     }
+    iter.FreeSelf();
 }
 
 //  Converts `AcediaObject` into it's internal representation.
