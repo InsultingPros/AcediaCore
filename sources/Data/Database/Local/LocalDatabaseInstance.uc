@@ -222,7 +222,8 @@ public function DBWriteTask WriteData(JSONPointer pointer, AcediaObject data)
     if (!ValidatePointer(pointer, writeTask))   return writeTask;
     if (!ValidateRootRecord(writeTask))         return writeTask;
 
-    if (pointer.GetLength() <= 0) {
+    //  We can only write JSON array as the root value
+    if (data != none && pointer.GetLength() <= 0) {
         isDataStorable = (data.class == class'AssociativeArray');
     }
     else {
