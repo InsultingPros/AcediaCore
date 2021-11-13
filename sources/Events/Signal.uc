@@ -183,15 +183,26 @@ protected function Finalizer()
  *      Must be a properly allocated `AcediaObject`.
  *  @return New `Slot` object that will be connected to the caller `Signal` if
  *      provided `receiver` is correct. Guaranteed to have class
- *      `relatedSlotClass`.
+ *      `relatedSlotClass`. Guaranteed to not be `none` if allocated `receiver`
+ *      is provided.
  */
 public final function Slot NewSlot(AcediaObject receiver)
 {
     local Slot newSlot;
+    if (receiver == none) {
+        return none;
+    }
     newSlot = Slot(_.memory.Allocate(relatedSlotClass));
-    newSlot.Initialize(self, receiver);
-    AddSlot(newSlot, receiver);
-    return newSlot;
+    if (newSlot.Initialize(self, receiver))
+    {
+        AddSlot(newSlot, receiver);
+        return newSlot;
+    }
+    newSlot.FreeSelf();
+    if (!receiver.IsAllocated()) {
+        Disconnect(receiver);
+    }
+    return none;
 }
 
 /**
