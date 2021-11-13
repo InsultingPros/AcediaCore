@@ -238,7 +238,7 @@ function bool TryAddingController(Actor other, out byte isSuperRelevant)
     //  for each new `PlayerController`,
     //  we will be detecting new users right after server
     //  detected and properly initialized them.
-    if (KFSteamStatsAndAchievements(other) == none) {
+    if (KFSteamStatsAndAchievements(other) != none) {
         RegisterConnection(PlayerController(other.owner));
     }
     return true;
