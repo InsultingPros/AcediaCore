@@ -114,7 +114,7 @@ public final function bool IsConnected()
  *      Before a `Initialize()` call, any other method calls on such `User`
  *  must be considerate to have undefined behavior.
  *
- *  @param  newController   Controller that caller `APLayer` will correspond to.
+ *  @param  newController   Controller that caller `APlayer` will correspond to.
  */
 public final function Initialize(Text idHash)
 {
