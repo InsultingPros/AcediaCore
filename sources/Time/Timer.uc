@@ -235,7 +235,7 @@ private final function Tick(float delta, float dilationCoefficient)
         //  is reset there and already has a zeroed `totalElapsedTime`
         totalElapsedTime -= eventInterval;
         onElapsedSignal.Emit(self);
-        if (!isTimerAutoReset)
+        if (!isTimerAutoReset && IsAllocated())
         {
             StopMe();
             return;
