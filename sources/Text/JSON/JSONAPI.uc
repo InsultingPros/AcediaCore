@@ -1001,6 +1001,7 @@ public final function MutableText PrintObject(AssociativeArray toPrint)
         }
         printedKeyValuePair = true;
     }
+    iter.FreeSelf();
     result.Append(T(default.TCLOSE_BRACE));
     return result;
 }
@@ -1236,6 +1237,7 @@ private final function MutableText PrettyPrintObjectWithIndent(
     if (printedKeyValuePair) {
         result.AppendLineBreak().Append(accumulatedIndent);
     }
+    iter.FreeSelf();
     result.Append(T(default.TCLOSE_BRACE), jObjectBraces);
     extendedIndent.FreeSelf();
     return result;
