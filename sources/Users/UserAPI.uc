@@ -1,6 +1,6 @@
 /**
  *      API that allows easy access to `User` persistent data and `UserID`s.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -18,6 +18,8 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class UserAPI extends AcediaObject;
+
+var private string userDataDBLink;
 
 /**
  *  Returns reference to the database of user records that Acedia was
@@ -73,6 +75,35 @@ public final function User FetchByKey(int userKey)
     return class'UserDatabase'.static.GetInstance().FetchUserByKey(userKey);
 }
 
+/**
+ *  Returns configured database link to the JSON object in which users' data
+ *  is stored.
+ *
+ *  @return Database link to the JSON object in which users' data is stored.
+ *      Guaranteed to not be `none`.
+ */
+public final function Text GetUserDataLink()
+{
+    return P(userDataDBLink).Copy();
+}
+
+/**
+ *  Checks whether database setup to store users' persistent data was configured
+ *  and actually exists.
+ *
+ *  This does not check for whether that database is properly configured.
+ *  If sub-object set to store users' data was not created inside it, then
+ *  Acedia will not be able to make use of users' persistent storage.
+ *
+ *  @return `true` if database for users' persistent data storage exists and
+ *      `false` otherwise.
+ */
+public final function bool PersistentStorageExists()
+{
+    return (_.db.Load(P(userDataDBLink)) != none);
+}
+
 defaultproperties
 {
+    userDataDBLink = "[local]database:/users"
 }

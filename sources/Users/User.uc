@@ -2,7 +2,7 @@
  *      Object that is supposed to store a persistent data about the
  *  certain player. That is data that will be remembered even after player
  *  reconnects or server changes map/restarts.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020 - 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -26,6 +26,13 @@ var private UserID  id;
 //  A numeric "key" assigned to this user for a session that can serve as
 //  an easy reference in console commands
 var private int     key;
+
+//  Database where user's persistent data is stored
+var private Database    persistentDatabase;
+//  Pointer to this user's "settings" data in particular
+var private JSONPointer persistentSettingsPointer;
+
+var private LoggerAPI.Definition errNoUserDataDatabase;
 
 /**
  *  Initializes caller `User` with id and it's session key. Should be called
@@ -61,6 +68,123 @@ public final function int GetKey()
     return key;
 }
 
+/**
+ *  Reads user's persistent data saved under name `dataName`, saving it into
+ *  a collection using mutable data types.
+ *  Only should be used if `_.users.PersistentStorageExists()` returns `true`.
+ *
+ *  @param  groupName   Name of the group these settings belong to.
+ *      This exists to help reduce name collisions between different mods.
+ *      Acedia stores all its settings under "Acedia" group. We suggest that you
+ *      pick at least one name to use for your own mods.
+ *      It should be unique enough to not get picked by others - "weapons" is
+ *      a bad name, while "CoolModMastah79" is actually a good pick.
+ *  @param  dataName    Any name, from under which settings you are interested
+ *      (inside `groupName` group) should be read.
+ *  @return Task object for reading specified persistent data from the database.
+ *      For more info see `Database.ReadData()` method.
+ *      Guaranteed to not be `none` iff
+ *      `_.users.PersistentStorageExists() == true`.
+ */
+public final function DBReadTask ReadPersistentData(
+    Text groupName,
+    Text dataName)
+{
+    local DBReadTask task;
+    if (groupName == none)          return none;
+    if (dataName == none)           return none;
+    if (!SetupDatabaseVariables())  return none;
+
+    persistentSettingsPointer.Push(groupName).Push(dataName);
+    task = persistentDatabase.ReadData(persistentSettingsPointer, true);
+    _.memory.Free(persistentSettingsPointer.Pop());
+    _.memory.Free(persistentSettingsPointer.Pop());
+    return task;
+}
+
+/**
+ *  Writes user's persistent data under name `dataName`.
+ *  Only should be used if `_.users.PersistentStorageExists()` returns `true`.
+ *
+ *  @param  groupName   Name of the group these settings belong to.
+ *      This exists to help reduce name collisions between different mods.
+ *      Acedia stores all its settings under "Acedia" group. We suggest that you
+ *      pick at least one name to use for your own mods.
+ *      It should be unique enough to not get picked by others - "weapons" is
+ *      a bad name, while "CoolModMastah79" is actually a good pick.
+ *  @param  dataName    Any name, under which settings you are interested
+ *      (inside `groupName` group) should be written.
+ *  @param  data        JSON-compatible (see `_.json.IsCompatible()`) data that
+ *      should be written into database.
+ *  @return Task object for writing specified persistent data into the database.
+ *      For more info see `Database.WriteData()` method.
+ *      Guarantee to not be `none` iff
+ *      `_.users.PersistentStorageExists() == true`.
+ */
+public final function DBWriteTask WritePersistentData(
+    Text            groupName,
+    Text            dataName,
+    AcediaObject    data)
+{
+    local DBWriteTask       task;
+    local AssociativeArray  emptyObject;
+    if (groupName == none)          return none;
+    if (dataName == none)           return none;
+    if (!SetupDatabaseVariables())  return none;
+
+    emptyObject = _.collections.EmptyAssociativeArray();
+    persistentSettingsPointer.Push(groupName);
+    persistentDatabase.IncrementData(persistentSettingsPointer, emptyObject);
+    persistentSettingsPointer.Push(dataName);
+    task = persistentDatabase.WriteData(persistentSettingsPointer, data);
+    _.memory.Free(persistentSettingsPointer.Pop());
+    _.memory.Free(persistentSettingsPointer.Pop());
+    _.memory.Free(emptyObject);
+    return task;
+}
+
+//  Setup database `persistentDatabase` and pointer to this user's data
+//  `persistentSettingsPointer`.
+//  Return `true` if these variables were setup (during this call or before)
+//  and `false` otherwise.
+private function bool SetupDatabaseVariables()
+{
+    local Text              userDataLink;
+    local Text              userTextID;
+    local AssociativeArray  skeletonObject;
+    if (    persistentDatabase != none && persistentSettingsPointer != none
+        &&  persistentDatabase.IsAllocated())
+    {
+        return true;
+    }
+    if (id == none || !id.IsInitialized()) {
+        return false;
+    }
+    _.memory.Free(persistentSettingsPointer);
+    userDataLink = _.users.GetUserDataLink();
+    persistentDatabase = _.db.Load(userDataLink);
+    if (persistentDatabase == none)
+    {
+        _.logger.Auto(errNoUserDataDatabase).Arg(userDataLink);
+        return false;
+    }
+    persistentSettingsPointer = _.db.GetPointer(userDataLink);
+    userTextID = id.GetSteamID64String();
+    skeletonObject = _.collections.EmptyAssociativeArray();
+    skeletonObject.SetItem( P("statistics"),
+                            _.collections.EmptyAssociativeArray(), true);
+    skeletonObject.SetItem( P("settings"),
+                            _.collections.EmptyAssociativeArray(), true);
+    persistentSettingsPointer.Push(userTextID);
+    persistentDatabase.IncrementData(persistentSettingsPointer, skeletonObject);
+    persistentSettingsPointer.Push(P("settings"));
+    _.memory.Free(userTextID);
+    _.memory.Free(userDataLink);
+    _.memory.Free(skeletonObject);
+    return true;
+}
+
 defaultproperties
 {
+    errNoUserDataDatabase = (l=LOG_Error,m="Failed to load persistent user database instance given by link \"%1\".")
 }
