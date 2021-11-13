@@ -161,11 +161,17 @@ protected static function Test_CopyTextKeys()
 
 protected static function Test_Remove()
 {
+    Context("Testing removing elements from `AssociativeArray`.");
+    SubTest_RemoveWithoutKeys();
+    SubTest_RemoveWithKeys();
+}
+
+protected static function SubTest_RemoveWithoutKeys()
+{
     local AcediaObject          key1, key2, key3;
     local array<AcediaObject>   keys;
     local AssociativeArray      array;
     array = AssociativeArray(__().memory.Allocate(class'AssociativeArray'));
-    Context("Testing removing elements from `AssociativeArray`.");
     key1 = __().text.FromString("some key");
     key2 = __().box.int(25);
     key3 = __().box.float(0.07);
@@ -180,6 +186,38 @@ protected static function Test_Remove()
     TEST_ExpectTrue(array.GetLength() == 1);
     TEST_ExpectTrue(keys.length == 1);
     TEST_ExpectTrue(keys[0] == key3);
+
+    Issue("Keys are deallocated upon removing elements from `AssociativeArray`"
+        @ "when they should not.");
+    TEST_ExpectTrue(key1.IsAllocated());
+    TEST_ExpectTrue(key2.IsAllocated());
+}
+
+protected static function SubTest_RemoveWithKeys()
+{
+    local AcediaObject          key1, key2, key3;
+    local array<AcediaObject>   keys;
+    local AssociativeArray      array;
+    array = AssociativeArray(__().memory.Allocate(class'AssociativeArray'));
+    key1 = __().text.FromString("some key");
+    key2 = __().box.int(25);
+    key3 = __().box.float(0.07);
+    array.SetItem(key1, __().text.FromString("value"));
+    array.SetItem(key2, __().text.FromString("value #2"));
+    array.SetItem(key3, __().box.bool(true));
+    Issue("Elements are not properly removed from `AssociativeArray`.");
+    array.RemoveItem(key1, true)
+        .RemoveItem(__().box.int(25), true)
+        .RemoveItem(__().box.float(0.06), true);
+    keys = array.GetKeys();
+    TEST_ExpectTrue(array.GetLength() == 1);
+    TEST_ExpectTrue(keys.length == 1);
+    TEST_ExpectTrue(keys[0] == key3);
+
+    Issue("Keys are not deallocated upon removing elements from"
+        @ "`AssociativeArray` when they should.");
+    TEST_ExpectFalse(key1.IsAllocated());
+    TEST_ExpectFalse(key2.IsAllocated());
 }
 
 protected static function Test_CreateItem()
