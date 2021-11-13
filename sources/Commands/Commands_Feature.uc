@@ -25,7 +25,8 @@ class Commands_Feature extends Feature
 
 //  Delimiters that always separate command name from it's parameters
 var private array<Text>         commandDelimiters;
-//  Registered commands, recorded as (<command_name>, <command_instance>) pairs
+//  Registered commands, recorded as (<command_name>, <command_instance>) pairs.
+//  Keys should be deallocated when their entry is removed.
 var private AssociativeArray    registeredCommands;
 
 //  Setting this to `true` enables players to input commands right in the chat
@@ -51,8 +52,12 @@ protected function OnEnabled()
 protected function OnDisabled()
 {
     _.unreal.broadcasts.OnHandleText(self).Disconnect();
-    _.memory.Free(registeredCommands);
-    registeredCommands          = none;
+    if (registeredCommands != none)
+    {
+        registeredCommands.Empty(true);
+        registeredCommands.FreeSelf();
+        registeredCommands = none;
+    }
     commandDelimiters.length    = 0;
 }
 
@@ -108,6 +113,41 @@ public final function RegisterCommand(class<Command> commandClass)
     //  Otherwise record new command
     //  `commandName` used as a key, do not deallocate it
     registeredCommands.SetItem(commandName, newCommandInstance, true);
+}
+
+/**
+ *  Removes command of class `commandClass` from the list of
+ *  registered commands.
+ *
+ *  WARNING: removing once registered commands is not an action that is expected
+ *  to be performed under normal circumstances and it is not efficient.
+ *  It is linear on the current amount of commands.
+ *
+ *  @param  commandClass    Class of command to remove from being registered.
+ */
+public final function RemoveCommand(class<Command> commandClass)
+{
+    local int           i;
+    local Iter          iter;
+    local Command       nextCommand;
+    local Text          nextCommandName;
+    local array<Text>   keysToRemove;
+    if (commandClass == none)       return;
+    if (registeredCommands == none) return;
+
+    for (iter = registeredCommands.Iterate(); !iter.HasFinished(); iter.Next())
+    {
+        nextCommand     = Command(iter.Get());
+        nextCommandName = Text(iter.GetKey());
+        if (nextCommand == none)                continue;
+        if (nextCommandName == none)            continue;
+        if (nextCommand.class != commandClass)  continue;
+        keysToRemove[keysToRemove.length] = nextCommandName;
+    }
+    iter.FreeSelf();
+    for (i = 0; i < keysToRemove.length; i += 1) {
+        registeredCommands.RemoveItem(keysToRemove[i], true);
+    }
 }
 
 /**
@@ -177,7 +217,7 @@ public final function HandleInput(Parser parser, APlayer callerPlayer)
     }
 }
 
-function bool HandleText(
+private function bool HandleText(
     Actor       sender,
     out string  message,
     name        messageType,
