@@ -98,6 +98,7 @@ protected function Finalizer()
     //  Defaulting variables is not necessary, since this class does not
     //  use object pool.
     CompleteAllTasks();
+    WriteToDisk();
     rootRecord = none;
     _.unreal.OnTick(self).Disconnect();
     _.memory.Free(diskUpdateTimer);
@@ -345,6 +346,7 @@ public final function Initialize(LocalDatabase config, DBRecord root)
     if (config.RequiresAcediaStructure()) {
         CreateAcediaStructure(config);
     }
+    ScheduleDiskUpdate();
 }
 
 //  Create JSON object at "/users" if something else (or nothing)
