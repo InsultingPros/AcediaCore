@@ -26,6 +26,7 @@ class LocalDatabase extends AcediaObject
     config(AcediaDB);
 
 var config private string   root;
+var config private bool     createIfMissing;
 var config private bool     enforceAcediaStructure;
 
 public final function Text GetPackageName()
@@ -78,7 +79,7 @@ public final static function LocalDatabase Load(Text databaseName)
 /**
  *  Updates `LocalDatabase` record inside it's config file. If caller
  *  `LocalDatabase` does not have defined root `HasDefinedRoot() == none`,
- *  then this method will erase it's record from the config.
+ *  then this method will erase its record from the config.
  */
 public final function Save()
 {
@@ -88,6 +89,11 @@ public final function Save()
     else {
         ClearConfig();
     }
+}
+
+public final function bool ShouldCreateIfMissing()
+{
+    return createIfMissing;
 }
 
 /**
@@ -104,5 +110,6 @@ public final function DeleteSelf()
 
 defaultproperties
 {
-    enforceAcediaStructure = false
+    enforceAcediaStructure  = false
+    createIfMissing         = false
 }

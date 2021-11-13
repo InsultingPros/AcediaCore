@@ -25,17 +25,20 @@ protected static function TESTS()
     local JSONPointer pointer;
     Context("Testing extracting `JSONPointer` from database link.");
     Issue("`JSONPointer` is incorrectly extracted.");
-    pointer =
-        __().db.GetPointer(__().text.FromString("local:default/huh/what/is/"));
+    pointer = __().db.GetPointer(
+        __().text.FromString("[local]default:/huh/what/is/"));
     TEST_ExpectNotNone(pointer);
     TEST_ExpectTrue(pointer.ToText().ToString() == "/huh/what/is/");
-    pointer = __().db.GetPointer(__().text.FromString("remote:db"));
+    pointer = __().db.GetPointer(__().text.FromString("[remote]db:"));
     TEST_ExpectNotNone(pointer);
     TEST_ExpectTrue(pointer.ToText().ToString() == "");
-    pointer = __().db.GetPointer(__().text.FromString("remote:"));
+    pointer = __().db.GetPointer(__().text.FromString("[remote]:"));
     TEST_ExpectNotNone(pointer);
     TEST_ExpectTrue(pointer.ToText().ToString() == "");
-    pointer = __().db.GetPointer(__().text.FromString("/just/a/pointer"));
+    pointer = __().db.GetPointer(__().text.FromString("db:/just/a/pointer"));
+    TEST_ExpectNotNone(pointer);
+    TEST_ExpectTrue(pointer.ToText().ToString() == "/just/a/pointer");
+    pointer = __().db.GetPointer(__().text.FromString(":/just/a/pointer"));
     TEST_ExpectNotNone(pointer);
     TEST_ExpectTrue(pointer.ToText().ToString() == "/just/a/pointer");
 }

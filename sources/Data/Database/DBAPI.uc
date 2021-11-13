@@ -37,10 +37,12 @@ private final function CreateLocalDBMapIfMissing()
 /**
  *  Loads database based on the link.
  *
- *  Links have the form of "<type>:<db_name>", followed by the JSON pointer
- *  (possibly empty one) to the object inside it. "<type>" can be either "local"
- *  or "remote" and "<db_name>" refers to the database that we are expected
- *  to load. This name has to consist of numbers and latin letters only.
+ *  Links have the form of "<db_name>:" (or, optionally, "[<type>]<db_name>:"),
+ *  followed by the JSON pointer (possibly empty one) to the object inside it.
+ *  "<type>" can be either "local" or "remote" and is necessary only when both
+ *  local and remote database have the same name (which should be avoided).
+ *  "<db_name>" refers to the database that we are expected
+ *  to load, it has to consist of numbers and latin letters only.
  *
  *  @param  databaseLink    Link from which to extract database's name.
  *  @return Database named "<db_name>" of type "<type>" from the `databaseLink`.
@@ -55,14 +57,16 @@ public final function Database Load(Text databaseLink)
     }
     parser = _.text.Parse(databaseLink);
     //  Only local DBs are supported for now!
-    parser.Match(P("local:"));
+    //  So just consume this prefix, if it's present.
+    parser.Match(P("[local]")).Confirm();
+    parser.R().MUntil(databaseName, _.text.GetCharacter(":")).MatchS(":");
     if (!parser.Ok())
     {
         parser.FreeSelf();
         return none;
     }
-    parser.MUntil(databaseName, _.text.GetCharacter("/"));
     result = LoadLocal(databaseName);
+    parser.FreeSelf();
     databaseName.FreeSelf();
     return result;
 }
@@ -70,14 +74,18 @@ public final function Database Load(Text databaseLink)
 /**
  *  Extracts `JSONPointer` from the database path, given by `databaseLink`.
  *
- *  Links have the form of "<type>:<db_name>", followed by the JSON pointer
- *  (possibly empty one) to the object inside it. "<type>" can be either "local"
- *  or "remote" and "<db_name>" refers to the database that we are to use to
- *  get the data, specified in the link.
+ *  Links have the form of "<db_name>:" (or, optionally, "[<type>]<db_name>:"),
+ *  followed by the JSON pointer (possibly empty one) to the object inside it.
+ *  "<type>" can be either "local" or "remote" and is necessary only when both
+ *  local and remote database have the same name (which should be avoided).
+ *  "<db_name>" refers to the database that we are expected
+ *  to load, it has to consist of numbers and latin letters only.
  *  This method returns `JSONPointer` that comes after type-name pair.
  *
  *  @param  Link from which to extract `JSONPointer`.
  *  @return `JSONPointer` from the database link.
+ *      Guaranteed to not be `none` if provided argument `databaseLink`
+ *      is not `none`.
  */
 public final function JSONPointer GetPointer(Text databaseLink)
 {
@@ -87,11 +95,11 @@ public final function JSONPointer GetPointer(Text databaseLink)
     if (databaseLink == none) {
         return none;
     }
-    slashIndex = databaseLink.IndexOf(P("/"));
+    slashIndex = databaseLink.IndexOf(P(":"));
     if (slashIndex < 0) {
         return JSONPointer(_.memory.Allocate(class'JSONPointer'));
     }
-    textPointer = databaseLink.Copy(slashIndex);
+    textPointer = databaseLink.Copy(slashIndex + 1);
     result = _.json.Pointer(textPointer);
     textPointer.FreeSelf();
     return result;
@@ -157,14 +165,27 @@ public final function LocalDatabaseInstance LoadLocal(Text databaseName)
     //  No need to check `databaseName` for being valid,
     //  since `Load()` will just return `none` if it is not.
     newConfig = class'LocalDatabase'.static.Load(databaseName);
-    if (newConfig == none)              return none;
-    if (!newConfig.HasDefinedRoot())    return none;
-
+    if (newConfig == none) {
+        return none;
+    }
+    if (!newConfig.HasDefinedRoot() && !newConfig.ShouldCreateIfMissing()) {
+        return none;
+    }
     newLocalDBInstance = LocalDatabaseInstance(_.memory.Allocate(localDBClass));
     loadedLocalDatabases.SetItem(databaseName.Copy(), newLocalDBInstance);
-    rootRecordName = newConfig.GetRootName();
-    rootRecord = class'DBRecord'.static
-        .LoadRecord(rootRecordName, databaseName);
+    if (newConfig.HasDefinedRoot())
+    {
+        rootRecordName = newConfig.GetRootName();
+        rootRecord = class'DBRecord'.static
+            .LoadRecord(rootRecordName, databaseName);
+    }
+    else
+    {
+        rootRecord = class'DBRecord'.static.NewRecord(databaseName);
+        rootRecordName = _.text.FromString(string(rootRecord.name));
+        newConfig.SetRootName(rootRecordName);
+        newConfig.Save();
+    }
     newLocalDBInstance.Initialize(newConfig, rootRecord);
     _.memory.Free(rootRecordName);
     return newLocalDBInstance;
