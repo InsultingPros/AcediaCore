@@ -204,7 +204,9 @@ public final function Text Pop(optional bool doNotRemove)
     else {
         result = components[lastIndex].asText.Copy();
     }
-    if (!doNotRemove) {
+    if (!doNotRemove)
+    {
+        _.memory.Free(components[lastIndex].asText);
         components.length = components.length - 1;
     }
     return result;
