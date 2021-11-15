@@ -51,6 +51,7 @@ public final function Database Load(Text databaseLink)
 {
     local Parser        parser;
     local Database      result;
+    local Text          immutableDatabaseName;
     local MutableText   databaseName;
     if (databaseLink == none) {
         return none;
@@ -65,9 +66,11 @@ public final function Database Load(Text databaseLink)
         parser.FreeSelf();
         return none;
     }
-    result = LoadLocal(databaseName);
+    immutableDatabaseName = databaseName.Copy();
+    result = LoadLocal(immutableDatabaseName);
     parser.FreeSelf();
     databaseName.FreeSelf();
+    immutableDatabaseName.FreeSelf();
     return result;
 }
 
@@ -156,6 +159,9 @@ public final function LocalDatabaseInstance LoadLocal(Text databaseName)
     local Text                  rootRecordName;
     local LocalDatabase         newConfig;
     local LocalDatabaseInstance newLocalDBInstance;
+    if (databaseName == none) {
+        return none;
+    }
     CreateLocalDBMapIfMissing();
     if (loadedLocalDatabases.HasKey(databaseName))
     {
@@ -214,6 +220,9 @@ public final function bool DeleteLocal(Text databaseName)
     local LocalDatabase             localDatabaseConfig;
     local LocalDatabaseInstance     localDatabase;
     local AssociativeArray.Entry    dbEntry;
+    if (databaseName == none) {
+        return false;
+    }
     CreateLocalDBMapIfMissing();
     //  To delete database we first need to load it
     localDatabase = LoadLocal(databaseName);
