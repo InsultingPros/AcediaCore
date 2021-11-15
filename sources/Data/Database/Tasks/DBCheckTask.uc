@@ -21,7 +21,10 @@ class DBCheckTask extends DBTask;
 
 var private Database.DataType queryTypeResponse;
 
-delegate connect(Database.DBQueryResult result, Database.DataType type) {}
+delegate connect(
+    Database.DBQueryResult  result,
+    Database.DataType       type,
+    Database                source) {}
 
 protected function Finalizer()
 {
@@ -35,9 +38,9 @@ public function SetDataType(Database.DataType type)
     queryTypeResponse = type;
 }
 
-protected function CompleteSelf()
+protected function CompleteSelf(Database source)
 {
-    connect(GetResult(), queryTypeResponse);
+    connect(GetResult(), queryTypeResponse, source);
 }
 
 defaultproperties

@@ -21,7 +21,10 @@ class DBReadTask extends DBTask;
 
 var private AcediaObject queryDataResponse;
 
-delegate connect(Database.DBQueryResult result, AcediaObject data) {}
+delegate connect(
+    Database.DBQueryResult  result,
+    AcediaObject            data,
+    Database                source) {}
 
 protected function Finalizer()
 {
@@ -35,9 +38,9 @@ public function SetReadData(AcediaObject data)
     queryDataResponse = data;
 }
 
-protected function CompleteSelf()
+protected function CompleteSelf(Database source)
 {
-    connect(GetResult(), queryDataResponse);
+    connect(GetResult(), queryDataResponse, source);
 }
 
 defaultproperties

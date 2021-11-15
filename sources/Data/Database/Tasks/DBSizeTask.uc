@@ -21,7 +21,7 @@ class DBSizeTask extends DBTask;
 
 var private int querySizeResponse;
 
-delegate connect(Database.DBQueryResult result, int size) {}
+delegate connect(Database.DBQueryResult result, int size, Database source) {}
 
 protected function Finalizer()
 {
@@ -35,9 +35,9 @@ public function SetDataSize(int size)
     querySizeResponse = size;
 }
 
-protected function CompleteSelf()
+protected function CompleteSelf(Database source)
 {
-    connect(GetResult(), querySizeResponse);
+    connect(GetResult(), querySizeResponse, source);
 }
 
 defaultproperties

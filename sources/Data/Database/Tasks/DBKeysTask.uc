@@ -21,7 +21,10 @@ class DBKeysTask extends DBTask;
 
 var private DynamicArray queryKeysResponse;
 
-delegate connect(Database.DBQueryResult result, DynamicArray keys) {}
+delegate connect(
+    Database.DBQueryResult  result,
+    DynamicArray            keys,
+    Database                source) {}
 
 protected function Finalizer()
 {
@@ -35,9 +38,9 @@ public function SetDataKeys(DynamicArray keys)
     queryKeysResponse = keys;
 }
 
-protected function CompleteSelf()
+protected function CompleteSelf(Database source)
 {
-    connect(GetResult(), queryKeysResponse);
+    connect(GetResult(), queryKeysResponse, source);
 }
 
 defaultproperties

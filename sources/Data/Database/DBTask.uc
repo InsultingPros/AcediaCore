@@ -118,14 +118,17 @@ public final function SetResult(Database.DBQueryResult result)
  *  Since this base class does not itself have `connect()` delegate declared -
  *  this method cannot be implemented here.
  */
-protected function CompleteSelf() {}
+protected function CompleteSelf(Database source) {}
 
 /**
  *  Attempts to complete this task.
  *  Can only succeed iff caller task both has necessary data to complete it's
  *  query and all previous tasks have completed.
+ *
+ *  @param  source  Database that will be passed to `DBTask`'s delegate as
+ *      its cause.
  */
-public final function TryCompleting()
+public final function TryCompleting(optional Database source)
 {
     local int           i;
     local array<DBTask> tasksQueue;
@@ -136,7 +139,7 @@ public final function TryCompleting()
     {
         if (tasksQueue[i].isReadyToComplete)
         {
-            tasksQueue[i].CompleteSelf();
+            tasksQueue[i].CompleteSelf(source);
             _.memory.Free(tasksQueue[i]);
         }
         else {

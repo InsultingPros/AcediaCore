@@ -29,8 +29,9 @@ var protected AssociativeArray          resultData;
 var protected AcediaObject              resultObject;
 
 protected function DBReadingHandler(
-    Database.DBQueryResult   result,
-    AcediaObject        data)
+    Database.DBQueryResult  result,
+    AcediaObject            data,
+    Database                source)
 {
     default.resultType      = result;
     default.resultObject    = data;
@@ -38,40 +39,49 @@ protected function DBReadingHandler(
 }
 
 protected function DBKeysHandler(
-    Database.DBQueryResult   result,
-    DynamicArray        keys)
+    Database.DBQueryResult  result,
+    DynamicArray            keys,
+    Database                source)
 {
     default.resultType = result;
     default.resultKeys = keys;
 }
 
 protected function DBCheckHandler(
-    Database.DBQueryResult result,
-    Database.DataType type)
+    Database.DBQueryResult  result,
+    Database.DataType       type,
+    Database                source)
 {
     default.resultType = result;
     default.resultDataType = type;
 }
 
 protected function DBSizeHandler(
-    Database.DBQueryResult   result,
-    int                 size)
+    Database.DBQueryResult  result,
+    int                     size,
+    Database                source)
 {
     default.resultType = result;
     default.resultSize = size;
 }
 
-protected function DBWritingHandler(Database.DBQueryResult result)
+protected function DBWritingHandler(
+    Database.DBQueryResult  result,
+    Database                source)
 {
     default.resultType = result;
 }
 
-protected function DBIncrementHandler(Database.DBQueryResult result)
+protected function DBIncrementHandler(
+    Database.DBQueryResult  result,
+    Database                source)
 {
     default.resultType = result;
 }
 
-protected function DBRemoveHandler(Database.DBQueryResult result)
+protected function DBRemoveHandler(
+    Database.DBQueryResult  result,
+    Database                source)
 {
     default.resultType = result;
 }

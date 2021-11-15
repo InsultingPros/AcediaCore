@@ -19,7 +19,7 @@
  */
 class DBWriteTask extends DBTask;
 
-delegate connect(Database.DBQueryResult result) {}
+delegate connect(Database.DBQueryResult result, Database source) {}
 
 protected function Finalizer()
 {
@@ -27,9 +27,9 @@ protected function Finalizer()
     connect = none;
 }
 
-protected function CompleteSelf()
+protected function CompleteSelf(Database source)
 {
-    connect(GetResult());
+    connect(GetResult(), source);
 }
 
 defaultproperties
