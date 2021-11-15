@@ -27,6 +27,10 @@ var private const class<Database> localDBClass;
 //  separately.
 var private AssociativeArray loadedLocalDatabases;
 
+var private LoggerAPI.Definition infoLocalDatabaseCreated;
+var private LoggerAPI.Definition infoLocalDatabaseDeleted;
+var private LoggerAPI.Definition infoLocalDatabaseLoaded;
+
 private final function CreateLocalDBMapIfMissing()
 {
     if (loadedLocalDatabases == none) {
@@ -139,6 +143,7 @@ public final function LocalDatabaseInstance NewLocal(Text databaseName)
     newConfig.SetRootName(rootRecordName);
     newConfig.Save();
     newLocalDBInstance.Initialize(newConfig, rootRecord);
+    _.logger.Auto(infoLocalDatabaseCreated).Arg(databaseName.Copy());
     _.memory.Free(rootRecordName);
     return newLocalDBInstance;
 }
@@ -193,6 +198,7 @@ public final function LocalDatabaseInstance LoadLocal(Text databaseName)
         newConfig.Save();
     }
     newLocalDBInstance.Initialize(newConfig, rootRecord);
+    _.logger.Auto(infoLocalDatabaseLoaded).Arg(databaseName.Copy());
     _.memory.Free(rootRecordName);
     return newLocalDBInstance;
 }
@@ -234,9 +240,11 @@ public final function bool DeleteLocal(Text databaseName)
     //  to allow it to clean up safely
     _.memory.Free(dbEntry.key);
     _.memory.Free(dbEntry.value);
-    if (localDatabaseConfig != none) {
+    if (localDatabaseConfig != none)
+    {
         EraseAllPackageData(localDatabaseConfig.GetPackageName());
         localDatabaseConfig.DeleteSelf();
+        _.logger.Auto(infoLocalDatabaseDeleted).Arg(databaseName.Copy());
         return true;
     }
     return false;
@@ -290,4 +298,7 @@ public final function array<Text> ListLocal()
 defaultproperties
 {
     localDBClass = class'LocalDatabaseInstance'
+    infoLocalDatabaseCreated = (l=LOG_Info,m="Local database \"%1\" was created.")
+    infoLocalDatabaseLoaded = (l=LOG_Info,m="Local database \"%1\" was loaded.")
+    infoLocalDatabaseDeleted = (l=LOG_Info,m="Local database \"%1\" was deleted.")
 }
