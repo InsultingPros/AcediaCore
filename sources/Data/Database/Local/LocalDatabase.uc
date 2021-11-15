@@ -27,7 +27,6 @@ class LocalDatabase extends AcediaObject
 
 var config private string   root;
 var config private bool     createIfMissing;
-var config private bool     enforceAcediaStructure;
 
 public final function Text GetPackageName()
 {
@@ -43,12 +42,6 @@ public final function Text GetRootName()
 {
     return __().text.FromString(root);
 }
-
-public final function bool RequiresAcediaStructure()
-{
-    return enforceAcediaStructure;
-}
-
 
 /**
  *  Changes caller's root name.
@@ -110,6 +103,5 @@ public final function DeleteSelf()
 
 defaultproperties
 {
-    enforceAcediaStructure  = false
-    createIfMissing         = false
+    createIfMissing = false
 }

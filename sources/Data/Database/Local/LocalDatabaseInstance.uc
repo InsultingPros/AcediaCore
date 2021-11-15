@@ -86,8 +86,6 @@ var private DBTask  lastTask;
 //  Remember task's life version to make sure we still have the correct copy
 var private int     lastTaskLifeVersion;
 
-var private LoggerAPI.Definition warnDataErasedForAcediaStructure;
-
 protected function Constructor()
 {
     _.unreal.OnTick(self).connect = CompleteAllTasks;
@@ -343,36 +341,7 @@ public final function Initialize(LocalDatabase config, DBRecord root)
 
     configEntry = config;
     rootRecord = root;
-    if (config.RequiresAcediaStructure()) {
-        CreateAcediaStructure(config);
-    }
     ScheduleDiskUpdate();
-}
-
-//  Create JSON object at "/users" if something else (or nothing)
-//  is stored there
-private final function CreateAcediaStructure(LocalDatabase config)
-{
-    local DataType          usersType;
-    local JSONPointer       usersPointer;
-    local AssociativeArray  emptyObject;
-    if (config == none)     return;
-    if (rootRecord == none) return;
-
-    usersPointer = _.json.Pointer(P("/users"));
-    usersType = rootRecord.GetObjectType(usersPointer);
-    if (usersType != JSON_Object)
-    {
-        emptyObject = _.collections.EmptyAssociativeArray();
-        rootRecord.SaveObject(usersPointer, emptyObject);
-        emptyObject.FreeSelf();
-        if (usersType != JSON_Undefined)
-        {
-            _.logger.Auto(warnDataErasedForAcediaStructure)
-                .Arg(config.GetPackageName());
-        }
-    }
-    usersPointer.FreeSelf();
 }
 
 /**
@@ -390,5 +359,4 @@ public final function LocalDatabase GetConfig()
 defaultproperties
 {
     usesObjectPool = false
-    warnDataErasedForAcediaStructure = (l=LOG_Warning,m="Data was erased at \"/users\" in database \"%1\" to create Acedia's database structure.")
 }
