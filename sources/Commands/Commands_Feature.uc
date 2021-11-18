@@ -20,8 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Commands_Feature extends Feature
-    config(AcediaSystem);
+class Commands_Feature extends Feature;
 
 //  Delimiters that always separate command name from it's parameters
 var private array<Text>         commandDelimiters;
@@ -38,6 +37,7 @@ var LoggerAPI.Definition errCommandDuplicate;
 protected function OnEnabled()
 {
     registeredCommands = _.collections.EmptyAssociativeArray();
+    RegisterCommand(class'ACommandHelp');
     _.unreal.broadcasts.OnHandleText(self).connect = HandleText;
     //  Macro selector
     commandDelimiters[0] = P("@");

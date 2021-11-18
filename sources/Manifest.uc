@@ -24,10 +24,6 @@ defaultproperties
 {
     features(0)     = class'Commands_Feature'
     features(1)     = class'Avarice_Feature'
-    commands(0)     = class'ACommandHelp'
-    commands(1)     = class'ACommandDosh'
-    commands(2)     = class'ACommandNick'
-    commands(3)     = class'ACommandTrader'
     services(0)     = class'ConnectionService'
     services(1)     = class'PlayerService'
     aliasSources(0) = class'AliasSource'

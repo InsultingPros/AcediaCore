@@ -27,9 +27,6 @@ var public const array< class<AliasSource> >    aliasSources;
 //  List of features in this manifest's package.
 var public const array< class<Feature> >        features;
 
-//  List of commands in this manifest's package.
-var public const array< class<Command> >        commands;
-
 //  List of test cases in this manifest's package.
 var public const array< class<TestCase> >       testCases;
 
