@@ -36,15 +36,15 @@ enum ConsoleWriterTarget
 {
     //  No one. Can happed if our target disconnects.
     CWTARGET_None,
-    //  A certain player.
-    CWTARGET_Player,
+    //  A certain set of players.
+    CWTARGET_Players,
     //  All players.
     CWTARGET_All
 };
 var private ConsoleWriterTarget targetType;
-//  Player that will receive output passed to this `ConsoleWriter`.
-//  Only used when `targetType == CWTARGET_Player`
-var private APlayer             outputTarget;
+//  Players that will receive output passed to this `ConsoleWriter`.
+//  Only used when `targetType == CWTARGET_Players`
+var private array<APlayer>      outputTargets;
 var private ConsoleBuffer       outputBuffer;
 
 var private bool                                needToResetColor;
@@ -301,38 +301,118 @@ public final function ConsoleWriter SetTotalLineLength(int newMaxTotalLineWidth)
 }
 
 /**
- *  Configures caller `ConsoleWriter` to output to all players.
- *  `Flush()` will be automatically called between target change.
+ *      Configures caller `ConsoleWriter` to output to all players.
+ *      `Flush()` will be automatically called if target actually has to switch
+ *  (before the switch occurs).
  *
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
 public final function ConsoleWriter ForAll()
 {
-    Flush();
+    if (targetType != CWTARGET_All) {
+        Flush();
+    }
     targetType = CWTARGET_All;
     return self;
 }
 
 /**
  *      Configures caller `ConsoleWriter` to output only to the given player.
- *      `Flush()` will be automatically called between target change.
+ *      `Flush()` will be automatically called if target actually has to switch
+ *  (before the switch occurs).
  *
  *  @param  targetPlayer    Player, to whom console we want to write.
  *      If `none` - caller `ConsoleWriter` would be configured to
  *      throw messages away.
- *  @return ConsoleWriter Returns caller `ConsoleWriter` to allow for
- *      method chaining.
+ *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
 public final function ConsoleWriter ForPlayer(APlayer targetPlayer)
 {
-    Flush();
-    if (targetPlayer != none)
+    if (targetPlayer == none)
     {
-        targetType      = CWTARGET_Player;
-        outputTarget    = targetPlayer;
-    }
-    else {
+        Flush();
         targetType = CWTARGET_None;
+        return self;
+    }
+    if (targetType != CWTARGET_Players) {
+        Flush();
+    }
+    outputTargets.length = 0;
+    targetType          = CWTARGET_Players;
+    outputTargets[0]    = targetPlayer;
+    return self;
+}
+
+/**
+ *      Configures caller `ConsoleWriter` to output to one more player,
+ *  given by `targetPlayer`.
+ *      `Flush()` will be automatically called if target actually has to switch
+ *  (before the switch occurs).
+ *
+ *  @param  targetPlayer    Player, to whom console we want to write.
+ *      If `none` - this method will do nothing.
+ *  @return Returns caller `ConsoleWriter` to allow for method chaining.
+ */
+public final function ConsoleWriter AndPlayer(APlayer targetPlayer)
+{
+    local int i;
+    if (targetPlayer == none)           return self;
+    if (!targetPlayer.IsConnected())    return self;
+
+    if (targetType != CWTARGET_Players)
+    {
+        Flush();
+        if (targetType == CWTARGET_None) {
+            outputTargets.length = 0;
+        }
+        else {
+            outputTargets.length = _.players.GetAll();
+        }
+    }
+    targetType = CWTARGET_Players;
+    for (i = 0; i < outputTargets.length; i += 1)
+    {
+        if (outputTargets[i] == targetPlayer) {
+            return self;
+        }
+    }
+    Flush();
+    outputTargets[outputTargets.length] = targetPlayer;
+    return self;
+}
+
+/**
+ *      Configures caller `ConsoleWriter` to output to one less player,
+ *  given by `targetPlayer`.
+ *      `Flush()` will be automatically called if target actually has to switch
+ *  (before the switch occurs).
+ *
+ *  @param  targetPlayer    Player, to whom console we no longer want to write.
+ *      If `none` - this method will do nothing.
+ *  @return Returns caller `ConsoleWriter` to allow for method chaining.
+ */
+public final function ConsoleWriter ButPlayer(APlayer playerToRemove)
+{
+    local int i;
+    if (targetType == CWTARGET_None)    return self;
+    if (playerToRemove == none)         return self;
+    if (!playerToRemove.IsConnected())  return self;
+
+    if (targetType == CWTARGET_All)
+    {
+        Flush();
+        outputTargets = _.players.GetAll();
+    }
+    targetType = CWTARGET_Players;
+    while (i < outputTargets.length)
+    {
+        if (outputTargets[i] == playerToRemove)
+        {
+            Flush();
+            outputTargets.Remove(i, 1);
+            break;
+        }
+        i += 1;
     }
     return self;
 }
@@ -345,15 +425,17 @@ public final function ConsoleWriter ForPlayer(APlayer targetPlayer)
  */
 public final function ConsoleWriterTarget CurrentTarget()
 {
-    if (targetType == CWTARGET_Player && outputTarget == none) {
+    if (targetType == CWTARGET_Players && outputTargets.length == 0) {
         targetType = CWTARGET_None;
     }
     return targetType;
 }
 
 /**
- *  Returns `APlayer` to whom console caller `ConsoleWriter` is
+ *      Returns `APlayer` to whom console caller `ConsoleWriter` is
  *  outputting messages.
+ *      If caller `ConsoleWriter` is setup to message several different players,
+ *  returns an arbitrary one of them.
  *
  *  @return Player (`APlayer` class) to whom console caller `ConsoleWriter` is
  *      outputting messages. Returns `none` iff it currently outputs to
@@ -362,7 +444,27 @@ public final function ConsoleWriterTarget CurrentTarget()
 public final function APlayer GetTargetPlayer()
 {
     if (targetType == CWTARGET_All) return none;
-    return outputTarget;
+    if (outputTargets.length <= 0)   return none;
+    return outputTargets[0];
+}
+
+/**
+ *      Returns `APlayer` to whom console caller `ConsoleWriter` is
+ *  outputting messages.
+ *      If caller `ConsoleWriter` is setup to message several different players,
+ *  returns an arbitrary one of them.
+ *
+ *  @return Player (`APlayer` class) to whom console caller `ConsoleWriter` is
+ *      outputting messages. Returns `none` iff it currently outputs to
+ *      every player or to no one.
+ */
+public final function array<APlayer> GetTargetPlayers()
+{
+    local array<APlayer> emptyArray;
+    if (targetType == CWTARGET_None)    return emptyArray;
+    if (targetType == CWTARGET_All)     return _.players.GetAll();
+
+    return outputTargets;
 }
 
 /**
@@ -514,11 +616,15 @@ private final function array<PlayerController> GetRecipientsControllers()
     if (targetType != CWTARGET_All)
     {
         playerService = PlayerService(class'PlayerService'.static.Require());
-        if (playerService != none && outputTarget != none) {
-            nextRecipient = playerService.GetController(outputTarget);
+        if (playerService == none) {
+            return recipients;
         }
-        if (nextRecipient != none) {
-            recipients[0] = nextRecipient;
+        for (i = 0; i < outputTargets.length; i += 1)
+        {
+            nextRecipient = playerService.GetController(outputTargets[i]);
+            if (nextRecipient != none) {
+                recipients[recipients.length] = nextRecipient;
+            }
         }
         return recipients;
     }
