@@ -47,6 +47,7 @@ var private ConsoleWriterTarget targetType;
 var private APlayer             outputTarget;
 var private ConsoleBuffer       outputBuffer;
 
+var private bool                                needToResetColor;
 var private ConsoleAPI.ConsoleDisplaySettings   displaySettings;
 //      Sometimes we want to output a certain part of text with a color
 //  different from the default one. However this requires to remember current
@@ -85,8 +86,8 @@ public final function ConsoleWriter Initialize(
  *
  *      Do note that `ConsoleWriter` can have two "default" colors: a "real"
  *  default and a "temporary" default: "temporary" one can be set with
- *  `UseColor()` method call to temporarily color certain part of the output and
- *  then revert to the "real" default color.
+ *  `UseColor()` or `UseColorOnce()` method calls to temporarily color certain
+ *  part of the output and then revert to the "real" default color.
  *      This method always returns "real" default color.
  *
  *  This value is not synchronized with the global value from `ConsoleAPI`
@@ -111,8 +112,8 @@ public final function Color GetDefaultColor()
  *
  *      Do note that `ConsoleWriter` can have two "default" colors: a "real"
  *  default and a "temporary" default: "temporary" one can be set with
- *  `UseColor()` method call to temporarily color certain part of the output and
- *  then revert to the "real" default color.
+ *  `UseColor()` or `UseColorOnce()` method calls to temporarily color certain
+ *  part of the output and then revert to the "real" default color.
  *      This method always return the color that will be actually used to
  *  output text, so "temporary" default if it's set and "real" default
  *  otherwise.
@@ -132,8 +133,9 @@ public final function Color GetColor()
  *  be ignored.
  *
  *  If you only want to quickly color certain part of output, it is better to
- *  use `UseColor()` method that temporarily changes used default color and
- *  allows to return to actual default color with `ResetColor()` method.
+ *  use `UseColor()` or `UseColorOnce()` methods that temporarily changes used
+ *  default color and allow to return to actual default color with
+ *  `ResetColor()` method.
  *
  *  This value is not synchronized with the global value from `ConsoleAPI`
  *  (or such value from any other `ConsoleWriter`) and affects only
@@ -157,7 +159,9 @@ public final function ConsoleWriter SetColor(Color newDefaultColor)
  *  with `ResetColor()` method.
  *
  *  For quickly coloring certain parts of output:
- *  `console.UseColor(_.color.blue).Write(blueMessage).ResetColor()`.
+ *  `console.UseColor(_.color.blue).Write(blueMessage)
+ *  .Write(moreBlueMessage).ResetColor()`.
+ *  Also see `UseColorOnce()` method.
  *
  *  Consecutive calls do not "stack up" colors - only last one is remembered:
  *      `console.UseColor(_.color.blue).UseColor(_.color.green)` is the same as
@@ -171,6 +175,36 @@ public final function ConsoleWriter SetColor(Color newDefaultColor)
  */
 public final function ConsoleWriter UseColor(Color temporaryColor)
 {
+    needToResetColor = false;
+    displaySettings.defaultColor = temporaryColor;
+    if (outputBuffer != none) {
+        outputBuffer.SetSettings(displaySettings);
+    }
+    return self;
+}
+
+/**
+ *  Sets "temporary" default color that will be automatically reverted to "real"
+ *  default color after any "writing" method (i.e. `Write()`, `WriteLine()`,
+ *  `WriteBlock()` or `Say()`) or when `ResetColor()` method is called.
+ *
+ *  For quickly coloring certain parts of output:
+ *  `console.UseColorOnce(_.color.blue).Write(blueMessage)`.
+ *
+ *  Consecutive calls do not "stack up" colors - only last one is remembered:
+ *      `console.UseColorOnce(_.color.blue).UseColorOnce(_.color.green)`
+ *      is the same as `console.UseColorOnce(_.color.green)`.
+ *
+ *  Use `SetColor()` to set both "real" and "temporary" color.
+ *
+ *  @param  temporaryColor  Color to use as default one in the next console
+ *      output calls until any "writing" method (or `ResetColor()` method)
+ *      is called.
+ *  @return Returns caller `ConsoleWriter` to allow for method chaining.
+ */
+public final function ConsoleWriter UseColorOnce(Color temporaryColor)
+{
+    needToResetColor = true;
     displaySettings.defaultColor = temporaryColor;
     if (outputBuffer != none) {
         outputBuffer.SetSettings(displaySettings);
@@ -180,12 +214,13 @@ public final function ConsoleWriter UseColor(Color temporaryColor)
 
 /**
  *  Resets "temporary" default text color to "real" default color.
- *  See `UseColor()` for details.
+ *  See `UseColor()` and `UseColorOnce()` for details.
  *
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
 public final function ConsoleWriter ResetColor()
 {
+    needToResetColor = false;
     displaySettings.defaultColor = defaultColor;
     if (outputBuffer != none) {
         outputBuffer.SetSettings(displaySettings);
@@ -350,9 +385,12 @@ public final function ConsoleWriter Flush()
  *  @param  message `Text` to output.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter Write(Text message)
+public final function ConsoleWriter Write(optional Text message)
 {
     outputBuffer.Insert(message);
+    if (needToResetColor) {
+        ResetColor();
+    }
     return self;
 }
 
@@ -363,7 +401,7 @@ public final function ConsoleWriter Write(Text message)
  *  @param  message `Text` to output.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter WriteLine(Text message)
+public final function ConsoleWriter WriteLine(optional Text message)
 {
     return Write(message).Flush();
 }
@@ -371,8 +409,8 @@ public final function ConsoleWriter WriteLine(Text message)
 /**
  *  Writes text's indented contents into console.
  *
- *  Acts like a `Flush().WriteLine()` chain of calls, except all output contents
- *  will be additionally indented by four whitespace symbols
+ *  Acts like a `WriteLine()` call, except all output contents will be
+ *  additionally indented by four whitespace symbols
  *  (including lines after line breaks).
  *
  *  Result will be output immediately, starts a new line.
@@ -380,11 +418,13 @@ public final function ConsoleWriter WriteLine(Text message)
  *  @param  message `Text` to output.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter WriteBlock(Text message)
+public final function ConsoleWriter WriteBlock(optional Text message)
 {
-    Flush();
     outputBuffer.Insert(message).Flush();
     SendBuffer(true);
+    if (needToResetColor) {
+        ResetColor();
+    }
     return self;
 }
 
@@ -398,11 +438,13 @@ public final function ConsoleWriter WriteBlock(Text message)
  *  @param  message `Text` to output.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter Say(Text message)
+public final function ConsoleWriter Say(optional Text message)
 {
-    Flush();
     outputBuffer.Insert(message).Flush();
     SendBuffer(, true);
+    if (needToResetColor) {
+        ResetColor();
+    }
     return self;
 }
 
