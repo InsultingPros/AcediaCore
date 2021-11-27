@@ -173,7 +173,7 @@ public final function ConsoleBuffer Clear()
  *  at the end of the `input` if you want that.
  *
  *  @param  input       `Text` to be added to the current line in caller
- *      `ConsoleBuffer`.
+ *      `ConsoleBuffer`. Does nothing if passed `none`.
  *  @param  inputType   How to treat given `string` regarding coloring.
  *  @return Returns caller `ConsoleBuffer` to allow method chaining.
  */
@@ -181,6 +181,9 @@ public final function ConsoleBuffer Insert(Text input)
 {
     local int               inputConsumed;
     local Text.Character    nextCharacter;
+    if (input == none) {
+        return self;
+    }
     //  Regular symbols and whitespaces are treated differently when
     //  breaking input into lines, so alternate between adding them,
     //  switching the logic appropriately
