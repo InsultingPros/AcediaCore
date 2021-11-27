@@ -44,7 +44,7 @@ not *hard rules*.
 ### Exceptions
 
 First guideline, for example, can be broken if returned object is supposed to
-be shared: `_.players.GetPlayers()` returns `array<APLayer>` with references to
+be shared: `_.players.GetAll()` returns `array<APLayer>` with references to
 *player objects* that aren't supposed to ever be deallocated.
 Similarly, Acedia's collections operate by different rules:
 they might still consider themselves responsible for objects returned with

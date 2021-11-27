@@ -83,7 +83,7 @@ public final function ConsoleWriter Console()
  *  @return Current array of all players.
  *      Guaranteed to not contain `none` values.
  */
-public final function array<APlayer> GetPlayers()
+public final function array<APlayer> GetAll()
 {
     local PlayerService     service;
     local array<APlayer>    emptyResult;
