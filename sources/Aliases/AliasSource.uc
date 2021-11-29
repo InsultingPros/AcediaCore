@@ -163,7 +163,8 @@ public function bool HasAlias(Text alias)
  *  (as well as it's `Aliases` objects).
  *
  *  @param  alias           Alias, for which method will attempt to return
- *      a value. Case-insensitive.
+ *      a value. Case-insensitive. If given `alias` starts with "$" character -
+ *      that character will be removed before resolving that alias.
  *  @param  copyOnFailure   Whether method should return copy of original
  *      `alias` value in case caller source did not have any records
  *      corresponding to `alias`.
@@ -180,7 +181,13 @@ public function Text Resolve(Text alias, optional bool copyOnFailure)
     if (alias == none) {
         return none;
     }
-    lowerCaseAlias = alias.LowerCopy();
+    //  Automatically get rid of "$" prefix, if present
+    if (alias.StartsWith(P("$"))) {
+        lowerCaseAlias = alias.LowerCopy(1);
+    }
+    else {
+        lowerCaseAlias = alias.LowerCopy();
+    }
     result = Text(aliasHash.GetItem(lowerCaseAlias));
     lowerCaseAlias.FreeSelf();
     if (result != none) {
