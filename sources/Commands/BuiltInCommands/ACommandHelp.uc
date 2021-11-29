@@ -219,8 +219,8 @@ private final function PrintOption(
     {
         cout.Write(T(TSPACE));
         PrintParameters(cout, option.required, option.optional);
-        cout.Flush();
     }
+    cout.Flush();
     //  Description
     if (option.description != none && !option.description.IsEmpty()) {
         cout.WriteBlock(option.description);
