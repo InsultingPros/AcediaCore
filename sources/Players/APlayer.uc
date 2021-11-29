@@ -54,6 +54,7 @@ enum AdminStatus
 protected function Finalizer()
 {
     _.memory.Free(controller);
+    controller = none;
 }
 
 /**
