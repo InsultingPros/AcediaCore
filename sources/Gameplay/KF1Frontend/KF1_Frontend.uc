@@ -21,6 +21,16 @@
  */
 class KF1_Frontend extends KFFrontend;
 
+public function EItemTemplateInfo GetItemTemplateInfo(Text templateName)
+{
+    local class<Inventory> inventoryClass;
+    inventoryClass = class<Inventory>(_.memory.LoadClass(templateName));
+    if (inventoryClass == none) {
+        return none;
+    }
+    return class'EKFItemTemplateInfo'.static.Wrap(inventoryClass);
+}
+
 defaultproperties
 {
     tradingClass = class'KF1_TradingComponent'

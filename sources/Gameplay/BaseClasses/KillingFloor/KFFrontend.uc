@@ -36,6 +36,20 @@ protected function Finalizer()
     trading = none;
 }
 
+/**
+ *  Returns an instance of information about item template with a given name
+ *  `templateName`.
+ *
+ *  @param  templateName    Name of the template to return info for.
+ *  @return Template info for item template named `templateName`.
+ *      `none` if item template with given name does not exist or passed
+ *      `templateName` is equal to `none`.
+ */
+public function EItemTemplateInfo GetItemTemplateInfo(Text templateName)
+{
+    return none;
+}
+
 defaultproperties
 {
     tradingClass = none

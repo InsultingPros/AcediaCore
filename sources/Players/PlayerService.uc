@@ -121,7 +121,7 @@ public final function APlayer GetPlayer(Controller controller)
 /**
  *  Returns `PlayerController` associated with a given `APlayer`.
  *
- *  @param  player  Player for which we want to find associated controller.
+ *  @param  player  Player for which we want to find associated `Controller`.
  *  @return Controller that is associated with a given player.
  *      Can return `none` if controller has already "expired".
  */
@@ -136,6 +136,23 @@ public final function PlayerController GetController(APlayer player)
         if (player == allPlayers[i].player) {
             return allPlayers[i].controller;
         }
+    }
+    return none;
+}
+
+/**
+ *  Returns `Pawn` associated with a given `APlayer`.
+ *
+ *  @param  player  Player for which we want to find associated `Pawn`.
+ *  @return `Pawn` that is associated with a given player.
+ *      Can return `none` if controller has already "expired".
+ */
+public final function Pawn GetPawn(APlayer player)
+{
+    local Controller controller;
+    controller = GetController(player);
+    if (controller != none) {
+        return controller.pawn;
     }
     return none;
 }

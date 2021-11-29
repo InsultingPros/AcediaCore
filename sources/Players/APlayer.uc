@@ -216,6 +216,20 @@ public final function SetName(Text newPlayerName)
     myReplicationInfo.playerName = hashedName;
 }
 
+//  TODO: replace this, it has no place here
+//  ^ works as a temporary solution before we add pawn wrappers
+public final function EInventory GetInventory()
+{
+    local EKFInventory inventory;
+    if (controller != none && controller.Get() != none)
+    {
+        inventory = EKFInventory(_.memory.Allocate(class'EKFInventory'));
+        inventory.Initialize(self);
+        return inventory;
+    }
+    return none;
+}
+
 /**
  *  Returns admin status of the caller player.
  *  Disconnected players are never admins.
