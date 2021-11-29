@@ -280,7 +280,7 @@ defaultproperties
     infoBootingUp               = (l=LOG_Info,m="Initializing Acedia.")
     infoBootingUpFinished       = (l=LOG_Info,m="Acedia initialized.")
     infoShuttingDown            = (l=LOG_Info,m="Shutting down Acedia.")
-    infoLoadingPackage          = (l=LOG_Info,m="BLoading package \"%1\".")
+    infoLoadingPackage          = (l=LOG_Info,m="Loading package \"%1\".")
     errorNoManifest             = (l=LOG_Error,m="Cannot load `Manifest` for package \"%1\". Check if it's missing or if its name is spelled incorrectly.")
     errorCannotRunTests         = (l=LOG_Error,m="Could not perform Acedia's tests.")
 }
