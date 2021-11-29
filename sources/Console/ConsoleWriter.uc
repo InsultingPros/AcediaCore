@@ -366,7 +366,7 @@ public final function ConsoleWriter AndPlayer(APlayer targetPlayer)
             outputTargets.length = 0;
         }
         else {
-            outputTargets.length = _.players.GetAll();
+            outputTargets = _.players.GetAll();
         }
     }
     targetType = CWTARGET_Players;
