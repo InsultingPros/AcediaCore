@@ -135,7 +135,7 @@ private final function BootUp()
     local Text              nextPackageName;
     local class<_manifest>  nextManifest;
     _.logger.Auto(infoBootingUp);
-    LoadManifest(class'AcediaCore_0_2.Manifest');
+    LoadManifest(class'AcediaCore.Manifest');
     //  Load packages
     for (i = 0; i < packagesToLoad.length; i += 1)
     {
