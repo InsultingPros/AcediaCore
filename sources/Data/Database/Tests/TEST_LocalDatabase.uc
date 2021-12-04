@@ -117,7 +117,8 @@ local LocalDatabaseInstance db;
 source = GetJSONTemplateString();
 parser = __().text.ParseString(source);
 root = AssociativeArray(__().json.ParseWith(parser));
-db = class'LocalDatabaseInstance'.static.NewDatabase(P("TEST_ReadOnly"));
+db = __().db.NewLocal(P("TEST_ReadOnly"));
+db.WriteData(__().json.Pointer(), root);
 */
 protected static function string GetJSONTemplateString()
 {
