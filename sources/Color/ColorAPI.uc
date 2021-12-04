@@ -224,6 +224,17 @@ var public config const Color DarkSlateGray;
 var public config const Color Eigengrau;
 var public config const Color Black;
 
+//  Struct and array that are meant to store colors used by "^"-color tags:
+//  "^2" means green, "^b" means blue, etc..
+struct ShortColorTagDefinition
+{
+    //  Letter after "^"
+    var public string   char;
+    //  Color corresponding to such letter
+    var public Color    color;
+};
+var public config const array<ShortColorTagDefinition> shortColorTag;
+
 //  Escape code point is used to change output's color and is used in
 //  Unreal Engine's `string`s.
 var private const int CODEPOINT_ESCAPE;
@@ -678,6 +689,39 @@ public final function bool Parse(
     return successfullyParsed;
 }
 
+/**
+ *  Resolves a given short (character) tag into a color.
+ *  These are the tags referred to by "^" color change sequence
+ *  (like "^4" or "^r").
+ *
+ *  This operation can fail if passed character does not correspond to
+ *  any color, according to settings.
+ *
+ *  @param  shortTag        Character that represents the short tag.
+ *  @param  resultingColor  Parsed color will be written here if resolving is
+ *      successful, otherwise value is undefined.
+ *  @return `true` if resolving was successful and false otherwise.
+ */
+public final function bool ResolveShortTagColor(
+    Text.Character  shortTag,
+    out Color       resultingColor)
+{
+    local int i;
+    if (shortTag.codePoint <= 0) {
+        return false;
+    }
+    for (i = 0; i < shortColorTag.length; i += 1)
+    {
+        if (    shortTag.codePoint
+            ==  _.text.GetCharacter(shortColorTag[i].char).codepoint)
+        {
+            resultingColor = shortColorTag[i].color;
+            return true;
+        }
+    }
+    return false;
+}
+
 defaultproperties
 {
     TextDefault=(R=255,G=255,B=255,A=255)
@@ -845,6 +889,24 @@ defaultproperties
     DarkSlateGray=(R=47,G=79,B=79,A=255)
     Eigengrau=(R=22,G=22,B=29,A=255)
     Black=(R=0,G=0,B=0,A=255)
+    shortColorTag(0)=(char="0",color=(R=0,G=0,B=0,A=255))
+    shortColorTag(1)=(char="1",color=(R=255,G=0,B=0,A=255))
+    shortColorTag(2)=(char="2",color=(R=0,G=255,B=0,A=255))
+    shortColorTag(3)=(char="3",color=(R=255,G=255,B=0,A=255))
+    shortColorTag(4)=(char="4",color=(R=0,G=0,B=255,A=255))
+    shortColorTag(5)=(char="5",color=(R=0,G=255,B=255,A=255))
+    shortColorTag(6)=(char="6",color=(R=255,G=0,B=255,A=255))
+    shortColorTag(7)=(char="7",color=(R=255,G=255,B=255,A=255))
+    shortColorTag(8)=(char="8",color=(R=255,G=127,B=0,A=255))
+    shortColorTag(9)=(char="9",color=(R=128,G=128,B=128,A=255))
+    shortColorTag(10)=(char="r",color=(R=255,G=0,B=0,A=255))
+    shortColorTag(11)=(char="g",color=(R=0,G=255,B=0,A=255))
+    shortColorTag(12)=(char="b",color=(R=0,G=0,B=255,A=255))
+    shortColorTag(13)=(char="p",color=(R=255,G=0,B=255,A=255))
+    shortColorTag(14)=(char="y",color=(R=255,G=255,B=0,A=255))
+    shortColorTag(15)=(char="o",color=(R=255,G=165,B=0,A=255))
+    shortColorTag(17)=(char="c",color=(R=0,G=255,B=255,A=255))
+    shortColorTag(18)=(char="w",color=(R=255,G=255,B=255,A=255))
     CODEPOINT_SMALL_A   = 97
     CODEPOINT_ESCAPE    = 27
 }
