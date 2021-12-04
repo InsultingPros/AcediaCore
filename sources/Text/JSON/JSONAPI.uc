@@ -79,7 +79,7 @@ private final function InitFormatting()
  *      an incorrect JSON pointer or `none`, - empty `JSONPointer` will be
  *      returned.
  */
-public final function JSONPointer Pointer(Text pointerAsText)
+public final function JSONPointer Pointer(optional Text pointerAsText)
 {
     return JSONPointer(_.memory.Allocate(class'JSONPointer'))
         .Set(pointerAsText);
