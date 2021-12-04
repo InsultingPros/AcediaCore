@@ -45,9 +45,15 @@ protected static function TESTS()
 
 protected static function Test_TextCreation()
 {
+    Context("Testing basic functionality for creating `Text` objects.");
+    SubTest_TextCreationSimply();
+    SubTest_TextCreationFormattedComplex();
+}
+
+protected static function SubTest_TextCreationSimply()
+{
     local string    plainString, coloredString, formattedString;
     local Text      plain, colored, formatted;
-    Context("Testing basic functionality for creating `Text` objects.");
     Issue("`Text` object is not properly created from the plain string.");
     plainString = "Prepare to DIE and be reborn!";
     plain = class'Text'.static.ConstFromPlainString(plainString);
@@ -62,10 +68,27 @@ protected static function Test_TextCreation()
     TEST_ExpectTrue(colored.ToColoredString() == coloredString);
 
     Issue("`Text` object is not properly created from the formatted string.");
-    formattedString = "Prepare to {rgb(255,0,0) DIE} and be reborn!";
+    formattedString = "Prepare to {rgb(255,0,0) DIE ^yand} be ^7reborn!";
     formatted = class'Text'.static.ConstFromFormattedString(formattedString);
     TEST_ExpectNotNone(formatted);
-    TEST_ExpectTrue(formatted.ToFormattedString() == formattedString);
+    TEST_ExpectTrue(    formatted.ToFormattedString()
+                    ==  ("Prepare to {rgb(255,0,0) DIE }{rgb(255,255,0) and} be"
+                    @   "{rgb(255,255,255) reborn!}"));
+}
+
+protected static function SubTest_TextCreationFormattedComplex()
+{
+    local string    input, output;
+    local Text      formatted;
+    Issue("`Text` object is not properly created from the formatted string.");
+    input = "This {$green i^4^5^cs q{#0f0f0f uit}^1e} a {rgb(45,234,154)"
+        @ "{$white ^bcomplex {$white ex}amp^ple}!}";
+    output = "This {rgb(0,128,0) i}{rgb(0,255,255) s q}{rgb(15,15,15) uit}"
+        $ "{rgb(255,0,0) e} a {rgb(0,0,255) complex }{rgb(255,255,255) ex}"
+        $ "{rgb(0,0,255) amp}{rgb(255,0,255) le}{rgb(45,234,154) !}";
+    formatted = class'Text'.static.ConstFromFormattedString(input);
+    TEST_ExpectNotNone(formatted);
+    TEST_ExpectTrue(formatted.ToFormattedString() == output);
 }
 
 protected static function Test_TextCopy()

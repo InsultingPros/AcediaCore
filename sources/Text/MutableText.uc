@@ -19,41 +19,59 @@
  */
 class MutableText extends Text;
 
-var private int CODEPOINT_NEWLINE;
+var private int CODEPOINT_NEWLINE, CODEPOINT_ACCENT;
 
-//      Every formatted `string` essentially consists of multiple differently
-//  formatted (colored) parts. Such `string`s will be more convenient for us to
-//  work with if we separate them from each other.
-//      This structure represents one such block: maximum uninterrupted
-//  substring, every character of which has identical formatting.
-//      Do note that a single block does not define text formatting, -
-//  it is defined by the whole sequence of blocks before it
-//  (if `isOpening == false` you only know that you should change previous
-//  formatting, but you do not know to what).
-struct FormattedBlock
+enum FormattedStackCommandType
+{
+    //  Push more data onto formatted stack
+    FST_StackPush,
+    //  Pop data from formatted stack
+    FST_StackPop,
+    //  Swap the top value on the formatting stack
+    FST_StackSwap
+};
+
+//      Formatted `string` is separated into several (possibly nested) parts,
+//  each with its own formatting. These can be easily handled with a formatting
+//  stack:
+//      *   Each time a new section opens ("{<color_tag ") we put another,
+//          current formatting on top of the stack;
+//      *   Each time a section closes ("}") we pop the stack, returning to
+//          a previous formatting.
+//      *   In a special case of "^" color swap that is supposed to last until
+//          current block closes we simply swap the color of the formatting on
+//          top of the stack.
+//      Logic that parses formatted `string` works is broken into two steps:
+//      1.  Read formatted `string` detecting "{<color_tag ", "}" and "^"
+//          sequences and build a series of stack commands (along with data that
+//          should be appended after them);
+//      2.  use these commands to construct `MutableText`.
+struct FormattedStackCommand
 {
     //  Did this block start by opening or closing formatted part?
     //  Ignored for the very first block without any formatting.
-    var bool        isOpening;
+    var FormattedStackCommandType   type;
     //  Full text inside the block, without any formatting
-    var array<int>  contents;
-    //  Formatting tag for this block
-    //  (ignored for `isOpening == false`)
-    var string      tag;
-    //  Whitespace symbol that separates tag from the `contents`;
-    //  For the purposes of reassembling a `string` broken into blocks.
-    //  (ignored for `isOpening == false`)
-    var Character   delimiter;
+    var array<int>                  contents;
+    //  Formatting tag for the next block
+    //  (only used for `FST_StackPush` command type)
+    var MutableText                 tag;
+    //  Formatting character for the "^"-type tag
+    //  (only used for `FST_StackSwap` command type)
+    var Character                   charTag;
 };
-//      Appending formatted `string` into the `MutableText` first requires to
-//  split it into series of `FormattedBlock` and then extract code points with
-//  the proper formatting from it.
+//      Appending formatted `string` into the `MutableText` first requires its
+//  transformation into series of `FormattedStackCommand` and then their
+//  execution to assemble the `MutableText`.
+//      First element of `stackCommands` is special and is used solely as
+//  a container for unformatted data. It should not be used to execute
+//  formatting stack commands.
 //      This variable contains intermediary data.
-var array<FormattedBlock>   splitBlocks;
+var array<FormattedStackCommand>    stackCommands;
 //  Formatted `string` can have an arbitrary level of folded format definitions,
 //  this array is used as a stack to keep track of opened formatting blocks
 //  when appending formatted `string`.
-var array<Formatting>       formattingStack;
+var array<Formatting>               formattingStack;
 
 /**
  *  Clears all current data from the caller `MutableText` instance.
@@ -228,6 +246,28 @@ public final function MutableText AppendColoredString(
 }
 
 /**
+ *  Appends contents of the formatted `Text` to the caller `MutableText`.
+ *
+ *  @param  source              `Text` (with formatted string contents) to be
+ *      appended to the caller `MutableText`.
+ *  @param  defaultFormatting   Formatting to apply to `source`'s character that
+ *      do not have it specified. For example, `defaultFormatting.isColored`,
+ *      but some of `other`'s characters do not have a color defined -
+ *      they will be appended with a specified color.
+ *  @return Caller `MutableText` to allow for method chaining.
+ */
+public final function MutableText AppendFormatted(
+    Text                source,
+    optional Formatting defaultFormatting)
+{
+    local Parser parser;
+    parser = _.text.Parse(source);
+    AppendFormattedParser(parser, defaultFormatting);
+    parser.FreeSelf();
+    return self;
+}
+
+/**
  *  Appends contents of the formatted `string` to the caller `MutableText`.
  *
  *  @param  source              Formatted `string` to be appended to
@@ -240,68 +280,98 @@ public final function MutableText AppendFormattedString(
     string              source,
     optional Formatting defaultFormatting)
 {
-    local int       i;
-    local Parser    parser;
-    SplitFormattedStringIntoBlocks(source);
-    if (splitBlocks.length <= 0) {
-        return self;
-    }
-    SetupFormattingStack(defaultFormatting);
-    parser = Parser(_.memory.Allocate(class'Parser'));
-    //  First element of `decomposedSource` is special and has
-    //  no color information,
-    //  see `SplitFormattedStringIntoBlocks()` for details.
-    SetFormatting(defaultFormatting);
-    AppendManyCodePoints(splitBlocks[0].contents);
-    for (i = 1; i < splitBlocks.length; i += 1)
-    {
-        if (splitBlocks[i].isOpening)
-        {
-            parser.InitializeS(splitBlocks[i].tag);
-            SetFormatting(PushIntoFormattingStack(parser));
-        }
-        else {
-            SetFormatting(PopFormattingStack());
-        }
-        AppendManyCodePoints(splitBlocks[i].contents);
-    }
-    _.memory.Free(parser);
+    local Parser parser;
+    parser = _.text.ParseString(source);
+    AppendFormattedParser(parser, defaultFormatting);
+    parser.FreeSelf();
     return self;
 }
 
-//      Function that breaks formatted string into array of `FormattedBlock`s.
-//      Returned array is guaranteed to always have at least one block.
-//      First block in array always corresponds to part of the input string
-//  (`source`) without any formatting defined, even if it's empty.
-//  This is to avoid `FormattedBlock` having a third option besides two defined
-//  by `isOpening` variable.
-private final function SplitFormattedStringIntoBlocks(string source)
+/**
+ *  Appends contents of the formatted `string` to the caller `MutableText`.
+ *
+ *  @param  source              Formatted `string` to be appended to
+ *      the caller `MutableText`.
+ *  @param  defaultFormatting   Formatting to be used for `source`'s characters
+ *      that have no color information defined.
+ *  @return Caller `MutableText` to allow for method chaining.
+ */
+private final function MutableText AppendFormattedParser(
+    Parser              sourceParser,
+    optional Formatting defaultFormatting)
 {
-    local Parser            parser;
-    local Character         nextCharacter;
-    local FormattedBlock    nextBlock;
-    splitBlocks.length = 0;
-    parser = _.text.ParseString(source);
+    local int       i;
+    local Parser    tagParser;
+    BuildFormattingStackCommands(sourceParser);
+    if (stackCommands.length <= 0) {
+        return self;
+    }
+    SetupFormattingStack(defaultFormatting);
+    tagParser = Parser(_.memory.Allocate(class'Parser'));
+    SetFormatting(defaultFormatting);
+    //  First element of color stack is special and has no color information;
+    //  see `BuildFormattingStackCommands()` for details.
+    AppendManyCodePoints(stackCommands[0].contents);
+    for (i = 1; i < stackCommands.length; i += 1)
+    {
+        if (stackCommands[i].type == FST_StackPush)
+        {
+            tagParser.Initialize(stackCommands[i].tag);
+            SetFormatting(PushIntoFormattingStack(tagParser));
+        }
+        else if (stackCommands[i].type == FST_StackPop) {
+            SetFormatting(PopFormattingStack());
+        }
+        else if (stackCommands[i].type == FST_StackSwap) {
+            SetFormatting(SwapFormattingStack(stackCommands[i].charTag));
+        }
+        AppendManyCodePoints(stackCommands[i].contents);
+        _.memory.Free(stackCommands[i].tag);
+    }
+    stackCommands.length = 0;
+    _.memory.Free(tagParser);
+    return self;
+}
+
+//      Function that parses formatted `string` into array of
+//  `FormattedStackCommand`s.
+//      Returned array is guaranteed to always have at least one element.
+//      First element in array always corresponds to part of the input string
+//  (`source`) without any formatting defined, even if it's empty.
+//  This is to avoid having fourth command type, only usable at the beginning.
+private final function BuildFormattingStackCommands(Parser parser)
+{
+    local Character             nextCharacter;
+    local FormattedStackCommand nextCommand;
+    stackCommands.length = 0;
     while (!parser.HasFinished())
     {
         parser.MCharacter(nextCharacter);
-        //  New formatted block by "{<color>"
+        //  New command by "{<color>"
         if (_.text.IsCodePoint(nextCharacter, CODEPOINT_OPEN_FORMAT))
         {
-            splitBlocks[splitBlocks.length] = nextBlock;
-            nextBlock = CreateFormattedBlock(true);
-            parser.MUntilS(nextBlock.tag,, true)
-                .MCharacter(nextBlock.delimiter);
+            stackCommands[stackCommands.length] = nextCommand;
+            nextCommand = CreateStackCommand(FST_StackPush);
+            parser.MUntil(nextCommand.tag,, true)
+                .MCharacter(nextCommand.charTag); //  Simply to skip a char
+            continue;
+        }
+        //  New command by "}"
+        if (_.text.IsCodePoint(nextCharacter, CODEPOINT_CLOSE_FORMAT))
+        {
+            stackCommands[stackCommands.length] = nextCommand;
+            nextCommand = CreateStackCommand(FST_StackPop);
+            continue;
+        }
+        //  New command by "^"
+        if (_.text.IsCodePoint(nextCharacter, CODEPOINT_ACCENT))
+        {
+            stackCommands[stackCommands.length] = nextCommand;
+            nextCommand = CreateStackCommand(FST_StackSwap);
+            parser.MCharacter(nextCommand.charTag);
             if (!parser.Ok()) {
                 break;
             }
-            continue;
-        }
-        //  New formatted block by "}"
-        if (_.text.IsCodePoint(nextCharacter, CODEPOINT_CLOSE_FORMAT))
-        {
-            splitBlocks[splitBlocks.length] = nextBlock;
-            nextBlock = CreateFormattedBlock(false);
             continue;
         }
         //  Escaped sequence
@@ -311,25 +381,23 @@ private final function SplitFormattedStringIntoBlocks(string source)
         if (!parser.Ok()) {
             break;
         }
-        nextBlock.contents[nextBlock.contents.length] = nextCharacter.codePoint;
+        nextCommand.contents[nextCommand.contents.length] =
+            nextCharacter.codePoint;
     }
-    //  Only put in empty block if there is nothing else.
-    if (nextBlock.contents.length > 0 || splitBlocks.length == 0) {
-        splitBlocks[splitBlocks.length] = nextBlock;
+    //  Only put in empty command if there is nothing else.
+    if (nextCommand.contents.length > 0 || stackCommands.length == 0) {
+        stackCommands[stackCommands.length] = nextCommand;
     }
-    _.memory.Free(parser);
 }
 
-//      Following two functions are to maintain a "color stack" that will
-//  remember unclosed colors (new colors are obtained from a parser) defined in
-//  formatted string, on order.
+//      Following four functions are to maintain a "color stack" that will
+//  remember unclosed colors (new colors are obtained from formatting commands
+//  sequence) defined in formatted string, in order.
 //      Stack array always contains one element, defined by
 //  the `SetupFormattingStack()` call. It corresponds to the default formatting
 //  that will be used when we pop all the other elements.
 //      It is necessary to deal with possible folded formatting definitions in
 //  formatted strings.
-//      For storing the color information we simply use `Text.Character`,
-//  ignoring all information that is not related to colors.
 private final function SetupFormattingStack(Text.Formatting defaultFormatting)
 {
     formattingStack.length = 0;
@@ -347,6 +415,20 @@ private final function Formatting PushIntoFormattingStack(
     return newFormatting;
 }
 
+private final function Formatting SwapFormattingStack(Character tagCharacter)
+{
+    local Formatting updatedFormatting;
+    if (formattingStack.length <= 0) {
+        return updatedFormatting;
+    }
+    updatedFormatting = formattingStack[formattingStack.length - 1];
+    if (_.color.ResolveShortTagColor(tagCharacter, updatedFormatting.color)) {
+        updatedFormatting.isColored = true;
+    }
+    formattingStack[formattingStack.length - 1] = updatedFormatting;
+    return updatedFormatting;
+}
+
 private final function Formatting PopFormattingStack()
 {
     local Formatting result;
@@ -357,12 +439,13 @@ private final function Formatting PopFormattingStack()
     return result;
 }
 
-//  Helper method for a quick creation of a new `FormattedBlock`
-private final function FormattedBlock CreateFormattedBlock(bool isOpening)
+//  Helper method for a quick creation of a new `FormattedStackCommand`
+private final function FormattedStackCommand CreateStackCommand(
+    FormattedStackCommandType stackCommandType)
 {
-    local FormattedBlock newBlock;
-    newBlock.isOpening = isOpening;
-    return newBlock;
+    local FormattedStackCommand newCommand;
+    newCommand.type = stackCommandType;
+    return newCommand;
 }
 
 /**
@@ -477,5 +560,6 @@ public final function MutableText ChangeFormatting(
 
 defaultproperties
 {
-    CODEPOINT_NEWLINE = 10
+    CODEPOINT_NEWLINE   = 10
+    CODEPOINT_ACCENT    = 94
 }
