@@ -549,7 +549,7 @@ protected static function Test_AppendGet()
 protected static function Test_AppendStringGet()
 {
     local Color         testColor;
-    local string        defaultTag, colorTag, greenTag;
+    local string        defaultTag, colorTag, greenTag, limeTag;
     local MutableText   txt;
     Context("Testing functionality of `MutableText` to append strings.");
     txt = MutableText(__().memory.Allocate(class'MutableText'));
@@ -562,18 +562,21 @@ protected static function Test_AppendStringGet()
     defaultTag = __().color.GetColorTagRGB(1, 1, 1);
     colorTag = __().color.GetColorTag(testColor);
     greenTag = __().color.GetColorTagRGB(0, 255, 0);
+    limeTag = __().color.GetColorTagRGB(50, 205, 50);
     txt.AppendString("Prepare to ");
     txt.AppendColoredString(colorTag $ "DIE");
-    txt.AppendFormattedString(" and be {#00ff00 reborn}!");
+    txt.AppendFormattedString(" ^gand {$LimeGreen be }");
+    txt.AppendFormatted(P("r{#00ff00 eborn}!"));
     TEST_ExpectTrue(    txt.ToString()
                     ==  "Prepare to DIE and be reborn!");
     TEST_ExpectTrue(    txt.ToColoredString()
                     ==  (   defaultTag $ "Prepare to " $ colorTag $ "DIE"
-                        $   defaultTag $ " and be " $ greenTag $ "reborn"
-                        $   defaultTag $ "!"));
+                        $   defaultTag $ " " $ greenTag $ "and "
+                        $   limeTag $ "be " $ defaultTag $ "r"
+                        $   greenTag $ "eborn" $   defaultTag $ "!"));
     TEST_ExpectTrue(    txt.ToFormattedString()
-                    ==  ("Prepare to {rgb(198,23,7) DIE} and"
-                            @ "be {rgb(0,255,0) reborn}!"));
+                    ==  ("Prepare to {rgb(198,23,7) DIE} {rgb(0,255,0) and }"
+                            $ "{rgb(50,205,50) be }r{rgb(0,255,0) eborn}!"));
 }
 
 protected static function Test_SeparateByCharacter()
