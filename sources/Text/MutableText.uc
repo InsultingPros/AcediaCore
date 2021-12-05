@@ -558,6 +558,58 @@ public final function MutableText ChangeFormatting(
     return self;
 }
 
+/**
+ *  Removes all characters in range, specified as
+ *  `[startIndex; startIndex + maxLength - 1]`.
+ *
+ *  If provided parameters `startPosition` and `maxLength` define a range that
+ *  goes beyond `[0; self.GetLength() - 1]`, then intersection with a valid
+ *  range will be used.
+ *
+ *  @param  startIndex      Position of the first character to get removed.
+ *  @param  maxLength       Max length of the segment to get removed.
+ *      By default `0` - that and all negative values are replaces by `MaxInt`,
+ *      effectively removing as much characters to the right of `startIndex`
+ *      as possible.
+ *  @return Reference to the caller `MutableText` to allow for method chaining.
+ */
+public final function MutableText Remove(int startIndex, optional int maxLength)
+{
+    local int   index;
+    local int   endIndex;
+    local Text  selfCopy;
+    if (startIndex >= GetLength()) {
+        return self;
+    }
+    endIndex    = startIndex + maxLength - 1;
+    startIndex  = Max(startIndex, 0);
+    if (maxLength <= 0) {
+        endIndex = GetLength() - 1;
+    }
+    if (startIndex > endIndex) {
+        return self;
+    }
+    if (startIndex == 0 && endIndex == GetLength() - 1)
+    {
+        Clear();
+        return self;
+    }
+    selfCopy = Copy();
+    Clear();
+    while (index < selfCopy.GetLength())
+    {
+        if (index >= startIndex && index <= endIndex) {
+            index = endIndex + 1;
+        }
+        else
+        {
+            AppendCharacter(selfCopy.GetCharacter(index));
+            index += 1;
+        }
+    }
+    selfCopy.FreeSelf();
+    return self;
+}
 defaultproperties
 {
     CODEPOINT_NEWLINE   = 10
