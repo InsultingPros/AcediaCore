@@ -610,6 +610,63 @@ public final function MutableText Remove(int startIndex, optional int maxLength)
     selfCopy.FreeSelf();
     return self;
 }
+
+/**
+ *  Removes leading and trailing whitespaces from the caller `MutableText`.
+ *  Optionally also reduces all sequences of internal whitespace characters to
+ *  a single space (first space character in each sequence).
+ *
+ *  @param  fixInnerSpacings    By default `false` - only removes leading and
+ *      trailing whitespace sequences from the caller `MutableText`.
+ *      Setting this to `true` also makes method simplify sequences internal
+ *      whitespace characters inside caller `MutableText`.
+ *  @return Reference to the caller `MutableText` to allow for method chaining.
+ */
+public final function MutableText Simplify(optional bool fixInnerSpacings)
+{
+    local int   index;
+    local int   leftIndex, rightIndex;
+    local bool  isWhitespace, foundNonWhitespace;
+    local Text  selfCopy;
+    while (leftIndex < GetLength())
+    {
+        if (!_.text.IsWhitespace(GetCharacter(leftIndex)))
+        {
+            foundNonWhitespace = true;
+            break;
+        }
+        leftIndex += 1;
+    }
+    if (!foundNonWhitespace)
+    {
+        Clear();
+        return self;
+    }
+    rightIndex = GetLength() - 1;
+    while (rightIndex >= 0)
+    {
+        if (!_.text.IsWhitespace(GetCharacter(rightIndex))) {
+            break;
+        }
+        rightIndex -= 1;
+    }
+    selfCopy = Copy(leftIndex, rightIndex - leftIndex + 1);
+    Clear();
+    while (index < selfCopy.GetLength())
+    {
+        isWhitespace = _.text.IsWhitespace(selfCopy.GetCharacter(index));
+        if (foundNonWhitespace || !isWhitespace) {
+            AppendCharacter(selfCopy.GetCharacter(index));
+        }
+        if (fixInnerSpacings) {
+            foundNonWhitespace = !isWhitespace;
+        }
+        index += 1;
+    }
+    selfCopy.FreeSelf();
+    return self;
+}
+
 defaultproperties
 {
     CODEPOINT_NEWLINE   = 10
