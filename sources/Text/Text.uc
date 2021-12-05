@@ -278,8 +278,8 @@ public static final function Text ConstFromFormattedString(string source)
  *  @param  startIndex  Position of the first character to copy.
  *      By default `0`, corresponding to the very first character.
  *  @param  maxLength   Max length of the extracted string. By default `0`,
- *      - that and all negative values are replaces by `MaxInt`,
- *      effectively extracting as much of a string as possible.
+ *      - that and all negative values mean that method should extract all
+ *      characters to the right of `startIndex`.
  *  @return Immutable copy of the caller `Text` instance.
  *      Guaranteed to be not `none` and have class `Text`.
  */
@@ -330,8 +330,8 @@ public final function Text Copy(
  *  @param  startIndex  Position of the first character to copy.
  *      By default `0`, corresponding to the very first character.
  *  @param  maxLength   Max length of the extracted string. By default `0`,
- *      - that and all negative values are replaces by `MaxInt`,
- *      effectively extracting as much of a string as possible.
+ *      - that and all negative values mean that method should extract all
+ *      characters to the right of `startIndex`.
  *  @return Mutable copy of the caller `Text` instance.
  *      Guaranteed to be not `none` and have class `MutableText`.
  */
@@ -378,9 +378,9 @@ public final function MutableText MutableCopy(
  *
  *  @param  startPosition   Position of the first character to copy.
  *      By default `0`, corresponding to the very first character.
- *  @param  maxLength       Max length of the extracted string. By default `0`,
- *      - that and all negative values are replaces by `MaxInt`,
- *      effectively extracting as much of a string as possible.
+ *  @param  maxLength   Max length of the extracted string. By default `0`,
+ *      - that and all negative values mean that method should extract all
+ *      characters to the right of `startIndex`.
  *  @return Immutable copy of caller `Text` in a lower case.
  *      Guaranteed to be not `none` and have class `Text`.
  */
@@ -404,9 +404,9 @@ public final function Text LowerCopy(
  *
  *  @param  startPosition   Position of the first character to copy.
  *      By default `0`, corresponding to the very first character.
- *  @param  maxLength       Max length of the extracted string. By default `0`,
- *      - that and all negative values are replaces by `MaxInt`,
- *      effectively extracting as much of a string as possible.
+ *  @param  maxLength   Max length of the extracted string. By default `0`,
+ *      - that and all negative values mean that method should extract all
+ *      characters to the right of `startIndex`.
  *  @return Immutable copy of caller `Text` in a upper case.
  *      Guaranteed to be not `none` and have class `Text`.
  */
@@ -430,9 +430,9 @@ public final function Text UpperCopy(
  *
  *  @param  startPosition   Position of the first character to copy.
  *      By default `0`, corresponding to the very first character.
- *  @param  maxLength       Max length of the extracted string. By default `0`,
- *      - that and all negative values are replaces by `MaxInt`,
- *      effectively extracting as much of a string as possible.
+ *  @param  maxLength   Max length of the extracted string. By default `0`,
+ *      - that and all negative values mean that method should extract all
+ *      characters to the right of `startIndex`.
  *  @return Mutable copy of caller `Text` instance in lower case.
  *      Guaranteed to be not `none` and have class `MutableText`.
  */
@@ -456,9 +456,9 @@ public final function MutableText LowerMutableCopy(
  *
  *  @param  startPosition   Position of the first character to copy.
  *      By default `0`, corresponding to the very first character.
- *  @param  maxLength       Max length of the extracted string. By default `0`,
- *      - that and all negative values are replaces by `MaxInt`,
- *      effectively extracting as much of a string as possible.
+ *  @param  maxLength   Max length of the extracted string. By default `0`,
+ *      - that and all negative values mean that method should extract all
+ *      characters to the right of `startIndex`.
  *  @return Mutable copy of caller `Text` instance in upper case.
  *      Guaranteed to be not `none` and have class `MutableText`.
  */
@@ -1118,7 +1118,7 @@ private final function NormalizeFormatting()
  *      plain `string`. By default `0`, corresponding to the first symbol.
  *  @param  maxLength       Max length of the extracted string. By default `0`,
  *      - that and all negative values are replaces by `MaxInt`,
- *      effectively extracting as much of a string as possible.
+ *      effectively extracting as much of a `string` as possible.
  *  @return Plain `string` representation of the caller `Text`,
  *      i.e. `string` without any color information inside.
  */
@@ -1131,11 +1131,10 @@ public final function string ToString(
     if (maxLength <= 0) {
         maxLength = MaxInt;
     }
-    else if (startIndex < 0)
-    {
+    else if (startIndex < 0) {
         maxLength += startIndex;
-        startIndex = 0;
     }
+    startIndex = Max(0, startIndex);
     for (i = startIndex; i < codePoints.length; i += 1)
     {
         if (maxLength <= 0) {
@@ -1162,7 +1161,7 @@ public final function string ToString(
  *      colored `string`. By default `0`, corresponding to the first symbol.
  *  @param  maxLength       Max length of the extracted string. By default `0`,
  *      - that and all negative values are replaces by `MaxInt`,
- *      effectively extracting as much of a string as possible.
+ *      effectively extracting as much of a `string` as possible.
  *      NOTE:   this parameter only counts actual visible symbols, ignoring
  *              4-byte color code sequences, so method `Len()`, applied to
  *              the result of `ToColoredString()`, will return a bigger value
@@ -1185,11 +1184,10 @@ public final function string ToColoredString(
     if (maxLength <= 0) {
         maxLength = MaxInt;
     }
-    else if (startIndex < 0)
-    {
+    else if (startIndex < 0) {
         maxLength += startIndex;
-        startIndex = 0;
     }
+    startIndex = Max(0, startIndex);
     //  `appliedColor` will contain perfect black and so,
     //  guaranteed to be different from any actually used color
     defaultColor = _.color.FixColor(defaultColor);
@@ -1234,9 +1232,9 @@ public final function string ToColoredString(
  *
  *  @param  startIndex      Position of the first symbol to extract into a
  *      formatted `string`. By default `0`, corresponding to the first symbol.
- *  @param  maxLength       Max length of the extracted string. By default `0`,
- *      - that and all negative values are replaces by `MaxInt`,
- *      effectively extracting as much of a string as possible.
+ *  @param  maxLength       Max length of the extracted `string`.
+ *      By default `0` - that and all negative values are replaces by `MaxInt`,
+ *      effectively extracting as much of a `string` as possible.
  *      NOTE:   this parameter only counts actual visible symbols,
  *              ignoring formatting blocks ('{<color> }')
  *              or escape sequences (i.e. '&{' is one character),
@@ -1257,11 +1255,10 @@ public final function string ToFormattedString(
     if (maxLength <= 0) {
         maxLength = MaxInt;
     }
-    else if (startIndex < 0)
-    {
+    else if (startIndex < 0) {
         maxLength += startIndex;
-        startIndex = 0;
     }
+    startIndex = Max(0, startIndex);
     for (i = startIndex; i < codePoints.length; i += 1)
     {
         if (maxLength <= 0) {

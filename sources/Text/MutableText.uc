@@ -528,8 +528,8 @@ public final function MutableText Replace(
  *  @param  startIndex      Position of the first character to change formatting
  *      of. By default `0`, corresponding to the very first character.
  *  @param  maxLength       Max length of the segment to change formatting of.
- *      By default `0`, - that and all negative values are replaces by `MaxInt`,
- *      effectively extracting as much of a string as possible.
+ *      By default `0` - that and all negative values mean that method should
+ *      reformat all characters to the right of `startIndex`.
  *  @return Reference to the caller `MutableText` to allow for method chaining.
  */
 public final function MutableText ChangeFormatting(
@@ -541,11 +541,11 @@ public final function MutableText ChangeFormatting(
     if (startIndex >= GetLength()) {
         return self;
     }
-    if (maxLength <= 0) {
-        maxLength = MaxInt;
-    }
-    endIndex    = Min(startIndex + maxLength, GetLength()) - 1;
+    endIndex    = startIndex + maxLength - 1;
     startIndex  = Max(startIndex, 0);
+    if (maxLength <= 0) {
+        endIndex = GetLength() - 1;
+    }
     if (startIndex > endIndex) {
         return self;
     }
@@ -566,11 +566,10 @@ public final function MutableText ChangeFormatting(
  *  goes beyond `[0; self.GetLength() - 1]`, then intersection with a valid
  *  range will be used.
  *
- *  @param  startIndex      Position of the first character to get removed.
- *  @param  maxLength       Max length of the segment to get removed.
- *      By default `0` - that and all negative values are replaces by `MaxInt`,
- *      effectively removing as much characters to the right of `startIndex`
- *      as possible.
+ *  @param  startIndex  Position of the first character to get removed.
+ *  @param  maxLength   Max length of the segment to get removed.
+ *      By default `0` - that and all negative values mean that method should
+ *      remove all characters to the right of `startIndex`.
  *  @return Reference to the caller `MutableText` to allow for method chaining.
  */
 public final function MutableText Remove(int startIndex, optional int maxLength)
