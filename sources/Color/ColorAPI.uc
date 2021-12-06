@@ -504,6 +504,10 @@ var public config const Color greydarken2;
 var public config const Color greydarken3;
 var public config const Color greydarken4;
 
+var private const int TRGB, TRGBA, TCLOSING_PARENTHESIS, TR_COMPONENT;
+var private const int TG_COMPONENT, TB_COMPONENT, TA_COMPONENT, TCOMMA, THASH;
+var private const int TDOLLAR;
+
 //  Struct and array that are meant to store colors used by "^"-color tags:
 //  "^2" means green, "^b" means blue, etc..
 struct ShortColorTagDefinition
@@ -852,26 +856,26 @@ private final function Color ParseRGB(Parser parser)
     local int                   blueComponent;
     local Parser.ParserState    initialParserState;
     initialParserState = parser.GetCurrentState();
-    parser.MatchS("rgb(", SCASE_INSENSITIVE)
-        .MInteger(redComponent).MatchS(",")
-        .MInteger(greenComponent).MatchS(",")
-        .MInteger(blueComponent).MatchS(")");
+    parser.Match(T(TRGB), SCASE_INSENSITIVE)
+        .MInteger(redComponent).Match(T(TCOMMA))
+        .MInteger(greenComponent).Match(T(TCOMMA))
+        .MInteger(blueComponent).Match(T(TCLOSING_PARENTHESIS));
     if (!parser.Ok())
     {
         parser.RestoreState(initialParserState)
-            .MatchS("rgb(", SCASE_INSENSITIVE)
-            .MatchS("r=", SCASE_INSENSITIVE)
-            .MInteger(redComponent).MatchS(",")
-            .MatchS("g=", SCASE_INSENSITIVE)
-            .MInteger(greenComponent).MatchS(",")
-            .MatchS("b=", SCASE_INSENSITIVE)
-            .MInteger(blueComponent).MatchS(")");
+            .Match(T(TRGB), SCASE_INSENSITIVE)
+            .Match(T(TR_COMPONENT), SCASE_INSENSITIVE)
+            .MInteger(redComponent).Match(T(TCOMMA))
+            .Match(T(TG_COMPONENT), SCASE_INSENSITIVE)
+            .MInteger(greenComponent).Match(T(TCOMMA))
+            .Match(T(TB_COMPONENT), SCASE_INSENSITIVE)
+            .MInteger(blueComponent).Match(T(TCLOSING_PARENTHESIS));
     }
     if (!parser.Ok())
     {
         parser.RestoreState(initialParserState)
-            .MInteger(redComponent).MatchS(",")
-            .MInteger(greenComponent).MatchS(",")
+            .MInteger(redComponent).Match(T(TCOMMA))
+            .MInteger(greenComponent).Match(T(TCOMMA))
             .MInteger(blueComponent);
     }
     return RGB(redComponent, greenComponent, blueComponent);
@@ -887,30 +891,30 @@ private final function Color ParseRGBA(Parser parser)
     local int                   alphaComponent;
     local Parser.ParserState    initialParserState;
     initialParserState = parser.GetCurrentState();
-    parser.MatchS("rgba(", SCASE_INSENSITIVE)
-        .MInteger(redComponent).MatchS(",")
-        .MInteger(greenComponent).MatchS(",")
-        .MInteger(blueComponent).MatchS(",")
-        .MInteger(alphaComponent).MatchS(")");
+    parser.Match(T(TRGBA), SCASE_INSENSITIVE)
+        .MInteger(redComponent).Match(T(TCOMMA))
+        .MInteger(greenComponent).Match(T(TCOMMA))
+        .MInteger(blueComponent).Match(T(TCOMMA))
+        .MInteger(alphaComponent).Match(T(TCLOSING_PARENTHESIS));
     if (!parser.Ok())
     {
         parser.RestoreState(initialParserState)
-            .MatchS("rgba(", SCASE_INSENSITIVE)
-            .MatchS("r=", SCASE_INSENSITIVE)
-            .MInteger(redComponent).MatchS(",")
-            .MatchS("g=", SCASE_INSENSITIVE)
-            .MInteger(greenComponent).MatchS(",")
-            .MatchS("b=", SCASE_INSENSITIVE)
-            .MInteger(blueComponent).MatchS(",")
-            .MatchS("a=", SCASE_INSENSITIVE)
-            .MInteger(alphaComponent).MatchS(")");
+            .Match(T(TRGBA), SCASE_INSENSITIVE)
+            .Match(T(TR_COMPONENT), SCASE_INSENSITIVE)
+            .MInteger(redComponent).Match(T(TCOMMA))
+            .Match(T(TG_COMPONENT), SCASE_INSENSITIVE)
+            .MInteger(greenComponent).Match(T(TCOMMA))
+            .Match(T(TB_COMPONENT), SCASE_INSENSITIVE)
+            .MInteger(blueComponent).Match(T(TCOMMA))
+            .Match(T(TA_COMPONENT), SCASE_INSENSITIVE)
+            .MInteger(alphaComponent).Match(T(TCLOSING_PARENTHESIS));
     }
     if (!parser.Ok())
     {
         parser.RestoreState(initialParserState)
-            .MInteger(redComponent).MatchS(",")
-            .MInteger(greenComponent).MatchS(",")
-            .MInteger(blueComponent).MatchS(",")
+            .MInteger(redComponent).Match(T(TCOMMA))
+            .MInteger(greenComponent).Match(T(TCOMMA))
+            .MInteger(blueComponent).Match(T(TCOMMA))
             .MInteger(alphaComponent);
     }
     return RGBA(redComponent, greenComponent, blueComponent, alphaComponent);
@@ -922,7 +926,7 @@ private final function Color ParseHexColor(Parser parser)
     local int redComponent;
     local int greenComponent;
     local int blueComponent;
-    parser.MatchS("#")
+    parser.Match(T(THASH))
         .MUnsignedInteger(redComponent, 16, 2)
         .MUnsignedInteger(greenComponent, 16, 2)
         .MUnsignedInteger(blueComponent, 16, 2);
@@ -954,7 +958,7 @@ public final function bool ParseWith(Parser parser, out Color resultingColor)
     resultingColor.a    = 0xff;
     colorParser         = parser;
     initialParserState  = parser.GetCurrentState();
-    if (parser.MatchS("$").MUntil(colorAlias,, true).Ok())
+    if (parser.Match(T(TDOLLAR)).MUntil(colorAlias,, true).Ok())
     {
         colorContent = _.alias.ResolveColor(colorAlias);
         colorParser = _.text.Parse(colorContent);
@@ -1508,4 +1512,24 @@ defaultproperties
     shortColorTag(18)=(char="w",color=(R=255,G=255,B=255,A=255))
     CODEPOINT_SMALL_A   = 97
     CODEPOINT_ESCAPE    = 27
+    TRGB                    = 0
+    stringConstants(0) = "rgb("
+    TRGBA                   = 1
+    stringConstants(1) = "rgba("
+    TCLOSING_PARENTHESIS    = 2
+    stringConstants(2) = ")"
+    TR_COMPONENT            = 3
+    stringConstants(3) = "r="
+    TG_COMPONENT            = 4
+    stringConstants(4) = "g="
+    TB_COMPONENT            = 5
+    stringConstants(5) = "b="
+    TA_COMPONENT            = 6
+    stringConstants(6) = "a="
+    TCOMMA                  = 7
+    stringConstants(7) = ","
+    THASH                   = 8
+    stringConstants(8) = "#"
+    TDOLLAR                 = 9
+    stringConstants(9) = "$"
 }
