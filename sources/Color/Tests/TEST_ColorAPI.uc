@@ -184,6 +184,7 @@ protected static function Test_ToString()
 {
     Context("Testing `ColorAPI`'s `ToString()` function.");
     SubTest_ToStringType();
+    SubTest_ToStringTypeStripped();
     SubTest_ToString();
 }
 
@@ -223,6 +224,30 @@ protected static function SubTest_ToStringType()
     TEST_ExpectTrue(
         __().color.ToStringType(borderValueColor, CLRDISPLAY_RGBA_TAG)
         ~= "rgba(r=0,g=255,b=255,a=0)");
+}
+
+protected static function SubTest_ToStringTypeStripped()
+{
+    local Color normalColor, borderValueColor;
+    normalColor         = __().color.RGBA(24, 232, 187, 34);
+    borderValueColor    = __().color.RGBA(0, 255, 255, 0);
+    Issue("`ToStringType()` improperly works with `CLRDISPLAY_RGB_STRIPPED`"
+        @ "option.");
+    TEST_ExpectTrue(
+            __().color.ToStringType(normalColor, CLRDISPLAY_RGB_STRIPPED)
+        ~=  "24,232,187");
+    TEST_ExpectTrue(
+        __().color.ToStringType(borderValueColor, CLRDISPLAY_RGB_STRIPPED)
+        ~= "0,255,255");
+
+    Issue("`ToStringType()` improperly works with `CLRDISPLAY_RGBA_STRIPPED`"
+        @ "option.");
+    TEST_ExpectTrue(
+            __().color.ToStringType(normalColor, CLRDISPLAY_RGBA_STRIPPED)
+        ~=  "24,232,187,34");
+    TEST_ExpectTrue(
+        __().color.ToStringType(borderValueColor, CLRDISPLAY_RGBA_STRIPPED)
+        ~= "0,255,255,0");
 }
 
 protected static function SubTest_ToString()
@@ -286,6 +311,9 @@ protected static function Test_Parse()
     SubTest_ParseWithParser();
     SubTest_ParseStringPlain();
     SubTest_ParseText();
+    SubTest_ParseWithParserStripped();
+    SubTest_ParseStringPlainStripped();
+    SubTest_ParseTextStripped();
 }
 
 protected static function SubTest_ParseWithParser()
@@ -390,6 +418,53 @@ protected static function SubTest_ParseText()
     Issue("`Parse()` reports success when parsing invalid color string.");
     TEST_ExpectFalse(__().color.Parse(   __().text.FromString("#9aff0g"),
                                         resultColor));
+}
+
+protected static function SubTest_ParseWithParserStripped()
+{
+    local Color expectedColor, resultColor;
+    expectedColor = __().color.RGBA(154, 255, 0, 187);
+    Issue("`ParseWith()` cannot parse stripped rgb colors.");
+    TEST_ExpectTrue(__().color.ParseWith(
+        __().text.ParseString("154,255,0"),
+        resultColor));
+    TEST_ExpectTrue(__().color.AreEqual(resultColor, expectedColor));
+
+    Issue("`ParseWith()` cannot parse stripped rgba colors.");
+    TEST_ExpectTrue(__().color.ParseWith(
+        __().text.ParseString("154,255,0,187"),
+        resultColor));
+    TEST_ExpectTrue(__().color.AreEqualWithAlpha(resultColor, expectedColor));
+}
+
+protected static function SubTest_ParseStringPlainStripped()
+{
+    local Color expectedColor, resultColor;
+    expectedColor = __().color.RGBA(154, 255, 0, 187);
+    Issue("`ParseString()` cannot parse stripped rgb colors.");
+    TEST_ExpectTrue(__().color.ParseString("154,255,0", resultColor));
+    TEST_ExpectTrue(__().color.AreEqual(resultColor, expectedColor));
+
+    Issue("`ParseString()` cannot parse stripped rgba colors.");
+    TEST_ExpectTrue(__().color.ParseString("154,255,0,187", resultColor));
+    TEST_ExpectTrue(__().color.AreEqualWithAlpha(resultColor, expectedColor));
+}
+
+protected static function SubTest_ParseTextStripped()
+{
+    local Color expectedColor, resultColor;
+    expectedColor = __().color.RGBA(154, 255, 0, 187);
+    Issue("`Parse()` cannot parse stripped rgb colors.");
+    TEST_ExpectTrue(__().color.Parse(
+        __().text.FromString("154,255,0"),
+        resultColor));
+    TEST_ExpectTrue(__().color.AreEqual(resultColor, expectedColor));
+
+    Issue("`Parse()` cannot parse stripped rgba colors.");
+    TEST_ExpectTrue(__().color.Parse(
+        __().text.FromString("154,255,0,187"),
+        resultColor));
+    TEST_ExpectTrue(__().color.AreEqualWithAlpha(resultColor, expectedColor));
 }
 
 defaultproperties

@@ -38,7 +38,11 @@ enum ColorDisplayType
     //  RGB format with tags; for pink: rgb(r=255,g=192,b=203)
     CLRDISPLAY_RGB_TAG,
     //  RGBA format with tags; for pink: rgb(r=255,g=192,b=203,a=255)
-    CLRDISPLAY_RGBA_TAG
+    CLRDISPLAY_RGBA_TAG,
+    //  Stripped RGB format; for pink: 255,192,203
+    CLRDISPLAY_RGB_STRIPPED,
+    //  Stripped RGBA format; for opaque pink: 255,192,203,255
+    CLRDISPLAY_RGBA_STRIPPED
 };
 
 //      Some useful predefined color values.
@@ -737,7 +741,7 @@ private final function string ComponentToHex(byte component)
 }
 
 /**
- *  Displays given color as a string in a given style
+ *  Displays given color as a `string` in a given style
  *  (hex color representation by default).
  *
  *  @param  colorToConvert  Color to display as a `string`.
@@ -773,15 +777,28 @@ public final function string ToStringType(
             $ "g=" $ string(colorToConvert.g) $ ","
             $ "b=" $ string(colorToConvert.b) $ ")";
     }
-    //else if (displayType == CLRDISPLAY_RGBA_TAG)
-    return "rgba(r=" $ string(colorToConvert.r) $ ","
-        $ "g=" $ string(colorToConvert.g) $ ","
-        $ "b=" $ string(colorToConvert.b) $ ","
-        $ "a=" $ string(colorToConvert.a) $ ")";
+    else if (displayType == CLRDISPLAY_RGBA_TAG)
+    {
+        return "rgba(r=" $ string(colorToConvert.r) $ ","
+            $ "g=" $ string(colorToConvert.g) $ ","
+            $ "b=" $ string(colorToConvert.b) $ ","
+            $ "a=" $ string(colorToConvert.a) $ ")";
+    }
+    else if (displayType == CLRDISPLAY_RGB_STRIPPED)
+    {
+        return string(colorToConvert.r) $ ","
+            $ string(colorToConvert.g) $ ","
+            $ string(colorToConvert.b);
+    }
+    //else if (displayType == CLRDISPLAY_RGBA_STRIPPED)
+    return string(colorToConvert.r) $ ","
+        $ string(colorToConvert.g) $ ","
+        $ string(colorToConvert.b) $ ","
+        $ string(colorToConvert.a);
 }
 
 /**
- *  Displays given color as a string in RGB or RGBA format, depending on
+ *  Displays given color as a `string` in RGB or RGBA format, depending on
  *  whether color is opaque.
  *
  *  @param  colorToConvert  Color to display as a `string` in `CLRDISPLAY_RGB`
@@ -796,7 +813,38 @@ public final function string ToString(Color colorToConvert)
     return ToStringType(colorToConvert, CLRDISPLAY_RGB);
 }
 
-//  Parses color in `CLRDISPLAY_RGB` and `CLRDISPLAY_RGB_TAG` representations.
+/**
+ *  Displays given color as a `Text` in a given style
+ *  (hex color representation by default).
+ *
+ *  @param  colorToConvert  Color to display as a `Text`.
+ *  @param  displayType     `enum` value, describing how should color
+ *      be displayed.
+ *  @return `Text` representation of a given color in a given style.
+ *      Guaranteed to not be `none`.
+ */
+public final function Text ToTextType(
+    Color                       colorToConvert,
+    optional ColorDisplayType   displayType)
+{
+    return _.text.FromString(ToStringType(colorToConvert, displayType));
+}
+
+/**
+ *  Displays given color as a `Text` in RGB or RGBA format, depending on
+ *  whether color is opaque.
+ *
+ *  @param  colorToConvert  Color to display as a `Text` in `CLRDISPLAY_RGB`
+ *      style if `colorToConvert.a == 255` and `CLRDISPLAY_RGBA` otherwise.
+ *  @return `Text` representation of a given color in a given style.
+ */
+public final function Text ToText(Color colorToConvert)
+{
+    return _.text.FromString(ToString(colorToConvert));
+}
+
+//  Parses color in `CLRDISPLAY_RGB`, `CLRDISPLAY_RGB_TAG` and
+//  `CLRDISPLAY_RGB_STRIPPED` representations.
 private final function Color ParseRGB(Parser parser)
 {
     local int                   redComponent;
@@ -819,10 +867,18 @@ private final function Color ParseRGB(Parser parser)
             .MatchS("b=", SCASE_INSENSITIVE)
             .MInteger(blueComponent).MatchS(")");
     }
+    if (!parser.Ok())
+    {
+        parser.RestoreState(initialParserState)
+            .MInteger(redComponent).MatchS(",")
+            .MInteger(greenComponent).MatchS(",")
+            .MInteger(blueComponent);
+    }
     return RGB(redComponent, greenComponent, blueComponent);
 }
 
-//  Parses color in `CLRDISPLAY_RGBA` and `CLRDISPLAY_RGBA_TAG` representations.
+//  Parses color in `CLRDISPLAY_RGBA`, `CLRDISPLAY_RGBA_TAG`
+//  and `CLRDISPLAY_RGBA_STRIPPED` representations.
 private final function Color ParseRGBA(Parser parser)
 {
     local int                   redComponent;
@@ -848,6 +904,14 @@ private final function Color ParseRGBA(Parser parser)
             .MInteger(blueComponent).MatchS(",")
             .MatchS("a=", SCASE_INSENSITIVE)
             .MInteger(alphaComponent).MatchS(")");
+    }
+    if (!parser.Ok())
+    {
+        parser.RestoreState(initialParserState)
+            .MInteger(redComponent).MatchS(",")
+            .MInteger(greenComponent).MatchS(",")
+            .MInteger(blueComponent).MatchS(",")
+            .MInteger(alphaComponent);
     }
     return RGBA(redComponent, greenComponent, blueComponent, alphaComponent);
 }
@@ -901,11 +965,13 @@ public final function bool ParseWith(Parser parser, out Color resultingColor)
         parser.RestoreState(initialParserState);
     }
     colorAlias.FreeSelf();
-    resultingColor = ParseRGB(colorParser);
+    //  `CLRDISPLAY_RGBA_STRIPPED` format can be parsed as an incomplete
+    //  `CLRDISPLAY_RGB_STRIPPED`, so we need to try parsing RGBA first
+    resultingColor = ParseRGBA(colorParser);
     if (!colorParser.Ok())
     {
         colorParser.RestoreState(initialParserState);
-        resultingColor = ParseRGBA(colorParser);
+        resultingColor = ParseRGB(colorParser);
     }
     if (!colorParser.Ok())
     {
