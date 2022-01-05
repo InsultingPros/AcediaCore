@@ -1,6 +1,6 @@
 /**
  *  Subset of functionality for dealing with everything related to traders.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -58,7 +58,7 @@ public final function SimpleSlot OnStart(AcediaObject receiver)
  *  Signal that will be emitted whenever trading time ends.
  *
  *  [Signature]
- *  void <slot>(ATrader oldTrader, ATrader newTrader)
+ *  void <slot>(ETrader oldTrader, ETrader newTrader)
  *
  *  @param  oldTrader   Trader that was selected before this event.
  *  @param  newTrader   Trader that will be selected after this event.
@@ -90,7 +90,7 @@ public final function Trading_OnSelect_Slot OnTraderSelected(
  *      `none`-references. None of them should be deallocated,
  *      otherwise Acedia's behavior is undefined.
  */
-public function array<ATrader> GetTraders();
+public function array<ETrader> GetTraders();
 
 /**
  *  Checks whether trading is currently active.
@@ -188,19 +188,19 @@ public function SetCountDownPause(bool doPause);
  *      Changing a selected trader in any way should always be followed
  *  by emitting `OnTraderSelected()` signal.
  *      After `SelectTrader()` call `GetSelectedTrader()` should return
- *  specified `ATrader`. If selected trader changes in some other way, it should
+ *  specified `ETrader`. If selected trader changes in some other way, it should
  *  first result in emitted `OnTraderSelected()` signal.
  *
  *  @return Currently selected trader.
  */
-public function ATrader GetSelectedTrader();
+public function ETrader GetSelectedTrader();
 
 /**
  *  Changes currently selected trader.
  *
  *  @see `GetSelectedTrader()` for more details.
  */
-public function SelectTrader(ATrader newSelection);
+public function SelectTrader(ETrader newSelection);
 
 defaultproperties
 {

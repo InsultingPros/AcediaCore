@@ -2,7 +2,7 @@
  *      Class, objects of which are expected to represent traders located on
  *  the map. In classic KF game mode it would represent areas behind closed
  *  doors that open during trader time and allow to purchase weapons and ammo.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ATrader extends AcediaObject
+class ETrader extends EInterface
     abstract;
 
 /**
@@ -60,7 +60,7 @@ public function Text GetName();
  *  @param  newName New name of the caller trader.
  *  @return `true` if trader is currently enabled and `false` otherwise.
  */
-public function ATrader SetName(Text newName);
+public function ETrader SetName(Text newName);
 
 /**
  *  Checks if caller trader is currently enabled.
@@ -78,7 +78,7 @@ public function ATrader SetName(Text newName);
 public function bool IsEnabled();
 
 /**
- *  Sets whether caller `ATrader`'s is currently enabled.
+ *  Sets whether caller `ETrader`'s is currently enabled.
  *
  *  Disabling the trader should automatically "boot" players out
  *  (see `BootPlayers()`).
@@ -87,14 +87,14 @@ public function bool IsEnabled();
  *
  *  @param  doEnable    `true` if trader is currently enabled and
  *      `false` otherwise.
- *  @return Caller `ATrader` to allow for method chaining.
+ *  @return Caller `ETrader` to allow for method chaining.
  */
-public function ATrader SetEnabled(bool doEnable);
+public function ETrader SetEnabled(bool doEnable);
 
 /**
- *  Checks whether caller `ATrader` will auto-open when trading gets activated.
+ *  Checks whether caller `ETrader` will auto-open when trading gets activated.
  *
- *  This setting must be ignored if trader is disabled, but disabling `ATrader`
+ *  This setting must be ignored if trader is disabled, but disabling `ETrader`
  *  should not reset it.
  *
  *  @return `true` if trader is marked to always auto-open upon activating
@@ -103,28 +103,28 @@ public function ATrader SetEnabled(bool doEnable);
 public function bool IsAutoOpen();
 
 /**
- *  Checks whether caller `ATrader` will auto-open when trading gets activated.
+ *  Checks whether caller `ETrader` will auto-open when trading gets activated.
  *
  *  @see `IsAutoOpen()` for more info.
  *
  *  @param  doAutoOpen  `true` if trader should be marked to always auto-open
  *      upon activating trading and `false` otherwise.
- *  @return Caller `ATrader` to allow for method chaining.
+ *  @return Caller `ETrader` to allow for method chaining.
  */
-public function ATrader SetAutoOpen(bool doAutoOpen);
+public function ETrader SetAutoOpen(bool doAutoOpen);
 
 /**
- *  Checks whether caller `ATrader` is currently open.
+ *  Checks whether caller `ETrader` is currently open.
  *
- *  `ATrader` being open means that players can "enter" (whatever that means for
- *  an implementation) and use `ATrader` to buy/sell equipment.
+ *  `ETrader` being open means that players can "enter" (whatever that means for
+ *  an implementation) and use `ETrader` to buy/sell equipment.
  *
  *  @return `true` if it is open and `false` otherwise.
  */
 public function bool IsOpen();
 
 /**
- *  Changes whether caller `ATrader` is open.
+ *  Changes whether caller `ETrader` is open.
  *
  *  Closing the trader should not automatically "boot" players out
  *  (see `BootPlayers()`).
@@ -132,27 +132,27 @@ public function bool IsOpen();
  *  @see `IsOpen()` for more details.
  *
  *  @param  doOpen  `true` if it is open and `false` otherwise.
- *  @return Caller `ATrader` to allow for method chaining.
+ *  @return Caller `ETrader` to allow for method chaining.
  */
-public function ATrader SetOpen(bool doOpen);
+public function ETrader SetOpen(bool doOpen);
 
 /**
- *  Checks whether caller `ATrader` is currently marked as selected.
+ *  Checks whether caller `ETrader` is currently marked as selected.
  *
  *  @see `ATradingComponent.GetSelectedTrader()` for more details.
  *
- *  @return `true` if caller `ATrader` is selected and `false` otherwise.
+ *  @return `true` if caller `ETrader` is selected and `false` otherwise.
  */
 public function bool IsSelected();
 
 /**
- *  Marks caller `ATrader` as a selected trader.
+ *  Marks caller `ETrader` as a selected trader.
  *
  *  @see `ATradingComponent.GetSelectedTrader()` for more details.
  *
- *  @return Caller `ATrader` to allow for method chaining.
+ *  @return Caller `ETrader` to allow for method chaining.
  */
-public function ATrader Select();
+public function ETrader Select();
 
 /**
  *  Removes players from the trader's place.
@@ -163,17 +163,17 @@ public function ATrader Select();
  *  after it is closed. If that is impossible (for traders resembling
  *  KF2's one), then this method should do nothing.
  *
- *  @return Caller `ATrader` to allow for method chaining.
+ *  @return Caller `ETrader` to allow for method chaining.
  */
-public function ATrader BootPlayers();
+public function ETrader BootPlayers();
 
 /**
  *  Shortcut method to open the caller trader, guaranteed to be equivalent to
  *  `SetOpen(true)`. Provided for better interface.
  *
- *  @return Caller `ATrader` to allow for method chaining.
+ *  @return Caller `ETrader` to allow for method chaining.
  */
-public final function ATrader Open()
+public final function ETrader Open()
 {
     SetOpen(true);
     return self;
@@ -183,9 +183,9 @@ public final function ATrader Open()
  *  Shortcut method to close the caller trader, guaranteed to be equivalent to
  *  `SetOpen(false)`. Provided for better interface.
  *
- *  @return Caller `ATrader` to allow for method chaining.
+ *  @return Caller `ETrader` to allow for method chaining.
  */
-public final function ATrader Close()
+public final function ETrader Close()
 {
     SetOpen(false);
     return self;

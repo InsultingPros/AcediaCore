@@ -25,7 +25,6 @@ defaultproperties
     features(0)     = class'Commands_Feature'
     features(1)     = class'Avarice_Feature'
     services(0)     = class'ConnectionService'
-    services(1)     = class'PlayerService'
     aliasSources(0) = class'AliasSource'
     aliasSources(1) = class'WeaponAliasSource'
     aliasSources(2) = class'ColorAliasSource'

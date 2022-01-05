@@ -1,6 +1,5 @@
 /**
- *      Signal class implementation for `ATradingComponent`, for detecting when
- *  another trader is selected.
+ *  Slot class implementation for `PlayerAPI`'s `OnLostPlayer` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -18,22 +17,24 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Trading_OnSelect_Signal extends Signal;
+class PlayerAPI_OnLostPlayer_Slot extends Slot;
 
-public final function Emit(ATrader oldTrader, ATrader newTrader)
+delegate connect(User identity)
 {
-    local Slot nextSlot;
-    StartIterating();
-    nextSlot = GetNextSlot();
-    while (nextSlot != none)
-    {
-        Trading_OnSelect_Slot(nextSlot).connect(oldTrader, newTrader);
-        nextSlot = GetNextSlot();
-    }
-    CleanEmptySlots();
+    DummyCall();
+}
+
+protected function Constructor()
+{
+    connect = none;
+}
+
+protected function Finalizer()
+{
+    super.Finalizer();
+    connect = none;
 }
 
 defaultproperties
 {
-    relatedSlotClass = class'Trading_OnSelect_Slot'
 }

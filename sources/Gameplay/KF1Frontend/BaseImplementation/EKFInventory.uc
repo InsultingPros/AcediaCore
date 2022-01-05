@@ -28,30 +28,33 @@ struct DualiesPair
     var class<KFWeaponPickup>   dual;
 };
 
-var private APlayer                     inventoryOwner;
+var private EPlayer                     inventoryOwner;
 var private config array<DualiesPair>   dualiesClasses;
 
 protected function Finalizer()
 {
+    _.memory.Free(inventoryOwner);
     inventoryOwner = none;
 }
 
-public function Initialize(APlayer player)
+public function Initialize(EPlayer player)
 {
     if (inventoryOwner != none) {
         return;
     }
-    inventoryOwner = player;
+    if (player != none) {
+        inventoryOwner = EPlayer(player.Copy());
+    }
 }
 
 private function Pawn GetOwnerPawn()
 {
-    local PlayerService service;
-    service = PlayerService(class'PlayerService'.static.Require());
-    if (service == none) {
+    local PlayerController myController;
+    myController = inventoryOwner.GetController();
+    if (myController == none) {
         return none;
     }
-    return service.GetPawn(inventoryOwner);
+    return myController.pawn;
 }
 
 public function bool Add(EItem newItem, optional bool forceAddition)

@@ -1,7 +1,7 @@
 /**
  *      Slot class implementation for `ATradingComponent`'s signal for
  *  detecting when another trader is selected.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -20,7 +20,7 @@
  */
 class Trading_OnSelect_Slot extends Slot;
 
-delegate connect(ATrader oldTrader, ATrader newTrader)
+delegate connect(ETrader oldTrader, ETrader newTrader)
 {
     DummyCall();
 }

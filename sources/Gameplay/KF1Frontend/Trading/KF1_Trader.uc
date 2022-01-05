@@ -1,7 +1,7 @@
 /**
- *  `ATrader`'s implementation for `KF1_Frontend`.
+ *  `ETrader`'s implementation for `KF1_Frontend`.
  *  Wrapper for KF1's `ShopVolume`s.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -18,13 +18,34 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class KF1_Trader extends ATrader;
+class KF1_Trader extends ETrader;
 
 //  We do not use any vanilla value as a name, instead storing and tracking it
 //  entirely as our own value.
 var protected Text              myName;
 //  Reference to `ShopVolume` actor that this `KF1_Trader` represents.
 var protected NativeActorRef    myShopVolume;
+
+//      We want to assign each trader (`ShopVolume`) a unique name that does
+//  not change. For that we will use `namedShopVolumes` array's default value to
+//  store `ShopVolume`-`Text` pairs.
+//      Whenever new `KF1_Trader` is created we check with this list to see if
+//  appropriate name was already assigned.
+struct NamedShopVolume
+{
+    var public Text             name;
+    var public NativeActorRef   reference;
+};
+var private array<NamedShopVolume> namedShopVolumes;
+
+protected function Constructor()
+{
+    //  We only care about `default` value of this array variable,
+    //  so do not bother storing needless references in each object
+    if (namedShopVolumes.length > 0) {
+        namedShopVolumes.length = 0;
+    }
+}
 
 protected function Finalizer()
 {
@@ -34,40 +55,84 @@ protected function Finalizer()
     myName = none;
 }
 
-/**
- *  Detect all existing traders on the level and created a `KF1_Trader` for
- *  each of them.
- *
- *  @return Array of created `KF1_Trader`s. All of them are guaranteed to not
- *      be `none`.
- */
-public static function array<KF1_Trader> WrapVanillaShops()
+protected static function StaticFinalizer()
 {
-    local int           shopCounter;
-    local MutableText   textBuilder;
-    local LevelInfo     level;
-    local KFGameType    kfGame;
-    local KF1_Trader    nextTrader;
-    local array<KF1_Trader> allTraders;
-    local ShopVolume    nextShopVolume;
-    level   = __().unreal.GetLevel();
-    kfGame  = __().unreal.GetKFGameType();
-    textBuilder = __().text.Empty();
-    foreach level.AllActors(class'ShopVolume', nextShopVolume)
+    local int i;
+    if (default.namedShopVolumes.length <= 0) {
+        return;
+    }
+    for (i = 0; i < default.namedShopVolumes.length; i += 1)
     {
-        if (nextShopVolume == none) continue;
-        if (!nextShopVolume.bObjectiveModeOnly || kfGame.bUsingObjectiveMode)
-        {
-            nextTrader = KF1_Trader(__().memory.Allocate(class'KF1_Trader'));
-            nextTrader.myShopVolume = __().unreal.ActorRef(nextShopVolume);
-            textBuilder.Clear().AppendString("trader" $ shopCounter);
-            nextTrader.myName = textBuilder.Copy();
-            allTraders[allTraders.length] = nextTrader;
-            shopCounter += 1;
+        __().memory.Free(default.namedShopVolumes[i].name);
+        __().memory.Free(default.namedShopVolumes[i].reference);
+    }
+    default.namedShopVolumes.length = 0;
+}
+
+private static function Text GetShopVolumeName(ShopVolume newShopVolume)
+{
+    local int                       i;
+    local NamedShopVolume           newRecord;
+    local array<NamedShopVolume>    namedShopVolumesCopy;
+    if (newShopVolume == none) {
+        return none;
+    }
+    namedShopVolumesCopy = default.namedShopVolumes;
+    for (i = 0; i < namedShopVolumesCopy.length; i += 1)
+    {
+        if (namedShopVolumesCopy[i].reference.Get() == newShopVolume) {
+            return namedShopVolumesCopy[i].name.Copy();
         }
     }
-    textBuilder.FreeSelf();
-    return allTraders;
+    newRecord.reference = __().unreal.ActorRef(newShopVolume);
+    newRecord.name =
+        __().text.FromString("trader" $ namedShopVolumesCopy.length);
+    default.namedShopVolumes[default.namedShopVolumes.length] = newRecord;
+    return newRecord.name.Copy();
+}
+
+/**
+ *  Initializes caller `KF1_Trader`. Should be called right after `KF1_Trader`
+ *  was allocated.
+ *
+ *  Every `KF1_Trader` must be initialized, using non-initialized `KF1_Trader`
+ *  instances is invalid.
+ *
+ *  Initialization can fail if:
+ *      1.  `initShopVolume == none`;
+ *      2.  Caller `KF1_Trader` already was successfully initialized.
+ *      3.  `initShopVolume` is objective-mode only `ShopVolume` and we are
+ *          not running an objective mode right now.
+ *
+ *  @param  initShopVolume  `ShopVolume` that caller `KF1_Trader` will
+ *      correspond to.
+ *  @return `true` if initialization was successful and `false` otherwise.
+ */
+public final /* unreal */ function bool Initialize(ShopVolume initShopVolume)
+{
+    if (initShopVolume == none) {
+        return false;
+    }
+    if (    initShopVolume.bObjectiveModeOnly
+        &&  !__().unreal.GetKFGameType().bUsingObjectiveMode) {
+        return false;
+    }
+    myName          = GetShopVolumeName(initShopVolume);
+    myShopVolume    = _.unreal.ActorRef(initShopVolume);
+    return true;
+}
+
+/**
+ *  Returns `ShopVolume`, associated with the caller `KF1_Trader`.
+ *
+ *  @return `ShopVolume`, associated with the caller `KF1_Trader`.
+ */
+public final /* unreal */ function ShopVolume GetShopVolume()
+{
+    if (myShopVolume == none) {
+        return none;
+    }
+    return ShopVolume(myShopVolume.Get());
 }
 
 public function Text GetName()
@@ -78,7 +143,8 @@ public function Text GetName()
     return myName.Copy();
 }
 
-public function ATrader SetName(Text newName)
+//  TODO: it is broken, needs fixing
+public function ETrader SetName(Text newName)
 {
     if (newName == none)    return self;
     if (newName.IsEmpty())  return self;
@@ -108,7 +174,7 @@ public function bool IsEnabled()
     return false;
 }
 
-public function ATrader SetEnabled(bool doEnable)
+public function ETrader SetEnabled(bool doEnable)
 {
     local ShopVolume vanillaShopVolume;
     vanillaShopVolume = ShopVolume(myShopVolume.Get());
@@ -138,7 +204,7 @@ protected function UpdateShopList()
     local ShopVolume        nextShopVolume;
     local KF1_Trader        nextTrader;
     local array<ShopVolume> shopVolumes;
-    local array<ATrader>    availableTraders;
+    local array<ETrader>    availableTraders;
     availableTraders = _.kf.trading.GetTraders();
     for (i = 0; i < availableTraders.length; i += 1)
     {
@@ -163,7 +229,7 @@ public function bool IsAutoOpen()
     return false;
 }
 
-public function ATrader SetAutoOpen(bool doAutoOpen)
+public function ETrader SetAutoOpen(bool doAutoOpen)
 {
     local ShopVolume vanillaShopVolume;
     vanillaShopVolume = ShopVolume(myShopVolume.Get());
@@ -189,7 +255,7 @@ public function bool IsOpen()
     return false;
 }
 
-public function ATrader SetOpen(bool doOpen)
+public function ETrader SetOpen(bool doOpen)
 {
     local ShopVolume vanillaShopVolume;
     if (doOpen && !IsEnabled())     return self;
@@ -220,7 +286,7 @@ public function bool IsSelected()
     return false;
 }
 
-public function ATrader Select()
+public function ETrader Select()
 {
     local ShopVolume            vanillaShopVolume;
     local KFGameReplicationInfo kfGameRI;
@@ -235,7 +301,7 @@ public function ATrader Select()
     return self;
 }
 
-public function ATrader BootPlayers()
+public function ETrader BootPlayers()
 {
     local ShopVolume vanillaShopVolume;
     vanillaShopVolume = ShopVolume(myShopVolume.Get());
@@ -243,6 +309,51 @@ public function ATrader BootPlayers()
         vanillaShopVolume.BootPlayers();
     }
     return self;
+}
+
+/**
+ *  Makes a copy of the caller interface, producing a new `EInterface` of
+ *  the exactly the same class (`EWeapon` will produce another `EWeapon`).
+ *
+ *  This should never fail. Even if referred entity is already gone.
+ *
+ *  @return Copy of the caller `EInterface`, of the exactly the same class.
+ *      Guaranteed to not be `none`.
+ */
+public function EInterface Copy()
+{
+    local KF1_Trader traderCopy;
+    traderCopy = KF1_Trader(_.memory.Allocate(class'KF1_Trader'));
+    if (myShopVolume == none)
+    {
+        //  Should not really happen, since then caller `KF1_Trader` was
+        //  not initialized
+        return traderCopy;
+    }
+    traderCopy.Initialize(ShopVolume(myShopVolume.Get()));
+    return traderCopy;
+}
+
+public function bool IsExistent()
+{
+    if (myShopVolume == none) {
+        return false;
+    }
+    return (myShopVolume.Get() != none);
+}
+
+public function bool SameAs(EInterface other)
+{
+    local KF1_Trader        asTrader;
+    local NativeActorRef    otherShopVolume;
+    if (other == none)              return false;
+    if (myShopVolume == none)       return false;
+    asTrader = KF1_Trader(other);
+    if (asTrader == none)           return false;
+    otherShopVolume = asTrader.myShopVolume;
+    if (otherShopVolume == none)    return false;
+    
+    return (myShopVolume.Get() == otherShopVolume.Get());
 }
 
 defaultproperties

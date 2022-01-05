@@ -1,6 +1,5 @@
 /**
- *      Base class for all backends. Does not define anything meaningful, which
- *  also means it does not put any limitations on it's implementation.
+ *  Signal class implementation for `PlayerAPI`'s `OnNewPlayer` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -18,9 +17,22 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
- class BaseBackend extends AcediaObject
-    abstract;
+class PlayerAPI_OnNewPlayer_Signal extends Signal;
+
+public final function Emit(EPlayer newPlayer)
+{
+    local Slot nextSlot;
+    StartIterating();
+    nextSlot = GetNextSlot();
+    while (nextSlot != none)
+    {
+        PlayerAPI_OnNewPlayer_Slot(nextSlot).connect(EPlayer(newPlayer.Copy()));
+        nextSlot = GetNextSlot();
+    }
+    CleanEmptySlots();
+}
 
 defaultproperties
 {
+    relatedSlotClass = class'PlayerAPI_OnNewPlayer_Slot'
 }

@@ -1,6 +1,6 @@
 /**
  *  Command for displaying help information about registered Acedia's commands.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -40,18 +40,14 @@ protected function BuildData(CommandDataBuilder builder)
         .Describe(P("Display list of all available commands."));
 }
 
-protected function Executed(CommandCall callInfo)
+protected function Executed(Command.CallData callData, EPlayer callerPlayer)
 {
-    local AssociativeArray  parameters;
+    local AssociativeArray  parameters, options;;
     local DynamicArray      commandsToDisplay;
-    local APlayer           callerPlayer;
-    callerPlayer = callInfo.GetCallerPlayer();
-    if (callerPlayer == none) {
-        return;
-    }
-
+    parameters  = callData.parameters;
+    options     = callData.options;
     //  Print command list if "--list" option was specified
-    if (callInfo.GetOptions().HasKey(P("list"))) {
+    if (options.HasKey(P("list"))) {
         DisplayCommandList(callerPlayer);
     }
     //  Help pages.
@@ -59,16 +55,17 @@ protected function Executed(CommandCall callInfo)
     //      1. Any commands are specified as parameters;
     //      2. No commands or "--list" option was specified, then we want to
     //          print a help page for this command.
-    if (    !callInfo.GetOptions().HasKey(P("list"))
-        ||  callInfo.GetParameters().HasKey(P("commands")))
+    if (!options.HasKey(P("list")) || parameters.HasKey(P("commands")))
     {
-        parameters = callInfo.GetParameters();
         commandsToDisplay = DynamicArray(parameters.GetItem(P("commands")));
         DisplayCommandHelpPages(callerPlayer, commandsToDisplay);
     }
+    _.memory.Free(callerPlayer);
+    _.memory.Free(parameters);
+    _.memory.Free(options);
 }
 
-private final function DisplayCommandList(APlayer player)
+private final function DisplayCommandList(EPlayer player)
 {
     local int               i;
     local ConsoleWriter     console;
@@ -81,7 +78,7 @@ private final function DisplayCommandList(APlayer player)
         Commands_Feature(class'Commands_Feature'.static.GetInstance());
     if (commandsFeature == none)    return;
 
-    console = player.Console();
+    console = player.BorrowConsole();
     commandNames = commandsFeature.GetCommandNames();
     for (i = 0; i < commandNames.length; i += 1)
     {
@@ -99,7 +96,7 @@ private final function DisplayCommandList(APlayer player)
 }
 
 private final function DisplayCommandHelpPages(
-    APlayer         player,
+    EPlayer         player,
     DynamicArray    commandList)
 {
     local int               i;
@@ -113,7 +110,7 @@ private final function DisplayCommandHelpPages(
     //  If arguments were empty - at least display our own help page
     if (commandList == none)
     {
-        PrintHelpPage(player.Console(), GetData());
+        PrintHelpPage(player.BorrowConsole(), GetData());
         return;
     }
     //  Otherwise - print help for specified commands
@@ -121,7 +118,7 @@ private final function DisplayCommandHelpPages(
     {
         nextCommand = commandsFeature.GetCommand(Text(commandList.GetItem(i)));
         if (nextCommand == none) continue;
-        PrintHelpPage(player.Console(), nextCommand.GetData());
+        PrintHelpPage(player.BorrowConsole(), nextCommand.GetData());
     }
 }
 

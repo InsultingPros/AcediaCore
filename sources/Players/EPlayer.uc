@@ -1,12 +1,6 @@
 /**
- *      Represents a connected player connection and serves to provide access to
- *  both it's server data and in-game pawn representation.
- *      Unlike `User`, - changes when player reconnects to the server.
- *      This object SHOULD NOT be created manually, please rely on
- *  Acedia for that.
- *      Due to being relatively rarely created, does not use object pools,
- *  which simplifies their usage and comparison.
- *      Copyright 2021 Anton Tarasenko
+ *  Provides a common interface to a connected player connection.
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -23,9 +17,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class APlayer extends AcediaObject;
+class EPlayer extends EInterface;
 
-//  How this `APlayer` is identified by the server
+//  How this `EPlayer` is identified by the server
 var private User identity;
 
 //  Writer that can be used to write into this player's console
@@ -33,6 +27,7 @@ var private ConsoleWriter   consoleInstance;
 //  Remember version to reallocate writer in case someone deallocates it
 var private int             consoleLifeVersion;
 
+//  `PlayerController` reference
 var private NativeActorRef  controller;
 
 //  These variables record name of this player;
@@ -54,21 +49,112 @@ enum AdminStatus
 protected function Finalizer()
 {
     _.memory.Free(controller);
-    controller = none;
+    _.memory.Free(consoleInstance);
+    controller      = none;
+    consoleInstance = none;
+    //  No need to deallocate `User` objects, since they are all have unique
+    //  instance for every player on the server
+    identity        = none;
 }
 
 /**
- *  Returns location of the caller `APlayer`.
+ *  Initializes caller `EPlayer`. Should be called right after `EPlayer`
+ *  was allocated.
  *
- *  @return If caller `APlayer` has a pawn, then it's location will be returned,
- *  otherwise a location caller `APlayer` is currently spectating the map from
- *  will be returned.
+ *  Every `EPlayer` must be initialized, using non-initialized `EPlayer`
+ *  instances is invalid.
+ *
+ *  Initialization can fail if:
+ *      1.  `initController == none`;
+ *      2.  Its id hash (from `GetPlayerIDHash()`) was not properly setup yet
+ *          (not steam id);
+ *      3.  Caller `EPlayer` already was successfully initialized.
+ *
+ *  @param  initController  Controller that caller `EPlayer` will correspond to.
+ *  @return `true` if initialization was successful and `false` otherwise.
+ */
+public final /* unreal */ function bool Initialize(
+    PlayerController initController)
+{
+    local Text                  idHash;
+    local PlayerReplicationInfo myReplicationInfo;
+    if (controller != none)     return false; // Already initialized!
+    if (initController == none) return false;
+
+    if (identity == none)
+    {
+        //  Only fetch `User` object if it was not yet setup, which can happen
+        //  if `EPlayer` is making a copy and wants to avoid
+        //  re-fetching `identity`
+        idHash = _.text.FromString(initController.GetPlayerIDHash());
+        identity = _.users.FetchByIDHash(idHash);
+        idHash.FreeSelf();
+        idHash = none;
+    }
+    controller = _.unreal.ActorRef(initController);
+    myReplicationInfo = initController.playerReplicationInfo;
+    //  Hash current name
+    if (myReplicationInfo != none)
+    {
+        hashedName  = myReplicationInfo.playerName;
+        textName    = _.text.FromColoredString(hashedName);
+    }
+    return true;
+}
+
+public function bool IsExistent()
+{
+    if (controller == none) {
+        return false;
+    }
+    return (controller.Get() != none);
+}
+
+public function EInterface Copy()
+{
+    local EPlayer playerCopy;
+    playerCopy = EPlayer(_.memory.Allocate(class'EPlayer'));
+    if (controller == none)
+    {
+        //  Should not really happen, since then caller `EPlayer` was
+        //  not initialized
+        return playerCopy;
+    }
+    playerCopy.identity = identity;
+    playerCopy.Initialize(PlayerController(controller.Get()));
+    return playerCopy;
+}
+
+public function bool SameAs(EInterface other)
+{
+    local EPlayer           asPlayer;
+    local NativeActorRef    otherController;
+    if (other == none)              return false;
+    if (controller == none)         return false;
+    asPlayer = EPlayer(other);
+    if (asPlayer != none)           return false;
+    otherController = asPlayer.controller;
+    if (otherController == none)    return false;
+    
+    return (controller.Get() == otherController.Get());
+}
+
+/**
+ *  Returns location of the caller `EPlayer`.
+ *
+ *  If caller `EPlayer` has a pawn, then it's location will be returned,
+ *  otherwise a location from which caller `EPlayer` is currently spectating is
+ *  considered caller's location.
+ *
+ *  @return Location of the caller `EPlayer` has a pawn.
  */
 public final function Vector GetLocation()
 {
     local Pawn              myPawn;
     local PlayerController  myController;
-    myController = PlayerController(controller.Get());
+    if (controller != none) {
+        myController = PlayerController(controller.Get());
+    }
     if (myController != none)
     {
         myPawn = myController.pawn;
@@ -80,68 +166,38 @@ public final function Vector GetLocation()
     return Vect(0.0, 0.0, 0.0);
 }
 
-//  `PlayerReplicationInfo` associated with the caller `APLayer`.
+//  `PlayerReplicationInfo` associated with the caller `EPlayer`.
 //  Can return `none` if:
-//      1. Caller `APlayer` has already disconnected;
+//      1. Caller `EPlayer` has already disconnected;
 //      2. It was not properly initialized;
-//      3. There is an issue running `PlayerService`.
 private final function PlayerReplicationInfo GetRI()
 {
     local PlayerController myController;
+    if (controller == none)     return none;
     myController = PlayerController(controller.Get());
-    if (myController != none) {
-        return myController.playerReplicationInfo;
-    }
-    return none;
+    if (myController == none)   return none;
+
+    return myController.playerReplicationInfo;
 }
 
 /**
- *  Checks if player, corresponding to `APlayer`, is still connected to
- *  the server. If player is disconnected - `APlayer` instance should be
- *  considered useless.
+ *  Returns `PlayerController`, associated with the caller `EPlayer`.
  *
- *  @return `true` if player is connected and `false` otherwise.
+ *  @return `PlayerController`, associated with the caller `EPlayer`.
  */
-public final function bool IsConnected()
+public final /* unreal */ function PlayerController GetController()
 {
-    return (controller.Get() != none);
+    if (controller == none) {
+        return none;
+    }
+    return PlayerController(controller.Get());
 }
 
 /**
- *  Initializes caller `APlayer`. Should be called right after `APlayer`
- *  was spawned.
+ *  Returns `User` object that is corresponding to the caller `EPlayer`.
  *
- *      Initialization should (and can) only be done once.
- *      Before a `Initialize()` call, any other method calls on such `User`
- *  must be considerate to have undefined behavior.
- *
- *  @param  newController   Controller that caller `APlayer` will correspond to.
- */
-public final function Initialize(Text idHash)
-{
-    local PlayerService         service;
-    local PlayerController      myController;
-    local PlayerReplicationInfo myReplicationInfo;
-    identity = _.users.FetchByIDHash(idHash);
-    //  Retrieve controller and replication info
-    service = PlayerService(class'PlayerService'.static.Require());
-    myController = service.GetController(self);
-    controller = _.unreal.ActorRef(myController);
-    if (myController != none) {
-        myReplicationInfo = myController.playerReplicationInfo;
-    }
-    //  Hash current name
-    if (myReplicationInfo != none) {
-        hashedName  = myReplicationInfo.playerName;
-        textName    = _.text.FromColoredString(hashedName);
-    }
-}
-
-/**
- *  Returns `User` object that is corresponding to the caller `APlayer`.
- *
- *  @return `User` corresponding to the caller `APlayer`. Guarantee to be
- *      not `none` for correctly initialized `APlayer` (it remembers `User`
+ *  @return `User` corresponding to the caller `EPlayer`. Guarantee to be
+ *      not `none` for correctly initialized `EPlayer` (it remembers `User`
  *      record even if player has disconnected).
  */
 public final function User GetIdentity()
@@ -154,7 +210,7 @@ public final function User GetIdentity()
  *
  *  @return `Text` containing current name of the caller player.
  *      Guaranteed to not be `none`. Returned object is not managed by caller
- *      `APlayer` and should be manually deallocated.
+ *      `EPlayer` and should be manually deallocated.
  */
 public final function Text GetName()
 {
@@ -173,9 +229,9 @@ public final function Text GetName()
 }
 
 /**
- *  Set new displayed name for the caller `APlayer`.
+ *  Set new displayed name for the caller `EPlayer`.
  *
- *  @param  newPlayerName   New name of the caller `APlayer`. This value will
+ *  @param  newPlayerName   New name of the caller `EPlayer`. This value will
  *      be copied. Passing `none` will result in an empty name.
  */
 public final function SetName(Text newPlayerName)
@@ -237,7 +293,7 @@ public final function EInventory GetInventory()
  *  Different from `IsAdmin()` since this method allows to distinguish between
  *  different types of admin login (like silent admins).
  *
- *  @return Admin status of the caller `APLayer`.
+ *  @return Admin status of the caller `EPlayer`.
  */
 public final function AdminStatus GetAdminStatus()
 {
@@ -271,10 +327,10 @@ public final function bool IsAdmin()
 }
 
 /**
- *  Changes admin status of the caller `APlayer`.
- *  Can only fail if caller `APlayer` has already disconnected.
+ *  Changes admin status of the caller `EPlayer`.
+ *  Can only fail if caller `EPlayer` has already disconnected.
  *
- * @param   newAdminStatus  New admin status of the `APlayer`.
+ * @param   newAdminStatus  New admin status of the `EPlayer`.
  */
 public final function SetAdminStatus(AdminStatus newAdminStatus)
 {
@@ -300,9 +356,9 @@ public final function SetAdminStatus(AdminStatus newAdminStatus)
 }
 
 /**
- *  Returns current amount of money caller `APlayer` has.
+ *  Returns current amount of money caller `EPlayer` has.
  *
- *  @return Amount of money `APlayer` has. If player has already disconnected
+ *  @return Amount of money `EPlayer` has. If player has already disconnected
  *      method will return `0`.
  */
 public final function int GetDosh()
@@ -316,9 +372,9 @@ public final function int GetDosh()
 }
 
 /**
- *  Sets amount of money that caller `APlayer` will have.
+ *  Sets amount of money that caller `EPlayer` will have.
  *
- *  @param  newDoshAmount   New amount of money that caller `APlayer` must have.
+ *  @param  newDoshAmount   New amount of money that caller `EPlayer` must have.
  */
 public final function SetDosh(int newDoshAmount)
 {
@@ -340,7 +396,7 @@ public final function SetDosh(int newDoshAmount)
  *      console. Returned object should not be deallocated, but it is
  *      guaranteed to be valid for non-disconnected players.
  */
-public final function ConsoleWriter Console()
+public final function /* borrow */ ConsoleWriter BorrowConsole()
 {
     if (    consoleInstance == none
         ||  consoleInstance.GetLifeVersion() != consoleLifeVersion)

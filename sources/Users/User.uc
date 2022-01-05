@@ -34,9 +34,10 @@ var private JSONPointer persistentSettingsPointer;
 
 var private LoggerAPI.Definition errNoUserDataDatabase;
 
+//  TODO: redo this comment
 /**
  *  Initializes caller `User` with id and it's session key. Should be called
- *  right after `APlayer` was created.
+ *  right after `EPlayer` was created.
  *
  *      Initialization should (and can) only be done once.
  *      Before a `Initialize()` call, any other method calls on such `User`

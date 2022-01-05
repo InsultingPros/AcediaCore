@@ -44,7 +44,8 @@ enum ConsoleWriterTarget
 var private ConsoleWriterTarget targetType;
 //  Players that will receive output passed to this `ConsoleWriter`.
 //  Only used when `targetType == CWTARGET_Players`
-var private array<APlayer>      outputTargets;
+//  Cannot be allowed to contain `none` values.
+var private array<EPlayer>      outputTargets;
 var private ConsoleBuffer       outputBuffer;
 
 var private bool                                needToResetColor;
@@ -58,6 +59,14 @@ var private ConsoleAPI.ConsoleDisplaySettings   displaySettings;
 //      This also means that `displaySettings` can sometimes store "default"
 //  color information instead.
 var private Color                               defaultColor;
+
+protected function Finalizer()
+{
+    _.memory.FreeMany(outputTargets);
+    _.memory.Free(outputBuffer);
+    outputTargets.length = 0;
+    outputBuffer = none;
+}
 
 public final function ConsoleWriter Initialize(
     ConsoleAPI.ConsoleDisplaySettings newDisplaySettings)
@@ -326,7 +335,7 @@ public final function ConsoleWriter ForAll()
  *      throw messages away.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter ForPlayer(APlayer targetPlayer)
+public final function ConsoleWriter ForPlayer(EPlayer targetPlayer)
 {
     if (targetPlayer == none)
     {
@@ -339,7 +348,7 @@ public final function ConsoleWriter ForPlayer(APlayer targetPlayer)
     }
     outputTargets.length = 0;
     targetType          = CWTARGET_Players;
-    outputTargets[0]    = targetPlayer;
+    outputTargets[0]    = EPlayer(targetPlayer.Copy());
     return self;
 }
 
@@ -353,15 +362,16 @@ public final function ConsoleWriter ForPlayer(APlayer targetPlayer)
  *      If `none` - this method will do nothing.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter AndPlayer(APlayer targetPlayer)
+public final function ConsoleWriter AndPlayer(EPlayer targetPlayer)
 {
     local int i;
-    if (targetPlayer == none)           return self;
-    if (!targetPlayer.IsConnected())    return self;
+    if (targetPlayer == none)       return self;
+    if (!targetPlayer.IsExistent()) return self;
 
     if (targetType != CWTARGET_Players)
     {
         Flush();
+        _.memory.FreeMany(outputTargets);
         if (targetType == CWTARGET_None) {
             outputTargets.length = 0;
         }
@@ -372,12 +382,12 @@ public final function ConsoleWriter AndPlayer(APlayer targetPlayer)
     targetType = CWTARGET_Players;
     for (i = 0; i < outputTargets.length; i += 1)
     {
-        if (outputTargets[i] == targetPlayer) {
+        if (targetPlayer.SameAs(outputTargets[i])) {
             return self;
         }
     }
     Flush();
-    outputTargets[outputTargets.length] = targetPlayer;
+    outputTargets[outputTargets.length] = EPlayer(targetPlayer.Copy());
     return self;
 }
 
@@ -391,24 +401,26 @@ public final function ConsoleWriter AndPlayer(APlayer targetPlayer)
  *      If `none` - this method will do nothing.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter ButPlayer(APlayer playerToRemove)
+public final function ConsoleWriter ButPlayer(EPlayer playerToRemove)
 {
     local int i;
     if (targetType == CWTARGET_None)    return self;
     if (playerToRemove == none)         return self;
-    if (!playerToRemove.IsConnected())  return self;
+    if (!playerToRemove.IsExistent())   return self;
 
     if (targetType == CWTARGET_All)
     {
         Flush();
+        _.memory.FreeMany(outputTargets);
         outputTargets = _.players.GetAll();
     }
     targetType = CWTARGET_Players;
     while (i < outputTargets.length)
     {
-        if (outputTargets[i] == playerToRemove)
+        if (playerToRemove.SameAs(outputTargets[i]))
         {
             Flush();
+            _.memory.Free(outputTargets[i]);
             outputTargets.Remove(i, 1);
             break;
         }
@@ -432,39 +444,45 @@ public final function ConsoleWriterTarget CurrentTarget()
 }
 
 /**
- *      Returns `APlayer` to whom console caller `ConsoleWriter` is
+ *      Returns `EPlayer` to whom console caller `ConsoleWriter` is
  *  outputting messages.
  *      If caller `ConsoleWriter` is setup to message several different players,
  *  returns an arbitrary one of them.
  *
- *  @return Player (`APlayer` class) to whom console caller `ConsoleWriter` is
+ *  @return Player (`EPlayer` class) to whom console caller `ConsoleWriter` is
  *      outputting messages. Returns `none` iff it currently outputs to
  *      every player or to no one.
  */
-public final function APlayer GetTargetPlayer()
+public final function EPlayer GetTargetPlayer()
 {
     if (targetType == CWTARGET_All) return none;
-    if (outputTargets.length <= 0)   return none;
-    return outputTargets[0];
+    if (outputTargets.length <= 0)  return none;
+
+    return EPlayer(outputTargets[0].Copy());
 }
 
 /**
- *      Returns `APlayer` to whom console caller `ConsoleWriter` is
+ *      Returns array of `EPlayer`s, to whom console caller `ConsoleWriter` is
  *  outputting messages.
- *      If caller `ConsoleWriter` is setup to message several different players,
- *  returns an arbitrary one of them.
  *
- *  @return Player (`APlayer` class) to whom console caller `ConsoleWriter` is
- *      outputting messages. Returns `none` iff it currently outputs to
- *      every player or to no one.
+ *  @return Player (`EPlayer` class) to whom console caller `ConsoleWriter` is
+ *      outputting messages. Returned array is guaranteed to not contain `none`s
+ *      or `EPlayer` interfaces with non-existent status.
  */
-public final function array<APlayer> GetTargetPlayers()
+public final function array<EPlayer> GetTargetPlayers()
 {
-    local array<APlayer> emptyArray;
-    if (targetType == CWTARGET_None)    return emptyArray;
+    local int               i;
+    local array<EPlayer>    result;
+    if (targetType == CWTARGET_None)    return result;
     if (targetType == CWTARGET_All)     return _.players.GetAll();
 
-    return outputTargets;
+    for (i = 0; i < outputTargets.length; i += 1)
+    {
+        if (outputTargets[i].IsExistent()) {
+            result[result.length] = EPlayer(outputTargets[i].Copy());
+        }
+    }
+    return result;
 }
 
 /**
@@ -576,8 +594,7 @@ private final function SendBuffer(optional bool asIndented, optional bool asSay)
     }
 }
 
-//      Assumes `playerService != none` and `connectionService != none`,
-//  caller function must ensure that.
+//  Assumes `connectionService != none`, caller function must ensure that.
 private final function SendConsoleMessage(
     array<PlayerController> recipients,
     string                  message,
@@ -604,7 +621,6 @@ private final function array<PlayerController> GetRecipientsControllers()
 {
     local int                                   i;
     local PlayerController                      nextRecipient;
-    local PlayerService                         playerService;
     local ConnectionService                     connectionService;
     local array<PlayerController>               recipients;
     local array<ConnectionService.Connection>   connections;
@@ -612,16 +628,12 @@ private final function array<PlayerController> GetRecipientsControllers()
     if (targetType == CWTARGET_None) {
         return recipients;
     }
-    //  Single target case
+    //  Selected targets case
     if (targetType != CWTARGET_All)
     {
-        playerService = PlayerService(class'PlayerService'.static.Require());
-        if (playerService == none) {
-            return recipients;
-        }
         for (i = 0; i < outputTargets.length; i += 1)
         {
-            nextRecipient = playerService.GetController(outputTargets[i]);
+            nextRecipient = outputTargets[i].GetController();
             if (nextRecipient != none) {
                 recipients[recipients.length] = nextRecipient;
             }

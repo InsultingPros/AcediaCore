@@ -1,6 +1,6 @@
 /**
  *  Set of tests for `Command` class.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -40,8 +40,8 @@ protected static function TESTS()
     Test_MockA();
     Context("Testing `Command` parsing (options).");
     Test_MockB();
-    Context("Testing `CommandCall` error messages.");
-    Test_CommandCallErrors();
+    Context("Testing `Command.CallData` error messages.");
+    Test_CallDataErrors();
     Context("Testing sub-command determination.");
     Test_SubCommandName();
 }
@@ -62,131 +62,132 @@ protected static function Test_MockB()
     SubTest_MockBQ3Remainder();
 }
 
-protected static function Test_CommandCallErrors()
+protected static function Test_CallDataErrors()
 {
-    SubTest_CommandCallErrorBadParser();
-    SubTest_CommandCallErrorNoRequiredParam();
-    SubTest_CommandCallErrorUnknownOption();
-    SubTest_CommandCallErrorRepeatedOption();
-    SubTest_CommandCallErrorMultipleOptionsWithParams();
-    SubTest_CommandCallErrorUnusedCommandParameters();
-    SubTest_CommandCallErrorNoRequiredParamForOption();
+    SubTest_CallDataErrorBadParser();
+    SubTest_CallDataErrorNoRequiredParam();
+    SubTest_CallDataErrorUnknownOption();
+    SubTest_CallDataErrorRepeatedOption();
+    SubTest_CallDataErrorMultipleOptionsWithParams();
+    SubTest_CallDataErrorUnusedCommandParameters();
+    SubTest_CallDataErrorNoRequiredParamForOption();
 }
 
-protected static function SubTest_CommandCallErrorBadParser()
+protected static function SubTest_CallDataErrorBadParser()
 {
-    local CommandCall result;
+    local Command.CallData result;
     Issue("`CET_BadParser` errors are incorrectly reported.");
-    result = class'MockCommandA'.static.GetInstance().ProcessInput(none, none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_BadParser);//
-    TEST_ExpectNone(result.GetErrorCause());
     result = class'MockCommandA'.static.GetInstance()
-        .ProcessInput(__().text.ParseString("stuff").Fail(), none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_BadParser);//
-    TEST_ExpectNone(result.GetErrorCause());
+        .ParseInputWith(none, none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_BadParser);
+    TEST_ExpectNone(result.errorCause);
+    result = class'MockCommandA'.static.GetInstance()
+        .ParseInputWith(__().text.ParseString("stuff").Fail(), none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_BadParser);
+    TEST_ExpectNone(result.errorCause);
 }
 
-protected static function SubTest_CommandCallErrorNoRequiredParam()
+protected static function SubTest_CallDataErrorNoRequiredParam()
 {
-    local CommandCall result;
+    local Command.CallData result;
     Issue("`CET_NoRequiredParam` errors are incorrectly reported.");
     result = class'MockCommandA'.static.GetInstance()
-        .ProcessInput(PRS(default.queryAFailure1), none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_NoRequiredParam);
-    TEST_ExpectTrue(    result.GetErrorCause().ToString()
+        .ParseInputWith(PRS(default.queryAFailure1), none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_NoRequiredParam);
+    TEST_ExpectTrue(    result.errorCause.ToString()
                     ==  "integer variable");
     result = class'MockCommandA'.static.GetInstance()
-        .ProcessInput(PRS(default.queryAFailure2), none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_NoRequiredParam);
-    TEST_ExpectTrue(    result.GetErrorCause().ToString()
+        .ParseInputWith(PRS(default.queryAFailure2), none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_NoRequiredParam);
+    TEST_ExpectTrue(    result.errorCause.ToString()
                     ==  "isItSimple?");
 }
 
-protected static function SubTest_CommandCallErrorUnknownOption()
+protected static function SubTest_CallDataErrorUnknownOption()
 {
-    local CommandCall result;
+    local Command.CallData result;
     Issue("`CET_UnknownOption` errors are incorrectly reported.");
     result = class'MockCommandB'.static.GetInstance()
-        .ProcessInput(PRS(default.queryBFailureUnknownOptionLong), none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_UnknownOption);
-    TEST_ExpectTrue(    result.GetErrorCause().ToString()
+        .ParseInputWith(PRS(default.queryBFailureUnknownOptionLong), none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_UnknownOption);
+    TEST_ExpectTrue(    result.errorCause.ToString()
                     ==  "kest");
     Issue("`CET_UnknownShortOption` errors are incorrectly reported.");
     result = class'MockCommandB'.static.GetInstance()
-        .ProcessInput(PRS(default.queryBFailureUnknownOptionShort), none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_UnknownShortOption);
-    TEST_ExpectNone(result.GetErrorCause());
+        .ParseInputWith(PRS(default.queryBFailureUnknownOptionShort), none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_UnknownShortOption);
+    TEST_ExpectNone(result.errorCause);
 }
 
-protected static function SubTest_CommandCallErrorRepeatedOption()
+protected static function SubTest_CallDataErrorRepeatedOption()
 {
-    local CommandCall result;
+    local Command.CallData result;
     Issue("`CET_RepeatedOption` errors are incorrectly reported.");
     result = class'MockCommandB'.static.GetInstance()
-        .ProcessInput(PRS(default.queryBFailure2), none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_RepeatedOption);
-    TEST_ExpectTrue(    result.GetErrorCause().ToString()
+        .ParseInputWith(PRS(default.queryBFailure2), none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_RepeatedOption);
+    TEST_ExpectTrue(    result.errorCause.ToString()
                     ==  "forced");
 }
 
-protected static function SubTest_CommandCallErrorUnusedCommandParameters()
+protected static function SubTest_CallDataErrorUnusedCommandParameters()
 {
-    local CommandCall result;
+    local Command.CallData result;
     Issue("`CET_UnusedCommandParameters` errors are incorrectly reported.");
     result = class'MockCommandB'.static.GetInstance()
-        .ProcessInput(PRS(default.queryBFailureUnused), none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_UnusedCommandParameters);
-    TEST_ExpectTrue(    result.GetErrorCause().ToString()
+        .ParseInputWith(PRS(default.queryBFailureUnused), none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_UnusedCommandParameters);
+    TEST_ExpectTrue(    result.errorCause.ToString()
                     ==  "text -j");
 }
 
-protected static function SubTest_CommandCallErrorMultipleOptionsWithParams()
+protected static function SubTest_CallDataErrorMultipleOptionsWithParams()
 {
-    local CommandCall result;
+    local Command.CallData result;
     Issue("`CET_MultipleOptionsWithParams` errors are incorrectly reported.");
     result = class'MockCommandB'.static.GetInstance()
-        .ProcessInput(PRS(default.queryBFailure1), none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_MultipleOptionsWithParams);
-    TEST_ExpectTrue(result.GetErrorCause().ToString() == "tv");
+        .ParseInputWith(PRS(default.queryBFailure1), none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_MultipleOptionsWithParams);
+    TEST_ExpectTrue(result.errorCause.ToString() == "tv");
 }
 
-protected static function SubTest_CommandCallErrorNoRequiredParamForOption()
+protected static function SubTest_CallDataErrorNoRequiredParamForOption()
 {
-    local CommandCall result;
+    local Command.CallData result;
     Issue("`CET_NoRequiredParamForOption` errors are incorrectly reported.");
     result = class'MockCommandB'.static.GetInstance()
-        .ProcessInput(PRS(default.queryBFailureNoReqParamOption1), none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_NoRequiredParamForOption);
-    TEST_ExpectTrue(result.GetErrorCause().ToString() == "long");
+        .ParseInputWith(PRS(default.queryBFailureNoReqParamOption1), none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_NoRequiredParamForOption);
+    TEST_ExpectTrue(result.errorCause.ToString() == "long");
     result = class'MockCommandB'.static.GetInstance()
-        .ProcessInput(PRS(default.queryBFailureNoReqParamOption2), none);
-    TEST_ExpectFalse(result.IsSuccessful());
-    TEST_ExpectTrue(result.GetError() == CET_NoRequiredParamForOption);
-    TEST_ExpectTrue(result.GetErrorCause().ToString() == "values");
+        .ParseInputWith(PRS(default.queryBFailureNoReqParamOption2), none);
+    TEST_ExpectFalse(result.parsingError == CET_None);
+    TEST_ExpectTrue(result.parsingError == CET_NoRequiredParamForOption);
+    TEST_ExpectTrue(result.errorCause.ToString() == "values");
 }
 
 protected static function Test_SubCommandName()
 {
-    local CommandCall result;
+    local Command.CallData result;
     Issue("Cannot determine subcommands.");
     result = class'MockCommandA'.static.GetInstance()
-        .ProcessInput(PRS(default.queryASuccess1), none);
-    TEST_ExpectTrue(result.GetSubCommand().ToString() == "simple");
+        .ParseInputWith(PRS(default.queryASuccess1), none);
+    TEST_ExpectTrue(result.subCommandName.ToString() == "simple");
 
     Issue("Cannot determine when subcommands are missing.");
     result = class'MockCommandA'.static.GetInstance()
-        .ProcessInput(PRS(default.queryASuccess2), none);
-    TEST_ExpectTrue(result.GetSubCommand().IsEmpty());
+        .ParseInputWith(PRS(default.queryASuccess2), none);
+    TEST_ExpectTrue(result.subCommandName.IsEmpty());
 }
 
 protected static function SubTest_MockAQ1AndFailed()
@@ -199,14 +200,16 @@ protected static function SubTest_MockAQ1AndFailed()
     command = class'MockCommandA'.static.GetInstance();
     Issue("Command queries that should fail succeed instead.");
     parser.InitializeS(default.queryAFailure1);
-    TEST_ExpectFalse(command.ProcessInput(parser, none).IsSuccessful());
+    TEST_ExpectFalse(
+        command.ParseInputWith(parser, none).parsingError == CET_None);
     parser.InitializeS(default.queryAFailure2);
-    TEST_ExpectFalse(command.ProcessInput(parser, none).IsSuccessful());
+    TEST_ExpectFalse(
+        command.ParseInputWith(parser, none).parsingError == CET_None);
 
     Issue("Cannot parse command queries without optional parameters.");
     parameters =
-        command.ProcessInput(parser.InitializeS(default.queryASuccess1), none)
-        .GetParameters();
+        command.ParseInputWith(parser.InitializeS(default.queryASuccess1), none)
+        .Parameters;
     TEST_ExpectTrue(parameters.GetLength() == 2);
     paramArray = DynamicArray(parameters.GetItem(P("isItSimple?")));
     TEST_ExpectTrue(paramArray.GetLength() == 1);
@@ -222,7 +225,7 @@ protected static function SubTest_MockAQ2()
     local AssociativeArray  result, subObject;
     Issue("Cannot parse command queries without optional parameters.");
     result = class'MockCommandA'.static.GetInstance()
-        .ProcessInput(PRS(default.queryASuccess2), none).GetParameters();
+        .ParseInputWith(PRS(default.queryASuccess2), none).Parameters;
     TEST_ExpectTrue(result.GetLength() == 2);
     subObject = AssociativeArray(result.GetItem(P("just_obj")));
     TEST_ExpectTrue(IntBox(subObject.GetItem(P("var"))).Get() == 7);
@@ -252,7 +255,7 @@ protected static function SubTest_MockAQ3()
     local AssociativeArray  result;
     Issue("Cannot parse command queries with optional parameters.");
     result = class'MockCommandA'.static.GetInstance()
-        .ProcessInput(PRS(default.queryASuccess3), none).GetParameters();
+        .ParseInputWith(PRS(default.queryASuccess3), none).Parameters;
     //  Booleans
     paramArray = DynamicArray(result.GetItem(P("isItSimple?")));
     TEST_ExpectTrue(paramArray.GetLength() == 7);
@@ -286,7 +289,7 @@ protected static function SubTest_MockAQ4()
     local AssociativeArray  result, subObject;
     Issue("Cannot parse command queries with optional parameters.");
     result = class'MockCommandA'.static.GetInstance()
-        .ProcessInput(PRS(default.queryASuccess4), none).GetParameters();
+        .ParseInputWith(PRS(default.queryASuccess4), none).Parameters;
     TEST_ExpectTrue(result.GetLength() == 3);
     subObject = AssociativeArray(result.GetItem(P("just_obj")));
     TEST_ExpectTrue(IntBox(subObject.GetItem(P("var"))).Get() == 7);
@@ -306,32 +309,40 @@ protected static function SubTest_MockBFailed()
     command = class'MockCommandB'.static.GetInstance();
     Issue("Command queries that should fail succeed instead.");
     parser.InitializeS(default.queryBFailure1);
-    TEST_ExpectFalse(command.ProcessInput(parser, none).IsSuccessful());
+    TEST_ExpectFalse(
+        command.ParseInputWith(parser, none).parsingError == CET_None);
     parser.InitializeS(default.queryBFailure2);
-    TEST_ExpectFalse(command.ProcessInput(parser, none).IsSuccessful());
+    TEST_ExpectFalse(
+        command.ParseInputWith(parser, none).parsingError == CET_None);
     parser.InitializeS(default.queryBFailure3);
-    TEST_ExpectFalse(command.ProcessInput(parser, none).IsSuccessful());
+    TEST_ExpectFalse(
+        command.ParseInputWith(parser, none).parsingError == CET_None);
     parser.InitializeS(default.queryBFailureNoReqParamOption1);
-    TEST_ExpectFalse(command.ProcessInput(parser, none).IsSuccessful());
+    TEST_ExpectFalse(
+        command.ParseInputWith(parser, none).parsingError == CET_None);
     parser.InitializeS(default.queryBFailureNoReqParamOption2);
-    TEST_ExpectFalse(command.ProcessInput(parser, none).IsSuccessful());
+    TEST_ExpectFalse(
+        command.ParseInputWith(parser, none).parsingError == CET_None);
     parser.InitializeS(default.queryBFailureUnknownOptionLong);
-    TEST_ExpectFalse(command.ProcessInput(parser, none).IsSuccessful());
+    TEST_ExpectFalse(
+        command.ParseInputWith(parser, none).parsingError == CET_None);
     parser.InitializeS(default.queryBFailureUnknownOptionShort);
-    TEST_ExpectFalse(command.ProcessInput(parser, none).IsSuccessful());
+    TEST_ExpectFalse(
+        command.ParseInputWith(parser, none).parsingError == CET_None);
     parser.InitializeS(default.queryBFailureUnused);
-    TEST_ExpectFalse(command.ProcessInput(parser, none).IsSuccessful());
+    TEST_ExpectFalse(
+        command.ParseInputWith(parser, none).parsingError == CET_None);
 }
 
 protected static function SubTest_MockBQ1()
 {
-    local CommandCall     result;
+    local Command.CallData     result;
     local DynamicArray      subArray;
     local AssociativeArray  params, options, subObject;
     Issue("Cannot parse command queries with options.");
     result = class'MockCommandB'.static.GetInstance()
-        .ProcessInput(PRS(default.queryBSuccess1), none);
-    params = result.GetParameters();
+        .ParseInputWith(PRS(default.queryBSuccess1), none);
+    params = result.Parameters;
     TEST_ExpectTrue(params.GetLength() == 2);
     subArray = DynamicArray(params.GetItem(P("just_array")));
     TEST_ExpectTrue(subArray.GetLength() == 2);
@@ -339,7 +350,7 @@ protected static function SubTest_MockBQ1()
     TEST_ExpectNone(subArray.GetItem(1));
     TEST_ExpectTrue(    Text(params.GetItem(P("just_text"))).ToString()
                     ==  "text");
-    options = result.GetOptions();
+    options = result.options;
     TEST_ExpectTrue(options.GetLength() == 1);
     subObject = AssociativeArray(options.GetItem(P("values")));
     TEST_ExpectTrue(subObject.GetLength() == 1);
@@ -354,14 +365,14 @@ protected static function SubTest_MockBQ1()
 
 protected static function SubTest_MockBQ2()
 {
-    local CommandCall       result;
+    local Command.CallData       result;
     local DynamicArray      subArray;
     local AssociativeArray  options, subObject;
     Issue("Cannot parse command queries with mixed-in options.");
     result = class'MockCommandB'.static.GetInstance()
-        .ProcessInput(PRS(default.queryBSuccess2), none);
-    TEST_ExpectTrue(result.GetParameters().GetLength() == 0);
-    options = result.GetOptions();
+        .ParseInputWith(PRS(default.queryBSuccess2), none);
+    TEST_ExpectTrue(result.Parameters.GetLength() == 0);
+    options = result.options;
     TEST_ExpectTrue(options.GetLength() == 7);
     TEST_ExpectTrue(options.HasKey(P("actual")));
     TEST_ExpectNone(options.GetItem(P("actual")));
@@ -384,17 +395,17 @@ protected static function SubTest_MockBQ2()
 
 protected static function SubTest_MockBQ3Remainder()
 {
-    local CommandCall       result;
+    local Command.CallData       result;
     local DynamicArray      subArray;
     local AssociativeArray  options, subObject;
     Issue("Cannot parse command queries with `CPT_Remainder` type parameters.");
     result = class'MockCommandB'.static.GetInstance()
-        .ProcessInput(PRS(default.queryBSuccess3), none);
-    TEST_ExpectTrue(result.GetParameters().GetLength() == 1);
-    subArray = DynamicArray(result.GetParameters().GetItem(P("list")));
+        .ParseInputWith(PRS(default.queryBSuccess3), none);
+    TEST_ExpectTrue(result.Parameters.GetLength() == 1);
+    subArray = DynamicArray(result.Parameters.GetItem(P("list")));
     TEST_ExpectTrue(FloatBox(subArray.GetItem(0)).Get() == 3);
     TEST_ExpectTrue(FloatBox(subArray.GetItem(1)).Get() == -76);
-    options = result.GetOptions();
+    options = result.Options;
     TEST_ExpectTrue(options.GetLength() == 1);
     TEST_ExpectTrue(options.HasKey(P("remainder")));
     subObject = AssociativeArray(options.GetItem(P("remainder")));

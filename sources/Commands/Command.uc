@@ -1,9 +1,12 @@
 /**
  *      This class is meant to represent a command type: to create new command
  *  one should extend it, then simply define required sub-commands/options and
- *  parameters in `BuildData()` and use `Execute()` / `ExecuteFor()` to perform
- *  necessary actions when command is executed by a player.
- *      Copyright 2021 Anton Tarasenko
+ *  parameters in `BuildData()` and overload `Execute()` / `ExecuteFor()`
+ *  to perform required actions when command is executed by a player.
+ *      `Execute()` is called first, whenever command is executed and
+ *  `ExecuteFor()` is called only for targeted commands, once for each
+ *  targeted player.
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -24,7 +27,8 @@ class Command extends AcediaObject
     dependson(Text);
 
 /**
- *  Possible errors that can arise when producing `CommandCall` from user input
+ *  Possible errors that can arise when parsing command parameters from
+ *  user input
  */
 enum ErrorType
 {
@@ -54,6 +58,25 @@ enum ErrorType
     //  Targets are specified incorrectly (or none actually specified)
     CET_IncorrectTargetList,
     CET_EmptyTargetList
+};
+
+/**
+ *  Structure that contains all the information about how `Command` was called.
+ */
+struct CallData
+{
+    //  Targeted players (if applicable)
+    var public array<EPlayer>   targetPlayers;
+    //  Specified sub-command and parameters/options
+    var public Text             subCommandName;
+    //  Provided parameters and specified options
+    var public AssociativeArray parameters;
+    var public AssociativeArray options;
+    //  Errors that occurred during command call processing are described by
+    //  error type and optional error textual name of the object
+    //  (parameter, option, etc.) that caused it.
+    var public ErrorType        parsingError;
+    var public Text             errorCause;
 };
 
 /**
@@ -216,25 +239,32 @@ private final function CleanParameters(array<Parameter> parameters)
 protected function BuildData(CommandDataBuilder builder){}
 
 /**
- *  Overload this method to perform what is needed when your command is called.
+ *  Overload this method to perform required actions when
+ *  your command is called.
  *
- *  @param  callInfo    Object filled with parameters that your command has
- *      been called with. Guaranteed to not be in error state.
+ *  @param  callData        `struct` filled with parameters that your command
+ *      has been called with. Guaranteed to not be in error state.
+ *  @param  callerPlayer    Player that instigated this execution.
  */
-protected function Executed(CommandCall callInfo){}
+protected function Executed(CallData callData, EPlayer callerPlayer){}
 
 /**
- *  Overload this method to perform what is needed when your command is called
+ *  Overload this method to perform required actions when your command is called
  *  with a given player as a target. If several players have been specified -
  *  this method will be called once for each.
  *
  *  If your command does not require a target - this method will not be called.
  *
  *  @param  targetPlayer    Player that this command must perform an action on.
- *  @param  callInfo        Object filled with parameters that your command has
- *      been called with. Guaranteed to not be in error state.
+ *  @param  callData        `struct` filled with parameters that your command
+ *      has been called with. Guaranteed to not be in error state and contain
+ *      all the required data.
+ *  @param  callerPlayer    Player that instigated this call.
  */
-protected function ExecutedFor(APlayer targetPlayer, CommandCall callInfo){}
+protected function ExecutedFor(
+    EPlayer     targetPlayer,
+    CallData    callData,
+    EPlayer     callerPlayer){}
 
 /**
  *  Returns an instance of command (of particular class) that is stored
@@ -249,112 +279,211 @@ public final static function Command GetInstance()
 }
 
 /**
- *  Forces command to process (parse and, if successful, execute itself)
- *  player's input.
+ *  Forces command to process (parse) player's input, producing a structure
+ *  with parsed data in Acedia's format instead.
  *
- *  @param  parser          Parser that contains player's input.
- *  @param  callerPlayer    Player that initiated this command's call.
- *  @return `CommandCall` object that described parsed command call.
- *      Guaranteed to be not `none`.
+ *  @see `Execute()` for actually performing command's actions.
+ *
+ *  @param  parser          Parser that contains command input.
+ *  @param  callerPlayer    Player that initiated this command's call,
+ *      necessary for parsing player list (since it can point at
+ *      the caller player).
+ *  @return `CallData` structure that contains all the information about
+ *      parameters specified in `parser`'s contents.
+ *      Returned structure contains objects that must be deallocated,
+ *      which can easily be done by the auxiliary `DeallocateCallData()` method.
  */
-public final function CommandCall ProcessInput(
+public final function CallData ParseInputWith(
     Parser  parser,
-    APlayer callerPlayer)
+    EPlayer callerPlayer)
 {
-    local int               i;
-    local array<APlayer>    targetPlayers;
+    local array<EPlayer>    targetPlayers;
     local CommandParser     commandParser;
-    local CommandCall       callInfo;
-    if (parser == none || !parser.Ok()) {
-        return MakeAndReportError(callerPlayer, CET_BadParser);
+    local CallData          callData;
+    if (parser == none || !parser.Ok())
+    {
+        callData.parsingError = CET_BadParser;
+        return callData;
     }
     //  Parse targets and handle errors that can arise here
     if (commandData.requiresTarget)
     {
         targetPlayers = ParseTargets(parser, callerPlayer);
-        if (!parser.Ok()) {
-            return MakeAndReportError(callerPlayer, CET_IncorrectTargetList);
+        if (!parser.Ok())
+        {
+            callData.parsingError = CET_IncorrectTargetList;
+            return callData;
         }
-        if (targetPlayers.length <= 0) {
-            return MakeAndReportError(callerPlayer, CET_EmptyTargetList);
+        if (targetPlayers.length <= 0)
+        {
+            callData.parsingError = CET_EmptyTargetList;
+            return callData;
         }
     }
     //  Parse parameters themselves
     commandParser = CommandParser(_.memory.Allocate(class'CommandParser'));
-    callInfo = commandParser.ParseWith(parser, commandData)
-        .SetCallerPlayer(callerPlayer)
-        .SetTargetPlayers(targetPlayers);
+    callData = commandParser.ParseWith(parser, commandData);
+    callData.targetPlayers = targetPlayers;
     commandParser.FreeSelf();
+    return callData;
+}
+
+/**
+ *  Executes caller `Command` with data provided by `callData` if it is in
+ *  a correct state and reports error to `callerPlayer` if
+ *  `callData` is invalid.
+ *
+ *  @param  callData        Data about parameters, options, etc. with which
+ *      caller `Command` is to be executed.
+ *  @param  callerPlayer    Player that should be considered responsible for
+ *      executing this `Command`.
+ *  @return `true` if command was successfully executed and `false` otherwise.
+ *      Execution is considered successful if `Execute()` call was made,
+ *      regardless of whether `Command` can actually perform required action.
+ *      For example, giving a weapon to a player can fail because he does not
+ *      have enough space in his inventory, but it will still be considered
+ *      a successful execution as far as return value is concerned.
+ */
+public final function bool Execute(CallData callData, EPlayer callerPlayer)
+{
+    local int               i;
+    local array<EPlayer>    targetPlayers;
+    if (callerPlayer == none)       return false;
+    if (!callerPlayer.IsExistent()) return false;
+
     //  Report or execute
-    if (!callInfo.IsSuccessful())
+    if (callData.parsingError != CET_None)
     {
-        ReportError(callerPlayer, callInfo);
-        return callInfo;
+        ReportError(callData, callerPlayer);
+        return false;
     }
-    Executed(callInfo);
+    Executed(callData, callerPlayer);
     if (commandData.requiresTarget)
     {
+        targetPlayers = callData.targetPlayers;
         for (i = 0; i < targetPlayers.length; i += 1) {
-            ExecutedFor(targetPlayers[i], callInfo);
+            ExecutedFor(targetPlayers[i], callData, callerPlayer);
         }
     }
-    return callInfo;
+    return true;
+}
+
+/**
+ *  Auxiliary method that cleans up all data and deallocates all objects inside
+ *  provided `callData` structure.
+ *
+ *  @param  callData    Structure to clean. All stored data will be cleared,
+ *      meaning that `DeallocateCallData()` method takes ownership of
+ *      this parameter.
+ */
+public final static function DeallocateCallData(/* take */ CallData callData)
+{
+    __().memory.Free(callData.subCommandName);
+    __().memory.Free(callData.parameters);
+    __().memory.Free(callData.options);
+    __().memory.Free(callData.errorCause);
+    __().memory.FreeMany(callData.targetPlayers);
+    if (callData.targetPlayers.length > 0) {
+        callData.targetPlayers.length = 0;
+    }
 }
 
 //  Reports given error to the `callerPlayer`, appropriately picking
 //  message color
-private final function ReportError(
-    APLayer     callerPlayer,
-    CommandCall callInfo)
+private final function ReportError(CallData callData, EPlayer callerPlayer)
 {
     local Text          errorMessage;
     local ConsoleWriter console;
     if (callerPlayer == none)       return;
-    if (callInfo == none)           return;
-    if (callInfo.IsSuccessful())    return;
+    if (!callerPlayer.IsExistent()) return;
 
     //  Setup console color
-    console = callerPlayer.Console();
-    if (callInfo.GetError() == CET_EmptyTargetList) {
+    console = callerPlayer.BorrowConsole();
+    if (callData.parsingError == CET_EmptyTargetList) {
         console.UseColor(_.color.textWarning);
     }
     else {
         console.UseColor(_.color.textFailure);
     }
     //  Send message
-    errorMessage = callInfo.PrintErrorMessage();
+    errorMessage = PrintErrorMessage(callData);
     console.Say(errorMessage);
     errorMessage.FreeSelf();
     //  Restore console color
     console.ResetColor().Flush();
 }
 
-//  Creates (and returns) empty `CommandCall` with given error type and
-//  empty error cause and reports it
-private final function CommandCall MakeAndReportError(
-    APLayer     callerPlayer,
-    ErrorType   errorType)
+private final function Text PrintErrorMessage(CallData callData)
 {
-    local CommandCall dummyCall;
-    if (errorType == CET_None)  return none;
-
-    dummyCall = class'CommandCall'.static.MakeError(errorType, callerPlayer);
-    ReportError(callerPlayer, dummyCall);
-    return dummyCall;
+    local Text          result;
+    local MutableText   builder;
+    builder = _.text.Empty();
+    switch (callData.parsingError)
+    {
+    case CET_BadParser:
+        builder.Append(P("Internal error occurred: invalid parser"));
+        break;
+    case CET_NoSubCommands:
+        builder.Append(P("Ill defined command: no subcommands"));
+        break;
+    case CET_NoRequiredParam:
+        builder.Append(P("Missing required parameter: "))
+            .Append(callData.errorCause);
+        break;
+    case CET_NoRequiredParamForOption:
+        builder.Append(P("Missing required parameter for option: "))
+            .Append(callData.errorCause);
+        break;
+    case CET_UnknownOption:
+        builder.Append(P("Invalid option specified: "))
+            .Append(callData.errorCause);
+        break;
+    case CET_UnknownShortOption:
+        builder.Append(P("Invalid short option specified"));
+        break;
+    case CET_RepeatedOption:
+        builder.Append(P("Option specified several times: "))
+            .Append(callData.errorCause);
+        break;
+    case CET_UnusedCommandParameters:
+        builder.Append(P("Part of command could not be parsed: "))
+            .Append(callData.errorCause);
+        break;
+    case CET_MultipleOptionsWithParams:
+        builder.Append(P(   "Multiple short options in one declarations"
+                        @   "require parameters: "))
+            .Append(callData.errorCause);
+        break;
+    case CET_IncorrectTargetList:
+        builder.Append(P("Target players are incorrectly specified."))
+            .Append(callData.errorCause);
+        break;
+    case CET_EmptyTargetList:
+        builder.Append(P("List of target players is empty"))
+            .Append(callData.errorCause);
+        break;
+    default:
+    }
+    result = builder.Copy();
+    builder.FreeSelf();
+    return result;
 }
 
 //  Auxiliary method for parsing list of targeted players.
 //  Assumes given parser is not `none` and not in a failed state.
-private final function array<APlayer> ParseTargets(
+//  If parsing failed, guaranteed to return an empty array.
+private final function array<EPlayer> ParseTargets(
     Parser  parser,
-    APlayer callerPlayer)
+    EPlayer callerPlayer)
 {
-    local array<APlayer>    targetPlayers;
+    local array<EPlayer>    targetPlayers;
     local PlayersParser     targetsParser;
     targetsParser = PlayersParser(_.memory.Allocate(class'PlayersParser'));
     targetsParser.SetSelf(callerPlayer);
     targetsParser.ParseWith(parser);
-    targetPlayers = targetsParser.GetPlayers();
+    if (parser.Ok()) {
+        targetPlayers = targetsParser.GetPlayers();
+    }
     targetsParser.FreeSelf();
     return targetPlayers;
 }
@@ -384,6 +513,7 @@ public final function Text GetName()
     return commandData.name.LowerCopy();
 }
 
+//  TODO: use `SharedRef` instead
 /**
  *  Returns `Command.Data` struct that describes caller `Command`.
  *

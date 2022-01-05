@@ -1,9 +1,9 @@
 /**
- *  Auxiliary class for parsing user's input into a `CommandCall` based on
+ *  Auxiliary class for parsing user's input into a `Command.CallData` based on
  *  a given `Command.Data`. While it's meant to be allocated for
  *  a `self.ParseWith()` call and deallocated right after, it can be reused
  *  without deallocation.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -21,7 +21,6 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class CommandParser extends AcediaObject
-    dependson(CommandCall)
     dependson(Command);
 
 /**
@@ -78,7 +77,7 @@ var private Command.SubCommand      pickedSubCommand;
 var private array<Command.Option>   availableOptions;
 //  Result variable we are filling during the parsing process,
 //  should be `none` outside of `self.ParseWith()` method call.
-var private CommandCall             nextResult;
+var private Command.CallData        nextResult;
 
 //      Describes which parameters we are currently parsing, classifying them
 //  as either "necessary" or "extra".
@@ -131,8 +130,9 @@ protected function Finalizer()
 //  Zero important variables
 private final function Reset()
 {
+    local Command.CallData blankCallData;
     commandParser           = none;
-    nextResult              = none;
+    nextResult              = blankCallData;
     currentTarget           = CPT_NecessaryParameter;
     currentTargetIsOption   = false;
     usedOptions.length      = 0;
@@ -143,8 +143,9 @@ private final function DeclareError(
     Command.ErrorType   type,
     optional Text       cause)
 {
-    if (nextResult != none) {
-        nextResult.DeclareError(type, cause);
+    nextResult.parsingError = type;
+    if (cause != none) {
+        nextResult.errorCause = cause.Copy();
     }
     if (commandParser != none) {
         commandParser.Fail();
@@ -200,50 +201,51 @@ private final function PickSubCommand(Command.Data commandData)
  *      to be parsed as a command's call.
  *  @param  commandData Describes what parameters and options should be
  *      expected in user's input. `Text` values from `commandData` can be used
- *      inside resulting object `CommandCall`, so deallocating them can
+ *      inside resulting `Command.CallData`, so deallocating them can
  *      invalidate returned value.
- *  @return Results of parsing as described by `CommandCall`.
+ *  @return Results of parsing, described by `Command.CallData`.
  *      Returned object is guaranteed to be not `none`.
  */
-public final function CommandCall ParseWith(
+public final function Command.CallData ParseWith(
     Parser          parser,
     Command.Data    commandData)
 {
     local AssociativeArray  commandParameters;
     //  Temporary object to return `nextResult` while setting variable to `none`
-    local CommandCall     toReturn;
-    Reset();
-    nextResult = CommandCall(_.memory.Allocate(class'CommandCall'));
+    local Command.CallData  toReturn;
+    nextResult.parameters   = _.collections.EmptyAssociativeArray();
+    nextResult.options      = _.collections.EmptyAssociativeArray();
     if (commandData.subCommands.length == 0)
     {
         DeclareError(CET_NoSubCommands, none);
-        return nextResult;
+        toReturn = nextResult;
+        Reset();
+        return toReturn;
     }
     if (parser == none || !parser.Ok())
     {
         DeclareError(CET_BadParser, none);
-        return nextResult;
+        toReturn = nextResult;
+        Reset();
+        return toReturn;
     }
     commandParser = parser;
     availableOptions = commandData.options;
     //  (subcommand) (parameters, possibly with options) and nothing else!
     PickSubCommand(commandData);
-    nextResult.SetSubCommand(pickedSubCommand.name);
+    nextResult.subCommandName = pickedSubCommand.name.Copy();
     commandParameters   = ParseParameterArrays( pickedSubCommand.required,
                                                 pickedSubCommand.optional);
     AssertNoTrailingInput();    //  make sure there is nothing else
     if (commandParser.Ok()) {
-        nextResult.SetParameters(commandParameters);
+        nextResult.parameters = commandParameters;
     }
     else {
         _.memory.Free(commandParameters);
     }
     //  Clean up
-    commandParser           = none;
-    usedOptions.length      = 0;
-    currentTargetIsOption   = false;
-    toReturn                = nextResult;
-    nextResult              = none;
+    toReturn = nextResult;
+    Reset();
     return toReturn;
 }
 
@@ -338,7 +340,7 @@ private final function ParseOptionalParameterArray(
         if (!ParseParameter(parsedParameters, optionalParameters[i]))
         {
             //  Propagate errors
-            if (!nextResult.IsSuccessful()) {
+            if (nextResult.parsingError != CET_None) {
                 return;
             }
             //  Failure to parse optional parameter is fine if
@@ -379,7 +381,7 @@ private final function bool ParseParameter(
     }
     //  We only succeeded in parsing if we've parsed enough for
     //  a given parameter and did not encounter any errors
-    if (parsedEnough && nextResult.IsSuccessful()) {
+    if (parsedEnough && nextResult.parsingError == CET_None) {
         commandParser.RestoreState(confirmedState);
         return true;
     }
@@ -416,7 +418,7 @@ private final function bool ParseSingleValue(
     }
     while (TryParsingOptions());
     //  Propagate errors after parsing options
-    if (!nextResult.IsSuccessful()) {
+    if (nextResult.parsingError != CET_None) {
         return false;
     }
     //  Try parsing one of the variable types
@@ -685,7 +687,7 @@ private final function bool TryParsingOptions()
 //  possible parameters with `commandParser`.
 //      Returns `true` on success and `false` otherwise. At the point this
 //  method is called, option declaration is already assumed to be detected
-//  and any failure implies parsing error (ending in failed `CommandCall`).
+//  and any failure implies parsing error (ending in failed `Command.CallData`).
 private final function bool ParseLongOption()
 {
     local int           i, optionIndex;
@@ -724,7 +726,7 @@ private final function bool ParseLongOption()
 //  possible parameters with `commandParser`.
 //      Returns `true` on success and `false` otherwise. At the point this
 //  method is called, option declaration is already assumed to be detected
-//  and any failure implies parsing error (ending in failed `CommandCall`).
+//  and any failure implies parsing error (ending in failed `Command.CallData`).
 private final function bool ParseShortOption()
 {
     local int           i;
@@ -738,14 +740,14 @@ private final function bool ParseShortOption()
     }
     for (i = 0; i < optionsList.GetLength(); i += 1)
     {
-        if (!nextResult.IsSuccessful()) break;
+        if (nextResult.parsingError != CET_None) break;
         pickedOptionWithParameters =
             AddOptionByCharacter(   optionsList.GetCharacter(i), optionsList,
                                     pickedOptionWithParameters)
             || pickedOptionWithParameters;
     }
     optionsList.FreeSelf();
-    return nextResult.IsSuccessful();
+    return (nextResult.parsingError == CET_None);
 }
 
 //      Assumes `commandParser` and `nextResult` are not `none`.
@@ -819,7 +821,9 @@ private final function bool ParseOptionParameters(Command.Option pickedOption)
     }
     if (pickedOption.required.length == 0 && pickedOption.optional.length == 0)
     {
-        nextResult.SetOptionParameters(pickedOption, none);
+        //  Here `optionParameters == none`
+        nextResult.options
+            .SetItem(pickedOption.longName, optionParameters, true);
         return true;
     }
     currentTargetIsOption   = true;
@@ -829,7 +833,8 @@ private final function bool ParseOptionParameters(Command.Option pickedOption)
     currentTargetIsOption = false;
     if (commandParser.Ok())
     {
-        nextResult.SetOptionParameters(pickedOption, optionParameters);
+        nextResult.options
+            .SetItem(pickedOption.longName, optionParameters, true);
         return true;
     }
     return false;

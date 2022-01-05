@@ -58,7 +58,7 @@ public final function Connection_Slot OnConnectionEstablished(
  *  Signal that will be emitted when the player connection is lost.
  *
  *  [Signature]
- *  void <slot>(ConnectionService.Connection newConnection)
+ *  void <slot>(ConnectionService.Connection lostConnection)
  *
  *  @param  newConnection   Structure that describes lost connection.
  */

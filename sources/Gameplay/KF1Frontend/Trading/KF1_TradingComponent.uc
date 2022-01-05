@@ -1,7 +1,7 @@
 /**
  *  `ATradingComponent`'s implementation for `KF1_Frontend`.
  *  Only supports `KF1_Trader` as a possible trader class.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -28,16 +28,38 @@ var protected int   pausedCountDownValue;
 //  For detecting events of trading becoming active/inactive and selecting
 //  a different trader, to account for these changing through non-Acedia means
 var protected bool      wasActiveLastCheck;
-var protected Atrader   lastSelectedTrader;
+var protected ETrader   lastSelectedTrader;
 
-//  All known traders on map
-var protected array<ATrader> registeredTraders;
+var protected array<ETrader> registeredTraders;
 
 protected function Constructor()
 {
+    local LevelInfo     level;
+    local KFGameType    kfGame;
+    local KF1_Trader    nextTrader;
+    local ShopVolume    nextShopVolume;
     super.Constructor();
     _.unreal.OnTick(self).connect = Tick;
-    registeredTraders   = class'KF1_Trader'.static.WrapVanillaShops();
+    //  Build `registeredTraders` cache to avoid looking through
+    //  all actors each time
+    level   = __().unreal.GetLevel();
+    kfGame  = __().unreal.GetKFGameType();
+    foreach level.AllActors(class'ShopVolume', nextShopVolume)
+    {
+        if (nextShopVolume == none) {
+            continue;
+        }
+        if (nextShopVolume.bObjectiveModeOnly && !kfGame.bUsingObjectiveMode) {
+            continue;
+        }
+        nextTrader = KF1_Trader(__().memory.Allocate(class'KF1_Trader'));
+        if (nextTrader.Initialize(nextShopVolume)) {
+            registeredTraders[registeredTraders.length] = nextTrader;
+        }
+        else {
+            _.memory.Free(nextTrader);
+        }
+    }
     lastSelectedTrader  = GetSelectedTrader();
     wasActiveLastCheck  = IsTradingActive();
 }
@@ -52,9 +74,14 @@ protected function Finalizer()
     registeredTraders.length = 0;
 }
 
-public function array<ATrader> GetTraders()
+public function array<ETrader> GetTraders()
 {
-    return registeredTraders;
+    local int               i;
+    local array<ETrader>    result;
+    for (i = 0; i < registeredTraders.length; i += 1) {
+        result[i] = ETrader(registeredTraders[i].Copy());
+    }
+    return result;
 }
 
 public function bool IsTradingActive()
@@ -91,21 +118,22 @@ public function SetTradingStatus(bool makeActive)
     kfGameRI.maxMonsters = 0;
 }
 
-public function ATrader GetSelectedTrader()
+public function ETrader GetSelectedTrader()
 {
     local int i;
     for (i = 0; i < registeredTraders.length; i += 1)
     {
         if (registeredTraders[i].IsSelected()) {
-            return registeredTraders[i];
+            return ETrader(registeredTraders[i].Copy());
         }
     }
     return none;
 }
 
-public function SelectTrader(ATrader newSelection)
+public function SelectTrader(ETrader newSelection)
 {
-    local ATrader               oldSelection;
+    local bool                  traderChanged;
+    local ETrader               oldSelection;
     local KFGameReplicationInfo kfGameRI;
     if (newSelection != none) {
         newSelection.Select();
@@ -121,10 +149,20 @@ public function SelectTrader(ATrader newSelection)
     //  in case someone decides it would be a grand idea to call `SelectTrader`
     //  during `onTraderSelectSignal` signal.
     oldSelection = lastSelectedTrader;
-    lastSelectedTrader = newSelection;
-    if (lastSelectedTrader != newSelection) {
+    if (newSelection != none)
+    {
+        lastSelectedTrader = ETrader(newSelection.Copy());
+        traderChanged = lastSelectedTrader.SameAs(oldSelection);
+    }
+    else
+    {
+        lastSelectedTrader = none;
+        traderChanged = (oldSelection == none);
+    }
+    if (traderChanged) {
         onTraderSelectSignal.Emit(oldSelection, newSelection);
     }
+    _.memory.Free(oldSelection);
 }
 
 public function int GetTradingInterval()
@@ -179,26 +217,19 @@ public function SetCountDownPause(bool doPause)
 
 protected function Tick(float delta, float timeScaleCoefficient)
 {
-    local bool      isActiveNow;
-    local ATrader   newSelectedTrader;
+    local bool isActiveNow;
     //  Enforce pause
     if (tradingCountDownPaused) {
         _.unreal.GetKFGameType().waveCountDown = pausedCountDownValue;
     }
     //  Selected trader check
-    newSelectedTrader = GetSelectedTrader();
-    if (lastSelectedTrader != newSelectedTrader)
-    {
-        onTraderSelectSignal.Emit(lastSelectedTrader, newSelectedTrader);
-        lastSelectedTrader = newSelectedTrader;
-    }
+    CheckNativeTraderSwap();
     //  Active status check
     isActiveNow = IsTradingActive();
     if (wasActiveLastCheck != isActiveNow)
     {
         wasActiveLastCheck = isActiveNow;
-        if (isActiveNow)
-        {
+        if (isActiveNow) {
             onStartSignal.Emit();
         }
         else
@@ -208,6 +239,24 @@ protected function Tick(float delta, float timeScaleCoefficient)
             tradingCountDownPaused = false;
         }
     }
+}
+
+//  Detect when selected trader is swapped be swapped by non-Acedia means
+protected function CheckNativeTraderSwap()
+{
+    local ETrader newSelectedTrader;
+    if (    lastSelectedTrader == none
+        &&  _.unreal.GetKFGameRI().currentShop == none) {
+        return;
+    }
+    if (lastSelectedTrader != none && lastSelectedTrader.IsSelected()) {
+        return;
+    }
+    //  Currently selected trader actually differs from `lastSelectedTrader`
+    newSelectedTrader = GetSelectedTrader();
+    onTraderSelectSignal.Emit(lastSelectedTrader, newSelectedTrader);
+    _.memory.Free(lastSelectedTrader);
+    lastSelectedTrader = newSelectedTrader;
 }
 
 defaultproperties

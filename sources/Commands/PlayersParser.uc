@@ -1,6 +1,6 @@
 /**
  *      Object for parsing what converting textual description of a group of
- *  players into array of `APlayer`s. Depends on the game context.
+ *  players into array of `EPlayer`s. Depends on the game context.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -62,12 +62,12 @@ class PlayersParser extends AcediaObject
  */
 
 //  Player for which "@" and "@self" macros will refer
-var private APlayer         selfPlayer;
+var private EPlayer         selfPlayer;
 //  Copy of the list of current players at the moment of allocation of
 //  this `PlayersParser`.
-var private array<APlayer>  playersSnapshot;
+var private array<EPlayer>  playersSnapshot;
 //  Players, selected according to selectors we have parsed so far
-var private array<APlayer>  currentSelection;
+var private array<EPlayer>  currentSelection;
 //  Have we parsed our first selector?
 //  We need this to know whether to start with the list of
 //  all players (if first selector removes them) or
@@ -81,6 +81,10 @@ var const int TOPEN_BRACKET, TCLOSE_BRACKET;
 
 protected function Finalizer()
 {
+    //  No need to deallocate `currentSelection`,
+    //  since it has `EPlayer`s from `playersSnapshot` or `selfPlayer`
+    _.memory.Free(selfPlayer);
+    _.memory.FreeMany(playersSnapshot);
     selfPlayer              = none;
     parsedFirstSelector     = false;
     playersSnapshot.length  = 0;
@@ -94,15 +98,18 @@ protected function Finalizer()
  *      "@self" macros. Passing `none` will make it so no one is
  *      referred by them.
  */
-public final function SetSelf(APLayer newSelfPlayer)
+public final function SetSelf(EPlayer newSelfPlayer)
 {
-    selfPlayer = newSelfPlayer;
+    _.memory.Free(selfPlayer);
+    if (newSelfPlayer != none) {
+        selfPlayer = EPlayer(newSelfPlayer.Copy());
+    }
 }
 
 //      Insert a new player into currently selected list of players
 //  (`currentSelection`) such that there will be no duplicates.
 //      `none` values are auto-discarded.
-private final function InsertPlayer(APLayer toInsert)
+private final function InsertPlayer(EPlayer toInsert)
 {
     local int i;
     if (toInsert == none) {
@@ -391,9 +398,17 @@ private final function MutableText ParseLiteral(Parser parser)
  *
  *  @return players parsed by the last `ParseWith()` or `Parse()` call.
  */
-public final function array<APlayer> GetPlayers()
+public final function array<EPlayer> GetPlayers()
 {
-    return currentSelection;
+    local int               i;
+    local array<EPlayer>    result;
+    for (i = 0; i < currentSelection.length; i += 1)
+    {
+        if (currentSelection[i].IsExistent()) {
+            result[result.length] = EPlayer(currentSelection[i].Copy());
+        }
+    }
+    return result;
 }
 
 /**
@@ -410,6 +425,7 @@ public final function bool ParseWith(Parser parser)
     local Parser.ParserState confirmedState;
     if (parser == none) return false;
     if (!parser.Ok())   return false;
+
     Reset();
     confirmedState = parser.Skip().GetCurrentState();
     if (!parser.Match(T(TOPEN_BRACKET)).Ok())
@@ -441,14 +457,11 @@ public final function bool ParseWith(Parser parser)
 //  `playersSnapshot` to contain current players. 
 private final function Reset()
 {
-    local PlayerService service;
     parsedFirstSelector     = false;
-    playersSnapshot.length  = 0;
     currentSelection.length = 0;
-    service = PlayerService(class'PlayerService'.static.Require());
-    if (service != none) {
-        playersSnapshot = service.GetAllPlayers();
-    }
+    _.memory.FreeMany(playersSnapshot);
+    playersSnapshot.length  = 0;
+    playersSnapshot = _.players.GetAll();
     selectorDelimiters.length = 0;
     selectorDelimiters[0] = T(TCOMMA);
     selectorDelimiters[1] = T(TCLOSE_BRACKET);

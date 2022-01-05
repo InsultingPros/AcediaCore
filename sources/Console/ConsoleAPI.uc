@@ -221,7 +221,7 @@ public final function ConsoleWriter ForAll()
  *      write into consoles of all players.
  *      Guaranteed to not be `none`.
  */
-public final function ConsoleWriter For(APlayer targetPlayer)
+public final function ConsoleWriter For(EPlayer targetPlayer)
 {
     local ConsoleDisplaySettings globalSettings;
     globalSettings.defaultColor         = defaultColor;

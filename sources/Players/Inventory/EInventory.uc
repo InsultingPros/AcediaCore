@@ -33,9 +33,9 @@ class EInventory extends AcediaObject
  *  Cannot fail for any connected player and can assume it will not be called
  *  for not connected ones.
  *
- *  @param  player  `APlayer` for which to initialize this inventory.
+ *  @param  player  `EPlayer` for which to initialize this inventory.
  */
-public function Initialize(APlayer player) {}
+public function Initialize(EPlayer player) {}
 
 /**
  *  Adds passed `EItem` to the caller inventory system.

@@ -3,7 +3,7 @@
  *  parse their arguments into standard Acedia collection. It also allows to
  *  manage them (and specify limitation on how they can be called) in a
  *  centralized manner.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -202,18 +202,22 @@ public final function array<Text> GetCommandNames()
  *      contain command's name and it's parameters.
  *  @param  callerPlayer    Player that caused this command call.
  */
-public final function HandleInput(Parser parser, APlayer callerPlayer)
+public final function HandleInput(Parser parser, EPlayer callerPlayer)
 {
-    local Command       commandInstance;
-    local MutableText   commandName;
+    local Command           commandInstance;
+    local Command.CallData  callData;
+    local MutableText       commandName;
     if (parser == none) return;
     if (!parser.Ok())   return;
 
     parser.MUntilMany(commandName, commandDelimiters, true, true);
     commandInstance = GetCommand(commandName);
     commandName.FreeSelf();
-    if (parser.Ok() && commandInstance != none) {
-        commandInstance.ProcessInput(parser, callerPlayer).FreeSelf();
+    if (parser.Ok() && commandInstance != none)
+    {
+        callData = commandInstance.ParseInputWith(parser, callerPlayer);
+        commandInstance.Execute(callData, callerPlayer);
+        commandInstance.DeallocateCallData(callData);
     }
 }
 
@@ -223,10 +227,9 @@ private function bool HandleText(
     name        messageType,
     bool        teamMessage)
 {
-    local Text              messageAsText;
-    local APlayer           callerPlayer;
-    local Parser            parser;
-    local PlayerService     service;
+    local Text      messageAsText;
+    local EPlayer   callerPlayer;
+    local Parser    parser;
     //  We only want to catch chat messages
     //  and only if `Commands` feature is active
     if (messageType != 'Say')   return true;
@@ -242,13 +245,11 @@ private function bool HandleText(
         messageAsText.FreeSelf();
         return true;
     }
-    //  Extract `APlayer` from the `sender`
-    service = PlayerService(class'PlayerService'.static.Require());
-    if (service != none) {
-        callerPlayer = service.GetPlayer(PlayerController(sender));
-    }
+    //  Extract `EPlayer` from the `sender`
+    callerPlayer = _.players.FromController(PlayerController(sender));
     //  Pass input to command feature
     HandleInput(parser, callerPlayer);
+    _.memory.Free(callerPlayer);
     parser.FreeSelf();
     return false;
 }
