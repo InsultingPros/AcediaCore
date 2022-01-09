@@ -30,12 +30,9 @@ var private int             consoleLifeVersion;
 //  `PlayerController` reference
 var private NativeActorRef  controller;
 
-//  These variables record name of this player;
-//  `hashedName` is used to track outside changes that bypass our getter/setter.
-var private Text    textName;
-var private string  hashedName;
-
-//  Describes the player's admin status (as defined by standard KF classes)
+/**
+ * Describes the player's admin status (as defined by standard KF classes)
+ */
 enum AdminStatus
 {
     //  Not an admin
@@ -45,6 +42,16 @@ enum AdminStatus
     //  Admin with their admin status hidden
     AS_SilentAdmin
 };
+
+//  Stores all the types of signals `EPlayer` might emit
+struct PlayerSignals
+{
+    var public PlayerAPI_OnPlayerNameChanging_Signal    onNameChanging;
+    var public PlayerAPI_OnPlayerNameChanged_Signal     onNameChanged;
+};
+//  We do not own objects in this structure, but it is created and managed by
+//  `PlayersAPI` and is expected to be allocated during the whole Acedia run.
+var protected PlayerSignals signalsReferences;
 
 protected function Finalizer()
 {
@@ -74,10 +81,10 @@ protected function Finalizer()
  *  @return `true` if initialization was successful and `false` otherwise.
  */
 public final /* unreal */ function bool Initialize(
-    PlayerController initController)
+    PlayerController    initController,
+    PlayerSignals       playerSignals)
 {
-    local Text                  idHash;
-    local PlayerReplicationInfo myReplicationInfo;
+    local Text idHash;
     if (controller != none)     return false; // Already initialized!
     if (initController == none) return false;
 
@@ -91,14 +98,8 @@ public final /* unreal */ function bool Initialize(
         idHash.FreeSelf();
         idHash = none;
     }
-    controller = _.unreal.ActorRef(initController);
-    myReplicationInfo = initController.playerReplicationInfo;
-    //  Hash current name
-    if (myReplicationInfo != none)
-    {
-        hashedName  = myReplicationInfo.playerName;
-        textName    = _.text.FromColoredString(hashedName);
-    }
+    signalsReferences   = playerSignals;
+    controller          = _.unreal.ActorRef(initController);
     return true;
 }
 
@@ -121,7 +122,8 @@ public function EInterface Copy()
         return playerCopy;
     }
     playerCopy.identity = identity;
-    playerCopy.Initialize(PlayerController(controller.Get()));
+    playerCopy.Initialize(  PlayerController(controller.Get()),
+                            signalsReferences);
     return playerCopy;
 }
 
@@ -216,16 +218,10 @@ public final function Text GetName()
 {
     local PlayerReplicationInfo myReplicationInfo;
     myReplicationInfo = GetRI();
-    if (myReplicationInfo == none) {
-        return P("").Copy();
+    if (myReplicationInfo != none) {
+        return _.text.FromColoredString(myReplicationInfo.playerName);
     }
-    if (textName != none && myReplicationInfo.playerName == hashedName) {
-        return textName.Copy();
-    }
-    _.memory.Free(textName);
-    hashedName  = myReplicationInfo.playerName;
-    textName    = _.text.FromColoredString(hashedName);
-    return textName.Copy();
+    return P("").Copy();
 }
 
 /**
@@ -236,40 +232,73 @@ public final function Text GetName()
  */
 public final function SetName(Text newPlayerName)
 {
-    local Text.Formatting       endingFormatting;
-    local PlayerReplicationInfo myReplicationInfo;
-    myReplicationInfo = GetRI();
-    if (myReplicationInfo == none) return;
+    local Text                  oldPlayerName;
+    local PlayerReplicationInfo replicationInfo;
+    replicationInfo = GetRI();
+    if (replicationInfo == none) {
+        return;
+    }
+    if (ConvertTextNameIntoString(newPlayerName) == replicationInfo.playerName)
+    {
+        return;
+    }
+    oldPlayerName = _.text.FromFormattedString(replicationInfo.playerName);
+    replicationInfo.playerName = CensorPlayerName(oldPlayerName, newPlayerName);
+    _.memory.Free(oldPlayerName);
+}
 
-    _.memory.Free(textName);
-    //  Filter both `none` and empty `newPlayerName`, so that we can
-    //  later rely on it having at least one character
-    if (newPlayerName == none || newPlayerName.IsEmpty()) {
-        textName = P("").Copy();
+//  Converts `Text` nickname into a suitable `string` representation.
+private final function string ConvertTextNameIntoString(Text playerName)
+{
+    local string            newPlayerNameAsString;
+    local Text.Formatting   endingFormatting;
+    if (playerName == none) {
+        return "";
     }
-    else {
-        textName = newPlayerName.Copy();
-    }
-    hashedName = textName.ToColoredString(,, _.color.white);
+    newPlayerNameAsString = playerName.ToColoredString(,, _.color.white);
     //      To correctly display nicknames we want to drop default color tag
     //  at the beginning (the one `ToColoredString()` adds if first character
     //  has no defined color).
     //      This is a compatibility consideration with vanilla UIs that use
     //  color codes from `myReplicationInfo.playerName` for displaying nicknames
     //  and whose expected behavior can get broken by default color tag.
-    if (!textName.GetFormatting(0).isColored) {
-        hashedName = Mid(hashedName, 4);
+    if (!playerName.GetFormatting(0).isColored) {
+        newPlayerNameAsString = Mid(newPlayerNameAsString, 4);
     }
     //      This is another compatibility consideration with vanilla UIs: unless
     //  we restore color to neutral white, Killing Floor will paint any chat
     //  messages we send in the color our nickname ended with.
-    endingFormatting = textName.GetFormatting(textName.GetLength() - 1);
+    endingFormatting = playerName.GetFormatting(playerName.GetLength() - 1);
     if (    endingFormatting.isColored
         &&  !_.color.AreEqual(endingFormatting.color, _.color.white, true))
     {
-        hashedName $= _.color.GetColorTag(_.color.white);
+        newPlayerNameAsString $= _.color.GetColorTag(_.color.white);
     }
-    myReplicationInfo.playerName = hashedName;
+    return newPlayerNameAsString;
+}
+
+//  Calls appropriate events to let them modify / "censor" player's new name.
+private final function string CensorPlayerName(
+    Text oldPlayerName,
+    Text newPlayerName)
+{
+    local string        result;
+    local Text          censoredName;
+    local MutableText   mutablePlayerName;
+    if (newPlayerName == none) {
+        return "";
+    }
+    mutablePlayerName = newPlayerName.MutableCopy();
+    //  Let signal handlers alter the name
+    signalsReferences.onNameChanging
+        .Emit(self, oldPlayerName, mutablePlayerName);
+    censoredName = mutablePlayerName.Copy();
+    signalsReferences.onNameChanged.Emit(self, oldPlayerName, censoredName);
+    //  Returns "censored" result
+    result = ConvertTextNameIntoString(censoredName);
+    _.memory.Free(mutablePlayerName);
+    _.memory.Free(censoredName);
+    return result;
 }
 
 //  TODO: replace this, it has no place here

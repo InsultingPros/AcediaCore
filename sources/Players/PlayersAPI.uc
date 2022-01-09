@@ -1,6 +1,6 @@
 /**
  *      API that provides functions for working player references (`EPlayer`).
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -19,7 +19,8 @@
  */
 class PlayersAPI extends AcediaObject
     dependson(ConnectionService)
-    dependson(Text);
+    dependson(Text)
+    dependson(EPlayer);
 
 //  Writer that can be used to write into this player's console
 var private ConsoleWriter   consoleInstance;
@@ -30,12 +31,18 @@ var protected bool connectedToConnectionServer;
 var protected PlayerAPI_OnNewPlayer_Signal  onNewPlayerSignal;
 var protected PlayerAPI_OnLostPlayer_Signal onLostPlayerSignal;
 
+var private EPlayer.PlayerSignals playerSignals;
+
 protected function Constructor()
 {
     onNewPlayerSignal = PlayerAPI_OnNewPlayer_Signal(
         _.memory.Allocate(class'PlayerAPI_OnNewPlayer_Signal'));
     onLostPlayerSignal = PlayerAPI_OnLostPlayer_Signal(
         _.memory.Allocate(class'PlayerAPI_OnLostPlayer_Signal'));
+    playerSignals.onNameChanging = PlayerAPI_OnPlayerNameChanging_Signal(
+        _.memory.Allocate(class'PlayerAPI_OnPlayerNameChanging_Signal'));
+    playerSignals.onNameChanged = PlayerAPI_OnPlayerNameChanged_Signal(
+        _.memory.Allocate(class'PlayerAPI_OnPlayerNameChanged_Signal'));
 }
 
 protected function Finalizer()
@@ -50,8 +57,12 @@ protected function Finalizer()
     }
     _.memory.Free(onNewPlayerSignal);
     _.memory.Free(onLostPlayerSignal);
-    onNewPlayerSignal   = none;
-    onLostPlayerSignal  = none;
+    _.memory.Free(playerSignals.onNameChanging);
+    _.memory.Free(playerSignals.onNameChanged);
+    onNewPlayerSignal               = none;
+    onLostPlayerSignal              = none;
+    playerSignals.onNameChanging    = none;
+    playerSignals.onNameChanged     = none;
 }
 
 /**
@@ -87,6 +98,52 @@ public function PlayerAPI_OnLostPlayer_Slot OnLostPlayerHandle(
 {
     ConnectToConnectionService();
     return PlayerAPI_OnLostPlayer_Slot(onLostPlayerSignal.NewSlot(receiver));
+}
+
+/**
+ *  Signal that will be emitted once player's name attempt to change.
+ *
+ *      This signal gives all handlers a change to modify mutable `newName`,
+ *  so the one you are given as a parameter might not be final, since other
+ *  handlers can modify it after you.
+ *      If you simply need to see the final version of the changed name -
+ *  use `OnPlayerNameChanged` instead.
+ *
+ *  [Signature]
+ *  void <slot>(EPlayer affectedPlayer, Text oldName, MutableText newName)
+ *
+ *  @param  affectedPlayer  Player, whos name got changed.
+ *  @param  oldName         Player's old name.
+ *  @param  newName         Player's new name. Can be modified, if you want
+ *      to make corrections.
+ */
+/* SIGNAL */
+public function PlayerAPI_OnPlayerNameChanging_Slot OnPlayerNameChanging(
+    AcediaObject receiver)
+{
+    return PlayerAPI_OnPlayerNameChanging_Slot(playerSignals.onNameChanging
+        .NewSlot(receiver));
+}
+
+/**
+ *  Signal that will be emitted once player's name is changed.
+ *
+ *  This signal simply notifies you of the changed name, if you wish to alter it
+ *  after change caused by someone else, use `OnPlayerNameChanging` instead.
+ *
+ *  [Signature]
+ *  void <slot>(EPlayer affectedPlayer, Text oldName, Text newName)
+ *
+ *  @param  affectedPlayer  Player, whos name got changed.
+ *  @param  oldName         Player's old name.
+ *  @param  newName         Player's new name.
+ */
+/* SIGNAL */
+public function PlayerAPI_OnPlayerNameChanged_Slot OnPlayerNameChanged(
+    AcediaObject receiver)
+{
+    return PlayerAPI_OnPlayerNameChanged_Slot(playerSignals.onNameChanged
+        .NewSlot(receiver));
 }
 
 /**
@@ -163,7 +220,7 @@ public final /* unreal */ function EPlayer FromController(
 {
     local EPlayer result;
     result = EPlayer(_.memory.Allocate(class'EPlayer'));
-    result.Initialize(controller);
+    result.Initialize(controller, playerSignals);
     return result;
 }
 
