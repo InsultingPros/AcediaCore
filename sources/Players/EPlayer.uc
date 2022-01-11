@@ -238,8 +238,7 @@ public final function Text GetOriginalName()
  *  Returns current displayed name of the caller player.
  *
  *  @return `Text` containing current name of the caller player.
- *      Guaranteed to not be `none`. Returned object is not managed by caller
- *      `EPlayer` and should be manually deallocated.
+ *      Guaranteed to not be `none`.
  */
 public final function Text GetName()
 {
@@ -263,10 +262,6 @@ public final function SetName(Text newPlayerName)
     local PlayerReplicationInfo replicationInfo;
     replicationInfo = GetRI();
     if (replicationInfo == none) {
-        return;
-    }
-    if (ConvertTextNameIntoString(newPlayerName) == replicationInfo.playerName)
-    {
         return;
     }
     oldPlayerName = _.text.FromFormattedString(replicationInfo.playerName);
