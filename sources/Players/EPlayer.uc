@@ -220,6 +220,21 @@ public final function User GetIdentity()
 }
 
 /**
+ *  Returns player's original name - the one he joined the game with.
+ *
+ *  @return `Text` containing original name of the caller player.
+ *      Guaranteed to not be `none`.
+ */
+public final function Text GetOriginalName()
+{
+    local ConnectionService             service;
+    local ConnectionService.Connection  myConnection;
+    service = ConnectionService(class'ConnectionService'.static.Require());
+    myConnection = service.GetConnection(GetController());
+    return _.text.FromString(myConnection.originalName);
+}
+
+/**
  *  Returns current displayed name of the caller player.
  *
  *  @return `Text` containing current name of the caller player.
