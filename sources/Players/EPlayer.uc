@@ -142,6 +142,18 @@ public function bool SameAs(EInterface other)
 }
 
 /**
+ *  Returns color of the caller `EPlayer`'s current team.
+ *
+ *  Such color is supposed to be defined even for a single-team modes.
+ *
+ *  @return `Color` structure with the `EPlayer`'s current color.
+ */
+public final function Color GetTeamColor()
+{
+    return _.color.Red;
+}
+
+/**
  *  Returns location of the caller `EPlayer`.
  *
  *  If caller `EPlayer` has a pawn, then it's location will be returned,
