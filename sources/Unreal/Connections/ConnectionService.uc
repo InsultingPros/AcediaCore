@@ -25,6 +25,8 @@ class ConnectionService extends Service;
 struct Connection
 {
     var public  PlayerController        controllerReference;
+    //  Native code will change player's name, so lets store the original value
+    var public string                   originalName;
     //  Remember these for the time `controllerReference` dies
     //  and becomes `none`.
     var public  string                  networkAddress;
@@ -35,6 +37,28 @@ struct Connection
 };
 
 var private array<Connection> activeConnections;
+
+//      We consider connection created once appropriate
+//  `KFSteamStatsAndAchievements` spawns, however `PlayerController` usually
+//  spawns a tick earlier and that is the moment when some of the information
+//  needs to be obtained.
+//      To later re-associate it with `Connection` structure we temporarily
+//  store it by pairing with `PlayerController`.
+struct PendingConnection
+{
+    var private PlayerController    controllerReference;
+    var private string              originalName;
+    //  `KFSteamStatsAndAchievements` should be created a tick after
+    //  `PlayerController` reference, so we can discard any `PendingConnection`s
+    //  that have lasted too long without matching a `Connection`.
+    var private int                 ticksPassed;
+};
+var private array<PendingConnection>    pendingConnections;
+//  We record the name, given to us in the options from `OnModifyLogin` event
+//  in this variable. Since corresponding `PlayerController` is created inside
+//  `Login()` function right after that - it is easy to associate.
+var private string                      lastNickNameFromModifyLogin;
+var private const int                   PENDING_CONNECTION_LIFETIME;
 
 var private Connection_Signal onConnectionEstablishedSignal;
 var private Connection_Signal onConnectionLostSignal;
@@ -73,7 +97,10 @@ protected function OnLaunch()
 {
     local Controller        nextController;
     local PlayerController  nextPlayerController;
-    _.unreal.mutator.OnCheckReplacement(_self).connect = TryAddingController;
+    _.unreal.mutator.OnModifyLogin(_self).connect       = RememberLoginOptions;
+    _.unreal.mutator.OnCheckReplacement(_self).connect  = TryAddingController;
+    _.unreal.mutator.OnCheckReplacement(_self).connect  =
+        RecordPendingInformation;
     onConnectionEstablishedSignal =
         Connection_Signal(_.memory.Allocate(class'Connection_Signal'));
     onConnectionLostSignal =
@@ -93,6 +120,8 @@ protected function OnLaunch()
 protected function OnShutdown()
 {
     default.activeConnections = activeConnections;
+    _.unreal.mutator.OnModifyLogin(_self).Disconnect();
+    _.unreal.mutator.OnCheckReplacement(_self).Disconnect();
     _.memory.Free(onConnectionEstablishedSignal);
     _.memory.Free(onConnectionLostSignal);
     onConnectionEstablishedSignal = none;
@@ -135,7 +164,6 @@ private function int GetConnectionIndex(PlayerController controllerToCheck)
 private function RemoveBrokenConnections()
 {
     local int i;
-    i = 0;
     while (i < activeConnections.length)
     {
         if (activeConnections[i].controllerReference == none)
@@ -145,6 +173,20 @@ private function RemoveBrokenConnections()
             }
             onConnectionLostSignal.Emit(activeConnections[i]);
             activeConnections.Remove(i, 1);
+        }
+        else {
+            i += 1;
+        }
+    }
+    //  Silently remove outdated pending connection
+    i = 0;
+    while (i < pendingConnections.length)
+    {
+        pendingConnections[i].ticksPassed += 1;
+        if (    pendingConnections[i].controllerReference == none
+            ||  pendingConnections[i].ticksPassed > PENDING_CONNECTION_LIFETIME)
+        {
+            pendingConnections.Remove(i, 1);
         }
         else {
             i += 1;
@@ -185,13 +227,21 @@ public final function Connection GetConnection(PlayerController player)
  */
 public final function bool RegisterConnection(PlayerController player)
 {
-    local Connection newConnection;
+    local int           pendingIndex;
+    local Connection    newConnection;
     if (!IsHumanController(player))         return false;
     if (GetConnectionIndex(player) >= 0)    return true;
     newConnection.controllerReference = player;
 
     newConnection.idHash = player.GetPlayerIDHash();
     newConnection.networkAddress = player.GetPlayerNetworkAddress();
+    pendingIndex = GetPendingConnectionIndex(player);
+    if (pendingIndex >= 0)
+    {
+        newConnection.originalName =
+            pendingConnections[pendingIndex].originalName;
+        pendingConnections.Remove(pendingIndex, 1);
+    }
     activeConnections[activeConnections.length] = newConnection;
     //  Remember recorded connections in case someone decides to
     //  nuke this service
@@ -224,7 +274,30 @@ public final function array<Connection> GetActiveConnections(
     return activeConnections;
 }
 
-function bool TryAddingController(Actor other, out byte isSuperRelevant)
+private function RememberLoginOptions(out string portal, out string options)
+{
+    lastNickNameFromModifyLogin =
+        _.unreal.GetGameType().ParseOption(options, "Name");
+}
+
+private function bool RecordPendingInformation(
+    Actor       other,
+    out byte    isSuperRelevant)
+{
+    local int               pendingIndex;
+    local PlayerController  newPlayerController;
+    newPlayerController = PlayerController(other);
+    if (newPlayerController != none)
+    {
+        pendingIndex = GetPendingConnectionIndex(newPlayerController);
+        pendingConnections[pendingIndex].originalName =
+            lastNickNameFromModifyLogin;
+        lastNickNameFromModifyLogin = "";
+    }
+    return true;
+}
+
+private function bool TryAddingController(Actor other, out byte isSuperRelevant)
 {
     //      We are looking for `KFSteamStatsAndAchievements` instead of
     //  `PlayerController` because, by the time they it's created,
@@ -244,6 +317,28 @@ function bool TryAddingController(Actor other, out byte isSuperRelevant)
     return true;
 }
 
+//  Returns valid index (creating a record, if necessary) in
+//  `pendingConnections`for any non-`none` reference.
+//  Otherwise returns `-1`.
+private function int GetPendingConnectionIndex(PlayerController controller)
+{
+    local int               index;
+    local PendingConnection newRecord;
+    if (controller == none) {
+        return -1;
+    }
+    for (index = 0; index < pendingConnections.length; index += 1)
+    {
+        if (pendingConnections[index].controllerReference == controller) {
+            return index;
+        }
+    }
+    index = pendingConnections.length;
+    newRecord.controllerReference = controller;
+    pendingConnections[index] = newRecord;
+    return index;
+}
+
 //  Check if connections are still active every tick.
 //  Should not take any noticeable time when no players are disconnecting.
 event Tick(float delta)
@@ -253,4 +348,8 @@ event Tick(float delta)
 
 defaultproperties
 {
+    //      Pending connection should not live more than one tick,
+    //  but give it more time just in case;
+    //      It will not cause any issues regardless.
+    PENDING_CONNECTION_LIFETIME = 5
 }
