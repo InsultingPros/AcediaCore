@@ -1,7 +1,7 @@
 /**
  *      Low-level API that provides set of utility methods for working with
  *  `Mutator`s.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -48,8 +48,9 @@ class MutatorAPI extends AcediaObject;
  *      checks and not really used for anything once these checks are complete.
  *      Some [sources]
  *      (https://wiki.beyondunreal.com/Legacy:Chain_Of_Events_At_Level_Startup)
- *      indicate that it used to omit additional `GameInfo`'s relevancy checks,
- *      however does not to serve any function in Killing Floor.
+ *      indicate that it is used to omit additional `GameInfo`'s
+ *      relevancy checks, however it does not seem to serve any function in
+ *      Killing Floor.
  *      Mutators might repurpose it for their own uses, but I am not aware of
  *      any that do.
  *  @return `false` if you want `other` to be destroyed and `true` otherwise.
@@ -85,6 +86,31 @@ public final function Mutator_OnMutate_Slot OnMutate(
     service = UnrealService(class'UnrealService'.static.Require());
     signal = service.GetSignal(class'Mutator_OnMutate_Signal');
     return Mutator_OnMutate_Slot(signal.NewSlot(receiver));
+}
+
+/**
+ *  Called from the `GameInfo`'s `Login()` function. Allows mutators to change
+ *  any options before the `Login()` function processes them.
+ *
+ *  [Signature]
+ *  <slot>(out string portal, out string options)
+ *
+ *  @param  Portal  Likely intended purpose is to indicate which "portal" was
+ *      used to allow player to enter this level, but does not seem to be doing
+ *      much in Killing Floor.
+ *  @param  options Options parts of URL that describe players entering
+ *      the server. Example is something like: "?LAN?Class=Engine.Pawn?
+ *      Character=Lieutenant_Masterson?team=1?VAC=1?password=pass?Name=guy".
+ */
+/* SIGNAL */
+public final function Mutator_OnModifyLogin_Slot OnModifyLogin(
+    AcediaObject receiver)
+{
+    local Signal        signal;
+    local UnrealService service;
+    service = UnrealService(class'UnrealService'.static.Require());
+    signal = service.GetSignal(class'Mutator_OnModifyLogin_Signal');
+    return Mutator_OnModifyLogin_Slot(signal.NewSlot(receiver));
 }
 
 defaultproperties

@@ -119,4 +119,5 @@ defaultproperties
     serviceSignals(10)  = (signalClass=class'Broadcast_OnHandleTextFor_Signal')
     serviceSignals(11)  = (signalClass=class'Mutator_OnCheckReplacement_Signal')
     serviceSignals(12)  = (signalClass=class'Mutator_OnMutate_Signal')
+    serviceSignals(13)  = (signalClass=class'Mutator_OnModifyLogin_Signal')
 }
