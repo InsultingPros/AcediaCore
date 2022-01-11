@@ -72,8 +72,6 @@ protected function Finalizer()
  *  void <slot>(EPlayer newPlayer)
  *
  *  @param  handle  Base `EPlayer` interface for the newly connected player.
- *      Each handler will receive its own copy of `EPlayer` that has to
- *      be deallocated.
  */
 /* SIGNAL */
 public function PlayerAPI_OnNewPlayer_Slot OnNewPlayer(
@@ -93,7 +91,7 @@ public function PlayerAPI_OnNewPlayer_Slot OnNewPlayer(
  *      the disconnected player.
  */
 /* SIGNAL */
-public function PlayerAPI_OnLostPlayer_Slot OnLostPlayerHandle(
+public function PlayerAPI_OnLostPlayer_Slot OnLostPlayer(
     AcediaObject receiver)
 {
     ConnectToConnectionService();
@@ -185,10 +183,10 @@ private final function ConnectToConnectionService()
 private final function AnnounceNewPlayer(
     ConnectionService.Connection newConnection)
 {
-    if (onNewPlayerSignal == none) {
-        return;
-    }
-    onNewPlayerSignal.Emit(FromController(newConnection.controllerReference));
+    local EPlayer newPlayer;
+    newPlayer = FromController(newConnection.controllerReference);
+    onNewPlayerSignal.Emit(newPlayer);
+    _.memory.Free(newPlayer);
 }
 
 private final function AnnounceLostPlayer(

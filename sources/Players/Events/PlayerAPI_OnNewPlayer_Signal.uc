@@ -26,7 +26,7 @@ public final function Emit(EPlayer newPlayer)
     nextSlot = GetNextSlot();
     while (nextSlot != none)
     {
-        PlayerAPI_OnNewPlayer_Slot(nextSlot).connect(EPlayer(newPlayer.Copy()));
+        PlayerAPI_OnNewPlayer_Slot(nextSlot).connect(newPlayer);
         nextSlot = GetNextSlot();
     }
     CleanEmptySlots();
