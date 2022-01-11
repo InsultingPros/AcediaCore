@@ -469,7 +469,7 @@ protected function int CalculateHashCode()
  *      in a case-sensitive manner. By default it will be.
  *  @param  formatSensitivity   Defines whether `before` should be matched
  *      in a way sensitive for color information. By default it is will not.
- *  @return Returns caller `Text`, to allow for method chaining.
+ *  @return Returns caller `MutableText`, to allow for method chaining.
  */
 public final function MutableText Replace(
     Text                        before,
