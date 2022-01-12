@@ -117,6 +117,15 @@ private function bool HandleText(
     messageAsText = __().text.FromColoredStringM(message);
     result = onMessageSignal.Emit(senderPlayer, messageAsText, teamMessage);
     message = messageAsText.ToColoredString();
+    //      To correctly display chat messages we want to drop default color tag
+    //  at the beginning (the one `ToColoredString()` adds if first character
+    //  has no defined color).
+    //      This is a compatibility consideration with vanilla UI that expects
+    //  uncolored text. Not removing initial color tag will make chat text
+    //  appear black.
+    if (!messageAsText.GetFormatting(0).isColored) {
+        message = Mid(message, 4);
+    }
     _.memory.Free(messageAsText);
     _.memory.Free(senderPlayer);
     return result;
