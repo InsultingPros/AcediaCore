@@ -38,7 +38,7 @@ protected function OnEnabled()
 {
     registeredCommands = _.collections.EmptyAssociativeArray();
     RegisterCommand(class'ACommandHelp');
-    _.unreal.broadcasts.OnHandleText(self).connect = HandleText;
+    _.chat.OnMessage(self).connect = HandleCommands;
     //  Macro selector
     commandDelimiters[0] = P("@");
     //  Key selector
@@ -51,7 +51,7 @@ protected function OnEnabled()
 
 protected function OnDisabled()
 {
-    _.unreal.broadcasts.OnHandleText(self).Disconnect();
+    _.chat.OnMessage(self).Disconnect();
     if (registeredCommands != none)
     {
         registeredCommands.Empty(true);
@@ -221,35 +221,24 @@ public final function HandleInput(Parser parser, EPlayer callerPlayer)
     }
 }
 
-private function bool HandleText(
-    Actor       sender,
-    out string  message,
-    name        messageType,
+private function bool HandleCommands(
+    EPlayer     sender,
+    MutableText message,
     bool        teamMessage)
 {
-    local Text      messageAsText;
-    local EPlayer   callerPlayer;
-    local Parser    parser;
-    //  We only want to catch chat messages
-    //  and only if `Commands` feature is active
-    if (messageType != 'Say')   return true;
-    if (!UsingChatInput())      return true;
+    local Parser parser;
+    if (!UsingChatInput()) {
+        return true;
+    }
     //  We are only interested in messages that start with "!"
-    parser = __().text.ParseString(message);
+    parser = _.text.Parse(message);
     if (!parser.Match(P("!")).Ok())
     {
         parser.FreeSelf();
-        //  Convert color tags into colors
-        messageAsText = __().text.FromFormattedString(message);
-        message = messageAsText.ToColoredString(,, __().color.White);
-        messageAsText.FreeSelf();
         return true;
     }
-    //  Extract `EPlayer` from the `sender`
-    callerPlayer = _.players.FromController(PlayerController(sender));
     //  Pass input to command feature
-    HandleInput(parser, callerPlayer);
-    _.memory.Free(callerPlayer);
+    HandleInput(parser, sender);
     parser.FreeSelf();
     return false;
 }

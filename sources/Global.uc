@@ -35,6 +35,7 @@ var public AliasesAPI       alias;
 var public TextAPI          text;
 var public MemoryAPI        memory;
 var public ConsoleAPI       console;
+var public ChatAPI          chat;
 var public ColorAPI         color;
 var public UserAPI          users;
 var public PlayersAPI       players;
@@ -70,6 +71,7 @@ protected function Initialize()
     logger      = LoggerAPI(memory.Allocate(class'LoggerAPI'));
     alias       = AliasesAPI(memory.Allocate(class'AliasesAPI'));
     console     = ConsoleAPI(memory.Allocate(class'ConsoleAPI'));
+    chat        = ChatAPI(memory.Allocate(class'ChatAPI'));
     color       = ColorAPI(memory.Allocate(class'ColorAPI'));
     users       = UserAPI(memory.Allocate(class'UserAPI'));
     players     = PlayersAPI(memory.Allocate(class'PlayersAPI'));
@@ -99,6 +101,7 @@ public function DropCoreAPI()
     logger      = none;
     alias       = none;
     console     = none;
+    chat        = none;
     color       = none;
     users       = none;
     players     = none;
