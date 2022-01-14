@@ -60,9 +60,6 @@ protected function Executed(Command.CallData callData, EPlayer callerPlayer)
         commandsToDisplay = DynamicArray(parameters.GetItem(P("commands")));
         DisplayCommandHelpPages(callerPlayer, commandsToDisplay);
     }
-    _.memory.Free(callerPlayer);
-    _.memory.Free(parameters);
-    _.memory.Free(options);
 }
 
 private final function DisplayCommandList(EPlayer player)
