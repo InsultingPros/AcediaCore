@@ -22,29 +22,35 @@ class Commands extends FeatureConfig
     config(AcediaSystem);
 
 var public config bool useChatInput;
+var public config bool useMutateInput;
 
 protected function AssociativeArray ToData()
 {
     local AssociativeArray data;
     data = __().collections.EmptyAssociativeArray();
     data.SetBool(P("useChatInput"), useChatInput, true);
+    data.SetBool(P("useMutateInput"), useMutateInput, true);
     return data;
 }
 
 protected function FromData(AssociativeArray source)
 {
-    if (source != none) {
-        useChatInput = source.GetBool(P("useChatInput"));
+    if (source != none)
+    {
+        useChatInput    = source.GetBool(P("useChatInput"));
+        useMutateInput  = source.GetBool(P("useMutateInput"));
     }
 }
 
 protected function DefaultIt()
 {
     useChatInput = true;
+    useMutateInput = true;
 }
 
 defaultproperties
 {
     configName = "AcediaSystem"
-    useChatInput = true
+    useChatInput    = true
+    useMutateInput  = true
 }

@@ -31,6 +31,9 @@ var private AssociativeArray    registeredCommands;
 //  Setting this to `true` enables players to input commands right in the chat
 //  by prepending them with "!" character.
 var private /*config*/ bool useChatInput;
+//  Setting this to `true` enables players to input commands with "mutate"
+//  console command.
+var private /*config*/ bool useMutateInput;
 
 var LoggerAPI.Definition errCommandDuplicate;
 
@@ -38,7 +41,6 @@ protected function OnEnabled()
 {
     registeredCommands = _.collections.EmptyAssociativeArray();
     RegisterCommand(class'ACommandHelp');
-    _.chat.OnMessage(self).connect = HandleCommands;
     //  Macro selector
     commandDelimiters[0] = P("@");
     //  Key selector
@@ -51,14 +53,21 @@ protected function OnEnabled()
 
 protected function OnDisabled()
 {
-    _.chat.OnMessage(self).Disconnect();
+    if (useChatInput) {
+        _.chat.OnMessage(self).Disconnect();
+    }
+    if (useMutateInput) {
+        _.unreal.mutator.OnMutate(self).Disconnect();
+    }
+    useChatInput    = false;
+    useMutateInput  = false;
     if (registeredCommands != none)
     {
         registeredCommands.Empty(true);
         registeredCommands.FreeSelf();
         registeredCommands = none;
     }
-    commandDelimiters.length    = 0;
+    commandDelimiters.length = 0;
 }
 
 protected function SwapConfig(FeatureConfig config)
@@ -68,17 +77,26 @@ protected function SwapConfig(FeatureConfig config)
     if (newConfig == none) {
         return;
     }
-    useChatInput = newConfig.useChatInput;
-}
-
-/**
- *  Checks whether this feature uses in-game chat input for commands.
- *
- *  @return `true` iff this feature uses in-game chat input for commands.
- */
-public final function bool UsingChatInput()
-{
-    return useChatInput;
+    if (useChatInput != newConfig.useChatInput)
+    {
+        useChatInput = newConfig.useChatInput;
+        if (newConfig.useChatInput) {
+            _.chat.OnMessage(self).connect = HandleCommands;
+        }
+        else {
+            _.chat.OnMessage(self).Disconnect();
+        }
+    }
+    if (useMutateInput != newConfig.useMutateInput)
+    {
+        useMutateInput = newConfig.useMutateInput;
+        if (newConfig.useMutateInput) {
+            _.unreal.mutator.OnMutate(self).connect = HandleMutate;
+        }
+        else {
+            _.unreal.mutator.OnMutate(self).Disconnect();
+        }
+    }
 }
 
 /**
@@ -227,9 +245,6 @@ private function bool HandleCommands(
     bool        teamMessage)
 {
     local Parser parser;
-    if (!UsingChatInput()) {
-        return true;
-    }
     //  We are only interested in messages that start with "!"
     parser = _.text.Parse(message);
     if (!parser.Match(P("!")).Ok())
@@ -241,6 +256,17 @@ private function bool HandleCommands(
     HandleInput(parser, sender);
     parser.FreeSelf();
     return false;
+}
+
+private function HandleMutate(string command, PlayerController sendingPlayer)
+{
+    local Parser    parser;
+    local EPlayer   sender;
+    parser = _.text.ParseString(command);
+    sender = _.players.FromController(sendingPlayer);
+    HandleInput(parser, sender);
+    sender.FreeSelf();
+    parser.FreeSelf();
 }
 
 defaultproperties
