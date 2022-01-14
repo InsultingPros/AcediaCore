@@ -357,6 +357,10 @@ public final function bool Execute(CallData callData, EPlayer callerPlayer)
         ReportError(callData, callerPlayer);
         return false;
     }
+    callerPlayer.BorrowConsole()
+        .Write(P("Executing command `"))
+        .Write(commandData.name)
+        .Say(P("`"));
     Executed(callData, callerPlayer);
     if (commandData.requiresTarget)
     {

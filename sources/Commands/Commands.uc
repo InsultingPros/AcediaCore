@@ -21,8 +21,9 @@ class Commands extends FeatureConfig
     perobjectconfig
     config(AcediaSystem);
 
-var public config bool useChatInput;
-var public config bool useMutateInput;
+var public config bool      useChatInput;
+var public config bool      useMutateInput;
+var public config string    chatCommandPrefix;
 
 protected function AssociativeArray ToData()
 {
@@ -30,27 +31,38 @@ protected function AssociativeArray ToData()
     data = __().collections.EmptyAssociativeArray();
     data.SetBool(P("useChatInput"), useChatInput, true);
     data.SetBool(P("useMutateInput"), useMutateInput, true);
+    data.SetItem(   P("chatCommandPrefix"),
+                    _.text.FromString(chatCommandPrefix), true);
     return data;
 }
 
 protected function FromData(AssociativeArray source)
 {
-    if (source != none)
-    {
-        useChatInput    = source.GetBool(P("useChatInput"));
-        useMutateInput  = source.GetBool(P("useMutateInput"));
+    local Text newChatPrefix;
+    if (source == none) {
+        return;
     }
+    useChatInput    = source.GetBool(P("useChatInput"));
+    useMutateInput  = source.GetBool(P("useMutateInput"));
+    newChatPrefix = source.GetText(P("chatCommandPrefix"));
+    chatCommandPrefix = "!";
+    if (newChatPrefix != none) {
+        chatCommandPrefix = newChatPrefix.ToString();
+    }
+    _.memory.Free(newChatPrefix);
 }
 
 protected function DefaultIt()
 {
-    useChatInput = true;
-    useMutateInput = true;
+    useChatInput        = true;
+    useMutateInput      = true;
+    chatCommandPrefix   = "!";
 }
 
 defaultproperties
 {
     configName = "AcediaSystem"
-    useChatInput    = true
-    useMutateInput  = true
+    useChatInput        = true
+    useMutateInput      = true
+    chatCommandPrefix   = "!"
 }

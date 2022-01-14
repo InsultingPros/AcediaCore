@@ -29,11 +29,16 @@ var private array<Text>         commandDelimiters;
 var private AssociativeArray    registeredCommands;
 
 //  Setting this to `true` enables players to input commands right in the chat
-//  by prepending them with "!" character.
+//  by prepending them with `chatCommandPrefix`.
+//  Default is `true`.
 var private /*config*/ bool useChatInput;
 //  Setting this to `true` enables players to input commands with "mutate"
 //  console command.
+//  Default is `true`.
 var private /*config*/ bool useMutateInput;
+//  Chat messages, prepended by this prefix will be treated as commands.
+//  Default is "!". Empty values are also treated as "!".
+var private /*config*/ Text chatCommandPrefix;
 
 var LoggerAPI.Definition errCommandDuplicate;
 
@@ -68,6 +73,8 @@ protected function OnDisabled()
         registeredCommands = none;
     }
     commandDelimiters.length = 0;
+    _.memory.Free(chatCommandPrefix);
+    chatCommandPrefix = none;
 }
 
 protected function SwapConfig(FeatureConfig config)
@@ -77,6 +84,8 @@ protected function SwapConfig(FeatureConfig config)
     if (newConfig == none) {
         return;
     }
+    _.memory.Free(chatCommandPrefix);
+    chatCommandPrefix = _.text.FromString(newConfig.chatCommandPrefix);
     if (useChatInput != newConfig.useChatInput)
     {
         useChatInput = newConfig.useChatInput;
@@ -245,9 +254,9 @@ private function bool HandleCommands(
     bool        teamMessage)
 {
     local Parser parser;
-    //  We are only interested in messages that start with "!"
+    //  We are only interested in messages that start with `chatCommandPrefix`
     parser = _.text.Parse(message);
-    if (!parser.Match(P("!")).Ok())
+    if (!parser.Match(chatCommandPrefix).Ok())
     {
         parser.FreeSelf();
         return true;
