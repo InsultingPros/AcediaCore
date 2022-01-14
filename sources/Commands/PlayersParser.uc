@@ -29,9 +29,9 @@ class PlayersParser extends AcediaObject
  *          This one is used to specify players by their key, assigned to
  *          them when they enter the game. This type of selectors can be used
  *          when players have hard to type names.
- *      2. Macro selector: "@self", "@all", "@admin" or just "@".
- *          "@" and "@self" are identical and can be used to specify player
- *          that called the command.
+ *      2. Macro selector: "@self", "@me", "@all", "@admin" or just "@".
+ *          "@", "@me", and "@self" are identical and can be used to
+ *          specify player that called the command.
  *          "@admin" can be used to specify all admins in the game at once.
  *          "@all" specifies all current players.
  *          In future it is planned to make macros extendable by allowing to
@@ -61,7 +61,7 @@ class PlayersParser extends AcediaObject
  *          select everyone who is not an admin and then adds everyone else.
  */
 
-//  Player for which "@" and "@self" macros will refer
+//  Player for which "@", "@me", and "@self" macros will refer
 var private EPlayer         selfPlayer;
 //  Copy of the list of current players at the moment of allocation of
 //  this `PlayersParser`.
@@ -76,7 +76,7 @@ var private bool            parsedFirstSelector;
 //  Will be equal to a single-element array [","], used for parsing
 var private array<Text>     selectorDelimiters;
 
-var const int TSELF, TADMIN, TALL, TNOT, TKEY, TMACRO, TCOMMA;
+var const int TSELF, TME, TADMIN, TALL, TNOT, TKEY, TMACRO, TCOMMA;
 var const int TOPEN_BRACKET, TCLOSE_BRACKET;
 
 protected function Finalizer()
@@ -92,9 +92,9 @@ protected function Finalizer()
 }
 
 /**
- *  Set a player who will be referred to by "@" and "@self" macros.
+ *  Set a player who will be referred to by "@", "@me" and "@self" macros.
  *
- *  @param  newSelfPlayer   Player who will be referred to by "@" and
+ *  @param  newSelfPlayer   Player who will be referred to by "@", "@me" and
  *      "@self" macros. Passing `none` will make it so no one is
  *      referred by them.
  */
@@ -228,7 +228,10 @@ private final function AddByMacro(Text macroText)
         currentSelection = playersSnapshot;
         return;
     }
-    if (macroText.IsEmpty() || macroText.Compare(T(TSELF), SCASE_INSENSITIVE)) {
+    if (    macroText.IsEmpty()
+        ||  macroText.Compare(T(TSELF), SCASE_INSENSITIVE)
+        ||  macroText.Compare(T(TME), SCASE_INSENSITIVE))
+    {
         InsertPlayer(selfPlayer);
     }
 }
@@ -508,4 +511,6 @@ defaultproperties
     stringConstants(7)  = "["
     TCLOSE_BRACKET  = 8
     stringConstants(8)  = "]"
+    TME                 = 9
+    stringConstants(9) = "me"
 }
