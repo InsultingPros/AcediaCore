@@ -2,7 +2,7 @@
  *  Player's inventory implementation for classic Killing Floor that changes
  *  as little as possible and only on request from another mod, otherwise not
  *  altering gameplay at all.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -57,11 +57,14 @@ private function Pawn GetOwnerPawn()
     return myController.pawn;
 }
 
+//  TODO: needs more testing
 public function bool Add(EItem newItem, optional bool forceAddition)
 {
-    local Pawn      pawn;
-    local EKFWeapon kfWeaponItem;
-    local KFWeapon  kfWeapon;
+    local Pawn              pawn;
+    local EKFWeapon         kfWeaponItem;
+    local KFWeapon          kfWeapon;
+    local class<KFWeapon>   dualClass;
+    local Inventory         collidingItem;
     if (!CanAdd(newItem, forceAddition))    return false;
     kfWeaponItem = EKFWeapon(newItem);
     if (kfWeaponItem == none)               return false;
@@ -70,6 +73,24 @@ public function bool Add(EItem newItem, optional bool forceAddition)
     kfWeapon = kfWeaponItem.GetNativeInstance();
     if (kfWeapon == none)                   return false;
 
+    dualClass = GetDualClass(kfWeapon.class);
+    if (dualClass != none)
+    {
+        collidingItem = FindSkinnedInventory(pawn, kfWeapon.class);
+        if (collidingItem != none)
+        {
+            collidingItem.Destroyed();
+            collidingItem.Destroy();
+        }
+        kfWeapon.Destroy();
+        kfWeapon = KFWeapon(_.memory.Allocate(dualClass));
+        if (kfWeapon != none) {
+            _.unreal.GetKFGameType().WeaponSpawned(kfWeapon);
+        }
+        else {
+            return false;
+        }
+    }
     kfWeapon.GiveTo(pawn);
     return true;
 }
@@ -78,18 +99,42 @@ public function bool AddTemplate(
     Text            newItemTemplate,
     optional bool   forceAddition)
 {
-    local Pawn          pawn;
-    local KFWeapon        newWeapon;
+    local Pawn              pawn;
+    local KFWeapon          newWeapon;
+    local class<KFWeapon>   newWeaponClass;
+    local class<KFWeapon>   dualClass;
+    local KFWeapon          collidingWeapon;
+    local int               totalAmmo, magazineAmmo;
     if (newItemTemplate == none)                            return false;
     if (!CanAddTemplate(newItemTemplate, forceAddition))    return false;
     pawn = GetOwnerPawn();
     if (pawn == none)                                       return false;
 
-    newWeapon = KFWeapon(_.memory.AllocateByReference(newItemTemplate));
+    newWeaponClass = class<KFWeapon>(_.memory.LoadClass(newItemTemplate));
+    if (newWeaponClass != none) {
+        dualClass = GetDualClass(newWeaponClass);
+    }
+    if (dualClass != none)
+    {
+        collidingWeapon = FindSkinnedInventory(pawn, newWeaponClass);
+        if (collidingWeapon != none)
+        {
+            totalAmmo       = collidingWeapon.AmmoAmount(0);
+            magazineAmmo    = collidingWeapon.magAmmoRemaining;
+            collidingWeapon.Destroyed();
+            collidingWeapon.Destroy();
+            newWeaponClass = dualClass;
+        }
+    }
+    newWeapon = KFWeapon(_.memory.Allocate(newWeaponClass));
     if (newWeapon != none)
     {
         _.unreal.GetKFGameType().WeaponSpawned(newWeapon);
         newWeapon.GiveTo(pawn);
+        if (totalAmmo > 0) {
+            newWeapon.AddAmmo(totalAmmo, 0);
+        }
+        newWeapon.magAmmoRemaining += magazineAmmo;
         return true;
     }
     return false;
@@ -117,11 +162,12 @@ public function bool CanAddTemplate(
     return CanAddWeaponClass(kfWeaponClass, forceAddition);
 }
 
-public function bool CanAddWeaponClass(
+private function bool CanAddWeaponClass(
     class<KFWeapon> kfWeaponClass,
     optional bool   forceAddition)
 {
-    local KFPawn kfPawn;
+    local KFPawn    kfPawn;
+    local Inventory collidingItem;
     if (kfWeaponClass == none)  return false;
     kfPawn = KFPawn(GetOwnerPawn());
     if (kfPawn == none)         return false;
@@ -129,11 +175,12 @@ public function bool CanAddWeaponClass(
     if (!forceAddition && !kfPawn.CanCarry(kfWeaponClass.default.weight)) {
         return false;
     }
-    if (kfPawn.FindInventoryType(kfWeaponClass) != none) {
-        return false;
-    }
-    if (!forceAddition && HasSameTypeWeapons(kfWeaponClass, kfPawn)) {
-        return false;
+    if (!forceAddition && HasSameTypeWeapons(kfWeaponClass, kfPawn))
+    {
+        if (GetDualClass(kfWeaponClass) != none) {
+            collidingItem = FindSkinnedInventory(kfPawn, kfWeaponClass);
+        }
+        return (collidingItem != none);
     }
     return true;
 }
@@ -155,6 +202,69 @@ private function bool HasSameTypeWeapons(
         nextInventory = nextInventory.inventory;
     }
     return false;
+}
+
+//  For "single" weapons that can have a "dual" version returns class of
+//  corresponding dual version, for any other
+//  (including dual weapons themselves) returns `none`.
+private final function class<KFWeapon> GetDualClass(class<KFWeapon> weapon)
+{
+    local int                   i;
+    local class<KFWeaponPickup> pickupClass;
+    local class<KFWeaponPickup> dualPickupClass;
+    if (weapon == none)         return none;
+    pickupClass = class<KFWeaponPickup>(weapon.default.pickupClass);
+    if (pickupClass == none)    return none;
+
+    for (i = 0; i < dualiesClasses.length; i += 1)
+    {
+        if (dualiesClasses[i].single == pickupClass)
+        {
+            dualPickupClass = dualiesClasses[i].dual;
+            if (dualPickupClass != none) {
+                return class<KFWeapon>(dualPickupClass.default.inventoryType);
+            }
+        }
+    }
+    return none;
+}
+
+//      Returns inventory type of class `desiredClass` if it exists in
+//  `pawn`'s inventory.
+//      Unlike `Pawn`'s `FindInventoryType()` method, this one will find
+//  inventory type in case it corresponds to the different (weapon's) skin by
+//  comparing first item of `KFWeaponPickup`'s `variantClasses`.
+private function KFWeapon FindSkinnedInventory(
+    Pawn            pawn,
+    class<KFWeapon> desiredClass)
+{
+    local Inventory             nextInv;
+    local class<Pickup>         rootVariant;
+    local class<KFWeaponPickup> nextPickupClass, desiredPickupClass;
+    if (desiredClass == none)   return none;
+    if (pawn == none)           return none;
+
+    desiredPickupClass = class<KFWeaponPickup>(desiredClass.default.pickupClass);
+    if (    desiredPickupClass != none
+        &&  desiredPickupClass.default.variantClasses.length > 0)
+    {
+        rootVariant = desiredPickupClass.default.variantClasses[0];
+    }
+    for (nextInv = pawn.inventory; nextInv != none; nextInv = nextInv.inventory)
+    {
+        if (nextInv.class == desiredClass) {
+            return KFWeapon(nextInv);
+        }
+        //  Variant check
+        if (rootVariant == none)                                continue;
+        nextPickupClass = class<KFWeaponPickup>(nextInv.pickupClass);
+        if (nextPickupClass == none)                            continue;
+        if (nextPickupClass.default.variantClasses.length <= 0) continue;
+        if (rootVariant == nextPickupClass.default.variantClasses[0]) {
+            return KFWeapon(nextInv);
+        }
+    }
+    return none;
 }
 
 //      Returns a root pickup class.
@@ -222,9 +332,9 @@ public function bool Remove(
         if (nextInventory.inventory == kfWeapon)
         {
             nextInventory.inventory     = kfWeapon.inventory;
-			kfWeapon.inventory          = none;
-			nextInventory.netUpdateTime = passedTime;
-			kfWeapon.netUpdateTime      = passedTime;
+            kfWeapon.inventory          = none;
+            nextInventory.netUpdateTime = passedTime;
+            kfWeapon.netUpdateTime      = passedTime;
             kfWeapon.Destroy();
             removedItem = true;
         }
@@ -271,9 +381,9 @@ public function bool RemoveTemplate(
             &&  nextInventory.inventory.class == kfWeaponClass)
         {
             nextInventory.inventory     = nextKFWeapon.inventory;
-			nextKFWeapon.inventory      = none;
-			nextInventory.netUpdateTime = passedTime;
-			nextKFWeapon.netUpdateTime  = passedTime;
+            nextKFWeapon.inventory      = none;
+            nextInventory.netUpdateTime = passedTime;
+            nextKFWeapon.netUpdateTime  = passedTime;
             nextKFWeapon.Destroy();
             removedItem = true;
             if (!removeAll) {

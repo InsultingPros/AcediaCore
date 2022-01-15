@@ -2,7 +2,7 @@
  *  Implementation of `EKFItemTemplateInfo` for classic Killing Floor items that
  *  changes as little as possible and only on request from another mod,
  *  otherwise not altering gameplay at all.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -30,8 +30,9 @@ var private class<Inventory> classReference;
  *  @param  newClass    Native inventory class that new `EKFItemTemplateInfo`
  *      will represent.
  *  @return New `EKFItemTemplateInfo` that represents given `newClass`.
+ *      `none` if passed argument `newInventoryClass` is `none`.
  */
-public final static function EKFItemTemplateInfo Wrap(
+public final static /*unreal*/ function EKFItemTemplateInfo Wrap(
     class<Inventory> newInventoryClass)
 {
     local EKFItemTemplateInfo newTemplateReference;

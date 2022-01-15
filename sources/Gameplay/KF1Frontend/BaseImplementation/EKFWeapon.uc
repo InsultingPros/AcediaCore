@@ -2,7 +2,7 @@
  *  Implementation of `EItem` for classic Killing Floor weapons that changes
  *  as little as possible and only on request from another mod, otherwise not
  *  altering gameplay at all.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -37,7 +37,7 @@ protected function Finalizer()
  *      represent.
  *  @return New `EKFWeapon` that represents given `weaponInstance`.
  */
-public final static function EKFWeapon Make(KFWeapon weaponInstance)
+public final static /*unreal*/ function EKFWeapon Wrap(KFWeapon weaponInstance)
 {
     local EKFWeapon newReference;
     newReference = EKFWeapon(__().memory.Allocate(class'EKFWeapon'));
@@ -50,7 +50,7 @@ public final static function EKFWeapon Make(KFWeapon weaponInstance)
  *
  *  @return `KFWeapon` instance represented by the caller `EKFWeapon`.
  */
-public final function KFWeapon GetNativeInstance()
+public final /*unreal*/ function KFWeapon GetNativeInstance()
 {
     if (weaponReference != none) {
         return KFWeapon(weaponReference.Get());
