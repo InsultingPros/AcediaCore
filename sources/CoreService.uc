@@ -71,7 +71,9 @@ protected function OnCreated()
  *      Using array of `string`s since Acedia's `Text` wouldn't yet
  *      be available.
  */
-public final static function LaunchAcedia(Actor source, array<string> packages)
+public final static function LaunchAcedia(
+    Actor                   source,
+    optional array<string>  packages)
 {
     default.packagesToLoad = packages;
     default.blockSpawning = false;
