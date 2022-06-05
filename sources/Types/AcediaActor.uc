@@ -397,4 +397,9 @@ public static function _cleanup()
 
 defaultproperties
 {
+    RemoteRole      = ROLE_None
+    drawType        = DT_None
+    bCollideActors  = false
+    bCollideWorld   = false
+    bBlockActors    = false
 }

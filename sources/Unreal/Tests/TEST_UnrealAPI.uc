@@ -156,43 +156,43 @@ protected static function SubTest_InventoryChainFetchingSingle(Inventory chain)
 {
     Issue("Does not find correct first entry inside the inventory chain.");
     TEST_ExpectTrue(
-            __().unreal.GetInventoryFrom(class'MockInventoryA', chain)
+            __().unreal.inventory.Get(class'MockInventoryA', chain)
         ==  chain.inventory.inventory);
     TEST_ExpectTrue(
-            __().unreal.GetInventoryFrom(class'MockInventoryB', chain)
+            __().unreal.inventory.Get(class'MockInventoryB', chain)
         ==  chain.inventory);
     TEST_ExpectTrue(
-            __().unreal.GetInventoryFrom(class'MockInventoryAChild', chain)
+            __().unreal.inventory.Get(class'MockInventoryAChild', chain)
         ==  chain);
 
     Issue("Incorrectly finds missing inventory entries.");
-    TEST_ExpectNone(__().unreal.GetInventoryFrom(none, chain));
-    TEST_ExpectNone(__().unreal.GetInventoryFrom(class'Winchester', chain));
+    TEST_ExpectNone(__().unreal.inventory.Get(none, chain));
+    TEST_ExpectNone(__().unreal.inventory.Get(class'Winchester', chain));
 
     Issue("Does not find correct first entry inside the inventory chain when" @
         "allowing for child classes.");
     TEST_ExpectTrue(
-            __().unreal.GetInventoryFrom(class'MockInventoryA', chain, true)
+            __().unreal.inventory.Get(class'MockInventoryA', chain, true)
         ==  chain);
     TEST_ExpectTrue(
-            __().unreal.GetInventoryFrom(class'MockInventoryB', chain, true)
+            __().unreal.inventory.Get(class'MockInventoryB', chain, true)
         ==  chain.inventory);
     TEST_ExpectTrue(
-        __().unreal.GetInventoryFrom(class'MockInventoryAChild', chain, true)
+        __().unreal.inventory.Get(class'MockInventoryAChild', chain, true)
         == chain);
 
     Issue("Incorrectly finds missing inventory entries when allowing for" @
         "child classes.");
-    TEST_ExpectNone(__().unreal.GetInventoryFrom(none, chain, true));
-    TEST_ExpectNone(__().unreal.GetInventoryFrom(   class'Winchester', chain,
-                                                    true));
+    TEST_ExpectNone(__().unreal.inventory.Get(none, chain, true));
+    TEST_ExpectNone(__().unreal.inventory.Get(  class'Winchester', chain,
+                                                true));
 }
 
 protected static function SubTest_InventoryChainFetchingMany(Inventory chain)
 {
     local array<Inventory> result;
     Issue("Does not find correct entries inside the inventory chain.");
-    result = __().unreal.GetAllInventoryFrom(class'MockInventoryB', chain);
+    result = __().unreal.inventory.GetAll(class'MockInventoryB', chain);
     TEST_ExpectTrue(result.length == 2);
     TEST_ExpectTrue(result[0] == chain.inventory);
     TEST_ExpectTrue(result[1] == chain.inventory.inventory.inventory.inventory);
@@ -200,12 +200,12 @@ protected static function SubTest_InventoryChainFetchingMany(Inventory chain)
     Issue("Does not find correct entries inside the inventory chain when" @
         "allowing for child classes.");
     result =
-        __().unreal.GetAllInventoryFrom(class'MockInventoryB', chain, true);
+        __().unreal.inventory.GetAll(class'MockInventoryB', chain, true);
     TEST_ExpectTrue(result.length == 2);
     TEST_ExpectTrue(result[0] == chain.inventory);
     TEST_ExpectTrue(result[1] == chain.inventory.inventory.inventory.inventory);
     result =
-        __().unreal.GetAllInventoryFrom(class'MockInventoryA', chain, true);
+        __().unreal.inventory.GetAll(class'MockInventoryA', chain, true);
     TEST_ExpectTrue(result.length == 5);
     TEST_ExpectTrue(result[0] == chain);
     TEST_ExpectTrue(result[1] == chain.inventory.inventory);
@@ -218,9 +218,9 @@ protected static function SubTest_InventoryChainFetchingMany(Inventory chain)
         ==  chain.inventory.inventory.inventory.inventory.inventory.inventory);
     
     Issue("Does not return empty array for non-existing inventory class.");
-    result = __().unreal.GetAllInventoryFrom(class'Winchester', chain);
+    result = __().unreal.inventory.GetAll(class'Winchester', chain);
     TEST_ExpectTrue(result.length == 0);
-    result = __().unreal.GetAllInventoryFrom(class'Winchester', chain, true);
+    result = __().unreal.inventory.GetAll(class'Winchester', chain, true);
     TEST_ExpectTrue(result.length == 0);
 }
 

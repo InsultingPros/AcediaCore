@@ -1,5 +1,5 @@
 /**
- *  Implementation of `EKFItemTemplateInfo` for classic Killing Floor items that
+ *  Implementation of `EItemTemplateInfo` for classic Killing Floor items that
  *  changes as little as possible and only on request from another mod,
  *  otherwise not altering gameplay at all.
  *      Copyright 2021 - 2022 Anton Tarasenko

@@ -33,5 +33,6 @@ public function EItemTemplateInfo GetItemTemplateInfo(Text templateName)
 
 defaultproperties
 {
-    tradingClass = class'KF1_TradingComponent'
+    templatesClass  = class'KF1_TemplatesComponent'
+    tradingClass    = class'KF1_TradingComponent'
 }

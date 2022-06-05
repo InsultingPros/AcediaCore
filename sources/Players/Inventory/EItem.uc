@@ -30,7 +30,7 @@
  *      2.  Weight. Accessed by `SetWeight()` / `GetWeight()`.
  *      All of these parameters can be ignored if they are not applicable to
  *  a certain type of item.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -47,7 +47,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class EItem extends AcediaObject
+class EItem extends EInterface
     abstract;
 
 /**
@@ -61,6 +61,12 @@ public function array<Text> GetTags()
 {
     local array<Text> emptyArray;
     return emptyArray;
+}
+
+// TODO: document this
+public function bool HasTag(Text tagToCheck)
+{
+    return false;
 }
 
 /**

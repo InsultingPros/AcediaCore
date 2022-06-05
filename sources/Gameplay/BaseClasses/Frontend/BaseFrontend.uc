@@ -21,6 +21,23 @@
  class BaseFrontend extends AcediaObject
     abstract;
 
+var private config class<ATemplatesComponent>   templatesClass;
+var public ATemplatesComponent                  templates;
+
+protected function Constructor()
+{
+    if (templatesClass != none) {
+        templates = ATemplatesComponent(_.memory.Allocate(templatesClass));
+    }
+}
+
+protected function Finalizer()
+{
+    _.memory.Free(templates);
+    templates = none;
+}
+
 defaultproperties
 {
+    templatesClass = none
 }

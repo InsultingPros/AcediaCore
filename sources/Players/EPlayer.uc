@@ -134,7 +134,7 @@ public function bool SameAs(EInterface other)
     if (other == none)              return false;
     if (controller == none)         return false;
     asPlayer = EPlayer(other);
-    if (asPlayer != none)           return false;
+    if (asPlayer == none)           return false;
     otherController = asPlayer.controller;
     if (otherController == none)    return false;
     

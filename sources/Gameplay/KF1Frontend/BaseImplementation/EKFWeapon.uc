@@ -1,5 +1,5 @@
 /**
- *  Implementation of `EItem` for classic Killing Floor weapons that changes
+ *  Implementation of `EWeapon` for classic Killing Floor weapons that changes
  *  as little as possible and only on request from another mod, otherwise not
  *  altering gameplay at all.
  *      Copyright 2021 - 2022 Anton Tarasenko
@@ -19,10 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class EKFWeapon extends EItem
-    abstract;
+class EKFWeapon extends EWeapon;
 
 var private NativeActorRef weaponReference;
+
+var private config array< class<KFWeapon> > weaponsWithFlashlight;
 
 protected function Finalizer()
 {
@@ -40,9 +41,57 @@ protected function Finalizer()
 public final static /*unreal*/ function EKFWeapon Wrap(KFWeapon weaponInstance)
 {
     local EKFWeapon newReference;
+    if (weaponInstance == none) {
+        return none;
+    }
     newReference = EKFWeapon(__().memory.Allocate(class'EKFWeapon'));
     newReference.weaponReference = __().unreal.ActorRef(weaponInstance);
     return newReference;
+}
+
+public function EInterface Copy()
+{
+    local KFWeapon weaponInstance;
+    weaponInstance = GetNativeInstance();
+    return Wrap(weaponInstance);
+}
+
+public function bool Supports(class<EInterface> newInterfaceClass)
+{
+    if (newInterfaceClass == none)              return false;
+    if (newInterfaceClass == class'EWeapon')    return true;
+    if (newInterfaceClass == class'EKFWeapon')  return true;
+
+    return false;
+}
+
+public function EInterface As(class<EInterface> newInterfaceClass)
+{
+    if (!IsExistent()) {
+        return none;
+    }
+    if (    newInterfaceClass == class'EItem'
+        ||  newInterfaceClass == class'EWeapon'
+        ||  newInterfaceClass == class'EKFWeapon')
+    {
+        return Copy();
+    }
+    return none;
+}
+
+public function bool IsExistent()
+{
+    return (GetNativeInstance() != none);
+}
+
+public function bool SameAs(EInterface other)
+{
+    local EKFWeapon otherWeapon;
+    otherWeapon = EKFWeapon(other);
+    if (otherWeapon == none) {
+        return false;
+    }
+    return (GetNativeInstance() == otherWeapon.GetNativeInstance());
 }
 
 /**
@@ -65,7 +114,17 @@ public function array<Text> GetTags()
     if (weaponReference.Get() == none)  return tagArray;
 
     tagArray[0] = P("weapon").Copy();
+    tagArray[1] = P("visible").Copy();
     return tagArray;
+}
+
+public function bool HasTag(Text tagToCheck)
+{
+    if (tagToCheck == none)                 return false;
+    if (tagToCheck.Compare(P("weapon")))    return true;
+    if (tagToCheck.Compare(P("visible")))   return true;
+
+    return false;
 }
 
 public function Text GetTemplate()
@@ -85,7 +144,7 @@ public function Text GetName()
     weapon = Weapon(weaponReference.Get());
     if (weapon == none)             return none;
 
-    return _.text.FromString(Locs(weapon.itemName));
+    return _.text.FromString(weapon.GetHumanReadableName());
 }
 
 public function bool IsRemovable()
@@ -145,6 +204,97 @@ public function int GetWeight()
     return int(kfWeapon.weight);
 }
 
+public function array<EAmmo> GetAvailableAmmo()
+{
+    local EAmmo                 nextAmmo;
+    local KFWeapon              kfWeapon;
+    local Inventory             nextInventory;
+    local array<EAmmo>          result;
+    local class<Ammunition>     ammoClass1, ammoClass2;
+    if (weaponReference == none)    return result;
+    kfWeapon = KFWeapon(weaponReference.Get());
+    if (kfWeapon == none)           return result;
+    if (kfWeapon.owner == none)     return result;
+
+    ammoClass1 = _.unreal.inventory.GetAmmoClass(kfWeapon, 0);
+    ammoClass2 = _.unreal.inventory.GetAmmoClass(kfWeapon, 1);
+    nextInventory = kfWeapon.owner.inventory;
+    while (nextInventory != none)
+    {
+        if (    nextInventory.class == ammoClass1
+            ||  nextInventory.class == ammoClass2)
+        {
+            nextAmmo = class'EKFAmmo'.static.Wrap(Ammunition(nextInventory));
+            if (nextAmmo != none) {
+                result[result.length] = nextAmmo;
+            }
+            //  Reset temporary variable to avoid adding same `EKFAmmo` twice
+            nextAmmo = none;
+        }
+        nextInventory = nextInventory.inventory;
+    }
+    result = AddSpecialAmmo(kfWeapon, result);
+    return result;
+}
+
+private function array<EAmmo> AddSpecialAmmo(
+    KFWeapon        kfWeapon,
+    array<EAmmo>    ammoCollection)
+{
+    local EAmmo         nextAmmo;
+    local KFMedicGun    kfMedicWeapon;
+    if (kfWeapon == none) {
+        return ammoCollection;
+    }
+    kfMedicWeapon = KFMedicGun(kfWeapon);
+    if (kfMedicWeapon != none)
+    {
+        nextAmmo = class'EKFMedicAmmo'.static.Wrap(kfMedicWeapon);
+        if (nextAmmo != none) {
+            ammoCollection[ammoCollection.length] = nextAmmo;
+        }
+    }
+    if (HasFlashlight(kfWeapon))
+    {
+        nextAmmo =
+            class'EKFFlashlightAmmo'.static.Wrap(KFHumanPawn(kfWeapon.owner));
+        if (nextAmmo != none) {
+            ammoCollection[ammoCollection.length] = nextAmmo;
+        }
+    }
+    if (kfWeapon.class == class'KFMod.Syringe')
+    {
+        nextAmmo =
+            class'EKFSyringeAmmo'.static.Wrap(Syringe(kfWeapon));
+        if (nextAmmo != none) {
+            ammoCollection[ammoCollection.length] = nextAmmo;
+        }
+    }
+    return ammoCollection;
+}
+
+private function bool HasFlashlight(KFWeapon weapon)
+{
+    local int i;
+    if (weapon == none) {
+        return false;
+    }
+    for (i = 0; i < weaponsWithFlashlight.length; i += 1)
+    {
+        if (weapon.class == weaponsWithFlashlight[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
 defaultproperties
 {
+    weaponsWithFlashlight(0) = class'Single'
+    weaponsWithFlashlight(1) = class'Dualies'
+    weaponsWithFlashlight(2) = class'Shotgun'
+    weaponsWithFlashlight(3) = class'CamoShotgun'
+    weaponsWithFlashlight(4) = class'NailGun'
+    weaponsWithFlashlight(5) = class'BenelliShotgun'
+    weaponsWithFlashlight(6) = class'GoldenBenelliShotgun'
 }

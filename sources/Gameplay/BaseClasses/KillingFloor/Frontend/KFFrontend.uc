@@ -25,6 +25,7 @@ var public ATradingComponent                trading;
 
 protected function Constructor()
 {
+    super.Constructor();
     if (tradingClass != none) {
         trading = ATradingComponent(_.memory.Allocate(tradingClass));
     }

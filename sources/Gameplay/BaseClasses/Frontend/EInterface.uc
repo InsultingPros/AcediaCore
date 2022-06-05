@@ -8,7 +8,7 @@
  *  once (including those of the same type). Deallocating one such reference
  *  should not affect referred entity in any way and should be treated as simply
  *  getting rid of one of the references.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -40,6 +40,20 @@
 public function EInterface Copy()
 {
     return none;
+}
+
+/**
+ *  Checks if entity, referred to by the caller `EInterface` supports
+ *  `newInterfaceClass` interface class.
+ *
+ *  @param  newInterfaceClass   Class of the `EInterface`, for which method
+ *      should check support by entity, referred to by the caller `EInterface`.
+ *  @return `true` if referred entity supports `newInterfaceClass` and
+ *      `false` otherwise.
+ */
+public function bool Supports(class<EInterface> newInterfaceClass)
+{
+    return false;
 }
 
 /**

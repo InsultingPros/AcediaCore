@@ -21,7 +21,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class EInventory extends AcediaObject
+class EInventory extends EInterface
     abstract;
 
 /**
@@ -30,7 +30,7 @@ class EInventory extends AcediaObject
  *  This method should not be called manually, unless you implement your own
  *  game interface.
  *
- *  Cannot fail for any connected player and can assume it will not be called
+ *  Cannot fail for any connected player and will assume it will not be called
  *  for not connected ones.
  *
  *  @param  player  `EPlayer` for which to initialize this inventory.
@@ -44,17 +44,23 @@ public function Initialize(EPlayer player) {}
  *  inventory system - it can refuse it.
  *
  *  @param  newItem         New item to add to the caller inventory system.
+ *      Can be destroyed as a result of this call, if it gets merged with
+ *      another weapon inside the inventory.
  *  @param  forceAddition   This parameter is only relevant when `newItem`
  *      cannot be added in the caller inventory system. If it cannot be added
  *      because of the conflict with other items - setting this flag to `true`
  *      allows caller inventory system to get rid of such items to make room for
  *      `newItem`. Removing items is only allowed if it will actually let us add
  *      `newItem`. How removal will be done is up to the implementation.
- *  @return `true` if `newItem` was added and `false` otherwise.
+ *  @return `EItem` added as a result. Can be different from `newItem` in case
+ *      inventory made it "merge" with another weapon. This can happen,
+ *      for example, if we add a single pistol when inventory already contains
+ *      pistol of the same type.
+ *      `none` if we have failed to add `newItem` to the inventory.
  */
-public function bool Add(EItem newItem, optional bool forceAddition)
+public function EItem Add(EItem newItem, optional bool forceAddition)
 {
-    return false;
+    return none;
 }
 
 /**
@@ -72,18 +78,21 @@ public function bool Add(EItem newItem, optional bool forceAddition)
  *      allows caller inventory system to get rid of such items to make room for
  *      new item. Removing items is only allowed if it will actually let us add
  *      new item. How removal will be done is up to the implementation.
- *  @return `true` if new item was added and `false` otherwise.
+ *  @return Reference to `EItem` interface to the added item entity,
+ *      `none` iff adding item has failed.
  */
-public function bool AddTemplate(
+public function EItem AddTemplate(
     Text            newItemTemplate,
     optional bool   forceAddition)
 {
-    return false;
+    return none;
 }
 
 /**
  *  Checks whether given item `itemToCheck` can be added to the caller
  *  inventory system.
+ *
+ *  See also `CanAddExplain()`.
  *
  *  @param  itemToCheck     Item to check for whether we can add it to
  *      the caller `EInventory`.
@@ -93,14 +102,23 @@ public function bool AddTemplate(
  *  @return `true` if given `itemToCheck` can be added to the caller
  *      inventory system with given flag `forceAddition` and `false` otherwise.
  */
-public function bool CanAdd(EItem itemToCheck, optional bool forceAddition)
+public final function bool CanAdd(
+    EItem           itemToCheck,
+    optional bool   forceAddition)
 {
-    return false;
+    local bool success;
+    local Text explanation;
+    explanation = CanAddExplain(itemToCheck, forceAddition);
+    success = (explanation == none);
+    _.memory.Free(explanation);
+    return success;
 }
 
 /**
  *  Checks whether item with given template `itemToCheck` can be added to
  *  the caller inventory system.
+ *
+ *  See also `CanAddTemplateExplain()`.
  *
  *  @param  itemTemplateToCheck Template of the item to check for whether we can
  *      add it to the caller `EInventory`.
@@ -115,7 +133,58 @@ public function bool CanAddTemplate(
     Text            itemTemplateToCheck,
     optional bool   forceAddition)
 {
-    return false;
+    local bool success;
+    local Text explanation;
+    explanation = CanAddTemplateExplain(itemTemplateToCheck, forceAddition);
+    success = (explanation == none);
+    _.memory.Free(explanation);
+    return success;
+}
+
+/**
+ *  Checks whether given item `itemToCheck` can be added to the caller
+ *  inventory system and provides short explanation (dependent on
+ *  implementation) if item cannot be added.
+ *
+ *  See also `CanAdd()`.
+ *
+ *  @param  itemToCheck     Item to check for whether we can add it to
+ *      the caller `EInventory`.
+ *  @param  forceAddition   New items can be added with or without
+ *      `forceAddition` flag. This parameter allows you to check whether we
+ *      test for addition with or without it.
+ *  @return `none` if given `itemToCheck` can be added to the caller
+ *      inventory system with given flag `forceAddition` and `Text` with
+ *      description of reason why not otherwise.
+ */
+public function Text CanAddExplain(
+    EItem           itemToCheck,
+    optional bool   forceAddition)
+{
+    return none;
+}
+
+/**
+ *  Checks whether item with given template `itemToCheck` can be added to
+ *  the caller inventory system and provides short explanation (dependent on
+ *  implementation) if item cannot be added.
+ *
+ *  See also `CanAddTemplate()`.
+ *
+ *  @param  itemTemplateToCheck Template of the item to check for whether we can
+ *      add it to the caller `EInventory`.
+ *  @param  forceAddition       New items can be added with or without
+ *      `forceAddition` flag. This parameter allows you to check whether we
+ *      test for addition with or without it.
+ *  @return `none` if given `itemToCheck` can be added to the caller
+ *      inventory system with given flag `forceAddition` and `Text` with
+ *      description of reason why not otherwise.
+ */
+public function Text CanAddTemplateExplain(
+    Text            itemTemplateToCheck,
+    optional bool   forceAddition)
+{
+    return none;
 }
 
 /**
@@ -137,15 +206,16 @@ public function bool CanAddTemplate(
  *      `EInventory` in the first place).
  */
 public function bool Remove(
-    EItem itemToRemove,
-    optional bool keepItem,
-    optional bool forceRemoval)
+    EItem           itemToRemove,
+    optional bool   keepItem,
+    optional bool   forceRemoval)
 {
     return false;
 }
 
 /**
- *  Removes item of type `itemTemplateToRemove` from the caller `EInventory`.
+ *  Removes item with given template `itemTemplateToRemove` from the caller
+ *  `EInventory`.
  *
  *  By default removes one arbitrary (can be based on simple convenience of
  *  implementation) item, but optional parameter can make it remove all items
@@ -194,13 +264,18 @@ public function bool RemoveTemplate(
  *  @param  forceRemoval    Set this to `true` if item must be removed
  *      no matter what. Otherwise inventory system can refuse removal of items,
  *      whose `IsRemovable()` returns `false`.
+ *  @param  forceRemoval    Set this to `true` if even invisible to the player
+ *      items have to be removed. In Killing Floor only weapons are visible to
+ *      the player (ammunition items are considered to be just
+ *      their parameters).
  *  @return `true` if any `EItem` was removed and `false` otherwise
  *      (including the case where no `EItem`s were kept in the caller
  *      `EInventory` in the first place).
  */
 public function bool RemoveAll(
     optional bool keepItems,
-    optional bool forceRemoval)
+    optional bool forceRemoval,
+    optional bool includeHidden)
 {
     return false;
 }
@@ -218,6 +293,20 @@ public function bool Contains(EItem itemToCheck)
 }
 
 /**
+ *  Checks whether caller `EInventory` contains item with given template
+ *  `itemTemplateToCheck`.
+ *
+ *  @param  itemTemplateToCheck Template we want to check for belonging to
+ *      the caller `EInventory`.
+ *  @result `true` if item with a given template does belong to the inventory
+ *      and `false` otherwise.
+ */
+public function bool ContainsTemplate(Text itemTemplateToCheck)
+{
+    return false;
+}
+
+/**
  *  Returns array with all `EItem`s contained inside the caller `EInventory`.
  *
  *  @return Array with all `EItem`s contained inside the caller `EInventory`.
@@ -230,11 +319,28 @@ public function array<EItem> GetAllItems()
 
 /**
  *  Returns array with all `EItem`s contained inside the caller `EInventory`
+ *  that support interface of class `interfaceClass`.
+ *
+ *  @return Array with all `EItem`s that support interface of
+ *      class `interfaceClass` contained inside the caller `EInventory`.
+ *      Guaranteed to not contain `none` references of interfaces to
+ *      inexistent entities.
+ */
+public function array<EItem> GetItemsSupporting(class<EItem> interfaceClass)
+{
+    local array<EItem> emptyArray;
+    return emptyArray;
+}
+
+/**
+ *  Returns array with all `EItem`s contained inside the caller `EInventory`
  *  that has specified tag `tag`.
  *
  *  @param  tag Tag, which items we want to get.
  *  @return Array with all `EItem`s contained inside the caller `EInventory`
  *      that has specified tag `tag`.
+ *      Guaranteed to not contain `none` references of interfaces to
+ *      inexistent entities.
  */
 public function array<EItem> GetTagItems(Text tag)
 {
@@ -254,6 +360,7 @@ public function array<EItem> GetTagItems(Text tag)
  *  @param  tag   Tag, which item we want to get.
  *  @return `EItem` contained inside the caller `EInventory` that belongs to
  *      the specified tag `tag`.
+ *      Guaranteed to not be `none` or refer to non-existent entity.
  */
 public function EItem GetTagItem(Text tag) { return none; }
 
@@ -264,6 +371,8 @@ public function EItem GetTagItem(Text tag) { return none; }
  *  @param  template    Template, that items we want to get originated from.
  *  @return Array with all `EItem`s contained inside the caller `EInventory`
  *      that originated from the specified template `template`.
+ *      Guaranteed to not contain `none` references or interfaces to
+ *      inexistent entities.
  */
 public function array<EItem> GetTemplateItems(Text template)
 {
@@ -272,7 +381,7 @@ public function array<EItem> GetTemplateItems(Text template)
 }
 
 /**
- *  Returns array with all `EItem`s contained inside the caller `EInventory`
+ *  Returns `EItem`s contained inside the caller `EInventory`
  *  that originated from the specified template `template`.
  *
  *  If several `EItem`s inside caller `EInventory` originated from
@@ -283,8 +392,26 @@ public function array<EItem> GetTemplateItems(Text template)
  *  @param  template    Template, that item we want to get originated from.
  *  @return `EItem`s contained inside the caller `EInventory` that originated
  *      from the specified template `template`.
+ *      Guaranteed to not be `none` or refer to non-existent entity.
  */
 public function EItem GetTemplateItem(Text template) { return none; }
+
+/**
+ *  Returns array of caller `EInventory`'s items that are currently equipped by
+ *  its owner player.
+ *
+ *  @return Array with all `EItem`s contained inside the caller `EInventory`
+ *      that are equipped by its owner.
+ *      Guaranteed to not contain `none` references or interfaces to
+ *      inexistent entities.
+ */
+public function array<EItem> GetEquippedItems()
+{
+    local array<EItem> emptyArray;
+    return emptyArray;
+}
+
+public function EItem GetEquippedItem() { return none; }
 
 defaultproperties
 {
