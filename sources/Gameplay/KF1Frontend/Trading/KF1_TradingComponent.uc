@@ -84,6 +84,26 @@ public function array<ETrader> GetTraders()
     return result;
 }
 
+public function ETrader GetTrader(Text traderName)
+{
+    local int   i;
+    local Text  nextTraderName;
+    if (traderName == none) {
+        return none;
+    }
+    for (i = 0; i < registeredTraders.length; i += 1)
+    {
+        nextTraderName = registeredTraders[i].GetName();
+        if (traderName.Compare(nextTraderName))
+        {
+            _.memory.Free(nextTraderName);
+            return ETrader(registeredTraders[i].Copy());
+        }
+        _.memory.Free(nextTraderName);
+    }
+    return none;
+}
+
 public function bool IsTradingActive()
 {
     local KFGameType kfGame;

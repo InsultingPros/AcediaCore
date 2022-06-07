@@ -93,6 +93,16 @@ public final function Trading_OnSelect_Slot OnTraderSelected(
 public function array<ETrader> GetTraders();
 
 /**
+ *  Returns a trader with a given name `traderName`.
+ *  If several traders are assigned the same name - returns any arbitrary one.
+ *
+ *  @param  traderName  Name of the trader to return. Case-sensitive.
+ *  @return `ETrader` with a given `traderName`. `none` if either `traderName`
+ *      is `none` or there is no trader with such a name.
+ */
+public function ETrader GetTrader(Text traderName);
+
+/**
  *  Checks whether trading is currently active.
  *
  *      For classic KF game mode it means that it is trader time and one
