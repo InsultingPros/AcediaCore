@@ -254,6 +254,10 @@ public function bool RemoveTemplate(
 /**
  *  Removes all items from the caller `EInventory`.
  *
+ *  By default this method should only remove items with "visible" tag,
+ *  i.e. the items player can see and interact with. This behavior can be
+ *  changed with `includeHidden` parameter.
+ *
  *  Based on gameplay considerations, inventory system can refuse removing
  *  `EItem`s for which `IsRemovable()` returns `false`. But removal of any item
  *  can be enforced with optional second parameter.
@@ -268,6 +272,8 @@ public function bool RemoveTemplate(
  *      items have to be removed. In Killing Floor only weapons are visible to
  *      the player (ammunition items are considered to be just
  *      their parameters).
+ *  @param  includeHidden   Set this to `true` to also affect items without
+ *      "visible" tag.
  *  @return `true` if any `EItem` was removed and `false` otherwise
  *      (including the case where no `EItem`s were kept in the caller
  *      `EInventory` in the first place).
