@@ -22,7 +22,6 @@
 class KF1_TemplatesComponent extends ATemplatesComponent;
 
 var private bool listsAreReady;
-// TODO: add tools
 var private array<Text> availableWeaponLists;
 var private array<Text> allWeaponsList;
 var private array<Text> medicWeaponsList;
@@ -110,7 +109,7 @@ private function BuildKFWeaponLists()
     availableWeaponLists[3]     = _.text.FromString("support weapons");
     availableWeaponLists[4]     = _.text.FromString("sharpshooter weapons");
     availableWeaponLists[5]     = _.text.FromString("commando weapons");
-    availableWeaponLists[6]     = _.text.FromString("firebug weapons");
+    availableWeaponLists[6]     = _.text.FromString("berserk weapons");
     availableWeaponLists[7]     = _.text.FromString("firebug weapons");
     availableWeaponLists[8]     = _.text.FromString("demolition weapons");
     availableWeaponLists[9]     = _.text.FromString("tools");
