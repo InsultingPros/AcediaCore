@@ -33,6 +33,7 @@ var private array<Text> berserkerWeaponsList;
 var private array<Text> firebugWeaponsList;
 var private array<Text> demolitionWeaponsList;
 var private array<Text> neutralWeaponsList;
+var private array<Text> toolWeaponsList;
 
 protected function Finalizer()
 {
@@ -45,6 +46,7 @@ protected function Finalizer()
     _.memory.FreeMany(firebugWeaponsList);
     _.memory.FreeMany(demolitionWeaponsList);
     _.memory.FreeMany(neutralWeaponsList);
+    _.memory.FreeMany(toolWeaponsList);
     _.memory.FreeMany(availableWeaponLists);
     if (allWeaponsList.length > 0) {
         allWeaponsList.length = 0;
@@ -76,6 +78,9 @@ protected function Finalizer()
     if (availableWeaponLists.length > 0) {
         availableWeaponLists.length = 0;
     }
+    if (toolWeaponsList.length > 0) {
+        toolWeaponsList.length = 0;
+    }
     listsAreReady = false;
 }
 
@@ -97,15 +102,19 @@ private function BuildKFWeaponLists()
     firebugWeaponsList      = MakeWeaponList(kfLevelRules.fireItemForSale);
     demolitionWeaponsList   = MakeWeaponList(kfLevelRules.demoItemForSale);
     neutralWeaponsList      = MakeWeaponList(kfLevelRules.neutItemForSale);
-    availableWeaponLists[0] = _.text.FromString("all weapons");
-    availableWeaponLists[1] = _.text.FromString("trading weapons");
-    availableWeaponLists[2] = _.text.FromString("medic weapons");
-    availableWeaponLists[3] = _.text.FromString("support weapons");
-    availableWeaponLists[4] = _.text.FromString("sharpshooter weapons");
-    availableWeaponLists[5] = _.text.FromString("commando weapons");
-    availableWeaponLists[6] = _.text.FromString("firebug weapons");
-    availableWeaponLists[7] = _.text.FromString("demolition weapons");
-    availableWeaponLists[8] = _.text.FromString("neutral weapons");
+    toolWeaponsList[0]      = _.text.FromString("kfmod.syringe");
+    toolWeaponsList[1]      = _.text.FromString("kfmod.welder");
+    availableWeaponLists[0]     = _.text.FromString("all weapons");
+    availableWeaponLists[1]     = _.text.FromString("trading weapons");
+    availableWeaponLists[2]     = _.text.FromString("medic weapons");
+    availableWeaponLists[3]     = _.text.FromString("support weapons");
+    availableWeaponLists[4]     = _.text.FromString("sharpshooter weapons");
+    availableWeaponLists[5]     = _.text.FromString("commando weapons");
+    availableWeaponLists[6]     = _.text.FromString("firebug weapons");
+    availableWeaponLists[7]     = _.text.FromString("firebug weapons");
+    availableWeaponLists[8]     = _.text.FromString("demolition weapons");
+    availableWeaponLists[9]     = _.text.FromString("tools");
+    availableWeaponLists[10]    = _.text.FromString("neutral weapons");
     listsAreReady = true;
 }
 
@@ -157,6 +166,7 @@ public function bool ItemListExists(Text listName)
     if (listNameAsString == "berserker weapons")    return true;
     if (listNameAsString == "firebug weapons")      return true;
     if (listNameAsString == "demolition weapons")   return true;
+    if (listNameAsString == "tools")                return true;
     if (listNameAsString == "neutral weapons")      return true;
 
     return false;
@@ -197,6 +207,9 @@ public function array<Text> GetItemList(Text listName)
     }
     if (listNameAsString == "demolition weapons") {
         return CopyList(demolitionWeaponsList);
+    }
+    if (listNameAsString == "tools") {
+        return CopyList(toolWeaponsList);
     }
     if (listNameAsString == "neutral weapons") {
         return CopyList(neutralWeaponsList);
