@@ -404,7 +404,7 @@ private final function MakeConsoles(
     local int i;
     publicConsole = _.console.ForAll();
     callerConsole = _.console.For(callerPlayer);
-    othersConsole = _.console.ForAll();
+    othersConsole = _.console.ForAll().ButPlayer(callerPlayer);
     for (i = 0; i < targetPlayers.length; i += 1) {
             othersConsole.ButPlayer(targetPlayers[i]);
     }
