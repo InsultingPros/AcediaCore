@@ -177,6 +177,25 @@ var private Data commandData;
 //  of `Command`, so we will simply store and reuse one created instance.
 var private Command mainInstance;
 
+/**
+ *      When command is being executed we create several instances of
+ *  `ConsoleWriter` that can be used for command output. They will also be
+ *  automatically deallocated once command is executed.
+ *      DO NOT modify them or deallocate any of them manually.
+ *      This should make output more convenient and standardized.
+ *
+ *      1. `publicConsole` - sends messages to all present players;
+ *      2. `callerConsole` - sends messages to the player that
+ *          called the command;
+ *      3. `targetConsole` - sends messages to the player that is currently
+ *          being targeted (different each call of `ExecutedFor()` and
+ *          `none` during `Executed()` call);
+ *      4. `othersConsole` - sends messaged to every player that is
+ *          neither "caller" or "target".
+ */
+var protected ConsoleWriter publicConsole, othersConsole;
+var protected ConsoleWriter callerConsole, targetConsole;
+
 protected function Constructor()
 {
     local CommandDataBuilder dataBuilder;
@@ -193,6 +212,7 @@ protected function Finalizer()
     local int               i;
     local array<SubCommand> subCommands;
     local array<Option>     options;
+    DeallocateConsoles();
     _.memory.Free(commandData.name);
     _.memory.Free(commandData.summary);
     subCommands = commandData.subCommands;
@@ -357,19 +377,57 @@ public final function bool Execute(CallData callData, EPlayer callerPlayer)
         ReportError(callData, callerPlayer);
         return false;
     }
-    callerPlayer.BorrowConsole()
-        .Write(P("Executing command `"))
+    targetPlayers = callData.targetPlayers;
+    MakeConsoles(targetPlayers, callerPlayer);
+    callerConsole.Write(P("Executing command `"))
         .Write(commandData.name)
         .Say(P("`"));
     Executed(callData, callerPlayer);
     if (commandData.requiresTarget)
     {
-        targetPlayers = callData.targetPlayers;
-        for (i = 0; i < targetPlayers.length; i += 1) {
+        for (i = 0; i < targetPlayers.length; i += 1)
+        {
+            targetConsole = _.console.For(targetPlayers[i]);
             ExecutedFor(targetPlayers[i], callData, callerPlayer);
+            _.memory.Free(targetConsole);
+            targetConsole = none;
         }
     }
+    DeallocateConsoles();
     return true;
+}
+
+private final function MakeConsoles(
+    array<EPlayer>  targetPlayers,
+    EPlayer         callerPlayer)
+{
+    local int i;
+    publicConsole = _.console.ForAll();
+    callerConsole = _.console.For(callerPlayer);
+    othersConsole = _.console.ForAll();
+    for (i = 0; i < targetPlayers.length; i += 1) {
+            othersConsole.ButPlayer(targetPlayers[i]);
+    }
+}
+
+private final function DeallocateConsoles()
+{
+    if (publicConsole != none && publicConsole.IsAllocated()) {
+        _.memory.Free(publicConsole);
+    }
+    if (callerConsole != none && callerConsole.IsAllocated()) {
+        _.memory.Free(callerConsole);
+    }
+    if (targetConsole != none && targetConsole.IsAllocated()) {
+        _.memory.Free(targetConsole);
+    }
+    if (othersConsole != none && othersConsole.IsAllocated()) {
+        _.memory.Free(othersConsole);
+    }
+    publicConsole = none;
+    callerConsole = none;
+    targetConsole = none;
+    othersConsole = none;
 }
 
 /**
