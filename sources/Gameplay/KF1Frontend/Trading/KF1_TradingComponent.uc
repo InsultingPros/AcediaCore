@@ -152,12 +152,12 @@ public function SelectTrader(ETrader newSelection)
     if (newSelection != none)
     {
         lastSelectedTrader = ETrader(newSelection.Copy());
-        traderChanged = lastSelectedTrader.SameAs(oldSelection);
+        traderChanged = !lastSelectedTrader.SameAs(oldSelection);
     }
     else
     {
         lastSelectedTrader = none;
-        traderChanged = (oldSelection == none);
+        traderChanged = (oldSelection != none);
     }
     if (traderChanged) {
         onTraderSelectSignal.Emit(oldSelection, newSelection);
