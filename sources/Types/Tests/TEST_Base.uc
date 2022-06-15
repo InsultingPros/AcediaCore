@@ -1,7 +1,7 @@
 /**
  *      Set of tests for some of the build-in methods for
  *  Acedia's objects/actors.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -68,7 +68,8 @@ protected static function Test_QuickText()
 
 protected static function Test_Constants()
 {
-    local Text old1, old2;
+    local Text  old1, old2;
+    local int   old1Lifetime, old2Lifetime;
     Context("Testing `T()` for returning `Text` generated from"
         @ "`stringConstants`.");
     Issue("Expected `Text`s are not correctly generated.");
@@ -91,12 +92,16 @@ protected static function Test_Constants()
         @ "a new one.");
     old1 = T(0);
     old2 = T(1);
+    old1Lifetime = old1.GetLifeVersion();
+    old2Lifetime = old2.GetLifeVersion();
     old1.FreeSelf();
     old2.FreeSelf();
-    TEST_ExpectTrue(    old2 != T(1)
-                    ||  old2.GetLifeVersion() != T(1).GetLifeVersion());
-    TEST_ExpectTrue(    old1 != T(0)
-                    ||  old1.GetLifeVersion() != T(0).GetLifeVersion());
+    TEST_ExpectTrue(old2 != T(1) || old2Lifetime != T(1).GetLifeVersion());
+    TEST_ExpectTrue(old1 != T(0) || old1Lifetime != T(0).GetLifeVersion());
+    TEST_ExpectTrue(T(0).IsAllocated());
+    TEST_ExpectTrue(T(1).IsAllocated());
+    TEST_ExpectTrue(T(0).ToString() == "boolean");
+    TEST_ExpectTrue(T(1).ToString() == "byte");
 }
 
 defaultproperties

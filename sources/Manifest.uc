@@ -1,6 +1,6 @@
 /**
  *      Manifest is meant to describe contents of the Acedia's package.
- *      Copyright 2020 - 2021 Anton Tarasenko
+ *      Copyright 2020 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -41,18 +41,19 @@ defaultproperties
     testCases(10)   = class'TEST_Parser'
     testCases(11)   = class'TEST_JSON'
     testCases(12)   = class'TEST_TextCache'
-    testCases(13)   = class'TEST_User'
-    testCases(14)   = class'TEST_Memory'
-    testCases(15)   = class'TEST_DynamicArray'
-    testCases(16)   = class'TEST_AssociativeArray'
-    testCases(17)   = class'TEST_CollectionsMixed'
-    testCases(18)   = class'TEST_Iterator'
-    testCases(19)   = class'TEST_Command'
-    testCases(20)   = class'TEST_CommandDataBuilder'
-    testCases(21)   = class'TEST_LogMessage'
-    testCases(22)   = class'TEST_DatabaseCommon'
-    testCases(23)   = class'TEST_LocalDatabase'
-    testCases(24)   = class'TEST_AcediaConfig'
-    testCases(25)   = class'TEST_UTF8EncoderDecoder'
-    testCases(26)   = class'TEST_AvariceStreamReader'
+    testCases(13)    = class'TEST_FormattedStrings'
+    testCases(14)   = class'TEST_User'
+    testCases(15)   = class'TEST_Memory'
+    testCases(16)   = class'TEST_DynamicArray'
+    testCases(17)   = class'TEST_AssociativeArray'
+    testCases(18)   = class'TEST_CollectionsMixed'
+    testCases(19)   = class'TEST_Iterator'
+    testCases(20)   = class'TEST_Command'
+    testCases(21)   = class'TEST_CommandDataBuilder'
+    testCases(22)   = class'TEST_LogMessage'
+    testCases(23)   = class'TEST_DatabaseCommon'
+    testCases(24)   = class'TEST_LocalDatabase'
+    testCases(25)   = class'TEST_AcediaConfig'
+    testCases(26)   = class'TEST_UTF8EncoderDecoder'
+    testCases(27)   = class'TEST_AvariceStreamReader'
 }

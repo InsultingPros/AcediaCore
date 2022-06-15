@@ -1,7 +1,7 @@
 /**
  *  Implements a simple `Parser` with built-in functions to parse simple
  *  UnrealScript's types and support for saving / restoring parser states.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -34,7 +34,7 @@ var public int CODEPOINT_ULARGE;
 var private Text    content;
 //      Incremented each time `Parser` is reinitialized with new `content`.
 //      Can be used to make `Parser` object completely independent from
-//  it's past after each re-initialization.
+//  its past after each re-initialization.
 //      This helps to avoid needless reallocations.
 var private int     version;
 
@@ -126,7 +126,7 @@ public final function Parser InitializeS(string source)
  *  Checks if `Parser` is in a failed state.
  *
  *  Parser enters a failed state whenever any parsing call returns without
- *  completing it's job. `Parser` in a failed state will automatically fail
+ *  completing its job. `Parser` in a failed state will automatically fail
  *  any further parsing attempts until it gets reset via `R()` call.
  *
  *  @return Returns 'false' if `Parser()` is in a failed state and
@@ -141,7 +141,7 @@ public final function bool Ok()
  *  Returns copy of the current state of this parser.
  *
  *  As long as caller `Parser` was not reinitialized, returned `ParserState`
- *  structure can be used to revert this `Parser` to it's current condition
+ *  structure can be used to revert this `Parser` to its current condition
  *  by a `RestoreState()` call.
  *
  *  @see `RestoreState()`
@@ -156,7 +156,7 @@ public final function ParserState GetCurrentState()
  *  Returns copy of (currently) last confirmed state of this parser.
  *
  *  As long as caller `Parser` was not reinitialized, returned `ParserState`
- *  structure can be used to revert this `Parser` to it's current confirmed
+ *  structure can be used to revert this `Parser` to its current confirmed
  *  state by a `RestoreState()` call.
  *
  *  @see `RestoreState()`, `Confirm()`, `R()`
@@ -253,7 +253,7 @@ public final function bool Confirm()
 /**
  *  Resets `Parser` to a last state recorded as confirmed by a last successful
  *  `Confirm()` function call. If there weren't any such call -
- *  reverts `Parser` to it's state right after initialization.
+ *  reverts `Parser` to its state right after initialization.
  *
  *  Always resets failed state of a `Parser`. Cannot fail.
  *
@@ -302,7 +302,7 @@ protected final function Parser ShiftPointer(optional int shift)
  *      and does not fit `Parser`'s contents, returns invalid character.
  *      `GetCodePoint()` with default (`0`) parameter can also return
  *      invalid character if caller `Parser` was not initialized,
- *      it's contents are empty or it has already consumed all input.
+ *      its contents are empty or it has already consumed all input.
  */
 protected final function Text.Character GetCharacter(optional int shift)
 {
@@ -361,7 +361,7 @@ public final function int GetRemainingLength()
 }
 
 /**
- *  Checks if caller `Parser` has already parsed all of it's content.
+ *  Checks if caller `Parser` has already parsed all of its content.
  *  Uninitialized `Parser` has no content and, therefore, parsed it all.
  *
  *  Should return `true` iff `GetRemainingLength() == 0`.
@@ -669,6 +669,72 @@ public final function Parser MEscapedSequence(
 }
 
 /**
+ *  Attempts to parse a "name": a string literal that:
+ *      1. Contains only digits and latin characters;
+ *      2. Starts with a latin character.
+ *  These restrictions help to avoid possible issues that arise from having
+ *  different code pages and are used. For example, only "names" are considered
+ *  to be valid aliases.
+ *
+ *  @param  result  If parsing is successful, this `MutableText` will contain
+ *      the contents of the matched "name", if parsing has failed, its value
+ *      is undefined. Any passed contents are simply discarded.
+ *      If passed `MutableText` equals to `none`, new instance will be
+ *      automatically allocated. This will be done regardless of whether
+ *      parsing fails.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
+ */
+public final function Parser MName(out MutableText result)
+{
+    local TextAPI           api;
+    local Text.Character    nextCharacter;
+    ResetResultText(result);
+    if (!Ok())                          return self;
+    if (GetRemainingLength() <= 0)      return Fail();
+    api = _.text;
+    nextCharacter = GetCharacter();
+    if (!api.IsAlpha(nextCharacter))    return Fail();
+
+    result.AppendCharacter(nextCharacter);
+    ShiftPointer();
+    nextCharacter = GetCharacter();
+    while (api.IsAlpha(nextCharacter) || api.IsDigit(nextCharacter))
+    {
+        result.AppendCharacter(nextCharacter);
+        ShiftPointer();
+        nextCharacter = GetCharacter();
+    }
+    return self;
+}
+
+/**
+ *  Attempts to parse a "name": a string literal that:
+ *      1. Contains only digits and latin characters;
+ *      2. Starts with a latin character.
+ *  These restrictions help to avoid possible issues that arise from having
+ *  different code pages and are used. For example, only "names" are considered
+ *  to be valid aliases.
+ *
+ *  @param  result  If parsing is successful, this `string` will contain the
+ *      contents of the matched "name" with resolved escaped sequences;
+ *      if parsing has failed, its value is undefined.
+ *      Any passed contents are simply discarded.
+ *  @return Returns the caller `Parser`, to allow for function chaining.
+ */
+public final function Parser MNameS(out string result)
+{
+    local MutableText wrapper;
+    if (!Ok()) return self;
+
+    wrapper = _.text.Empty();
+    if (MName(wrapper).Ok()) {
+        result = wrapper.ToString();
+    }
+    wrapper.FreeSelf();
+    return self;
+}
+
+/**
  *  Attempts to parse a string literal: a string enclosed in either of
  *  the following quotation marks: ", ', `.
  *
@@ -678,7 +744,7 @@ public final function Parser MEscapedSequence(
  *
  *  @param  result  If parsing is successful, this `MutableText` will contain
  *      the contents of string literal with resolved escaped sequences;
- *      if parsing has failed, it's value is undefined.
+ *      if parsing has failed, its value is undefined.
  *      Any passed contents are simply discarded.
  *      If passed `MutableText` equals to `none`, new instance will be
  *      automatically allocated. This will be done regardless of whether
@@ -736,7 +802,7 @@ public final function Parser MStringLiteral(out MutableText result)
  *
  *  @param  result  If parsing is successful, this `string` will contain the
  *      contents of string literal with resolved escaped sequences;
- *      if parsing has failed, it's value is undefined.
+ *      if parsing has failed, its value is undefined.
  *      Any passed contents are simply discarded.
  *  @return Returns the caller `Parser`, to allow for function chaining.
  */

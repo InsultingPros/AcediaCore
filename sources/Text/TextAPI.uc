@@ -1,7 +1,7 @@
 /**
  *      API that provides functions for working with characters and for creating
  *  `Text` and `Parser` instances.
- *      Copyright 2020 - 2021 Anton Tarasenko
+ *      Copyright 2020 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -145,9 +145,30 @@ public final function bool IsDigit(Text.Character character)
 }
 
 /**
+ *  Checks if given character corresponds to a latin alphabet.
+ *
+ *  @param  codePoint   Unicode code point to check for belonging in
+ *      the alphabet.
+ *  @return `true` if given Unicode code point belongs to a latin alphabet,
+ *      `false` otherwise.
+ */
+public final function bool IsAlpha(Text.Character character)
+{
+    //  Capital Latin letters
+    if (character.codePoint >= 65 && character.codePoint <= 90) {
+        return true;
+    }
+    //  Small Latin letters
+    if (character.codePoint >= 97 && character.codePoint <= 122) {
+        return true;
+    }
+    return false;
+}
+
+/**
  *  Checks if given character is an ASCII character.
  *
- *  @param  character   Character to check for being a digit.
+ *  @param  character   Character to check for being from ASCII.
  *  @return `true` if given character is a digit, `false` otherwise.
  */
 public final function bool IsASCII(Text.Character character)

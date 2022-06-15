@@ -3,7 +3,7 @@
  *      It has a wide range of pre-defined colors and some functions that
  *  allow to quickly assemble color from rgb(a) values, parse it from
  *  a `Text`/string or load it from an alias.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2020-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -954,11 +954,13 @@ public final function bool ParseWith(Parser parser, out Color resultingColor)
     local MutableText           colorAlias;
     local Parser                colorParser;
     local Parser.ParserState    initialParserState;
-    if (parser == none) return false;
+    if (parser == none) {
+        return false;
+    }
     resultingColor.a    = 0xff;
     colorParser         = parser;
     initialParserState  = parser.GetCurrentState();
-    if (parser.Match(T(TDOLLAR)).MUntil(colorAlias,, true).Ok())
+    if (parser.Match(T(TDOLLAR)).MName(colorAlias).Ok())
     {
         colorContent = _.alias.ResolveColor(colorAlias);
         colorParser = _.text.Parse(colorContent);

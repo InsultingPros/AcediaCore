@@ -11,7 +11,7 @@
  *          a representation (e.g. faster hash calculation was implemented).
  *      3.  Provides an additional layer of abstraction that can potentially
  *          allow for an improved Unicode support.
- *      Copyright 2020 - 2021 Anton Tarasenko
+ *      Copyright 2020 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -60,8 +60,8 @@ struct Formatting
 //  Represents one character, together with it's formatting
 struct Character
 {
-    var int             codePoint;
-    var Formatting      formatting;
+    var int         codePoint;
+    var Formatting  formatting;
 };
 
 //  Actual content of the `Text` is stored as a sequence of Unicode code points.
@@ -1299,9 +1299,13 @@ public final function string ToFormattedString(
  *  single-element array containing copy of this `Text`.
  *
  *  @param  separator   Character that separates different parts of this `Text`.
+ *  @param  skipEmpty   Set this to `true` to filter out empty `MutableText`s
+ *      from the output.
  *  @return Array of `MutableText`s that contain separated substrings.
  */
-public final function array<MutableText> SplitByCharacter(Character separator)
+public final function array<MutableText> SplitByCharacter(
+    Character       separator,
+    optional bool   skipEmpty)
 {
     local int                   i, length;
     local Character             nextCharacter;
@@ -1315,7 +1319,12 @@ public final function array<MutableText> SplitByCharacter(Character separator)
         nextCharacter = GetCharacter(i);
         if (_.text.AreEqual(separator, nextCharacter))
         {
-            result[result.length] = nextText;
+            if (!skipEmpty || !nextText.IsEmpty()) {
+                result[result.length] = nextText;
+            }
+            else {
+                _.memory.Free(nextText);
+            }
             nextText = _.text.Empty();
         }
         else {
@@ -1323,7 +1332,9 @@ public final function array<MutableText> SplitByCharacter(Character separator)
         }
         i += 1;
     }
-    result[result.length] = nextText;
+    if (!skipEmpty || !nextText.IsEmpty()) {
+        result[result.length] = nextText;
+    }
     return result;
 }
 
