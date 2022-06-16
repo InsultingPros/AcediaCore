@@ -18,12 +18,12 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class FormattingErrors extends AcediaObject;
+class FormattingErrorsReport extends AcediaObject;
 
 /**
  *  Errors that can occur during parsing of the formatted string.
  */
-enum FormattedDataErrorType
+enum FormattedStringErrorType
 {
     //  There was an unmatched closing figure bracket, e.g.
     //  "{$red Hey} you, there}!"
@@ -34,9 +34,11 @@ enum FormattedDataErrorType
     //  e.g. "Why not {just kill them}?"
     FSE_BadColor,
     //  Gradient color tag contained bad point specified, e.g.
-    //  "That is SO {$red~$orange(what?)~$red AMAZING}!!!" or
-    //  "That is SO {$red~$orange(0.76~$red AMAZING}!!!"
+    //  "That is SO {$red:$orange[what?]:$red AMAZING}!!!" or
+    //  "That is SO {$red:$orange[0.76:$red AMAZING}!!!"
     FSE_BadGradientPoint,
+    //  Short tag (e.g. "^r" or "^2") was specified, but the character after "^"
+    //  is not configured to correspond to any color
     FSE_BadShortColorTag
 };
 
@@ -45,26 +47,29 @@ enum FormattedDataErrorType
 //  invoked.
 var private int unmatchedClosingBracketsErrorCount;
 var private int emptyColorTagErrorCount;
-//  `FSE_BadColor` and `FSE_BadGradientPoint` are always expected to have
-//  a `Text` hint reported alongside them, so simply store that hint.
+//  `FSE_BadColor`, `FSE_BadGradientPoint` and `FSE_BadShortColorTag` are always
+//  expected to have a `Text` hint reported alongside them. We store that hint.
 var private array<Text> badColorTagErrorHints;
 var private array<Text> badGradientTagErrorHints;
 var private array<Text> badShortColorTagErrorHints;
 
-//  We will report accumulated errors as an array of these structs.
-struct FormattedDataError
+/**
+ *  `FormattingErrorsReport` returns reported errors in formatting strings via
+ *  this struct.
+ */
+struct FormattedStringError
 {
     //  Type of the error
-    var FormattedDataErrorType  type;
+    var FormattedStringErrorType    type;
     //      How many times had this error happened?
     //      Can be specified for `FSE_UnmatchedClosingBrackets` and
     //  `FSE_EmptyColorTag` error types. Never negative.
-    var int                     count;
+    var int                         count;
     //      `Text` hint that should help user understand where the error is
     //  coming from.
-    //      Can be specified for `FSE_BadColor` and `FSE_BadGradientPoint`
-    //  error types.
-    var Text                    cause;
+    //      Can be specified for `FSE_BadColor`, `FSE_BadGradientPoint` and
+    //  `FSE_BadShortColorTag` error types.
+    var Text                        cause;
 };
 
 protected function Finalizer()
@@ -80,15 +85,17 @@ protected function Finalizer()
 }
 
 /**
- *  Adds new error to the caller `FormattingErrors` object.
+ *  Adds new error to the caller `FormattingErrorsReport` object.
  *
  *  @param  type    Type of the new error.
  *  @param  cause   Auxiliary `Text` that might give user additional hint about
  *      what exactly went wrong.
- *      If this parameter is `none` for errors `FSE_BadColor` or
- *      `FSE_BadGradientPoint` - method will do nothing.
+ *      If this parameter is `none` for errors  of type `FSE_BadColor`,
+ *      `FSE_BadGradientPoint` or `FSE_BadShortColorTag`, then method will
+ *      do nothing.
+ *      Parameter is unused for other types of errors.
  */
-public final function Report(FormattedDataErrorType type, optional Text cause)
+public final function Report(FormattedStringErrorType type, optional Text cause)
 {
     switch (type)
     {
@@ -121,21 +128,37 @@ public final function Report(FormattedDataErrorType type, optional Text cause)
 }
 
 /**
- *  Returns array of errors collected so far.
+ *  Returns all formatted string errors reported for caller
+ *  `FormattingErrorReport`.
  *
- *  @return Array of errors collected so far.
- *      Each `FormattedDataError` in array has either non-`none` `cause` field
- *      or strictly positive `count > 0` field (but not both).
- *      `count` field is always guaranteed to not be negative.
- *      WARNING: `FormattedDataError` struct may contain `Text` objects that
- *      should be deallocated.
+ *  @return Array of `FormattedStringError`s that represent reported errors.
+ *      Each `FormattedStringError` item in array has either:
+ *          * non-`none` `cause` field or;
+ *          * strictly positive `count > 0` field.
+ *      But never both.
+ *      `count` field is always guaranteed to be non-negative.
+ *      WARNING: `FormattedStringError` struct may contain `Text` objects that
+ *      should be deallocated, as per usual rules.
  */
-public final function array<FormattedDataError> GetErrors()
+public final function array<FormattedStringError> GetErrors()
 {
-    local int                       i;
-    local FormattedDataError        newError;
-    local array<FormattedDataError> errors;
-    //  We overwrite old `cause` in `newError` with new one each time we
+    local int                           i;
+    local FormattedStringError          newError;
+    local array<FormattedStringError>   errors;
+    //  First add errors that do not need `cause` variable
+    if (unmatchedClosingBracketsErrorCount > 0)
+    {
+        newError.type = FSE_UnmatchedClosingBrackets;
+        newError.count = unmatchedClosingBracketsErrorCount;
+        errors[errors.length] = newError;
+    }
+    if (emptyColorTagErrorCount > 0)
+    {
+        newError.type = FSE_EmptyColorTag;
+        newError.count = emptyColorTagErrorCount;
+        errors[errors.length] = newError;
+    }
+    //  We overwrite old `newError.cause` with new `Text` object each time we
     //  add new error, so it should be fine to not set it to `none` after
     //  "moving it" into `errors`.
     newError.type = FSE_BadColor;
@@ -154,21 +177,6 @@ public final function array<FormattedDataError> GetErrors()
     for (i = 0; i < badGradientTagErrorHints.length; i += 1)
     {
         newError.cause = badGradientTagErrorHints[i].Copy();
-        errors[errors.length] = newError;
-    }
-    //  Need to reset `cause` here, to avoid duplicating it in
-    //  following two errors
-    newError.cause = none;
-    if (unmatchedClosingBracketsErrorCount > 0)
-    {
-        newError.type = FSE_UnmatchedClosingBrackets;
-        newError.count = unmatchedClosingBracketsErrorCount;
-        errors[errors.length] = newError;
-    }
-    if (emptyColorTagErrorCount > 0)
-    {
-        newError.type = FSE_EmptyColorTag;
-        newError.count = emptyColorTagErrorCount;
         errors[errors.length] = newError;
     }
     return errors;

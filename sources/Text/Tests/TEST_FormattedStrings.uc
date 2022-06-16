@@ -57,207 +57,6 @@ protected static function TESTS()
     Test_Errors();
 }
 
-protected static function Test_Errors()
-{
-    Context("Testing error reporting for formatted strings.");
-    SubTest_ErrorUnmatchedClosingBrackets();
-    SubTest_ErrorEmptyColorTag();
-    SubTest_ErrorBadColor();
-    SubTest_ErrorBadShortColorTag();
-    SubTest_ErrorBadGradientPoint();
-    SubTest_AllErrors();
-}
-
-protected static function SubTest_ErrorUnmatchedClosingBrackets()
-{
-    local array<FormattingErrors.FormattedDataError> errors;
-    local FormattedStringData data;
-    Issue("Unmatched closing brackets are not reported.");
-    data = class'FormattedStringData'.static.FromText(P("Testing {$pink pink text}}!"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 1);
-    TEST_ExpectTrue(errors[0].type == FSE_UnmatchedClosingBrackets);
-    TEST_ExpectTrue(errors[0].count == 1);
-    TEST_ExpectNone(errors[0].cause);
-    data = class'FormattedStringData'.static.FromText(P("Testing regular text!}"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 1);
-    TEST_ExpectTrue(errors[0].type == FSE_UnmatchedClosingBrackets);
-    TEST_ExpectTrue(errors[0].count == 1);
-    TEST_ExpectNone(errors[0].cause);
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {rgb(255,0,0) red{rgb(255,255,255) , }}}"
-            $ "{rgb(0,255,0) gr}een{rgb(255,255,255)  and }}}}{rgb(0,0,255)"
-            $ " blue!}}}"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 1);
-    TEST_ExpectTrue(errors[0].type == FSE_UnmatchedClosingBrackets);
-    TEST_ExpectTrue(errors[0].count == 6);
-    TEST_ExpectNone(errors[0].cause);
-}
-
-protected static function SubTest_ErrorEmptyColorTag()
-{
-    local array<FormattingErrors.FormattedDataError> errors;
-    local FormattedStringData data;
-    Issue("Empty color tags are not reported.");
-    data = class'FormattedStringData'.static.FromText(P("Testing { pink text}!"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 1);
-    TEST_ExpectTrue(errors[0].type == FSE_EmptyColorTag);
-    TEST_ExpectTrue(errors[0].count == 1);
-    TEST_ExpectNone(errors[0].cause);
-    data = class'FormattedStringData'.static.FromText(P("Testing {$red regu{   lar tex}t!}"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 1);
-    TEST_ExpectTrue(errors[0].type == FSE_EmptyColorTag);
-    TEST_ExpectTrue(errors[0].count == 1);
-    TEST_ExpectNone(errors[0].cause);
-    data = class'FormattedStringData'.static
-        .FromText(P("This is { {rgb(255,255,255)~$green , }"
-            $ "{#800c37 ^ggre^gen{ and }}}^bblue!"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 1);
-    TEST_ExpectTrue(errors[0].type == FSE_EmptyColorTag);
-    TEST_ExpectTrue(errors[0].count == 2);
-    TEST_ExpectNone(errors[0].cause);
-}
-
-protected static function SubTest_ErrorBadColor()
-{
-    local array<FormattingErrors.FormattedDataError> errors;
-    local FormattedStringData data;
-    Issue("Bad color is not reported.");
-    data = class'FormattedStringData'.static.FromText(P("Testing {$cat pink text}!"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 1);
-    TEST_ExpectTrue(errors[0].type == FSE_BadColor);
-    TEST_ExpectTrue(errors[0].cause.ToString() == "$cat");
-    TEST_ExpectTrue(errors[0].count == 0);
-    data = class'FormattedStringData'.static.FromText(P("Testing {dog regular} {#wicked text!}"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 2);
-    TEST_ExpectTrue(errors[0].type == FSE_BadColor);
-    TEST_ExpectTrue(errors[1].type == FSE_BadColor);
-    TEST_ExpectTrue(errors[0].cause.ToString() == "dog");
-    TEST_ExpectTrue(errors[1].cause.ToString() == "#wicked");
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {goat red{rgb(255,255,255)~lol~$green , }"
-            $ "{#800c37 ^ggre^gen{324sd  and }}}^bblue!"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 3);
-    TEST_ExpectTrue(errors[0].type == FSE_BadColor);
-    TEST_ExpectTrue(errors[1].type == FSE_BadColor);
-    TEST_ExpectTrue(errors[2].type == FSE_BadColor);
-    TEST_ExpectTrue(errors[0].cause.ToString() == "goat");
-    TEST_ExpectTrue(errors[1].cause.ToString() == "lol");
-    TEST_ExpectTrue(errors[2].cause.ToString() == "324sd");
-}
-
-protected static function SubTest_ErrorBadShortColorTag()
-{
-    local array<FormattingErrors.FormattedDataError> errors;
-    local FormattedStringData data;
-    Issue("Bad short color tag is not reported.");
-    data = class'FormattedStringData'.static.FromText(P("This is ^xred^w, ^ugreen^x and ^zblue!"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 4);
-    TEST_ExpectTrue(errors[0].type == FSE_BadShortColorTag);
-    TEST_ExpectTrue(errors[0].cause.ToString() == "^x");
-    TEST_ExpectTrue(errors[0].count == 0);
-    TEST_ExpectTrue(errors[1].type == FSE_BadShortColorTag);
-    TEST_ExpectTrue(errors[1].cause.ToString() == "^u");
-    TEST_ExpectTrue(errors[1].count == 0);
-    TEST_ExpectTrue(errors[2].type == FSE_BadShortColorTag);
-    TEST_ExpectTrue(errors[2].cause.ToString() == "^x");
-    TEST_ExpectTrue(errors[2].count == 0);
-    TEST_ExpectTrue(errors[3].type == FSE_BadShortColorTag);
-    TEST_ExpectTrue(errors[3].cause.ToString() == "^z");
-    TEST_ExpectTrue(errors[3].count == 0);
-}
-
-protected static function SubTest_ErrorBadGradientPoint()
-{
-    local array<FormattingErrors.FormattedDataError> errors;
-    local FormattedStringData data;
-    Issue("Bad gradient point is not reported.");
-    data = class'FormattedStringData'.static.FromText(P("Testing {$pink[dog] pink text}!"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 1);
-    TEST_ExpectTrue(errors[0].type == FSE_BadGradientPoint);
-    TEST_ExpectTrue(errors[0].cause.ToString() == "[dog]");
-    TEST_ExpectTrue(errors[0].count == 0);
-    data = class'FormattedStringData'.static.FromText(P("Testing {45,2,241[bad] regular} {#ffaacd~rgb(2,3,4)45worse] text!}"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 2);
-    TEST_ExpectTrue(errors[0].type == FSE_BadGradientPoint);
-    TEST_ExpectTrue(errors[1].type == FSE_BadGradientPoint);
-    TEST_ExpectTrue(errors[0].cause.ToString() == "[bad]");
-    TEST_ExpectTrue(errors[1].cause.ToString() == "45worse]");
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {$red[45%%] red{rgb(255,255,255)~45,3,128point~$green , }"
-            $ "{#800c37 ^ggre^gen{#43fa6b3c  and }}}^bblue!"), true);
-    errors = data.BorrowErrors().GetErrors();
-    TEST_ExpectTrue(errors.length == 3);
-    TEST_ExpectTrue(errors[0].type == FSE_BadGradientPoint);
-    TEST_ExpectTrue(errors[1].type == FSE_BadGradientPoint);
-    TEST_ExpectTrue(errors[2].type == FSE_BadGradientPoint);
-    TEST_ExpectTrue(errors[0].cause.ToString() == "[45%%]");
-    TEST_ExpectTrue(errors[1].cause.ToString() == "point");
-    TEST_ExpectTrue(errors[2].cause.ToString() == "3c");
-}
-
-protected static function SubTest_AllErrors()
-{
-    local int i;
-    local bool foundUnmatched, foundEmpty, foundBadColor, foundBadPoint, foundBadShortTag;
-    local array<FormattingErrors.FormattedDataError> errors;
-    local FormattedStringData data;
-    Issue("COMPLEX.");
-    data = class'FormattedStringData'.static.FromText(P("This} is {$cat~$green[%7] red{$white , }{ green^z and }}{$blue blue!}}"), true);
-    errors = data.BorrowErrors().GetErrors();
-    for (i = 0; i < errors.length; i += 1)
-    {
-        if (errors[i].type == FSE_UnmatchedClosingBrackets)
-        {
-            foundUnmatched = true;
-            TEST_ExpectTrue(errors[i].count == 2);
-        }
-        if (errors[i].type == FSE_EmptyColorTag)
-        {
-            foundEmpty = true;
-            TEST_ExpectTrue(errors[i].count == 1);
-        }
-        if (errors[i].type == FSE_BadColor)
-        {
-            foundBadColor = true;
-            TEST_ExpectTrue(errors[i].cause.ToString() == "$cat");
-        }
-        if (errors[i].type == FSE_BadGradientPoint)
-        {
-            foundBadPoint = true;
-            TEST_ExpectTrue(errors[i].cause.ToString() == "[%7]");
-        }
-        if (errors[i].type == FSE_BadShortColorTag)
-        {
-            foundBadShortTag = true;
-            TEST_ExpectTrue(errors[i].cause.ToString() == "^z");
-        }
-    }
-}//^z, $cat, [%7]
-/*    //  There was an unmatched closing figure bracket, e.g.
-    //  "{$red Hey} you, there}!"
-    FSE_UnmatchedClosingBrackets,
-    //  Color tag was empty, e.g. "Why not { just kill them}?"
-    FSE_EmptyColorTag,
-    //  Color tag cannot be parsed as a color or color gradient,
-    //  e.g. "Why not {just kill them}?"
-    FSE_BadColor,
-    //  Gradient color tag contained bad point specified, e.g.
-    //  "That is SO {$red~$orange(what?)~$red AMAZING}!!!" or
-    //  "That is SO {$red~$orange(0.76~$red AMAZING}!!!"
-    FSE_BadGradientPoint,
-    FSE_BadShortColorTag */
 protected static function Test_Simple()
 {
     Context("Testing parsing formatted strings with plain colors.");
@@ -271,99 +70,102 @@ protected static function Test_Simple()
 
 protected static function SubTest_SimpleNone()
 {
-    local FormattedStringData data;
+    local MutableText result;
+    result = __().text.Empty();
     Issue("Empty formatted strings are handled incorrectly.");
-    data = class'FormattedStringData'.static.FromText(P(""));
-    TEST_ExpectNotNone(data.GetResult());
-    TEST_ExpectTrue(data.GetResult().IsEmpty());
+    class'FormattingStringParser'.static.ParseFormatted(P(""), result);
+    TEST_ExpectNotNone(result);
+    TEST_ExpectTrue(result.IsEmpty());
 
     Issue("Formatted strings with no content are handled incorrectly.");
-    data = class'FormattedStringData'.static.FromText(P("{$red }"));
-    TEST_ExpectNotNone(data.GetResult());
-    TEST_ExpectTrue(data.GetResult().IsEmpty());
-    data = class'FormattedStringData'.static
-        .FromText(P("{#ff03a5 {$blue }}^3{$lime }"));
-    TEST_ExpectNotNone(data.GetResult());
-    TEST_ExpectTrue(data.GetResult().IsEmpty());
+    class'FormattingStringParser'.static.ParseFormatted(P("{$red }"), result);
+    TEST_ExpectNotNone(result);
+    TEST_ExpectTrue(result.IsEmpty());
+    class'FormattingStringParser'.static
+        .ParseFormatted(P("{#ff03a5 {$blue }}^3{$lime }"), result);
+    TEST_ExpectNotNone(result);
+    TEST_ExpectTrue(result.IsEmpty());
 }
 
 protected static function SubTest_SimpleAlias()
 {
-    local MutableText           example;
-    local FormattedStringData   data;
+    local MutableText result, example;
+    result = __().text.Empty();
     Issue("Formatted strings with aliases are handled incorrectly.");
     example = GetRGBText();
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {$red red}, {$lime green} and {$blue blue}!"));
-    TEST_ExpectTrue(example.Compare(data.GetResult(),, SFORM_SENSITIVE));
+    class'FormattingStringParser'.static.ParseFormatted(
+        P("This is {$red red}, {$lime green} and {$blue blue}!"), result);
+    TEST_ExpectTrue(example.Compare(result,, SFORM_SENSITIVE));
     example = GetRGBText(true);
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {$red red{$white , }{$lime green{$white  and }}}"
-            $ "{$blue blue!}"));
-    TEST_ExpectTrue(example.Compare(data.GetResult(),, SFORM_SENSITIVE));
+    class'FormattingStringParser'.static.ParseFormatted(
+        P("This is {$red red{$white , }{$lime green{$white  and }}}"
+            $ "{$blue blue!}"),
+        result.Clear());
+    TEST_ExpectTrue(example.Compare(result,, SFORM_SENSITIVE));
 }
 
 protected static function SubTest_SimpleRGB()
 {
-    local MutableText           example;
-    local FormattedStringData   data;
+    local MutableText result, example;
+    result = __().text.Empty();
     Issue("Formatted strings with rgb definitions are handled incorrectly.");
     example = GetRGBText();
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {rgb(255,0,0) red}, {rgb(0,255,0) green} and"
-            @ "{rgb(0,0,255) blue}!"));
-    TEST_ExpectTrue(example.Compare(data.GetResult(),, SFORM_SENSITIVE));
+    class'FormattingStringParser'.static
+        .ParseFormatted(P("This is {rgb(255,0,0) red}, {rgb(0,255,0) green} and"
+            @ "{rgb(0,0,255) blue}!"), result);
+    TEST_ExpectTrue(example.Compare(result,, SFORM_SENSITIVE));
     example = GetRGBText(true);
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {rgb(255,0,0) red{rgb(255,255,255) , }"
+    class'FormattingStringParser'.static
+        .ParseFormatted(P("This is {rgb(255,0,0) red{rgb(255,255,255) , }"
             $ "{rgb(0,255,0) green{rgb(255,255,255)  and }}}{rgb(0,0,255)"
-            $ " blue!}"));
-    TEST_ExpectTrue(example.Compare(data.GetResult(),, SFORM_SENSITIVE));
+            $ " blue!}"), result.Clear());
+    TEST_ExpectTrue(example.Compare(result,, SFORM_SENSITIVE));
 }
 
 protected static function SubTest_SimpleHEX()
 {
-    local MutableText           example;
-    local FormattedStringData   data;
+    local MutableText result, example;
+    result = __().text.Empty();
     Issue("Formatted strings with hex definitions are handled incorrectly.");
     example = GetRGBText();
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {#ff0000 red}, {#00ff00 green} and"
-            @ "{#0000ff blue}!"));
-    TEST_ExpectTrue(example.Compare(data.GetResult(),, SFORM_SENSITIVE));
+    class'FormattingStringParser'.static
+        .ParseFormatted(P("This is {#ff0000 red}, {#00ff00 green} and"
+            @ "{#0000ff blue}!"), result);
+    TEST_ExpectTrue(example.Compare(result,, SFORM_SENSITIVE));
     example = GetRGBText(true);
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {#ff0000 red{#ffffff , }"
-            $ "{#00ff00 green{#ffffff  and }}}{#0000ff blue!}"));
-    TEST_ExpectTrue(example.Compare(data.GetResult(),, SFORM_SENSITIVE));
+    class'FormattingStringParser'.static.ParseFormatted(
+        P("This is {#ff0000 red{#ffffff , }{#00ff00 green{#ffffff  and }}}"
+            $ "{#0000ff blue!}"),
+        result.Clear());
+    TEST_ExpectTrue(example.Compare(result,, SFORM_SENSITIVE));
 }
 
 protected static function SubTest_SimpleTag()
 {
-    local MutableText           example;
-    local FormattedStringData   data;
+    local MutableText result, example;
+    result = __().text.Empty();
     Issue("Formatted strings with rag definitions are handled incorrectly.");
     example = GetRGBText(true);
-    data = class'FormattedStringData'.static
-        .FromText(P("This is ^rred^w, ^2green^w and ^4blue!"));
-    TEST_ExpectTrue(example.Compare(data.GetResult(),, SFORM_SENSITIVE));
+    class'FormattingStringParser'.static
+        .ParseFormatted(P("This is ^rred^w, ^2green^w and ^4blue!"), result);
+    TEST_ExpectTrue(example.Compare(result,, SFORM_SENSITIVE));
 }
 
 protected static function SubTest_SimpleMix()
 {
-    local MutableText           example;
-    local FormattedStringData   data;
+    local MutableText result, example;
+    result = __().text.Empty();
     Issue("Formatted strings with mixed definitions are handled incorrectly.");
     example = GetRGBText();
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {rgb(255,0,0) red}, {$lime green} and"
-            @ "{#af4378 ^bblue}!"));
-    TEST_ExpectTrue(example.Compare(data.GetResult(),, SFORM_SENSITIVE));
+    class'FormattingStringParser'.static
+        .ParseFormatted(P("This is {rgb(255,0,0) red}, {$lime green} and"
+            @ "{#af4378 ^bblue}!"), result);
+    TEST_ExpectTrue(example.Compare(result,, SFORM_SENSITIVE));
     example = GetRGBText(true);
-    data = class'FormattedStringData'.static
-        .FromText(P("This is {$red red{rgb(255,255,255) , }"
-            $ "{#800c37d ^ggre^gen{#ffffff  and }}}^bblue!"));
-    TEST_ExpectTrue(example.Compare(data.GetResult(),, SFORM_SENSITIVE));
+    class'FormattingStringParser'.static
+        .ParseFormatted(P("This is {$red red{rgb(255,255,255) , }"
+            $ "{#800c37d ^ggre^gen{#ffffff  and }}}^bblue!"), result.Clear());
+    TEST_ExpectTrue(example.Compare(result,, SFORM_SENSITIVE));
 }
 
 protected static function Test_Gradient()
@@ -378,16 +180,15 @@ protected static function Test_Gradient()
 
 protected static function SubTest_TestGradientTwoColors()
 {
-    local int                   i;
-    local Text                  result;
-    local FormattedStringData   data;
-    local Color                 previousColor, currentColor;
+    local int           i;
+    local Color         previousColor, currentColor;
+    local MutableText   result;
+    result = __().text.Empty();
     Issue("Simple (two color) gradient block does not color intermediate"
         @ "characters correctly.");
-    data = class'FormattedStringData'.static
-        .FromText(P("{rgb(255,128,56)~rgb(0,255,56)"
-            @ "Simple shit to test out gradient}"));
-    result = data.GetResult();
+    class'FormattingStringParser'.static
+        .ParseFormatted(P("{rgb(255,128,56):rgb(0,255,56)"
+            @ "Simple shit to test out gradient}"), result);
     previousColor = result.GetFormatting(0).color;
     TEST_ExpectTrue(result.GetFormatting(0).isColored);
     for (i = 1; i < result.GetLength(); i += 1)
@@ -443,15 +244,14 @@ protected static function CheckRedIncrease(Text sample, int from, int to)
 
 protected static function SubTest_TestGradientThreeColors()
 {
-    local Text                  result;
-    local FormattedStringData   data;
-    local Color                 borderColor;
+    local Color         borderColor;
+    local MutableText   result;
+    result = __().text.Empty();
     Issue("Gradient block with three colors does not color intermediate"
         @ "characters correctly.");
-    data = class'FormattedStringData'.static
-        .FromText(P("{rgb(255,0,0)~#000000~$red"
-            @ "Simple shit to test out gradient!}"));
-    result = data.GetResult();
+    class'FormattingStringParser'.static
+        .ParseFormatted(P("{rgb(255,0,0):#000000:$red"
+            @ "Simple shit to test out gradient!}"), result);
     CheckRedDecrease(result, 0, 16);
     CheckRedIncrease(result, 17, result.GetLength());
     Issue("Gradient block with three colors does not color edge characters"
@@ -466,14 +266,16 @@ protected static function SubTest_TestGradientThreeColors()
 
 protected static function SubTest_TestGradientFiveColors()
 {
-    local Text                  result;
-    local FormattedStringData   data;
-    local Color                 borderColor;
+    local Color         borderColor;
+    local MutableText   result;
+    result = __().text.Empty();
     Issue("Gradient block with five colors does not color intermediate"
         @ "characters correctly.");
-    data = class'FormattedStringData'.static
-        .FromText(P("Check this wacky shit out: {rgb(255,0,0)~rgb(200,0,0)~rgb(180,0,0)~rgb(210,0,0)~rgb(97,0,0) Go f yourself}!?!?!"));//27 SHIFT
-    result = data.GetResult();
+    class'FormattingStringParser'.static.ParseFormatted(
+        P("Check this wacky shit out: {rgb(255,0,0):rgb(200,0,0):rgb(180,0,0)"
+            $ ":rgb(210,0,0):rgb(97,0,0) Go f yourself}!?!?!"),
+        result);
+    result = result;
     CheckRedDecrease(result, 0 + 27, 6 + 27);
     CheckRedIncrease(result, 7 + 27, 9 + 27);
     CheckRedDecrease(result, 9 + 27, 12 + 27);
@@ -493,13 +295,14 @@ protected static function SubTest_TestGradientFiveColors()
 
 protected static function SubTest_TestGradientPoints()
 {
-    local Text                  result;
-    local FormattedStringData   data;
-    local Color                 borderColor;
+    local Color         borderColor;
+    local MutableText   result;
+    result = __().text.Empty();
     Issue("Gradient points are incorrectly handled.");
-    data = class'FormattedStringData'.static
-        .FromText(P("Check this wacky shit out: {rgb(255,0,0)~rgb(0,0,0)[25%]~rgb(123,0,0) Go f yourself}!?!?!"));
-    result = data.GetResult();
+    class'FormattingStringParser'.static.ParseFormatted(
+        P("Check this wacky shit out: {rgb(255,0,0):rgb(0,0,0)[25%]:"
+            $ "rgb(123,0,0) Go f yourself}!?!?!"),
+        result);
     CheckRedDecrease(result, 0 + 27, 3 + 27);
     CheckRedIncrease(result, 3 + 27, 12 + 27);
     borderColor = result.GetFormatting(0 + 27).color;
@@ -509,9 +312,10 @@ protected static function SubTest_TestGradientPoints()
     borderColor = result.GetFormatting(12 + 27).color;
     TEST_ExpectTrue(borderColor.r == 123);
     Issue("Gradient block does not color intermediate characters correctly.");
-    data = class'FormattedStringData'.static
-        .FromText(P("Check this wacky shit out: {rgb(255,0,0)~rgb(0,0,0)[0.75]~rgb(45,0,0) Go f yourself}!?!?!"));
-    result = data.GetResult();
+    class'FormattingStringParser'.static.ParseFormatted(
+        P("Check this wacky shit out: {rgb(255,0,0):rgb(0,0,0)[0.75]:"
+            $ "rgb(45,0,0) Go f yourself}!?!?!"),
+        result.Clear());
     CheckRedDecrease(result, 0 + 27, 9 + 27);
     CheckRedIncrease(result, 9 + 27, 12 + 27);
     borderColor = result.GetFormatting(0 + 27).color;
@@ -524,13 +328,15 @@ protected static function SubTest_TestGradientPoints()
 
 protected static function SubTest_TestGradientPointsBad()
 {
-    local Text                  result;
-    local FormattedStringData   data;
-    local Color                 borderColor;
+    local Color         borderColor;
+    local MutableText   result;
+    result = __().text.Empty();
     Issue("Bad gradient points are incorrectly handled.");
-    data = class'FormattedStringData'.static
-        .FromText(P("Check this wacky shit out: {rgb(255,0,0)~rgb(128,0,0)[50%]~rgb(150,0,0)[0.3]~rgb(123,0,0) Go f yourself}!?!?!"));
-    result = data.GetResult();
+    class'FormattingStringParser'.static.ParseFormatted(
+        P("Check this wacky shit out: {rgb(255,0,0):rgb(128,0,0)[50%]:"
+            $ "rgb(150,0,0)[0.3]:rgb(123,0,0) Go f yourself}!?!?!"),
+        result);
+    result = result;
     CheckRedDecrease(result, 0 + 27, 6 + 27);
     CheckRedIncrease(result, 6 + 27, 9 + 27);
     CheckRedDecrease(result, 9 + 27, 12 + 27);
@@ -542,9 +348,10 @@ protected static function SubTest_TestGradientPointsBad()
     TEST_ExpectTrue(borderColor.r == 150);
     borderColor = result.GetFormatting(12 + 27).color;
     TEST_ExpectTrue(borderColor.r == 123);
-    data = class'FormattedStringData'.static
-        .FromText(P("Check this wacky shit out: {rgb(200,0,0)~rgb(255,0,0)[EDF]~rgb(0,0,0)[0.50]~rgb(45,0,0) Go f yourself}!?!?!"));
-    result = data.GetResult();
+    class'FormattingStringParser'.static.ParseFormatted(
+        P("Check this wacky shit out: {rgb(200,0,0):rgb(255,0,0)[EDF]:"
+            $ "rgb(0,0,0)[0.50]:rgb(45,0,0) Go f yourself}!?!?!"),
+        result.Clear());
     CheckRedIncrease(result, 0 + 27, 3 + 27);
     CheckRedDecrease(result, 3 + 27, 6 + 27);
     CheckRedIncrease(result, 6 + 27, 12 + 27);
@@ -556,6 +363,195 @@ protected static function SubTest_TestGradientPointsBad()
     TEST_ExpectTrue(borderColor.r == 0);
     borderColor = result.GetFormatting(12 + 27).color;
     TEST_ExpectTrue(borderColor.r == 45);
+}
+
+protected static function Test_Errors()
+{
+    Context("Testing error reporting for formatted strings.");
+    SubTest_ErrorUnmatchedClosingBrackets();
+    SubTest_ErrorEmptyColorTag();
+    SubTest_ErrorBadColor();
+    SubTest_ErrorBadShortColorTag();
+    SubTest_ErrorBadGradientPoint();
+    SubTest_AllErrors();
+}
+
+protected static function SubTest_ErrorUnmatchedClosingBrackets()
+{
+    local array<FormattingErrorsReport.FormattedStringError> errors;
+    Issue("Unmatched closing brackets are not reported.");
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("Testing {$pink pink text}}!"),, true);
+    TEST_ExpectTrue(errors.length == 1);
+    TEST_ExpectTrue(errors[0].type == FSE_UnmatchedClosingBrackets);
+    TEST_ExpectTrue(errors[0].count == 1);
+    TEST_ExpectNone(errors[0].cause);
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("Testing regular text!}"),, true);
+    TEST_ExpectTrue(errors.length == 1);
+    TEST_ExpectTrue(errors[0].type == FSE_UnmatchedClosingBrackets);
+    TEST_ExpectTrue(errors[0].count == 1);
+    TEST_ExpectNone(errors[0].cause);
+    errors = class'FormattingStringParser'.static
+        .ParseFormatted(P("This is {rgb(255,0,0) red{rgb(255,255,255) , }}}"
+            $ "{rgb(0,255,0) gr}een{rgb(255,255,255)  and }}}}{rgb(0,0,255)"
+            $ " blue!}}}"),, true);
+    TEST_ExpectTrue(errors.length == 1);
+    TEST_ExpectTrue(errors[0].type == FSE_UnmatchedClosingBrackets);
+    TEST_ExpectTrue(errors[0].count == 6);
+    TEST_ExpectNone(errors[0].cause);
+}
+
+protected static function SubTest_ErrorEmptyColorTag()
+{
+    local array<FormattingErrorsReport.FormattedStringError> errors;
+    Issue("Empty color tags are not reported.");
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("Testing { pink text}!"),, true);
+    TEST_ExpectTrue(errors.length == 1);
+    TEST_ExpectTrue(errors[0].type == FSE_EmptyColorTag);
+    TEST_ExpectTrue(errors[0].count == 1);
+    TEST_ExpectNone(errors[0].cause);
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("Testing {$red regu{   lar tex}t!}"),, true);
+    TEST_ExpectTrue(errors.length == 1);
+    TEST_ExpectTrue(errors[0].type == FSE_EmptyColorTag);
+    TEST_ExpectTrue(errors[0].count == 1);
+    TEST_ExpectNone(errors[0].cause);
+    errors = class'FormattingStringParser'.static
+        .ParseFormatted(P("This is { {rgb(255,255,255):$green , }"
+            $ "{#800c37 ^ggre^gen{ and }}}^bblue!"),, true);
+    TEST_ExpectTrue(errors.length == 1);
+    TEST_ExpectTrue(errors[0].type == FSE_EmptyColorTag);
+    TEST_ExpectTrue(errors[0].count == 2);
+    TEST_ExpectNone(errors[0].cause);
+}
+
+protected static function SubTest_ErrorBadColor()
+{
+    local array<FormattingErrorsReport.FormattedStringError> errors;
+    Issue("Bad color is not reported.");
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("Testing {$cat pink text}!"),, true);
+    TEST_ExpectTrue(errors.length == 1);
+    TEST_ExpectTrue(errors[0].type == FSE_BadColor);
+    TEST_ExpectTrue(errors[0].cause.ToString() == "$cat");
+    TEST_ExpectTrue(errors[0].count == 0);
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("Testing {dog regular} {#wicked text!}"),, true);
+    TEST_ExpectTrue(errors.length == 2);
+    TEST_ExpectTrue(errors[0].type == FSE_BadColor);
+    TEST_ExpectTrue(errors[1].type == FSE_BadColor);
+    TEST_ExpectTrue(errors[0].cause.ToString() == "dog");
+    TEST_ExpectTrue(errors[1].cause.ToString() == "#wicked");
+    errors = class'FormattingStringParser'.static
+        .ParseFormatted(P("This is {goat red{rgb(255,255,255):lol:$green , }"
+            $ "{#800c37 ^ggre^gen{324sd  and }}}^bblue!"),, true);
+    TEST_ExpectTrue(errors.length == 3);
+    TEST_ExpectTrue(errors[0].type == FSE_BadColor);
+    TEST_ExpectTrue(errors[1].type == FSE_BadColor);
+    TEST_ExpectTrue(errors[2].type == FSE_BadColor);
+    TEST_ExpectTrue(errors[0].cause.ToString() == "goat");
+    TEST_ExpectTrue(errors[1].cause.ToString() == "lol");
+    TEST_ExpectTrue(errors[2].cause.ToString() == "324sd");
+}
+
+protected static function SubTest_ErrorBadShortColorTag()
+{
+    local array<FormattingErrorsReport.FormattedStringError> errors;
+    Issue("Bad short color tag is not reported.");
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("This is ^xred^w, ^ugreen^x and ^zblue!"),, true);
+    TEST_ExpectTrue(errors.length == 4);
+    TEST_ExpectTrue(errors[0].type == FSE_BadShortColorTag);
+    TEST_ExpectTrue(errors[0].cause.ToString() == "^x");
+    TEST_ExpectTrue(errors[0].count == 0);
+    TEST_ExpectTrue(errors[1].type == FSE_BadShortColorTag);
+    TEST_ExpectTrue(errors[1].cause.ToString() == "^u");
+    TEST_ExpectTrue(errors[1].count == 0);
+    TEST_ExpectTrue(errors[2].type == FSE_BadShortColorTag);
+    TEST_ExpectTrue(errors[2].cause.ToString() == "^x");
+    TEST_ExpectTrue(errors[2].count == 0);
+    TEST_ExpectTrue(errors[3].type == FSE_BadShortColorTag);
+    TEST_ExpectTrue(errors[3].cause.ToString() == "^z");
+    TEST_ExpectTrue(errors[3].count == 0);
+}
+
+protected static function SubTest_ErrorBadGradientPoint()
+{
+    local array<FormattingErrorsReport.FormattedStringError> errors;
+    Issue("Bad gradient point is not reported.");
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("Testing {$pink[dog] pink text}!"),, true);
+    TEST_ExpectTrue(errors.length == 1);
+    TEST_ExpectTrue(errors[0].type == FSE_BadGradientPoint);
+    TEST_ExpectTrue(errors[0].cause.ToString() == "[dog]");
+    TEST_ExpectTrue(errors[0].count == 0);
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("Testing {45,2,241[bad] regular} {#ffaacd:rgb(2,3,4)45worse]"
+            @ "text!}"),
+        ,
+        true);
+    TEST_ExpectTrue(errors.length == 2);
+    TEST_ExpectTrue(errors[0].type == FSE_BadGradientPoint);
+    TEST_ExpectTrue(errors[1].type == FSE_BadGradientPoint);
+    TEST_ExpectTrue(errors[0].cause.ToString() == "[bad]");
+    TEST_ExpectTrue(errors[1].cause.ToString() == "45worse]");
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("This is {$red[45%%] red{rgb(255,255,255):45,3,128point:$green , }"
+            $ "{#800c37 ^ggre^gen{#43fa6b3c  and }}}^bblue!"),
+        ,
+        true);
+    TEST_ExpectTrue(errors.length == 3);
+    TEST_ExpectTrue(errors[0].type == FSE_BadGradientPoint);
+    TEST_ExpectTrue(errors[1].type == FSE_BadGradientPoint);
+    TEST_ExpectTrue(errors[2].type == FSE_BadGradientPoint);
+    TEST_ExpectTrue(errors[0].cause.ToString() == "[45%%]");
+    TEST_ExpectTrue(errors[1].cause.ToString() == "point");
+    TEST_ExpectTrue(errors[2].cause.ToString() == "3c");
+}
+
+protected static function SubTest_AllErrors()
+{
+    local int   i;
+    local bool  foundUnmatched, foundEmpty, foundBadColor;
+    local bool  foundBadPoint, foundBadShortTag;
+    local array<FormattingErrorsReport.FormattedStringError> errors;
+    Issue("If formatted string contains several errors, not all of them are"
+        @ "properly detected.");
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("This} is {$cat:$green[%7] red{$white , }{ green^z and }}"
+            $ "{$blue blue!}}"),
+        ,
+        true);
+    for (i = 0; i < errors.length; i += 1)
+    {
+        if (errors[i].type == FSE_UnmatchedClosingBrackets)
+        {
+            foundUnmatched = true;
+            TEST_ExpectTrue(errors[i].count == 2);
+        }
+        if (errors[i].type == FSE_EmptyColorTag)
+        {
+            foundEmpty = true;
+            TEST_ExpectTrue(errors[i].count == 1);
+        }
+        if (errors[i].type == FSE_BadColor)
+        {
+            foundBadColor = true;
+            TEST_ExpectTrue(errors[i].cause.ToString() == "$cat");
+        }
+        if (errors[i].type == FSE_BadGradientPoint)
+        {
+            foundBadPoint = true;
+            TEST_ExpectTrue(errors[i].cause.ToString() == "[%7]");
+        }
+        if (errors[i].type == FSE_BadShortColorTag)
+        {
+            foundBadShortTag = true;
+            TEST_ExpectTrue(errors[i].cause.ToString() == "^z");
+        }
+    }
 }
 
 defaultproperties

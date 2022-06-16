@@ -273,43 +273,29 @@ public final function MutableText AppendColoredString(
 /**
  *  Appends contents of the formatted `Text` to the caller `MutableText`.
  *
- *  @param  source              `Text` (with formatted string contents) to be
+ *  @param  source  `Text` (with formatted string contents) to be
  *      appended to the caller `MutableText`.
- *  @param  defaultFormatting   Formatting to apply to `source`'s character that
- *      do not have it specified. For example, `defaultFormatting.isColored`,
- *      but some of `other`'s characters do not have a color defined -
- *      they will be appended with a specified color.
  *  @return Caller `MutableText` to allow for method chaining.
  */
 public final function MutableText AppendFormatted(
     Text                source,
     optional Formatting defaultFormatting)
 {
-    //  TODO: is this the best way?
-    local Text                  appendedPart;
-    local FormattedStringData   data;
-    data = class'FormattedStringData'.static.FromText(source);
-    appendedPart = data.GetResult();
-    Append(appendedPart);
-    _.memory.Free(appendedPart);
-    _.memory.Free(data);
+    class'FormattingStringParser'.static.ParseFormatted(source, self);
     return self;
 }
 
 /**
  *  Appends contents of the formatted `string` to the caller `MutableText`.
  *
- *  @param  source              Formatted `string` to be appended to
+ *  @param  source  Formatted `string` to be appended to
  *      the caller `MutableText`.
- *  @param  defaultFormatting   Formatting to be used for `source`'s characters
- *      that have no color information defined.
  *  @return Caller `MutableText` to allow for method chaining.
  */
 public final function MutableText AppendFormattedString(
     string              source,
     optional Formatting defaultFormatting)
 {
-    //  TODO: is this the best way?
     local Text sourceAsText;
     sourceAsText = _.text.FromString(source);
     AppendFormatted(sourceAsText);
