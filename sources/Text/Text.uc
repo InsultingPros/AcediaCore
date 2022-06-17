@@ -983,6 +983,49 @@ protected final function Text DropCodePoints() {
 }
 
 /**
+ *  Sets `newFormatting` for every non-formatted character in the caller `Text`.
+ *  Allows to create mutable child classes.
+ *
+ *  @param  newFormatting   Formatting to use for all non-formatted character in
+ *      the caller `Text`. If `newFormatting` is not colored itself -
+ *      method does nothing.
+ *  @return Returns caller `Text`, to allow for method chaining.
+ */
+protected final function Text _changeDefaultFormatting(Formatting newFormatting)
+{
+    local int                       i;
+    local FormattingChunk           newFormattingChunk;
+    local array<FormattingChunk>    newFormattingChunks;
+    if (!newFormatting.isColored) {
+        return self;
+    }
+    newFormattingChunk.formatting = newFormatting;
+    if (    formattingChunks.length <= 0
+        ||  formattingChunks[0].startIndex > 0)
+    {
+        newFormattingChunks[0] = newFormattingChunk;
+    }
+    while (i < formattingChunks.length)
+    {
+        if (formattingChunks[i].formatting.isColored)
+        {
+            newFormattingChunks[newFormattingChunks.length] =
+                formattingChunks[i];
+        }
+        else
+        {
+            newFormattingChunk.startIndex = formattingChunks[i].startIndex;
+            newFormattingChunks[newFormattingChunks.length] =
+                newFormattingChunk;
+        }
+        i += 1;
+    }
+    formattingChunks = newFormattingChunks;
+    NormalizeFormatting();
+    return self;
+}
+
+/**
  *  Sets formatting for the next code point(s) to be added by
  *  `AppendCodePoint()` / `AppendManyCodePoints()`.
  *  Allows to create mutable child classes.

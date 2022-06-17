@@ -372,6 +372,21 @@ public final function MutableText Replace(
 }
 
 /**
+ *  Sets `newFormatting` for every non-formatted character in the caller `Text`.
+ *
+ *  @param  newFormatting   Formatting to use for all non-formatted character in
+ *      the caller `Text`. If `newFormatting` is not colored itself -
+ *      method does nothing.
+ *  @return Returns caller `MutableText`, to allow for method chaining.
+ */
+public final function MutableText ChangeDefaultFormatting(
+    Formatting newFormatting)
+{
+    _changeDefaultFormatting(newFormatting);
+    return self;
+}
+
+/**
  *  Changes formatting for characters with indices in range, specified as
  *  `[startIndex; startIndex + maxLength - 1]` to `newFormatting` parameter.
  *
