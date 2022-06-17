@@ -216,6 +216,22 @@ public static final function Text GetAutoEnabledConfig()
 }
 
 /**
+ *  Returns name of the currently enabled config for the caller `Feature`.
+ *
+ *  @return Name of the currently enabled for the caller `Feature`.
+ *      `none` if `Feature` is not currently enabled.
+ */
+public static final function Text GetCurrentConfig()
+{
+    local Feature myInstance;
+    myInstance = GetInstance();
+    if (myInstance == none)                     return none;
+    if (myInstance.currentConfigName == none)   return none;
+
+    return myInstance.currentConfigName.Copy();
+}
+
+/**
  *  Checks whether caller `Feature` is currently enabled.
  *
  *  @return `true` if caller `Feature` is currently enabled and
