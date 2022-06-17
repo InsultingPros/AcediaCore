@@ -116,21 +116,21 @@ public final function AliasSource GetColorSource()
  */
 public final function AliasSource GetFeatureSource()
 {
-    local AliasSource           colorSource;
+    local AliasSource           featureSource;
     local class<AliasSource>    sourceClass;
-    sourceClass = class'AliasService'.default.colorAliasesSource;
+    sourceClass = class'AliasService'.default.featureAliasesSource;
     if (sourceClass == none)
     {
-        _.logger.Auto(noColorAliasSource);
+        _.logger.Auto(noFeatureAliasSource);
         return none;
     }
-    colorSource = AliasSource(sourceClass.static.GetInstance(true));
-    if (colorSource == none)
+    featureSource = AliasSource(sourceClass.static.GetInstance(true));
+    if (featureSource == none)
     {
-        _.logger.Auto(invalidColorAliasSource).ArgClass(sourceClass);
+        _.logger.Auto(invalidFeatureAliasSource).ArgClass(sourceClass);
         return none;
     }
-    return colorSource;
+    return featureSource;
 }
 
 /**

@@ -28,6 +28,7 @@ defaultproperties
     aliasSources(0) = class'AliasSource'
     aliasSources(1) = class'WeaponAliasSource'
     aliasSources(2) = class'ColorAliasSource'
+    aliasSources(3) = class'FeatureAliasSource'
     testCases(0)    = class'TEST_Base'
     testCases(1)    = class'TEST_ActorService'
     testCases(2)    = class'TEST_Boxes'
