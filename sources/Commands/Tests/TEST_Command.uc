@@ -279,8 +279,8 @@ protected static function SubTest_MockAQ3()
     TEST_ExpectTrue(paramArray.GetLength() == 3);
     TEST_ExpectTrue(Text(paramArray.GetItem(0)).ToString() == "dk");
     TEST_ExpectTrue(Text(paramArray.GetItem(1)).ToString() == "someone");
-    TEST_ExpectTrue(    Text(paramArray.GetItem(2)).ToFormattedString()
-                    ==  "complex {rgb(123,45,72) string}");
+    TEST_ExpectTrue(    Text(paramArray.GetItem(2)).ToString()
+                    ==  "complex {#7b2d48 string}");
 }
 
 protected static function SubTest_MockAQ4()

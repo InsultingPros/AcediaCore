@@ -556,7 +556,7 @@ private final function bool ParseTextValue(
         return false;
     }
     RecordParameter(parsedParameters, expectedParameter,
-                    _.text.FromFormattedString(textValue));
+                    _.text.FromString(textValue));
     return true;
 }
 
@@ -575,7 +575,7 @@ private final function bool ParseRemainderValue(
         return false;
     }
     RecordParameter(parsedParameters, expectedParameter,
-                    _.text.FromFormattedString(textValue));
+                    _.text.FromString(textValue));
     return true;
 }
 
