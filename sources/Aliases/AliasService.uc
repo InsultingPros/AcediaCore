@@ -39,6 +39,7 @@ var public config const float saveInterval;
 //  looks for weapon and color aliases.
 var public config const class<AliasSource> weaponAliasesSource;
 var public config const class<AliasSource> colorAliasesSource;
+var public config const class<AliasSource> featureAliasesSource;
 
 protected function OnLaunch()
 {
@@ -130,6 +131,7 @@ event Timer()
 defaultproperties
 {
     saveInterval = 0.05
-    weaponAliasesSource = class'WeaponAliasSource'
-    colorAliasesSource  = class'ColorAliasSource'
+    weaponAliasesSource     = class'WeaponAliasSource'
+    colorAliasesSource      = class'ColorAliasSource'
+    featureAliasesSource    = class'FeatureAliasSource'
 }
