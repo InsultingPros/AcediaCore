@@ -42,7 +42,8 @@ struct FeatureConfigPair
     var public class<Feature>   featureClass;
     var public Text             configName;
 };
-var private array<FeatureConfigPair> automaticConfigs;
+var private array<FeatureConfigPair>    automaticConfigs;
+var private array< class<Feature> >     availableFeatures;
 
 var private LoggerAPI.Definition infoLoadingPackage;
 var private LoggerAPI.Definition infoBootingUp, infoBootingUpFinished;
@@ -179,7 +180,9 @@ private final function LoadManifest(class<_manifest> manifestClass)
         nextPair.featureClass   = manifestClass.default.features[i];
         nextPair.configName     = manifestClass.default.features[i].static
             .GetAutoEnabledConfig();
-        automaticConfigs[automaticConfigs.length] = nextPair;
+        automaticConfigs[automaticConfigs.length]   = nextPair;
+        availableFeatures[availableFeatures.length] =
+            manifestClass.default.features[i];
     }
     for (i = 0; i < manifestClass.default.testCases.length; i += 1)
     {
@@ -200,6 +203,11 @@ public final function array<FeatureConfigPair> GetAutoConfigurationInfo()
         }
     }
     return result;
+}
+
+public final function array< class<Feature> > GetAvailableFeatures()
+{
+    return availableFeatures;
 }
 
 private final function class<_manifest> LoadManifestClass(string packageName)
