@@ -141,7 +141,7 @@ private final function bool PushInnerByte(byte nextByte)
 
 private final function AppendCodePoint(int codePoint)
 {
-    local Text.Character nextCharacter;
+    local BaseText.Character nextCharacter;
     nextCharacter.codePoint = codePoint;
     builtText.AppendCharacter(nextCharacter);
 }

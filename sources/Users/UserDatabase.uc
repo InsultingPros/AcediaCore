@@ -66,7 +66,7 @@ public final static function UserDatabase GetInstance()
  *      correctly initialized with given `idHash` (guaranteed not to happen for
  *      any valid id hashes).
  */
-public final function UserID FetchUserID(Text idHash)
+public final function UserID FetchUserID(BaseText idHash)
 {
     local int               i;
     local UserID.SteamID    steamID;

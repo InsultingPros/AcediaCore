@@ -95,7 +95,9 @@ protected function Finalizer()
  *      do nothing.
  *      Parameter is unused for other types of errors.
  */
-public final function Report(FormattedStringErrorType type, optional Text cause)
+public final function Report(
+    FormattedStringErrorType    type,
+    optional BaseText           cause)
 {
     switch (type)
     {

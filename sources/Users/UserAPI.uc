@@ -53,7 +53,7 @@ public final function User Fetch(UserID userID)
  *  @return Corresponding `User` object. Guaranteed to be a valid non-`none`
  *      reference.
  */
-public final function User FetchByIDHash(Text idHash)
+public final function User FetchByIDHash(BaseText idHash)
 {
     local UserID        userID;
     local UserDatabase  userDB;

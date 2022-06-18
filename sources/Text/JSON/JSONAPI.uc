@@ -28,8 +28,9 @@ class JSONAPI extends AcediaObject
 var private bool            formattingInitialized;
 //  Variables used in json pretty printing for defining used colors;
 //  Colors are taken from `ColorAPI`.
-var private Text.Formatting jPropertyName, jObjectBraces, jArrayBraces, jComma;
-var private Text.Formatting jColon, jNumber, jBoolean, jString, jNull;
+var private BaseText.Formatting jPropertyName, jObjectBraces, jArrayBraces;
+var private BaseText.Formatting jComma, jColon, jNumber, jBoolean, jString;
+var private BaseText.Formatting jNull;
 
 var const int TNULL, TTRUE, TFALSE, TDOT, TEXPONENT;
 var const int TOPEN_BRACKET, TCLOSE_BRACKET, TOPEN_BRACE, TCLOSE_BRACE;
@@ -79,7 +80,7 @@ private final function InitFormatting()
  *      an incorrect JSON pointer or `none`, - empty `JSONPointer` will be
  *      returned.
  */
-public final function JSONPointer Pointer(optional Text pointerAsText)
+public final function JSONPointer Pointer(optional BaseText pointerAsText)
 {
     return JSONPointer(_.memory.Allocate(class'JSONPointer'))
         .Set(pointerAsText);
@@ -147,7 +148,7 @@ public final function TryNullWith(Parser parser)
  *  @param  source  `Text` instance to parse JSON null value from.
  *  @return `true` if parsing succeeded and `false` otherwise.
  */
-public final function bool IsNull(Text source)
+public final function bool IsNull(BaseText source)
 {
     local bool      parsingSucceeded;
     local Parser    parser;
@@ -258,7 +259,7 @@ public final function AcediaObject ParseBooleanWith(
  *      Returns `none` iff parsing has failed.
  */
 public final function AcediaObject ParseBoolean(
-    Text            source,
+    BaseText        source,
     optional bool   parseAsMutable)
 {
     local bool      result;
@@ -476,7 +477,7 @@ public final function AcediaObject ParseNumberWith(
  *      Returns `none` iff parsing has failed.
  */
 public final function AcediaObject ParseNumber(
-    Text            source,
+    BaseText        source,
     optional bool   parseAsMutable)
 {
     local int       integerResult;
@@ -534,7 +535,7 @@ public final function AcediaObject ParseNumber(
  *      `none` otherwise. To check for parsing success check the state of
  *      the `parser`.
  */
-public final function Text ParseStringWith(
+public final function BaseText ParseStringWith(
     Parser          parser,
     optional bool   parseAsMutable)
 {
@@ -572,8 +573,8 @@ public final function Text ParseStringWith(
  *      `none` otherwise. To check for parsing success check the state of
  *      the `parser`.
  */
-public final function Text ParseString(
-    Text            source,
+public final function BaseText ParseString(
+    BaseText        source,
     optional bool   parseAsMutable)
 {
     local bool          parsingSuccessful;
@@ -1250,7 +1251,7 @@ private final function MutableText PrettyPrintObjectWithIndent(
 //  initialized.
 private final function PrettyPrintKeyValue(
     MutableText     builder,
-    Text            nextKey,
+    BaseText        nextKey,
     AcediaObject    nextValue,
     MutableText     accumulatedIndent)
 {
@@ -1276,12 +1277,12 @@ private final function PrettyPrintKeyValue(
 //  representation.
 //      We can't just dump `original`'s contents into JSON output as is,
 //  since we have to replace several special characters with escaped sequences.
-private final function MutableText DisplayText(Text original)
+private final function MutableText DisplayText(BaseText original)
 {
-    local int               i, length;
-    local MutableText       result;
-    local Text.Character    nextCharacter;
-    local Text.Character    reverseSolidus;
+    local int                   i, length;
+    local MutableText           result;
+    local BaseText.Character    nextCharacter;
+    local BaseText.Character    reverseSolidus;
     reverseSolidus = _.text.CharacterFromCodePoint(CODEPOINT_REVERSE_SOLIDUS);
     result = T(TQUOTE).MutableCopy();
     length = original.GetLength();

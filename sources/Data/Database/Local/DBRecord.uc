@@ -266,7 +266,7 @@ public static final function Global __()
  *  @return New `DBRecord`, created in specified package.
  *      `none` iff `dbPackageName == none`.
  */
-public final static function DBRecord NewRecord(Text dbPackageName)
+public final static function DBRecord NewRecord(BaseText dbPackageName)
 {
     if (dbPackageName == none) {
         return none;
@@ -303,8 +303,8 @@ private final static function DBRecord NewRecordFor(string dbPackageName)
 }
 
 public final static function DBRecord LoadRecord(
-    Text recordName,
-    Text dbPackageName)
+    BaseText recordName,
+    BaseText dbPackageName)
 {
     if (dbPackageName == none)  return none;
     if (recordName == none)     return none;

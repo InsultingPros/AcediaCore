@@ -84,7 +84,7 @@ public function array<ETrader> GetTraders()
     return result;
 }
 
-public function ETrader GetTrader(Text traderName)
+public function ETrader GetTrader(BaseText traderName)
 {
     local int   i;
     local Text  nextTraderName;

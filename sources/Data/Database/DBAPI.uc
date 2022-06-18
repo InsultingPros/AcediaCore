@@ -51,7 +51,7 @@ private final function CreateLocalDBMapIfMissing()
  *  @param  databaseLink    Link from which to extract database's name.
  *  @return Database named "<db_name>" of type "<type>" from the `databaseLink`.
  */
-public final function Database Load(Text databaseLink)
+public final function Database Load(BaseText databaseLink)
 {
     local Parser        parser;
     local Database      result;
@@ -94,7 +94,7 @@ public final function Database Load(Text databaseLink)
  *      Guaranteed to not be `none` if provided argument `databaseLink`
  *      is not `none`.
  */
-public final function JSONPointer GetPointer(Text databaseLink)
+public final function JSONPointer GetPointer(BaseText databaseLink)
 {
     local int           slashIndex;
     local Text          textPointer;
@@ -122,7 +122,7 @@ public final function JSONPointer GetPointer(Text databaseLink)
  *  @param  databaseName    Name for the new database.
  *  @return Reference to created database. Returns `none` iff method failed.
  */
-public final function LocalDatabaseInstance NewLocal(Text databaseName)
+public final function LocalDatabaseInstance NewLocal(BaseText databaseName)
 {
     local DBRecord              rootRecord;
     local Text                  rootRecordName;
@@ -158,7 +158,7 @@ public final function LocalDatabaseInstance NewLocal(Text databaseName)
  *  @param  databaseName    Name of the database to load.
  *  @return Loaded local database. `none` if it does not exist.
  */
-public final function LocalDatabaseInstance LoadLocal(Text databaseName)
+public final function LocalDatabaseInstance LoadLocal(BaseText databaseName)
 {
     local DBRecord              rootRecord;
     local Text                  rootRecordName;
@@ -209,7 +209,7 @@ public final function LocalDatabaseInstance LoadLocal(Text databaseName)
  *  @param  databaseName    Name of the database to check.
  *  @return `true` if database with specified name exists and `false` otherwise.
  */
-public final function bool ExistsLocal(Text databaseName)
+public final function bool ExistsLocal(BaseText databaseName)
 {
     return LoadLocal(databaseName) != none;
 }
@@ -221,7 +221,7 @@ public final function bool ExistsLocal(Text databaseName)
  *  @return `true` if database with specified name existed and was deleted and
  *      `false` otherwise.
  */
-public final function bool DeleteLocal(Text databaseName)
+public final function bool DeleteLocal(BaseText databaseName)
 {
     local LocalDatabase             localDatabaseConfig;
     local LocalDatabaseInstance     localDatabase;
@@ -250,7 +250,7 @@ public final function bool DeleteLocal(Text databaseName)
     return false;
 }
 
-private function EraseAllPackageData(Text packageToErase)
+private function EraseAllPackageData(BaseText packageToErase)
 {
     local int               i;
     local string            packageName;

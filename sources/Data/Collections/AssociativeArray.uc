@@ -669,7 +669,7 @@ public final function Entry GetEntryByIndex(Index index)
     return hashTable[index.bucketIndex].entries[index.entryIndex];
 }
 
-protected function AcediaObject GetByText(Text key)
+protected function AcediaObject GetByText(BaseText key)
 {
     return GetItem(key);
 }

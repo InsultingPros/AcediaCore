@@ -79,7 +79,7 @@ var private array<int>  normalizedArguments;
 //  amounts of trash objects, since only one of them can "make a mess".
 var private LogMessage  dirtyLogMessage;
 //  Arguments, collected so far by the `Arg*()` calls
-var private array<Text> collectedArguments;
+var private array<BaseText> collectedArguments;
 
 protected function Finalizer()
 {
@@ -105,11 +105,11 @@ protected function Finalizer()
  */
 public final function Initialize(LoggerAPI.Definition logMessageDefinition)
 {
-    local int               nextArgument;
-    local Parser            parser;
-    local MutableText       nextLogPart, nextChunk;
-    local Text.Character    percentCharacter;
-    local array<int>        parsedArguments;
+    local int                   nextArgument;
+    local Parser                parser;
+    local MutableText           nextLogPart, nextChunk;
+    local BaseText.Character    percentCharacter;
+    local array<int>            parsedArguments;
     if (isInitialized) {
         return;
     }
@@ -208,7 +208,7 @@ private final function NormalizeArguments(array<int> argumentsOrder)
  *      returned by `P()`, `C()` or `F()` calls.
  *  @return Caller `LogMessage` to allow for method chaining.
  */
-public final function LogMessage Arg(Text argument)
+public final function LogMessage Arg(/*take*/ BaseText argument)
 {
     if (IsArgumentListFull()) {
         return self;
@@ -335,7 +335,7 @@ public final function Text Collect()
 {
     local int           i, argumentIndex;
     local Text          result;
-    local Text          nextArgument;
+    local BaseText      nextArgument;
     local MutableText   builder;
     if (logParts.length == 0) {
         return P("").Copy();

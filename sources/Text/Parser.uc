@@ -19,7 +19,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class Parser extends AcediaObject
-    dependson(Text)
+    dependson(BaseText)
     dependson(UnicodeData);
 
 //  Max value of a byte
@@ -75,7 +75,7 @@ enum ParsedSign
 //      Common logic for parser initialization.
 //      Uses `source` as is, without copying, so public initialization method
 //  must do it itself.
-private final function Parser _initialize(Text source)
+private final function Parser _initialize(/*take*/ Text source)
 {
     if (source == none) return self;
 
@@ -98,7 +98,7 @@ private final function Parser _initialize(Text source)
  *      If `none` is passed - parser won't be initialized.
  *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser Initialize(Text source)
+public final function Parser Initialize(BaseText source)
 {
     if (source == none) {
         return self;
@@ -304,10 +304,10 @@ protected final function Parser ShiftPointer(optional int shift)
  *      invalid character if caller `Parser` was not initialized,
  *      its contents are empty or it has already consumed all input.
  */
-protected final function Text.Character GetCharacter(optional int shift)
+protected final function BaseText.Character GetCharacter(optional int shift)
 {
-    local Text.Character    invalidCharacter;
-    local int               absoluteAddress;
+    local BaseText.Character    invalidCharacter;
+    local int                   absoluteAddress;
     if (content == none) return _.text.GetInvalidCharacter();
 
     absoluteAddress = currentState.pointer + Max(0, shift);
@@ -377,11 +377,12 @@ public final function bool HasFinished()
 }
 
 /**
- *  Returns still unparsed part of caller `Parser`'s source as `Text`.
+ *  Returns still unparsed part of caller `Parser`'s source as `MutableText`.
  *
- *  @return Unparsed part of caller `Parser`'s source as `Text`.
+ *  @return Unparsed part of caller `Parser`'s source as `MutableText`.
+ *      Guaranteed to be not-`none`.
  */
-public final function Text GetRemainder()
+public final function MutableText GetRemainderM()
 {
     local int           i;
     local MutableText   result;
@@ -390,6 +391,17 @@ public final function Text GetRemainder()
         result.AppendCharacter(GetCharacter(i));
     }
     return result;
+}
+
+/**
+ *  Returns still unparsed part of caller `Parser`'s source as `Text`.
+ *
+ *  @return Unparsed part of caller `Parser`'s source as `Text`.
+ *      Guaranteed to be not-`none`.
+ */
+public final function Text GetRemainder()
+{
+    return GetRemainderM().IntoText();
 }
 
 /**
@@ -475,8 +487,8 @@ public final function Parser Skip(optional out int whitespacesAmount)
  *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser Match(
-    Text                            word,
-    optional Text.CaseSensitivity   caseSensitivity)
+    BaseText                            word,
+    optional BaseText.CaseSensitivity   caseSensitivity)
 {
     local int       i;
     local int       wordLength;
@@ -513,8 +525,8 @@ public final function Parser Match(
  *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MatchS(
-    string                          word,
-    optional Text.CaseSensitivity   caseSensitivity)
+    string                              word,
+    optional BaseText.CaseSensitivity   caseSensitivity)
 {
     local Text wrapper;
     wrapper = _.text.FromString(word);
@@ -639,7 +651,7 @@ protected final function int SafeIntegerCombination(
  *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MEscapedSequence(
-    out Text.Character denotedCharacter)
+    out BaseText.Character denotedCharacter)
 {
     local int i;
     if (!Ok())                                              return self;
@@ -686,8 +698,8 @@ public final function Parser MEscapedSequence(
  */
 public final function Parser MName(out MutableText result)
 {
-    local TextAPI           api;
-    local Text.Character    nextCharacter;
+    local TextAPI               api;
+    local BaseText.Character    nextCharacter;
     ResetResultText(result);
     if (!Ok())                          return self;
     if (GetRemainingLength() <= 0)      return Fail();
@@ -753,10 +765,10 @@ public final function Parser MNameS(out string result)
  */
 public final function Parser MStringLiteral(out MutableText result)
 {
-    local TextAPI           api;
-    local Text.Character    nextCharacter;
-    local Text.Character    usedQuotationMark;
-    local Text.Character    escapedCharacter;
+    local TextAPI               api;
+    local BaseText.Character    nextCharacter;
+    local BaseText.Character    usedQuotationMark;
+    local BaseText.Character    escapedCharacter;
     ResetResultText(result);
     if (!Ok())                                      return self;
     usedQuotationMark = GetCharacter();
@@ -843,13 +855,13 @@ public final function Parser MStringLiteralS(out string result)
  *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MUntil(
-    out MutableText         result,
-    optional Text.Character characterBreak,
-    optional bool           whitespacesBreak,
-    optional bool           quotesBreak)
+    out MutableText             result,
+    optional BaseText.Character characterBreak,
+    optional bool               whitespacesBreak,
+    optional bool               quotesBreak)
 {
-    local Text.Character    nextCharacter;
-    local TextAPI           api;
+    local BaseText.Character    nextCharacter;
+    local TextAPI               api;
     ResetResultText(result);
     if (!Ok()) return self;
 
@@ -889,10 +901,10 @@ public final function Parser MUntil(
  *  @return Returns the caller `Parser`, to allow for function chaining.
  */
 public final function Parser MUntilS(
-    out string              result,
-    optional Text.Character characterBreak,
-    optional bool           whitespacesBreak,
-    optional bool           quotesBreak)
+    out string                  result,
+    optional BaseText.Character characterBreak,
+    optional bool               whitespacesBreak,
+    optional bool               quotesBreak)
 {
     local MutableText wrapper;
     if (!Ok()) return self;
@@ -929,14 +941,14 @@ public final function Parser MUntilS(
  */
 public final function Parser MUntilMany(
     out MutableText result,
-    array<Text>     separators,
+    array<BaseText> separators,
     optional bool   whitespacesBreak,
     optional bool   quotesBreak)
 {
-    local bool              foundEnd;
-    local int               i, pointerShift;
-    local array<int>        completions;
-    local Text.Character    nextCharacter, separatorCharacter;
+    local bool                  foundEnd;
+    local int                   i, pointerShift;
+    local array<int>            completions;
+    local BaseText.Character    nextCharacter, separatorCharacter;
     ResetResultText(result);
     if (!Ok()) return self;
 
@@ -1002,7 +1014,7 @@ public final function Parser MUntilMany(
  */
 public final function Parser MUntilManyS(
     out string      result,
-    array<Text>     separators,
+    array<BaseText> separators,
     optional bool   whitespacesBreak,
     optional bool   quotesBreak)
 {
@@ -1093,8 +1105,8 @@ public final function Parser MStringS(out string result)
  */
 public final function Parser MWhitespaces(out MutableText result)
 {
-    local Text.Character    nextCharacter;
-    local TextAPI           api;
+    local BaseText.Character    nextCharacter;
+    local TextAPI               api;
     if (!Ok())          return self;
 
     api = _.text;
@@ -1148,7 +1160,7 @@ public final function Parser MWhitespacesS(out string result)
  *      Any passed value is discarded.
  *  @return Returns the caller `Parser`, to allow for function chaining.
  */
-public final function Parser MCharacter(out Text.Character result)
+public final function Parser MCharacter(out BaseText.Character result)
 {
     if (!Ok())          return self;
     if (HasFinished())  return Fail();
@@ -1170,7 +1182,7 @@ public final function Parser MCharacter(out Text.Character result)
  */
 public final function Parser MByte(out byte result)
 {
-    local Text.Character character;
+    local BaseText.Character character;
     if (!Ok()) return self;
 
     if (!MCharacter(character).Ok())

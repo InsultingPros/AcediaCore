@@ -19,7 +19,7 @@
  */
 class PlayerAPI_OnPlayerNameChanged_Slot extends Slot;
 
-delegate connect(EPlayer player, Text oldName, Text newName)
+delegate connect(EPlayer player, BaseText oldName, BaseText newName)
 {
     DummyCall();
 }

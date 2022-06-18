@@ -48,7 +48,7 @@ public final function Text GetRootName()
  *
  *  Only makes changes if root is not already defined.
  */
-public final function SetRootName(Text rootName)
+public final function SetRootName(BaseText rootName)
 {
     if (HasDefinedRoot()) {
         return;
@@ -61,7 +61,7 @@ public final function SetRootName(Text rootName)
     }
 }
 
-public final static function LocalDatabase Load(Text databaseName)
+public final static function LocalDatabase Load(BaseText databaseName)
 {
     if (!__().text.IsEmpty(databaseName)) {
         return new(none, databaseName.ToString()) class'LocalDatabase';

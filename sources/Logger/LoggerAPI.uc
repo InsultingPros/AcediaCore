@@ -245,7 +245,7 @@ public final function LogMessage Auto(out Definition definition)
  *  @param  message         Message to log.
  *  @param  messageLevel    Level at which to log message.
  */
-public final function LogAtLevel(Text message, LogLevel messageLevel)
+public final function LogAtLevel(BaseText message, LogLevel messageLevel)
 {
     switch (messageLevel)
     {
@@ -274,7 +274,7 @@ public final function LogAtLevel(Text message, LogLevel messageLevel)
  *
  *  @param  message Message to log.
  */
-public final function Debug(Text message)
+public final function Debug(BaseText message)
 {
     local int i;
     for (i = 0; i < debugLoggerInstances.length; i += 1) {
@@ -288,7 +288,7 @@ public final function Debug(Text message)
  *
  *  @param  message Message to log.
  */
-public final function Info(Text message)
+public final function Info(BaseText message)
 {
     local int i;
     for (i = 0; i < infoLoggerInstances.length; i += 1) {
@@ -302,7 +302,7 @@ public final function Info(Text message)
  *
  *  @param  message Message to log.
  */
-public final function Warning(Text message)
+public final function Warning(BaseText message)
 {
     local int i;
     for (i = 0; i < warningLoggerInstances.length; i += 1) {
@@ -316,7 +316,7 @@ public final function Warning(Text message)
  *
  *  @param  message Message to log.
  */
-public final function Error(Text message)
+public final function Error(BaseText message)
 {
     local int i;
     for (i = 0; i < errorLoggerInstances.length; i += 1) {
@@ -330,7 +330,7 @@ public final function Error(Text message)
  *
  *  @param  message Message to log.
  */
-public final function Fatal(Text message)
+public final function Fatal(BaseText message)
 {
     local int i;
     for (i = 0; i < fatalLoggerInstances.length; i += 1) {

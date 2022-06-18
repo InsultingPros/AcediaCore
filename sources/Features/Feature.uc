@@ -138,8 +138,9 @@ protected function Finalizer()
  *
  *  @param  newConfigName   Name of the config to apply to the caller `Feature`.
  */
-private final function ApplyConfig(Text newConfigName)
+private final function ApplyConfig(BaseText newConfigName)
 {
+    local Text          configNameCopy;
     local FeatureConfig newConfig;
     if (newConfigName == none) {
         return;
@@ -150,17 +151,17 @@ private final function ApplyConfig(Text newConfigName)
     {
         _.logger.Auto(errorBadConfigData).ArgClass(class);
         //  Fallback to "default" config
-        newConfigName = _.text.FromString(defaultConfigName);
-        configClass.static.NewConfig(newConfigName);
+        configNameCopy = _.text.FromString(defaultConfigName);
+        configClass.static.NewConfig(configNameCopy);
         newConfig =
-            FeatureConfig(configClass.static.GetConfigInstance(newConfigName));
+            FeatureConfig(configClass.static.GetConfigInstance(configNameCopy));
     }
     else {
-        newConfigName = newConfigName.Copy();
+        configNameCopy = newConfigName.Copy();
     }
     SwapConfig(newConfig);
     _.memory.Free(currentConfigName);
-    currentConfigName = newConfigName;
+    currentConfigName = configNameCopy;
 }
 
 /**
@@ -258,7 +259,7 @@ public static final function bool IsEnabled()
  *      Passing `none` will make caller `Feature` use "default" config.
  *  @return Active instance of the caller `Feature` class.
  */
-public static final function Feature EnableMe(Text configName)
+public static final function Feature EnableMe(BaseText configName)
 {
     local Feature myInstance;
     if (configName == none) {

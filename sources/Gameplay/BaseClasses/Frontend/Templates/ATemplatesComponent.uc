@@ -31,7 +31,7 @@ class ATemplatesComponent extends AcediaObject
  *  @return `true` if list named `listName` exists and `false` otherwise.
  *      Always returns `false` if `listName` equals `none`.
  */
-public function bool ItemListExists(Text listName)
+public function bool ItemListExists(BaseText listName)
 {
     return false;
 }
@@ -54,7 +54,7 @@ public function bool ItemListExists(Text listName)
  *      When incorrect `listName` is specified - empty array is returned
  *      (which can also happen if specified list is empty).
  */
-public function array<Text> GetItemList(Text listName)
+public function array<Text> GetItemList(BaseText listName)
 {
     local array<Text> emptyArray;
     return emptyArray;

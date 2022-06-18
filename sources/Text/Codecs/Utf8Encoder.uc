@@ -44,7 +44,7 @@ var private int lastSixBits;
  *      `none` iff `text == none` or `text` contains invalid Unicode
  *      code points.
  */
-public final function ByteArrayRef Encode(Text text)
+public final function ByteArrayRef Encode(BaseText text)
 {
     local int           i, nextCodepoint, textLength;
     local ByteArrayRef  buffer;

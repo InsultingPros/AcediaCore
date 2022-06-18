@@ -88,8 +88,8 @@ public final function int GetKey()
  *      `_.users.PersistentStorageExists() == true`.
  */
 public final function DBReadTask ReadPersistentData(
-    Text groupName,
-    Text dataName)
+    BaseText groupName,
+    BaseText dataName)
 {
     local DBReadTask task;
     if (groupName == none)          return none;
@@ -123,8 +123,8 @@ public final function DBReadTask ReadPersistentData(
  *      `_.users.PersistentStorageExists() == true`.
  */
 public final function DBWriteTask WritePersistentData(
-    Text            groupName,
-    Text            dataName,
+    BaseText        groupName,
+    BaseText        dataName,
     AcediaObject    data)
 {
     local DBWriteTask       task;

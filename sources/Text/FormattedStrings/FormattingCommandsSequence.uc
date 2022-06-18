@@ -24,7 +24,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class FormattingCommandsSequence extends AcediaObject
-    dependson(Text);
+    dependson(BaseText);
 
 enum FormattingCommandType
 {
@@ -48,7 +48,7 @@ struct FormattingCommand
 
     //  Formatting character for the "^"-type tag
     //  This parameter is only used for `FST_StackSwap` command type.
-    var Text.Character          charTag;
+    var BaseText.Character      charTag;
 
     //      Rest of the parameters are only used for `FST_StackPush`
     //  command type.
@@ -149,7 +149,7 @@ protected function Finalizer()
  *      direct access to formatting commands defined in `input`.
  */
 public final static function FormattingCommandsSequence FromText(
-    Text                            input,
+    BaseText                        input,
     optional FormattingErrorsReport errorsReporter)
 {
     local FormattingCommandsSequence newSequence;
@@ -205,7 +205,7 @@ public final function FormattingCommand GetCommand(int commandIndex)
 
 private final function BuildSelf()
 {
-    local Text.Character nextCharacter;
+    local BaseText.Character nextCharacter;
     while (!parser.HasFinished())
     {
         parser.MCharacter(nextCharacter);

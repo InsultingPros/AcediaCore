@@ -150,7 +150,7 @@ private function array<Text> CopyList(array<Text> inputList)
     return outputList;
 }
 
-public function bool ItemListExists(Text listName)
+public function bool ItemListExists(BaseText listName)
 {
     local string listNameAsString;
     if (listName == none) return false;
@@ -171,7 +171,7 @@ public function bool ItemListExists(Text listName)
     return false;
 }
 
-public function array<Text> GetItemList(Text listName)
+public function array<Text> GetItemList(BaseText listName)
 {
     local string        listNameAsString;
     local array<Text>   emptyArray;

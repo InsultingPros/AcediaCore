@@ -60,7 +60,7 @@ public function Text GetName();
  *  @param  newName New name of the caller trader.
  *  @return `true` if trader is currently enabled and `false` otherwise.
  */
-public function ETrader SetName(Text newName);
+public function ETrader SetName(BaseText newName);
 
 /**
  *  Checks if caller trader is currently enabled.

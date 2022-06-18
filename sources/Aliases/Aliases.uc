@@ -48,7 +48,7 @@ var protected config array<string> alias;
 //  we need methods to convert between "storage" (`string`)
 //  and "actual" (`Text`) value version.
 //  `ToStorageVersion()` and `ToActualVersion()` do that.
-private final static function string ToStorageVersion(Text actualValue)
+private final static function string ToStorageVersion(BaseText actualValue)
 {
     return Repl(actualValue.ToString(), ".", ":");
 }
@@ -98,7 +98,7 @@ private static final function Aliases LoadObjectByName(string objectName)
  *      correspond to.
  *  @return Instance of `Aliases` object with a given name.
  */
-public static final function Aliases LoadObject(Text aliasesValue)
+public static final function Aliases LoadObject(BaseText aliasesValue)
 {
     if (aliasesValue != none) {
         return LoadObjectByName(ToStorageVersion(aliasesValue));
@@ -141,7 +141,7 @@ public final function array<Text> GetAliases()
  *  @param  aliasToAdd  Alias to add to caller `Aliases` object.
  *      If `none`, method will do nothing.
  */
-public final function AddAlias(Text aliasToAdd)
+public final function AddAlias(BaseText aliasToAdd)
 {
     local int i;
     if (aliasToAdd == none) return;
@@ -165,7 +165,7 @@ public final function AddAlias(Text aliasToAdd)
  *
  *  @param  aliasToRemove   Alias to remove from caller `Aliases` object.
  */
-public final function RemoveAlias(Text aliasToRemove)
+public final function RemoveAlias(BaseText aliasToRemove)
 {
     local int   i;
     local bool  removedAlias;

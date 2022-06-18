@@ -21,7 +21,7 @@
  */
 class KF1_Frontend extends KFFrontend;
 
-public function EItemTemplateInfo GetItemTemplateInfo(Text templateName)
+public function EItemTemplateInfo GetItemTemplateInfo(BaseText templateName)
 {
     local class<Inventory> inventoryClass;
     inventoryClass = class<Inventory>(_.memory.LoadClass(templateName));

@@ -44,7 +44,7 @@ protected function FromData(AssociativeArray source)
     }
     useChatInput    = source.GetBool(P("useChatInput"));
     useMutateInput  = source.GetBool(P("useMutateInput"));
-    newChatPrefix = source.GetText(P("chatCommandPrefix"));
+    newChatPrefix   = source.GetText(P("chatCommandPrefix"));
     chatCommandPrefix = "!";
     if (newChatPrefix != none) {
         chatCommandPrefix = newChatPrefix.ToString();

@@ -21,7 +21,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class ConsoleBuffer extends AcediaObject
-    dependson(Text)
+    dependson(BaseText)
     dependson(ConsoleAPI);
 
 /**
@@ -177,10 +177,10 @@ public final function ConsoleBuffer Clear()
  *  @param  inputType   How to treat given `string` regarding coloring.
  *  @return Returns caller `ConsoleBuffer` to allow method chaining.
  */
-public final function ConsoleBuffer Insert(Text input)
+public final function ConsoleBuffer Insert(BaseText input)
 {
-    local int               inputConsumed;
-    local Text.Character    nextCharacter;
+    local int                   inputConsumed;
+    local BaseText.Character    nextCharacter;
     if (input == none) {
         return self;
     }
@@ -249,11 +249,11 @@ public final function ConsoleBuffer Flush()
 
 //      It is assumed that passed characters are not whitespace, -
 //  responsibility to check is on the one calling this method.
-private final function InsertIntoWordBuffer(Text.Character newCharacter)
+private final function InsertIntoWordBuffer(BaseText.Character newCharacter)
 {
-    local int               newCharacterIndex;
-    local Text.Formatting   newFormatting;
-    local Color             oldColor, newColor;
+    local int                   newCharacterIndex;
+    local BaseText.Formatting   newFormatting;
+    local Color                 oldColor, newColor;
     //  Fix text color in the buffer to remember default color, if we use it.
     newFormatting = _.text.GetCharacterFormatting(newCharacter);
     newFormatting.color =
@@ -336,7 +336,7 @@ private final function bool CanAppendWhitespaceIntoLine()
 }
 
 private final function bool CanAppendNonWhitespaceIntoLine(
-    Text.Character nextCharacter)
+    BaseText.Character nextCharacter)
 {
     //  We always allow to insert at least something into empty line,
     //  otherwise we can never insert it anywhere
@@ -357,7 +357,8 @@ private final function bool CanAppendNonWhitespaceIntoLine(
 
 //  For performance reasons assumes that passed character is a whitespace,
 //  the burden of checking is on the caller.
-private final function AppendWhitespaceToCurrentLine(Text.Character whitespace)
+private final function AppendWhitespaceToCurrentLine(
+    BaseText.Character whitespace)
 {
     if (_.text.IsCodePoint(whitespace, CODEPOINT_NEWLINE)) {
         BreakLine(false);

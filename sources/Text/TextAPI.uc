@@ -1,6 +1,6 @@
 /**
  *      API that provides functions for working with characters and for creating
- *  `Text` and `Parser` instances.
+ *  `Text`, `MutableText` and `Parser` instances.
  *      Copyright 2020 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -19,7 +19,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class TextAPI extends AcediaObject
-    dependson(Text);
+    dependson(BaseText);
 
 /**
  *  Creates a new `Formatting` structure that defines a default,
@@ -29,9 +29,9 @@ class TextAPI extends AcediaObject
  *
  *  @return Empty formatting object.
  */
-public final function Text.Formatting EmptyFormatting()
+public final function BaseText.Formatting EmptyFormatting()
 {
-    local Text.Formatting emptyFormatting;
+    local BaseText.Formatting emptyFormatting;
     return emptyFormatting;
 }
 
@@ -43,9 +43,9 @@ public final function Text.Formatting EmptyFormatting()
  *  @param  color   Color that formatting must have.
  *  @return Formatting object that describes text colored with `color`.
  */
-public final function Text.Formatting FormattingFromColor(Color color)
+public final function BaseText.Formatting FormattingFromColor(Color color)
 {
-    local Text.Formatting coloredFormatting;
+    local BaseText.Formatting coloredFormatting;
     coloredFormatting.isColored = true;
     coloredFormatting.color = color;
     return coloredFormatting;
@@ -62,8 +62,8 @@ public final function Text.Formatting FormattingFromColor(Color color)
  *  @return `true` if formattings are equal and `false` otherwise.
  */
 public final function bool IsFormattingEqual(
-    Text.Formatting formatting1,
-    Text.Formatting formatting2)
+    BaseText.Formatting formatting1,
+    BaseText.Formatting formatting2)
 {
     if (formatting1.isColored != formatting2.isColored) {
         return false;
@@ -85,7 +85,7 @@ public final function bool IsFormattingEqual(
  *  @param  character   Character to test for lower case.
  *  @return `true` if given character is lower case.
  */
-public final function bool IsLower(Text.Character character)
+public final function bool IsLower(BaseText.Character character)
 {
     //  Small Latin letters
     if (character.codePoint >= 97 && character.codePoint <= 122) {
@@ -113,7 +113,7 @@ public final function bool IsLower(Text.Character character)
  *  @param  character   Character to test for upper case.
  *  @return `true` if given character is upper case.
  */
-public final function bool IsUpper(Text.Character character)
+public final function bool IsUpper(BaseText.Character character)
 {
     //  Capital Latin letters
     if (character.codePoint >= 65 && character.codePoint <= 90) {
@@ -136,7 +136,7 @@ public final function bool IsUpper(Text.Character character)
  *  @param  codePoint   Unicode code point to check for being a digit.
  *  @return `true` if given Unicode code point is a digit, `false` otherwise.
  */
-public final function bool IsDigit(Text.Character character)
+public final function bool IsDigit(BaseText.Character character)
 {
     if (character.codePoint >= 48 && character.codePoint <= 57) {
         return true;
@@ -152,7 +152,7 @@ public final function bool IsDigit(Text.Character character)
  *  @return `true` if given Unicode code point belongs to a latin alphabet,
  *      `false` otherwise.
  */
-public final function bool IsAlpha(Text.Character character)
+public final function bool IsAlpha(BaseText.Character character)
 {
     //  Capital Latin letters
     if (character.codePoint >= 65 && character.codePoint <= 90) {
@@ -171,7 +171,7 @@ public final function bool IsAlpha(Text.Character character)
  *  @param  character   Character to check for being from ASCII.
  *  @return `true` if given character is a digit, `false` otherwise.
  */
-public final function bool IsASCII(Text.Character character)
+public final function bool IsASCII(BaseText.Character character)
 {
     if (character.codePoint >= 0 && character.codePoint <= 127) {
         return true;
@@ -189,7 +189,7 @@ public final function bool IsASCII(Text.Character character)
  *  @param  character   Character to check for being a whitespace.
  *  @return `true` if given character is a whitespace, `false` otherwise.
  */
-public final function bool IsWhitespace(Text.Character character)
+public final function bool IsWhitespace(BaseText.Character character)
 {
     switch (character.codePoint)
     {
@@ -232,7 +232,7 @@ public final function bool IsWhitespace(Text.Character character)
  *  @return `true` if given Unicode code point denotes one of the recognized
  *      quote symbols, `false` otherwise.
  */
-public final function bool IsQuotationMark(Text.Character character)
+public final function bool IsQuotationMark(BaseText.Character character)
 {
     if (character.codePoint == 0x0022) return true;
     if (character.codePoint == 0x0027) return true;
@@ -252,11 +252,11 @@ public final function bool IsQuotationMark(Text.Character character)
  *      `formatting`.
  */
 // TODO: Validity checks fro non-negative input code points
-public final function Text.Character CharacterFromCodePoint(
-    int                         codePoint,
-    optional Text.Formatting    formatting)
+public final function BaseText.Character CharacterFromCodePoint(
+    int                             codePoint,
+    optional BaseText.Formatting    formatting)
 {
-    local Text.Character result;
+    local BaseText.Character result;
     result.codePoint    = codePoint;
     result.formatting   = formatting;
     return result;
@@ -266,7 +266,7 @@ public final function Text.Character CharacterFromCodePoint(
  *  Extracts a character at position `position` from a given plain `string`.
  *
  *  For extracting multiple character or character from colored/formatted
- *  `string` we advice to convert `string` into `Text` instead.
+ *  `string` we advice to convert `string` into `BaseText` instead.
  *
  *  @param  source      `string`, from which to extract the character.
  *  @param  position    Position of the character to extract, starts from `0`.
@@ -274,11 +274,11 @@ public final function Text.Character CharacterFromCodePoint(
  *      If specified position is invalid (`< 0` or `>= Len(source)`),
  *      returns invalid character.
  */
-public final function Text.Character GetCharacter(
+public final function BaseText.Character GetCharacter(
     string          source,
     optional int    position)
 {
-    local Text.Character result;
+    local BaseText.Character result;
     if (position < 0)               return GetInvalidCharacter();
     if (position >= Len(source))    return GetInvalidCharacter();
 
@@ -287,34 +287,34 @@ public final function Text.Character GetCharacter(
 }
 
 /**
- *  Auxiliary method for checking whether `Text` object defines an "empty"
+ *  Auxiliary method for checking whether `BaseText` object defines an "empty"
  *  `string`. That is, if it's either `none` or has empty contents.
  *
  *  It is added, since it allows to replace two common checks
  *  `text == none || text.IsEmpty()` with a nicer looking one:
  *  `_.text.IsEmpty(text)`.
  *
- *  @param  text    `Text` to check for emptiness.
+ *  @param  text    `BaseText` to check for emptiness.
  *  @return `true` iff either passed `text == none` or `text.IsEmpty()`.
  */
-public final function bool IsEmpty(Text text)
+public final function bool IsEmpty(BaseText text)
 {
     return (text == none || text.IsEmpty());
 }
 
 /**
- *  Converts given `Text` into a plain `string`, returns it's value and
- *  deallocates passed `Text`.
+ *  Converts given `BaseText` into a plain `string`, returns it's value and
+ *  deallocates passed `BaseText`.
  *
  *  Method introduced to simplify a common use-case of converting returned copy
- *  of `Text` into a `string`, which required additional variable to store and
- *  later deallocate `Text` reference.
+ *  of `BaseText` into a `string`, which required additional variable to store
+ *  and later deallocate `BaseText` reference.
  *
- *  @param  toConvert   `Text` to convert.
- *  @return `string` representation of passed `Text` as a plain `string`.
+ *  @param  toConvert   `BaseText` to convert.
+ *  @return `string` representation of passed `BaseText` as a plain string.
  *      Empty `string`, if `toConvert == none`.
  */
-public final function string ToString(Text toConvert)
+public final function string ToString(/*take*/ BaseText toConvert)
 {
     local string result;
     if (toConvert != none) {
@@ -325,18 +325,18 @@ public final function string ToString(Text toConvert)
 }
 
 /**
- *  Converts given `Text` into a colored `string`, returns it's value and
- *  deallocates passed `Text`.
+ *  Converts given `BaseText` into a colored `string`, returns it's value and
+ *  deallocates passed `BaseText`.
  *
  *  Method introduced to simplify a common use-case of converting returned copy
- *  of `Text` into a `string`, which required additional variable to store and
- *  later deallocate `Text` reference.
+ *  of `BaseText` into a `string`, which required additional variable to store
+ *  and later deallocate `BaseText` reference.
  *
- *  @param  toConvert   `Text` to convert.
- *  @return `string` representation of passed `Text` as a colored `string`.
+ *  @param  toConvert   `BaseText` to convert.
+ *  @return `string` representation of passed `BaseText` as a colored `string`.
  *      Empty `string`, if `toConvert == none`.
  */
-public final function string ToColoredString(Text toConvert)
+public final function string ToColoredString(/*take*/ Text toConvert)
 {
     local string result;
     if (toConvert != none) {
@@ -347,18 +347,18 @@ public final function string ToColoredString(Text toConvert)
 }
 
 /**
- *  Converts given `Text` into a formatted `string`, returns it's value and
- *  deallocates passed `Text`.
+ *  Converts given `BaseText` into a formatted `string`, returns it's value and
+ *  deallocates passed `BaseText`.
  *
  *  Method introduced to simplify a common use-case of converting returned copy
- *  of `Text` into a `string`, which required additional variable to store and
- *  later deallocate `Text` reference.
+ *  of `BaseText` into a `string`, which required additional variable to store
+ *  and later deallocate `BaseText` reference.
  *
- *  @param  toConvert   `Text` to convert.
- *  @return `string` representation of passed `Text` as a formatted `string`.
+ *  @param  toConvert   `BaseText` to convert.
+ *  @return `string` representation of passed `BaseText` as a formatted `string`.
  *      Empty `string`, if `toConvert == none`.
  */
-public final function string ToFormattedString(Text toConvert)
+public final function string ToFormattedString(/*take*/ BaseText toConvert)
 {
     local string result;
     if (toConvert != none) {
@@ -375,7 +375,7 @@ public final function string ToFormattedString(Text toConvert)
  *  @return `string` that consists only of a given character,
  *      if given character is valid. Empty `string` otherwise.
  */
-public final function string CharacterToString(Text.Character character)
+public final function string CharacterToString(BaseText.Character character)
 {
     if (!IsValidCharacter(character)) {
         return "";
@@ -404,7 +404,7 @@ public final function string CharacterToString(Text.Character character)
  *      `-1` if given character does not represent anything in the given base.
  */
 public final function int CharacterToInt(
-    Text.Character  character,
+    BaseText.Character  character,
     optional int    base
 )
 {
@@ -439,7 +439,9 @@ public final function int CharacterToInt(
  *  @return `true` if given character can be represented by a given code point
  *      and `false` otherwise.
  */
-public final function bool IsCodePoint(Text.Character character, int codePoint)
+public final function bool IsCodePoint(
+    BaseText.Character  character,
+    int                 codePoint)
 {
     return (character.codePoint == codePoint);
 }
@@ -451,10 +453,10 @@ public final function bool IsCodePoint(Text.Character character, int codePoint)
  *  @return Returns formatting of the given character.
  *      Always returns 'null' (not colored) formatting for invalid characters.
  */
-public final function Text.Formatting GetCharacterFormatting(
-    Text.Character character)
+public final function BaseText.Formatting GetCharacterFormatting(
+    BaseText.Character character)
 {
-    local Text.Formatting emptyFormatting;
+    local BaseText.Formatting emptyFormatting;
     if(IsValidCharacter(character)) {
         return character.formatting;
     }
@@ -469,9 +471,9 @@ public final function Text.Formatting GetCharacterFormatting(
  *  @return Same character as `character`, but with new formatting.
  *      Invalid characters are not altered.
  */
-public final function Text.Character SetFormatting(
-    Text.Character  character,
-    Text.Formatting newFormatting)
+public final function BaseText.Character SetFormatting(
+    BaseText.Character  character,
+    BaseText.Formatting newFormatting)
 {
     if(!IsValidCharacter(character)) {
         return character;
@@ -492,8 +494,8 @@ public final function Text.Character SetFormatting(
  *      `defaultColor`.
  */
 public final function Color GetCharacterColor(
-    Text.Character  character,
-    optional Color  defaultColor)
+    BaseText.Character  character,
+    optional Color      defaultColor)
 {
     if (character.formatting.isColored) {
         return character.formatting.color;
@@ -508,9 +510,9 @@ public final function Color GetCharacterColor(
  *
  *  @return Invalid character instance.
  */
-public final function Text.Character GetInvalidCharacter()
+public final function BaseText.Character GetInvalidCharacter()
 {
-    local Text.Character result;
+    local BaseText.Character result;
     result.codePoint = -1;
     return result;
 }
@@ -521,7 +523,7 @@ public final function Text.Character GetInvalidCharacter()
  *  @param  character   Character to check.
  *  @return `true` if passed character is valid and `false` otherwise.
  */
-public final function bool IsValidCharacter(Text.Character character)
+public final function bool IsValidCharacter(BaseText.Character character)
 {
     return (character.codePoint >= 0);
 }
@@ -548,10 +550,10 @@ public final function bool IsValidCharacter(Text.Character character)
  *      `false` otherwise.
  */
 public final function bool AreEqual(
-    Text.Character                  character1,
-    Text.Character                  character2,
-    optional Text.CaseSensitivity   caseSensitivity,
-    optional Text.FormatSensitivity formatSensitivity
+    BaseText.Character                  character1,
+    BaseText.Character                  character2,
+    optional BaseText.CaseSensitivity   caseSensitivity,
+    optional BaseText.FormatSensitivity formatSensitivity
 )
 {
     //  These handle checks with invalid characters
@@ -572,7 +574,7 @@ public final function bool AreEqual(
 }
 
 /**
- *  Converts Unicode code point into it's lower case folding,
+ *  Converts Unicode code point into its lower case folding,
  *  as defined by Unicode standard.
  *
  *  @param  codePoint   Code point to convert into lower case.
@@ -580,7 +582,7 @@ public final function bool AreEqual(
  *  not define any lower case folding (like "&" or "!") for given code point, -
  *  function returns given code point unchanged.
  */
-public final function Text.Character ToLower(Text.Character character)
+public final function BaseText.Character ToLower(BaseText.Character character)
 {
     local int newCodePoint;
     newCodePoint =
@@ -600,7 +602,7 @@ public final function Text.Character ToLower(Text.Character character)
  *  not define any upper case version (like "&" or "!") for given code point, -
  *  function returns given code point unchanged.
  */
-public final function Text.Character ToUpper(Text.Character character)
+public final function BaseText.Character ToUpper(BaseText.Character character)
 {
     local int newCodePoint;
     newCodePoint =
@@ -612,21 +614,21 @@ public final function Text.Character ToUpper(Text.Character character)
 }
 
 /**
- *      Prepares an array of parts from a given single `Text`.
+ *      Prepares an array of parts from a given single `BaseText`.
  *      First character is treated as a separator with which the rest of
- *  the given `Text` is split into parts:
+ *  the given `BaseText` is split into parts:
  *      ~ "/ab/c/d" => ["ab", "c", "d"]
  *      ~ "zWordzomgzz" => ["Word", "omg", "", ""]
  *
  *  This method is useful to easily prepare array of words for `Parser`'s
  *  methods.
  *
- *  @param  source  `Text` that contains separator with parts to
+ *  @param  source  `BaseText` that contains separator with parts to
  *      separate and extract.
  *  @return Separated words. Empty array if passed `source` was empty,
  *      otherwise contains at least one element.
  */
-public final function array<MutableText> Parts(Text source)
+public final function array<MutableText> Parts(BaseText source)
 {
     local array<MutableText> result;
     if (source == none)             return result;
@@ -757,16 +759,17 @@ public final function Parser NewParser()
 }
 
 /**
- *  Method for creating a new parser, initialized with contents of given `Text`.
+ *  Method for creating a new parser, initialized with contents of given
+ *  `BaseText`.
  *
  *  @param  source  Returned `Parser` will be setup to parse the contents of
- *      the passed `Text`.
+ *      the passed `BaseText`.
  *      If `none` value is passed, - parser won't be initialized.
  *  @return Guaranteed to be not `none` and contain a valid `Parser`.
  *      If passed argument also is not `none`, - guaranteed to be
  *      initialized with it's content.
  */
-public final function Parser Parse(Text source)
+public final function Parser Parse(BaseText source)
 {
     local Parser parser;
     parser = NewParser();
@@ -798,7 +801,7 @@ public final function Parser ParseString(string source)
  *      if given character is valid. Empty `Text` otherwise.
  *      Guaranteed to be not `none`.
  */
-public final function Text FromCharacter(Text.Character character)
+public final function Text FromCharacter(BaseText.Character character)
 {
     return _.text.FromString(CharacterToString(character));
 }

@@ -129,7 +129,7 @@ private final function string GetSteamAccountTypeCharacter()
  *  @param  steamID64   Steam64 ID's decimal representation.
  *  @return `SteamID` generated from a given Steam64 ID `steamID64`.
  */
-public static final function SteamID GetSteamIDFromIDHash(Text steamID64)
+public static final function SteamID GetSteamIDFromIDHash(BaseText steamID64)
 {
     local int           i;
     local SteamID       newSteamID;
@@ -170,7 +170,7 @@ public static final function SteamID GetSteamIDFromIDHash(Text steamID64)
  *      (can happen if caller `UserID` was already initialized
  *      or `steamID64 == none`).
  */
-public final function bool Initialize(Text steamID64)
+public final function bool Initialize(BaseText steamID64)
 {
     if (initialized)        return false;
     if (steamID64 == none)  return false;

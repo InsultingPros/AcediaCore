@@ -36,7 +36,7 @@ var protected class<Iter> iteratorClass;
  *  this method (i.e. `AssociativeArray` only lets you access values with
  *  `Text` keys).
  */
-protected function AcediaObject GetByText(Text key);
+protected function AcediaObject GetByText(BaseText key);
 
 /**
  *  Creates an `Iterator` instance to iterate over stored items.
@@ -166,7 +166,7 @@ public final function AcediaObject GetItemByJSON(JSONPointer jsonPointer)
  *  @return An item `jsonPointerAsText` is referring to (according to the above
  *      stated rules). `none` if such item does not exist.
  */
-public final function AcediaObject GetItemBy(Text jsonPointerAsText)
+public final function AcediaObject GetItemBy(BaseText jsonPointerAsText)
 {
     local AcediaObject  result;
     local JSONPointer   jsonPointer;
@@ -196,7 +196,7 @@ public final function AcediaObject GetItemBy(Text jsonPointerAsText)
  *      is missing or has a different type.
  */
 public final function bool GetBoolBy(
-    Text            jsonPointerAsText,
+    BaseText        jsonPointerAsText,
     optional bool   defaultValue)
 {
     local AcediaObject  result;
@@ -234,7 +234,7 @@ public final function bool GetBoolBy(
  *      is missing or has a different type.
  */
 public final function byte GetByteBy(
-    Text            jsonPointerAsText,
+    BaseText        jsonPointerAsText,
     optional byte   defaultValue)
 {
     local AcediaObject  result;
@@ -272,7 +272,7 @@ public final function byte GetByteBy(
  *      is missing or has a different type.
  */
 public final function int GetIntBy(
-    Text            jsonPointerAsText,
+    BaseText        jsonPointerAsText,
     optional int    defaultValue)
 {
     local AcediaObject  result;
@@ -310,7 +310,7 @@ public final function int GetIntBy(
  *      is missing or has a different type.
  */
 public final function float GetFloatBy(
-    Text            jsonPointerAsText,
+    BaseText        jsonPointerAsText,
     optional float  defaultValue)
 {
     local AcediaObject  result;
@@ -344,7 +344,7 @@ public final function float GetFloatBy(
  *  @return `Text` value, stored at `jsonPointerAsText` or `none` if it
  *      is missing or has a different type.
  */
-public final function Text GetTextBy(Text jsonPointerAsText)
+public final function Text GetTextBy(BaseText jsonPointerAsText)
 {
     return Text(GetItemBy(jsonPointerAsText));
 }
@@ -364,7 +364,7 @@ public final function Text GetTextBy(Text jsonPointerAsText)
  *      `none` if it is missing or has a different type.
  */
 public final function AssociativeArray GetAssociativeArrayBy(
-    Text jsonPointerAsText)
+    BaseText jsonPointerAsText)
 {
     return AssociativeArray(GetItemBy(jsonPointerAsText));
 }
@@ -383,7 +383,7 @@ public final function AssociativeArray GetAssociativeArrayBy(
  *  @return `DynamicArray` value, stored at `jsonPointerAsText` or
  *      `none` if it is missing or has a different type.
  */
-public final function DynamicArray GetDynamicArrayBy(Text jsonPointerAsText)
+public final function DynamicArray GetDynamicArrayBy(BaseText jsonPointerAsText)
 {
     return DynamicArray(GetItemBy(jsonPointerAsText));
 }

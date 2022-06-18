@@ -60,7 +60,7 @@ protected static function StaticFinalizer()
  *      unless it is deallocated.
  *  @return Logger with object name `loggerName`.
  */
-public final static function Logger GetLogger(Text loggerName)
+public final static function Logger GetLogger(BaseText loggerName)
 {
     local Logger    loggerInstance;
     local Text      loggerKey;
@@ -136,7 +136,7 @@ protected function MutableText GetPrefix(LoggerAPI.LogLevel messageLevel)
  *  @param  message         Message to output.
  *  @param  messageLevel    Level, at which message must be output.
  */
-public function Write(Text message, LoggerAPI.LogLevel messageLevel){}
+public function Write(BaseText message, LoggerAPI.LogLevel messageLevel){}
 
 defaultproperties
 {

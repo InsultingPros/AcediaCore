@@ -310,7 +310,7 @@ public function EItem Add(EItem newItem, optional bool forceAddition)
  *  and can fail adding an item even if `CanAddTemplate()` succeeded.
  */
 public function EItem AddTemplate(
-    Text            newItemTemplate,
+    BaseText        newItemTemplate,
     optional bool   forceAddition)
 {
     local Pawn              pawn;
@@ -399,7 +399,7 @@ public function Text CanAddExplain(
  *  and can raise "faulty implementation" error in case it cannot.
  */
 public function Text CanAddTemplateExplain(
-    Text            itemTemplateToCheck,
+    BaseText        itemTemplateToCheck,
     optional bool   forceAddition)
 {
     local class<Inventory>  inventoryClass;
@@ -614,7 +614,7 @@ public function bool Remove(
  *  added by other mods) items.
  */
 public function bool RemoveTemplate(
-    Text            template,
+    BaseText        template,
     optional bool   keepItem,
     optional bool   forceRemoval,
     optional bool   removeAll)
@@ -962,7 +962,7 @@ public function bool Contains(EItem itemToCheck)
     return false;
 }
 
-public function bool ContainsTemplate(Text itemTemplateToCheck)
+public function bool ContainsTemplate(BaseText itemTemplateToCheck)
 {
     local bool  success;
     local EItem templateItem;
@@ -1100,7 +1100,7 @@ public function array<EItem> GetItemsSupporting(class<EItem> interfaceClass)
     return GetItemsByFlags(getWeapon, getAmmo, false);
 }
 
-public function array<EItem> GetTagItems(Text tag)
+public function array<EItem> GetTagItems(BaseText tag)
 {
     local array<EItem>  emptyArray;
     local bool          getWeapon, getAmmo;
@@ -1112,7 +1112,7 @@ public function array<EItem> GetTagItems(Text tag)
     return GetItemsByFlags(getWeapon, getAmmo, false);
 }
 
-public function EItem GetTagItem(Text tag)
+public function EItem GetTagItem(BaseText tag)
 {
     local bool getWeapon, getAmmo;
     if (tag == none) {
@@ -1123,7 +1123,7 @@ public function EItem GetTagItem(Text tag)
     return GetItemByFlags(getWeapon, getAmmo, false);
 }
 
-public function array<EItem> GetTemplateItems(Text template)
+public function array<EItem> GetTemplateItems(BaseText template)
 {
     local Pawn          pawn;
     local bool          getBuiltInAmmo;
@@ -1173,7 +1173,7 @@ public function array<EItem> GetTemplateItems(Text template)
     return result;
 }
 
-public function EItem GetTemplateItem(Text template)
+public function EItem GetTemplateItem(BaseText template)
 {
     local Pawn      pawn;
     local bool      getBuiltInAmmo;

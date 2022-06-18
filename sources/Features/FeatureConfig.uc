@@ -97,7 +97,7 @@ public static function Text GetAutoEnabledConfig()
  *  @return `true` iff some config was set to be used when it's `Feature` is
  *      auto-enabled, even if the same config was already configured to be used.
  */
-public static function bool SetAutoEnabledConfig(Text autoEnabledConfigName)
+public static function bool SetAutoEnabledConfig(BaseText autoEnabledConfigName)
 {
     local int           i;
     local array<Text>   names;

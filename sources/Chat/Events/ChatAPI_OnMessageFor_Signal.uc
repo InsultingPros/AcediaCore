@@ -19,7 +19,10 @@
  */
 class ChatAPI_OnMessageFor_Signal extends Signal;
 
-public final function bool Emit(EPlayer receiver, EPlayer sender, Text message)
+public final function bool Emit(
+    EPlayer     receiver,
+    EPlayer     sender,
+    BaseText    message)
 {
     local Slot  nextSlot;
     local bool  nextReply;

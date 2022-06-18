@@ -95,7 +95,7 @@ protected function Finalizer()
 //  Find index of sub-command with a given name `name` in `subcommands`.
 //  `-1` if there's not sub-command with such name.
 //  Case-sensitive.
-private final function int FindSubCommandIndex(Text name)
+private final function int FindSubCommandIndex(BaseText name)
 {
     local int i;
     if (name == none) {
@@ -113,7 +113,7 @@ private final function int FindSubCommandIndex(Text name)
 //  Find index of option with a given name `name` in `options`.
 //  `-1` if there's not sub-command with such name.
 //  Case-sensitive.
-private final function int FindOptionIndex(Text longName)
+private final function int FindOptionIndex(BaseText longName)
 {
     local int i;
     if (longName == none) {
@@ -132,7 +132,7 @@ private final function int FindOptionIndex(Text longName)
 //  name (long name) `name`.
 //      Doe not check whether subcommand/option with that name already exists.
 //      Copies passed `name`, assumes that it is not `none`.
-private final function MakeEmptySelection(Text name, bool selectedOption)
+private final function MakeEmptySelection(BaseText name, bool selectedOption)
 {
     selectedItemIsOption            = selectedOption;
     selectedItemName                = name.Copy();
@@ -146,7 +146,7 @@ private final function MakeEmptySelection(Text name, bool selectedOption)
 //  creates new record in selection, otherwise copies previously saved data.
 //      Automatically saves previously selected data into prepared data.
 //      Copies `name` if it has to create new record.
-private final function SelectSubCommand(Text name)
+private final function SelectSubCommand(BaseText name)
 {
     local int subcommandIndex;
     if (name == none)                                               return;
@@ -181,7 +181,7 @@ private final function SelectSubCommand(Text name)
 //  creates new record in selection, otherwise copies previously saved data.
 //      Automatically saves previously selected data into prepared data.
 //      Copies `name` if it has to create new record.
-private final function SelectOption(Text longName)
+private final function SelectOption(BaseText longName)
 {
     local int optionIndex;
     if (longName == none) return;
@@ -293,7 +293,7 @@ private final function RecordSelectedOption()
  *  @return Returns the caller `CommandDataBuilder` to allow for
  *      method chaining.
  */
-public final function CommandDataBuilder SubCommand(Text name)
+public final function CommandDataBuilder SubCommand(BaseText name)
 {
     SelectSubCommand(name);
     return self;
@@ -309,9 +309,9 @@ public final function CommandDataBuilder SubCommand(Text name)
 //  the option altogether.
 //  Returns `none` if validation failed and chosen short name otherwise
 //  (if `shortName` was used for it - it's value will be copied).
-private final function Text.Character GetValidShortName(
-    Text longName,
-    Text shortName)
+private final function BaseText.Character GetValidShortName(
+    BaseText longName,
+    BaseText shortName)
 {
     //  Validate `longName`
     if (longName == none) {
@@ -341,8 +341,8 @@ private final function Text.Character GetValidShortName(
 //  i.e. we cannot have several options with identical names:
 //  (--silent, -s) and (--sick, -s).
 private final function bool VerifyNoOptionNamingConflict(
-    Text            longName,
-    Text.Character  shortName)
+    BaseText            longName,
+    BaseText.Character  shortName)
 {
     local int i;
     //  To make sure we will search through the up-to-date `options`,
@@ -397,11 +397,11 @@ private final function bool VerifyNoOptionNamingConflict(
  *      method chaining.
  */
 public final function CommandDataBuilder Option(
-    Text            longName,
-    optional Text   shortName)
+    BaseText            longName,
+    optional BaseText   shortName)
 {
-    local int               optionIndex;
-    local Text.Character    shortNameAsCharacter;
+    local int                   optionIndex;
+    local BaseText.Character    shortNameAsCharacter;
     //  Unlike for `SubCommand()`, we need to ensure that option naming is
     //  correct and does not conflict with existing options
     //  (user might attempt to add two options with same long names and
@@ -440,7 +440,7 @@ public final function CommandDataBuilder Option(
  *  @return Returns the caller `CommandDataBuilder` to allow for
  *      method chaining.
  */
-public final function CommandDataBuilder Describe(Text description)
+public final function CommandDataBuilder Describe(BaseText description)
 {
     if (selectedDescription == description) {
         return self;
@@ -459,7 +459,7 @@ public final function CommandDataBuilder Describe(Text description)
  *  @return Returns the caller `CommandDataBuilder` to allow for
  *      method chaining.
  */
-public final function CommandDataBuilder Name(Text newName)
+public final function CommandDataBuilder Name(BaseText newName)
 {
     if (newName != none && newName == commandName) {
         return self;
@@ -481,7 +481,7 @@ public final function CommandDataBuilder Name(Text newName)
  *  @return Returns the caller `CommandDataBuilder` to allow for
  *      method chaining.
  */
-public final function CommandDataBuilder Summary(Text newSummary)
+public final function CommandDataBuilder Summary(BaseText newSummary)
 {
     if (newSummary != none && newSummary == commandSummary) {
         return self;
@@ -561,10 +561,10 @@ private final function PushParameter(Command.Parameter newParameter)
 //  Fills `Command.ParameterType` struct with given values
 //  (except boolean format). Assumes `displayName != none`.
 private final function Command.Parameter NewParameter(
-    Text                    displayName,
+    BaseText                displayName,
     Command.ParameterType   parameterType,
     bool                    isListParameter,
-    optional Text           variableName)
+    optional BaseText       variableName)
 {
     local Command.Parameter newParameter;
     newParameter.displayName    = displayName.Copy();
@@ -574,7 +574,7 @@ private final function Command.Parameter NewParameter(
         newParameter.variableName = variableName.Copy();
     }
     else {
-        newParameter.variableName = displayName;
+        newParameter.variableName = displayName.Copy();
     }
     return newParameter;
 }
@@ -601,9 +601,9 @@ private final function Command.Parameter NewParameter(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamBoolean(
-    Text                                    name,
+    BaseText                                name,
     optional Command.PreferredBooleanFormat format,
-    optional Text                           variableName)
+    optional BaseText                       variableName)
 {
     local Command.Parameter newParam;
     if (name == none) {
@@ -636,9 +636,9 @@ public final function CommandDataBuilder ParamBoolean(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamBooleanList(
-    Text                                    name,
+    BaseText                                name,
     optional Command.PreferredBooleanFormat format,
-    optional Text                           variableName)
+    optional BaseText                       variableName)
 {
     local Command.Parameter newParam;
     if (name == none) {
@@ -667,8 +667,8 @@ public final function CommandDataBuilder ParamBooleanList(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamInteger(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;
@@ -694,8 +694,8 @@ public final function CommandDataBuilder ParamInteger(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamIntegerList(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;
@@ -721,8 +721,8 @@ public final function CommandDataBuilder ParamIntegerList(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamNumber(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;
@@ -748,8 +748,8 @@ public final function CommandDataBuilder ParamNumber(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamNumberList(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;
@@ -775,8 +775,8 @@ public final function CommandDataBuilder ParamNumberList(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamText(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;
@@ -802,8 +802,8 @@ public final function CommandDataBuilder ParamText(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamTextList(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;
@@ -829,8 +829,8 @@ public final function CommandDataBuilder ParamTextList(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamRemainder(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;
@@ -856,8 +856,8 @@ public final function CommandDataBuilder ParamRemainder(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamObject(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;
@@ -883,8 +883,8 @@ public final function CommandDataBuilder ParamObject(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamObjectList(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;
@@ -910,8 +910,8 @@ public final function CommandDataBuilder ParamObjectList(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamArray(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;
@@ -937,8 +937,8 @@ public final function CommandDataBuilder ParamArray(
  *      method chaining.
  */
 public final function CommandDataBuilder ParamArrayList(
-    Text            name,
-    optional Text   variableName)
+    BaseText            name,
+    optional BaseText   variableName)
 {
     if (name == none) {
         return self;

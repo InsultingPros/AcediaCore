@@ -46,7 +46,7 @@ protected function Finalizer()
  *      `none` if item template with given name does not exist or passed
  *      `templateName` is equal to `none`.
  */
-public function EItemTemplateInfo GetItemTemplateInfo(Text templateName)
+public function EItemTemplateInfo GetItemTemplateInfo(BaseText templateName)
 {
     return none;
 }

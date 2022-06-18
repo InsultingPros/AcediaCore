@@ -155,7 +155,7 @@ public final function AliasSource GetFeatureSource()
  *      If `alias == none` method always returns `none`.
  */
 public final function Text ResolveWeapon(
-    Text            alias,
+    BaseText        alias,
     optional bool   copyOnFailure)
 {
     local AliasSource source;
@@ -187,7 +187,9 @@ public final function Text ResolveWeapon(
  *      and `copyOnFailure == true` means method will return `alias.Copy()`.
  *      If `alias == none` method always returns `none`.
  */
-public final function Text ResolveColor(Text alias, optional bool copyOnFailure)
+public final function Text ResolveColor(
+    BaseText        alias,
+    optional bool   copyOnFailure)
 {
     local AliasSource source;
     source = GetColorSource();
@@ -219,7 +221,7 @@ public final function Text ResolveColor(Text alias, optional bool copyOnFailure)
  *      If `alias == none` method always returns `none`.
  */
 public final function Text ResolveFeature(
-    Text            alias,
+    BaseText        alias,
     optional bool   copyOnFailure)
 {
     local AliasSource source;

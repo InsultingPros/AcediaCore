@@ -82,7 +82,7 @@ public function EItem Add(EItem newItem, optional bool forceAddition)
  *      `none` iff adding item has failed.
  */
 public function EItem AddTemplate(
-    Text            newItemTemplate,
+    BaseText        newItemTemplate,
     optional bool   forceAddition)
 {
     return none;
@@ -130,7 +130,7 @@ public final function bool CanAdd(
  *      `false` otherwise.
  */
 public function bool CanAddTemplate(
-    Text            itemTemplateToCheck,
+    BaseText        itemTemplateToCheck,
     optional bool   forceAddition)
 {
     local bool success;
@@ -181,7 +181,7 @@ public function Text CanAddExplain(
  *      description of reason why not otherwise.
  */
 public function Text CanAddTemplateExplain(
-    Text            itemTemplateToCheck,
+    BaseText        itemTemplateToCheck,
     optional bool   forceAddition)
 {
     return none;
@@ -243,7 +243,7 @@ public function bool Remove(
  *      caller `EInventory` in the first place).
  */
 public function bool RemoveTemplate(
-    Text            itemTemplateToRemove,
+    BaseText        itemTemplateToRemove,
     optional bool   keepItem,
     optional bool   forceRemoval,
     optional bool   removeAll)
@@ -307,7 +307,7 @@ public function bool Contains(EItem itemToCheck)
  *  @result `true` if item with a given template does belong to the inventory
  *      and `false` otherwise.
  */
-public function bool ContainsTemplate(Text itemTemplateToCheck)
+public function bool ContainsTemplate(BaseText itemTemplateToCheck)
 {
     return false;
 }
@@ -348,7 +348,7 @@ public function array<EItem> GetItemsSupporting(class<EItem> interfaceClass)
  *      Guaranteed to not contain `none` references of interfaces to
  *      inexistent entities.
  */
-public function array<EItem> GetTagItems(Text tag)
+public function array<EItem> GetTagItems(BaseText tag)
 {
     local array<EItem> emptyArray;
     return emptyArray;
@@ -368,7 +368,7 @@ public function array<EItem> GetTagItems(Text tag)
  *      the specified tag `tag`.
  *      Guaranteed to not be `none` or refer to non-existent entity.
  */
-public function EItem GetTagItem(Text tag) { return none; }
+public function EItem GetTagItem(BaseText tag) { return none; }
 
 /**
  *  Returns array with all `EItem`s contained inside the caller `EInventory`
@@ -380,7 +380,7 @@ public function EItem GetTagItem(Text tag) { return none; }
  *      Guaranteed to not contain `none` references or interfaces to
  *      inexistent entities.
  */
-public function array<EItem> GetTemplateItems(Text template)
+public function array<EItem> GetTemplateItems(BaseText template)
 {
     local array<EItem> emptyArray;
     return emptyArray;
@@ -400,7 +400,7 @@ public function array<EItem> GetTemplateItems(Text template)
  *      from the specified template `template`.
  *      Guaranteed to not be `none` or refer to non-existent entity.
  */
-public function EItem GetTemplateItem(Text template) { return none; }
+public function EItem GetTemplateItem(BaseText template) { return none; }
 
 /**
  *  Returns array of caller `EInventory`'s items that are currently equipped by

@@ -141,7 +141,7 @@ private final function Reset()
 //  Auxiliary method for recording errors
 private final function DeclareError(
     Command.ErrorType   type,
-    optional Text       cause)
+    optional BaseText   cause)
 {
     nextResult.parsingError = type;
     if (cause != none) {
@@ -764,9 +764,9 @@ private final function bool ParseShortOption()
 //  `nextError.DeclareError()` call, so you can use `nextResult.IsSuccessful()`
 //  to check if method has failed.
 private final function bool AddOptionByCharacter(
-    Text.Character  optionCharacter,
-    Text            optionSourceList,
-    bool            forbidOptionWithParameters)
+    BaseText.Character  optionCharacter,
+    BaseText            optionSourceList,
+    bool                forbidOptionWithParameters)
 {
     local int   i;
     local bool  optionHasParameters;

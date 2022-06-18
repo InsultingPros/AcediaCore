@@ -22,7 +22,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class FormattingStringParser extends AcediaObject
-    dependson(Text)
+    dependson(BaseText)
     dependson(FormattingErrorsReport)
     dependson(FormattingCommandsSequence);
 
@@ -121,7 +121,7 @@ var private MutableText                 borrowedTarget;
 var private FormattingErrorsReport      borrowedErrors;
 
 //  Keep this as an easy access to separator of gradient colors ':'
-var private Text.Character separatorCharacter;
+var private BaseText.Character separatorCharacter;
 
 var private const int TOPENING_BRACKET, TCLOSING_BRACKET, TPERCENT;
 
@@ -165,7 +165,7 @@ protected function Finalizer()
  */
 public static final function array<FormattingErrorsReport.FormattedStringError>
     ParseFormatted(
-    Text                    source,
+    BaseText                source,
     optional MutableText    target,
     optional bool           doReportErrors)
 {
@@ -207,7 +207,7 @@ public static final function array<FormattingErrorsReport.FormattedStringError>
 private final function DoAppend()
 {
     local int                                           i;
-    local Text.Formatting                               emptyFormatting;
+    local BaseText.Formatting                           emptyFormatting;
     local FormattingCommandsSequence.FormattingCommand  nextCommand;
     SetupFormattingStack(emptyFormatting);
     //  First element of color stack is special and has no color information;
@@ -262,7 +262,7 @@ private final function AppendToTarget(array<Text.Character> contents)
 
 private final function Report(
     FormattingErrorsReport.FormattedStringErrorType type,
-    optional Text                                   cause)
+    optional BaseText                               cause)
 {
     if (borrowedErrors == none) {
         return;
@@ -278,9 +278,9 @@ private final function bool IsCurrentFormattingGradient()
     return formattingStackHead.gradient;
 }
 
-private final function Text.Formatting GetFormattingFor(int index)
+private final function BaseText.Formatting GetFormattingFor(int index)
 {
-    local Text.Formatting emptyFormatting;
+    local BaseText.Formatting emptyFormatting;
     if (formattingStack.length <= 0)    return emptyFormatting;
     if (!formattingStackHead.colored)   return emptyFormatting;
 
@@ -319,7 +319,7 @@ private final function Color GetColorFor(int index)
     return targetColor;
 }
 
-private final function FormattingInfo ParseFormattingInfo(Text colorTag)
+private final function FormattingInfo ParseFormattingInfo(BaseText colorTag)
 {
     local int                   i;
     local Parser                colorParser;
@@ -477,7 +477,8 @@ private final function array<float> NormalizePoints(array<float> points)
 //  that will be used when we pop all the other elements.
 //      It is necessary to deal with possible folded formatting definitions in
 //  formatted strings.
-private final function SetupFormattingStack(Text.Formatting defaultFormatting)
+private final function SetupFormattingStack(
+    BaseText.Formatting defaultFormatting)
 {
     local FormattingInfo defaultFormattingInfo;
     defaultFormattingInfo.colored       = defaultFormatting.isColored;
@@ -499,7 +500,7 @@ private final function PushIntoFormattingStack(
     formattingStack[formattingStack.length] = formattingStackHead;
 }
 
-private final function SwapFormattingStack(Text.Character tagCharacter)
+private final function SwapFormattingStack(BaseText.Character tagCharacter)
 {
     local FormattingInfo updatedFormatting;
     if (formattingStack.length > 0) {

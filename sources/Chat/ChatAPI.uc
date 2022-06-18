@@ -80,7 +80,7 @@ public function ChatAPI_OnMessage_Slot OnMessage(
  *  also be interrupted.
  *
  *  [Signature]
- *  bool <slot>(EPlayer receiver, EPlayer sender, Text message)
+ *  bool <slot>(EPlayer receiver, EPlayer sender, BaseText message)
  *
  *  @param  receiver    `EPlayer` that will receive the message.
  *  @param  sender      `EPlayer` that has sent the message.

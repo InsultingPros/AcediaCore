@@ -118,7 +118,7 @@ public function array<Text> GetTags()
     return tagArray;
 }
 
-public function bool HasTag(Text tagToCheck)
+public function bool HasTag(BaseText tagToCheck)
 {
     if (tagToCheck == none)                 return false;
     if (tagToCheck.Compare(P("weapon")))    return true;

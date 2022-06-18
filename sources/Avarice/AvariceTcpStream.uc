@@ -269,7 +269,7 @@ private final function HandleIncomingData()
     _.memory.FreeMany(receivedMessages);
 }
 
-public final function SendMessage(Text textMessage)
+public final function SendMessage(BaseText textMessage)
 {
     local int           i;
     local int           nextByte;
@@ -331,7 +331,7 @@ private final function SendReceived(int received)
     SendBinary(3, buffer);
 }
 
-private final function AvariceMessage MessageFromText(Text message)
+private final function AvariceMessage MessageFromText(BaseText message)
 {
     local Parser            parser;
     local AvariceMessage    result;

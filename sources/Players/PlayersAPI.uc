@@ -19,7 +19,7 @@
  */
 class PlayersAPI extends AcediaObject
     dependson(ConnectionService)
-    dependson(Text)
+    dependson(BaseText)
     dependson(EPlayer);
 
 //  Writer that can be used to write into this player's console
@@ -108,7 +108,7 @@ public function PlayerAPI_OnLostPlayer_Slot OnLostPlayer(
  *  use `OnPlayerNameChanged` instead.
  *
  *  [Signature]
- *  void <slot>(EPlayer affectedPlayer, Text oldName, MutableText newName)
+ *  void <slot>(EPlayer affectedPlayer, BaseText oldName, MutableText newName)
  *
  *  @param  affectedPlayer  Player, whos name got changed.
  *  @param  oldName         Player's old name.
@@ -130,7 +130,7 @@ public function PlayerAPI_OnPlayerNameChanging_Slot OnPlayerNameChanging(
  *  after change caused by someone else, use `OnPlayerNameChanging` instead.
  *
  *  [Signature]
- *  void <slot>(EPlayer affectedPlayer, Text oldName, Text newName)
+ *  void <slot>(EPlayer affectedPlayer, BaseText oldName, BaseText newName)
  *
  *  @param  affectedPlayer  Player, whos name got changed.
  *  @param  oldName         Player's old name.

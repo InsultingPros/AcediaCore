@@ -19,7 +19,9 @@
  */
 class PlayerAPI_OnPlayerNameChanging_Signal extends Signal;
 
-public final function Emit(EPlayer player, Text oldName, MutableText newName)
+public final function Emit(EPlayer player,
+    BaseText oldName,
+    MutableText newName)
 {
     local Slot nextSlot;
     StartIterating();

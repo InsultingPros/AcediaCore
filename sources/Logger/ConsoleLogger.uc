@@ -24,7 +24,7 @@ class ConsoleLogger extends Logger
     config(AcediaSystem)
     dependson(LoggerAPI);
 
-public function Write(Text message, LoggerAPI.LogLevel messageLevel)
+public function Write(BaseText message, LoggerAPI.LogLevel messageLevel)
 {
     local MutableText builder;
     if (message != none)

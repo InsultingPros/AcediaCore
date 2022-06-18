@@ -138,13 +138,13 @@ public final /* unreal */ function ShopVolume GetShopVolume()
 public function Text GetName()
 {
     if (myName == none) {
-        return _.text.Empty();
+        return P("");
     }
     return myName.Copy();
 }
 
 //  TODO: it is broken, needs fixing
-public function ETrader SetName(Text newName)
+public function ETrader SetName(BaseText newName)
 {
     if (newName == none)    return self;
     if (newName.IsEmpty())  return self;

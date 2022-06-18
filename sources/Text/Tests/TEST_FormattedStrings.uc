@@ -212,7 +212,7 @@ protected static function SubTest_TestGradientTwoColors()
     TEST_ExpectTrue(currentColor.b == 56);
 }
 
-protected static function CheckRedDecrease(Text sample, int from, int to)
+protected static function CheckRedDecrease(BaseText sample, int from, int to)
 {
     local int   i;
     local Color previousColor, currentColor;
@@ -227,7 +227,7 @@ protected static function CheckRedDecrease(Text sample, int from, int to)
     }
 }
 
-protected static function CheckRedIncrease(Text sample, int from, int to)
+protected static function CheckRedIncrease(BaseText sample, int from, int to)
 {
     local int   i;
     local Color previousColor, currentColor;

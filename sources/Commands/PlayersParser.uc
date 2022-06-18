@@ -153,7 +153,7 @@ private final function RemoveByKey(int key)
 }
 
 //  Adds all the players with specified name (`name`) to the current selection.
-private final function AddByName(Text name)
+private final function AddByName(BaseText name)
 {
     local int   i;
     local Text  nextPlayerName;
@@ -170,7 +170,7 @@ private final function AddByName(Text name)
 
 //  Removes all the players with specified name (`name`) from
 //  the current selection.
-private final function RemoveByName(Text name)
+private final function RemoveByName(BaseText name)
 {
     local int   i;
     local Text  nextPlayerName;
@@ -216,7 +216,7 @@ private final function RemoveAdmins()
 
 //  Add all the players specified by `macroText` (from macro "@<macroText>").
 //  Does nothing if there is no such macro.
-private final function AddByMacro(Text macroText)
+private final function AddByMacro(BaseText macroText)
 {
     if (macroText.Compare(T(TADMIN), SCASE_INSENSITIVE))
     {
@@ -239,7 +239,7 @@ private final function AddByMacro(Text macroText)
 //      Removes all the players specified by `macroText`
 //  (from macro "@<macroText>").
 //      Does nothing if there is no such macro.
-private final function RemoveByMacro(Text macroText)
+private final function RemoveByMacro(BaseText macroText)
 {
     local int i;
     if (macroText.Compare(T(TADMIN), SCASE_INSENSITIVE))
@@ -478,7 +478,7 @@ private final function Reset()
  *  @param  toParse `Text` from which to parse player list.
  *  @return `true` if parsing was successful and `false` otherwise.
  */
-public final function bool Parse(Text toParse)
+public final function bool Parse(BaseText toParse)
 {
     local bool      wasSuccessful;
     local Parser    parser;

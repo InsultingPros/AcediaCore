@@ -1,5 +1,5 @@
 /**
- *  Mutable version of Acedia's `Text`
+ *  Mutable version of Acedia's `BaseText`.
  *      Copyright 2020 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,9 +17,22 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class MutableText extends Text;
+class MutableText extends BaseText;
 
 var private int CODEPOINT_NEWLINE;
+
+public function Text IntoText()
+{
+    local Text immutableVersion;
+    immutableVersion = Copy();
+    FreeSelf();
+    return immutableVersion;
+}
+
+public function MutableText IntoMutableText()
+{
+    return self;
+}
 
 /**
  *  Clears all current data from the caller `MutableText` instance.
@@ -44,7 +57,7 @@ public final function MutableText Clear()
  *  @return Caller `MutableText` to allow for method chaining.
  */
 public final function MutableText AppendRawCharacter(
-    Text.Character      newCharacter,
+    BaseText.Character  newCharacter,
     optional Formatting characterFormatting)
 {
     if (!_.text.IsValidCharacter(newCharacter)) {
@@ -70,8 +83,8 @@ public final function MutableText AppendRawCharacter(
  *  @return Caller `MutableText` to allow for method chaining.
  */
 public final function MutableText AppendManyRawCharacters(
-    array<Text.Character>   newCharacters,
-    optional Formatting     charactersFormatting)
+    array<BaseText.Character>   newCharacters,
+    optional Formatting         charactersFormatting)
 {
     local int i;
     SetFormatting(charactersFormatting);
@@ -88,7 +101,8 @@ public final function MutableText AppendManyRawCharacters(
  *      Only valid characters will be added.
  *  @return Caller `MutableText` to allow for method chaining.
  */
-public final function MutableText AppendCharacter(Text.Character newCharacter)
+public final function MutableText AppendCharacter(
+    BaseText.Character newCharacter)
 {
     if (!_.text.IsValidCharacter(newCharacter)) {
         return self;
@@ -105,7 +119,7 @@ public final function MutableText AppendCharacter(Text.Character newCharacter)
  *  @return Caller `MutableText` to allow for method chaining.
  */
 public final function MutableText AppendManyCharacters(
-    array<Text.Character> newCharacters)
+    array<BaseText.Character> newCharacters)
 {
     local int i;
     for (i = 0; i < newCharacters.length; i += 1) {
@@ -153,10 +167,10 @@ public final function MutableText AppendLineBreak()
 }
 
 /**
- *  Appends contents of another `Text` to the caller `MutableText`.
+ *  Appends contents of another `BaseText` to the caller `MutableText`.
  *
- *  @param  other               Instance of `Text`, which content method must
- *      append. Appends nothing if passed value is `none`.
+ *  @param  other               Instance of `BaseText`, which content method
+ *      will append. Appends nothing if passed value is `none`.
  *  @param  defaultFormatting   Formatting to apply to `other`'s character that
  *      do not have it specified. For example, `defaultFormatting.isColored`,
  *      but some of `other`'s characters do not have a color defined -
@@ -164,7 +178,7 @@ public final function MutableText AppendLineBreak()
  *  @return Caller `MutableText` to allow for method chaining.
  */
 public final function MutableText Append(
-    Text                other,
+    BaseText            other,
     optional Formatting defaultFormatting)
 {
     local int           i;
@@ -255,7 +269,7 @@ public final function MutableText AppendColoredString(
         {
             if (i + 3 >= sourceLength) break;
             newFormatting.isColored = true;
-            newFormatting.color     = _.color.RGB(sourceAsIntegers[i + 1],
+            newFormatting.color     = _.color.RGB(  sourceAsIntegers[i + 1],
                                                     sourceAsIntegers[i + 2],
                                                     sourceAsIntegers[i + 3]);
             i += 4;
@@ -271,14 +285,14 @@ public final function MutableText AppendColoredString(
 }
 
 /**
- *  Appends contents of the formatted `Text` to the caller `MutableText`.
+ *  Appends contents of the formatted `BaseText` to the caller `MutableText`.
  *
- *  @param  source  `Text` (with formatted string contents) to be
+ *  @param  source  `BaseText` (with formatted string contents) to be
  *      appended to the caller `MutableText`.
  *  @return Caller `MutableText` to allow for method chaining.
  */
 public final function MutableText AppendFormatted(
-    Text                source,
+    BaseText            source,
     optional Formatting defaultFormatting)
 {
     class'FormattingStringParser'.static.ParseFormatted(source, self);
@@ -296,8 +310,8 @@ public final function MutableText AppendFormattedString(
     string              source,
     optional Formatting defaultFormatting)
 {
-    local Text sourceAsText;
-    sourceAsText = _.text.FromString(source);
+    local MutableText sourceAsText;
+    sourceAsText = _.text.FromStringM(source);
     AppendFormatted(sourceAsText);
     _.memory.Free(sourceAsText);
     return self;
@@ -316,10 +330,11 @@ protected function int CalculateHashCode()
 }
 
 /**
- *  Replaces every occurrence of the string `before` with the string `after`.
+ *  Replaces every occurrence of the `Text` object `before` with
+ *  the `Text` object `after`.
  *
- *  @param  before              `Text` contents to match and then replace.
- *  @param  after               `Text` contents to replace `before` with.
+ *  @param  before              `BaseText` contents to match and then replace.
+ *  @param  after               `BaseText` contents to replace `before` with.
  *  @param  caseSensitivity     Defines whether `before` should be matched
  *      in a case-sensitive manner. By default it will be.
  *  @param  formatSensitivity   Defines whether `before` should be matched
@@ -327,15 +342,15 @@ protected function int CalculateHashCode()
  *  @return Returns caller `MutableText`, to allow for method chaining.
  */
 public final function MutableText Replace(
-    Text                        before,
-    Text                        after,
+    BaseText                    before,
+    BaseText                    after,
     optional CaseSensitivity    caseSensitivity,
     optional FormatSensitivity  formatSensitivity)
 {
-    local int   index;
-    local bool  needToInsertReplacer;
-    local int   nextReplacementIndex;
-    local Text  selfCopy;
+    local int       index;
+    local bool      needToInsertReplacer;
+    local int       nextReplacementIndex;
+    local BaseText  selfCopy;
     if (before == none)     return self;
     if (before.IsEmpty())   return self;
 
@@ -372,10 +387,34 @@ public final function MutableText Replace(
 }
 
 /**
- *  Sets `newFormatting` for every non-formatted character in the caller `Text`.
+ *  Replaces every occurrence of the string `before` with the string `after`.
+ *
+ *  @param  before              `string` contents to match and then replace.
+ *  @param  after               `string` contents to replace `before` with.
+ *  @param  caseSensitivity     Defines whether `before` should be matched
+ *      in a case-sensitive manner. By default it will be.
+ *  @return Returns caller `MutableText`, to allow for method chaining.
+ */
+public final function MutableText ReplaceS(
+    string                      before,
+    string                      after,
+    optional CaseSensitivity    caseSensitivity)
+{
+    local MutableText   beforeText, afterText;
+    beforeText  = _.text.FromStringM(before);
+    afterText   = _.text.FromStringM(after);
+    Replace(beforeText, afterText, caseSensitivity);
+    _.memory.Free(beforeText);
+    _.memory.Free(afterText);
+    return self;
+}
+
+/**
+ *  Sets `newFormatting` for every non-formatted character in
+ *  the caller `MutableText`.
  *
  *  @param  newFormatting   Formatting to use for all non-formatted character in
- *      the caller `Text`. If `newFormatting` is not colored itself -
+ *      the caller `MutableText`. If `newFormatting` is not colored itself -
  *      method does nothing.
  *  @return Returns caller `MutableText`, to allow for method chaining.
  */

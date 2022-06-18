@@ -505,7 +505,7 @@ public final function ConsoleWriter Flush()
  *  @param  message `Text` to output.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter Write(optional Text message)
+public final function ConsoleWriter Write(optional BaseText message)
 {
     outputBuffer.Insert(message);
     if (needToResetColor) {
@@ -521,7 +521,7 @@ public final function ConsoleWriter Write(optional Text message)
  *  @param  message `Text` to output.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter WriteLine(optional Text message)
+public final function ConsoleWriter WriteLine(optional BaseText message)
 {
     return Write(message).Flush();
 }
@@ -538,7 +538,7 @@ public final function ConsoleWriter WriteLine(optional Text message)
  *  @param  message `Text` to output.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter WriteBlock(optional Text message)
+public final function ConsoleWriter WriteBlock(optional BaseText message)
 {
     outputBuffer.Insert(message).Flush();
     SendBuffer(true);
@@ -558,7 +558,7 @@ public final function ConsoleWriter WriteBlock(optional Text message)
  *  @param  message `Text` to output.
  *  @return Returns caller `ConsoleWriter` to allow for method chaining.
  */
-public final function ConsoleWriter Say(optional Text message)
+public final function ConsoleWriter Say(optional BaseText message)
 {
     outputBuffer.Insert(message).Flush();
     SendBuffer(, true);

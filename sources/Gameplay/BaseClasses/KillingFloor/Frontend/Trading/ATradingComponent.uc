@@ -100,7 +100,7 @@ public function array<ETrader> GetTraders();
  *  @return `ETrader` with a given `traderName`. `none` if either `traderName`
  *      is `none` or there is no trader with such a name.
  */
-public function ETrader GetTrader(Text traderName);
+public function ETrader GetTrader(BaseText traderName);
 
 /**
  *  Checks whether trading is currently active.

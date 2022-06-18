@@ -153,7 +153,7 @@ private static function string NameToActualVersion(string configObjectName)
  *  @return `false` iff config object name `name` already existed
  *      or `name` is invalid for config object.
  */
-public final static function bool NewConfig(Text name)
+public final static function bool NewConfig(BaseText name)
 {
     local AcediaConfig newConfig;
     if (name == none)                       return false;
@@ -186,7 +186,7 @@ public final static function bool NewConfig(Text name)
  *      and dot ('.') character.
  *  @return `true` iff new config object was created.
  */
-public final static function bool Exists(Text name)
+public final static function bool Exists(BaseText name)
 {
     local bool result;
     if (name == none)                       return false;
@@ -214,7 +214,7 @@ public final static function bool Exists(Text name)
  *      Case-insensitive, must contain only ASCII latin letters, digits
  *      and dot ('.') character.
 */
-public final static function DeleteConfig(Text name)
+public final static function DeleteConfig(BaseText name)
 {
     local AssociativeArray.Entry entry;
     if (default.existingConfigs == none) {
@@ -250,7 +250,7 @@ public static function array<Text> AvailableConfigs()
  *      digits and dot ('.') character.
  *  @return `AcediaConfig` of caller class with name `name`.
  */
-public final static function AcediaConfig GetConfigInstance(Text name)
+public final static function AcediaConfig GetConfigInstance(BaseText name)
 {
     local AssociativeArray.Entry configEntry;
     if (name == none)                       return none;
@@ -286,7 +286,7 @@ public final static function AcediaConfig GetConfigInstance(Text name)
  *      For correctly implemented config objects should only return `none` if
  *      their class was not yet initialized (see `self.Initialize()` method).
 */
-public final static function AssociativeArray LoadData(Text name)
+public final static function AssociativeArray LoadData(BaseText name)
 {
     local AssociativeArray  result;
     local AcediaConfig      requiredConfig;
@@ -311,7 +311,7 @@ public final static function AssociativeArray LoadData(Text name)
  *      allows for JSON deserialization (see `JSONAPI.IsCompatible()` for
  *      details).
 */
-public final static function SaveData(Text name, AssociativeArray data)
+public final static function SaveData(BaseText name, AssociativeArray data)
 {
     local AcediaConfig requiredConfig;
     requiredConfig = GetConfigInstance(name);

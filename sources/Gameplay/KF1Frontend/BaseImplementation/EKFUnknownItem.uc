@@ -111,7 +111,7 @@ public function array<Text> GetTags()
     return emptyArray;
 }
 
-public function bool HasTag(Text tagToCheck)
+public function bool HasTag(BaseText tagToCheck)
 {
     return false;
 }

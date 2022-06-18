@@ -123,7 +123,7 @@ protected function Finalizer()
  *  @param  name    Port used by the Avarice instance that caller `AvariceLink`
  *      is connecting to.
  */
-public final function Initialize(Text name, Text host, int port)
+public final function Initialize(BaseText name, BaseText host, int port)
 {
     if (tcpStream != none)  return;
     if (name == none)       return;
@@ -198,12 +198,13 @@ public final function SimpleSlot OnDeath(AcediaObject receiver)
 /* SIGNAL */
 public final function Avarice_OnMessage_Slot OnMessage(
     AcediaObject    receiver,
-    Text            service)
+    BaseText        service)
 {
     return Avarice_OnMessage_Slot(GetServiceSignal(service).NewSlot(receiver));
 }
 
-private final function Avarice_OnMessage_Signal GetServiceSignal(Text service)
+private final function Avarice_OnMessage_Signal GetServiceSignal(
+    BaseText service)
 {
     local Avarice_OnMessage_Signal result;
     if (service != none) {
@@ -370,8 +371,8 @@ public final function int GetPort()
  *      addressing make a reply.
  */
 public final function bool SendMessage(
-    Text            service,
-    Text            type,
+    BaseText        service,
+    BaseText        type,
     AcediaObject    parameters)
 {
     local Mutabletext       parametesAsJSON;

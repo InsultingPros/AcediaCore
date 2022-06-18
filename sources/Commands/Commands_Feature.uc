@@ -185,7 +185,7 @@ public final function RemoveCommand(class<Command> commandClass)
  *  @return Command, registered with a given name `commandName`.
  *      If no command with such name was registered - returns `none`.
  */
-public final function Command GetCommand(Text commandName)
+public final function Command GetCommand(BaseText commandName)
 {
     local Text      commandNameLowerCase;
     local Command   commandInstance;

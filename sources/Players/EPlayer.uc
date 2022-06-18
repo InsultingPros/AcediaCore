@@ -256,7 +256,7 @@ public final function Text GetName()
  *  @param  newPlayerName   New name of the caller `EPlayer`. This value will
  *      be copied. Passing `none` will result in an empty name.
  */
-public final function SetName(Text newPlayerName)
+public final function SetName(BaseText newPlayerName)
 {
     local Text                  oldPlayerName;
     local PlayerReplicationInfo replicationInfo;
@@ -270,10 +270,10 @@ public final function SetName(Text newPlayerName)
 }
 
 //  Converts `Text` nickname into a suitable `string` representation.
-private final function string ConvertTextNameIntoString(Text playerName)
+private final function string ConvertTextNameIntoString(BaseText playerName)
 {
-    local string            newPlayerNameAsString;
-    local Text.Formatting   endingFormatting;
+    local string                newPlayerNameAsString;
+    local BaseText.Formatting   endingFormatting;
     if (playerName == none) {
         return "";
     }
@@ -301,8 +301,8 @@ private final function string ConvertTextNameIntoString(Text playerName)
 
 //  Calls appropriate events to let them modify / "censor" player's new name.
 private final function string CensorPlayerName(
-    Text oldPlayerName,
-    Text newPlayerName)
+    BaseText oldPlayerName,
+    BaseText newPlayerName)
 {
     local string        result;
     local Text          censoredName;

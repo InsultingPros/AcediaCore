@@ -19,7 +19,7 @@
  */
 class ChatAPI_OnMessageFor_Slot extends Slot;
 
-delegate bool connect(EPlayer receiver, EPlayer sender, Text message)
+delegate bool connect(EPlayer receiver, EPlayer sender, BaseText message)
 {
     DummyCall();
     return true;

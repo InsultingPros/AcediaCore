@@ -1026,7 +1026,7 @@ public final function bool ParseString(
  *  @return `true` if parsing was successful and false otherwise.
  */
 public final function bool Parse(
-    Text        textWithColor,
+    BaseText    textWithColor,
     out Color   resultingColor)
 {
     local bool      successfullyParsed;
@@ -1051,8 +1051,8 @@ public final function bool Parse(
  *  @return `true` if resolving was successful and false otherwise.
  */
 public final function bool ResolveShortTagColor(
-    Text.Character  shortTag,
-    out Color       resultingColor)
+    BaseText.Character  shortTag,
+    out Color           resultingColor)
 {
     local int i;
     if (shortTag.codePoint <= 0) {

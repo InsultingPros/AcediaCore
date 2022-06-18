@@ -157,7 +157,7 @@ private final function PrintCommands(ConsoleWriter cout, Command.Data data)
 private final function PrintSubCommand(
     ConsoleWriter   cout,
     SubCommand      subCommand,
-    Text            commandName)
+    BaseText        commandName)
 {
     //  Command + parameters
     //  Command name + sub command name

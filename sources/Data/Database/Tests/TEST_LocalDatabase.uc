@@ -1000,7 +1000,7 @@ protected static function SubTest_IncrementString(LocalDatabaseInstance db)
     TEST_ExpectTrue(
         Text(default.resultObject).ToString() == "simpleValue!");
     task = db.IncrementData(__().json.Pointer(P("/A")),
-                            __().text.FromStringM("?"));
+                            __().text.FromString("?"));
     task.connect = DBIncrementHandler;
     task.TryCompleting();
     TEST_ExpectTrue(default.resultType == DBR_Success);

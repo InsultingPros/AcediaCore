@@ -47,7 +47,7 @@ public final function array<AvariceLink> GetAllLinks()
  *      If `linkName == none` or `AvariceLink` with such name does not exist -
  *      returns `none`.
  */
-public final function AvariceLink GetLink(Text linkName)
+public final function AvariceLink GetLink(BaseText linkName)
 {
     local int                   i;
     local Text                  nextName;

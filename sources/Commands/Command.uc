@@ -24,7 +24,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class Command extends AcediaObject
-    dependson(Text);
+    dependson(BaseText);
 
 /**
  *  Possible errors that can arise when parsing command parameters from
@@ -149,7 +149,7 @@ struct SubCommand
 //  Options are independent from sub-commands.
 struct Option
 {
-    var Text.Character      shortName;
+    var BaseText.Character  shortName;
     var Text                longName;
     var Text                description;
     //  Option can also have their own parameters
@@ -550,12 +550,12 @@ private final function array<EPlayer> ParseTargets(
     return targetPlayers;
 }
 
-
 //  TODO: This is a hack to insert new line symbol,
 //  this needs to be redone in a better way
-private final function Text.Character GetNewLine(Text.Formatting formatting)
+private final function BaseText.Character GetNewLine(
+    BaseText.Formatting formatting)
 {
-    local Text.Character newLine;
+    local BaseText.Character newLine;
     newLine.codePoint   = 10;
     newLine.formatting  = formatting;
     return newLine;

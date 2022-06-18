@@ -30,7 +30,7 @@ class MemoryAPI extends AcediaObject;
  *  @param  classReference  Text representation of the class to return.
  *  @return Loaded class, corresponding to its name from `classReference`.
  */
-public final function class<Object> LoadClass(Text classReference)
+public final function class<Object> LoadClass(BaseText classReference)
 {
     if (classReference == none) {
         return none;
@@ -139,7 +139,7 @@ public final function Object Allocate(
  *  guarantees to return last pooled object (in a LIFO queue),
  *  unless `forceNewInstance == true`.
  *
- *  @param  refToClassToAllocate    `Text` representation of the class of
+ *  @param  refToClassToAllocate    `BaseText` representation of the class of
  *      the `Object` / `Actor` that this method must create.
  *  @param  forceNewInstance    Set this to `true` if you require this method to
  *      create a new instance, bypassing any object pools.
@@ -147,7 +147,7 @@ public final function Object Allocate(
  *      `none` if creation has failed (only possible for actors).
  */
 public final function Object AllocateByReference(
-    Text            refToClassToAllocate,
+    BaseText        refToClassToAllocate,
     optional bool   forceNewInstance)
 {
     return Allocate(LoadClass(refToClassToAllocate), forceNewInstance);

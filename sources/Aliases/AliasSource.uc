@@ -123,7 +123,7 @@ private final function HashValidAliasesFromPerObjectConfig()
 //  they already exist.
 //      Takes care of lower case conversion to store aliases in `aliasHash`
 //  in a case-insensitive way.
-private final function InsertAlias(Text alias, Text value)
+private final function InsertAlias(BaseText alias, BaseText value)
 {
     local Text                      aliasLowerCaseCopy;
     local AssociativeArray.Entry    hashEntry;
@@ -145,7 +145,7 @@ private final function InsertAlias(Text alias, Text value)
  *  @param  alias   Alias to check, case-insensitive.
  *  @return `true` if present, `false` otherwise.
  */
-public function bool HasAlias(Text alias)
+public function bool HasAlias(BaseText alias)
 {
     local bool  result;
     local Text  lowerCaseAlias;
@@ -174,7 +174,7 @@ public function bool HasAlias(Text alias)
  *      and `copyOnFailure == true` means method will return `alias.Copy()`.
  *      If `alias == none` method always returns `none`.
  */
-public function Text Resolve(Text alias, optional bool copyOnFailure)
+public function Text Resolve(BaseText alias, optional bool copyOnFailure)
 {
     local Text result;
     local Text lowerCaseAlias;
@@ -273,7 +273,7 @@ public final function bool AddAlias(
  *
  *  @param  aliasToRemove   Alias that you want to remove from caller source.
  */
-public final function RemoveAlias(Text aliasToRemove)
+public final function RemoveAlias(BaseText aliasToRemove)
 {
     local int                       i;
     local bool                      isMatchingRecord;
@@ -308,7 +308,9 @@ public final function RemoveAlias(Text aliasToRemove)
     }
 }
 
-private final function LogDuplicateAliasWarning(Text alias, Text existingValue)
+private final function LogDuplicateAliasWarning(
+    BaseText alias,
+    BaseText existingValue)
 {
     _.logger.Auto(warnDuplicateAlias)
         .ArgClass(class)
@@ -319,7 +321,7 @@ private final function LogDuplicateAliasWarning(Text alias, Text existingValue)
 //      Tries to find a loaded `Aliases` config object that stores aliases for
 //  the given value. If such object does not exists - creates a new one.
 //      Assumes `value != none`.
-private final function Aliases GetAliasesObjectWithValue(Text value)
+private final function Aliases GetAliasesObjectWithValue(BaseText value)
 {
     local int       i;
     local Text      nextValue;

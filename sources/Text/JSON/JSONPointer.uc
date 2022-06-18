@@ -90,7 +90,7 @@ public final function JSONPointer Empty()
  *  @param  pointerAsText   `Text` representation of the JSON pointer.
  *  @return Reference to the caller `JSONPointer` to allow for method chaining.
  */
-public final function JSONPointer Set(Text pointerAsText)
+public final function JSONPointer Set(BaseText pointerAsText)
 {
     local int                   i;
     local bool                  hasEscapedSequences;
@@ -144,7 +144,7 @@ public final function JSONPointer Set(Text pointerAsText)
  *      no changes will be made at all.
  *  @return Reference to the caller `JSONPointer` to allow for method chaining.
  */
-public final function JSONPointer Push(Text newComponent)
+public final function JSONPointer Push(BaseText newComponent)
 {
     local Component newComponentRecord;
     if (newComponent == none) {
@@ -199,7 +199,7 @@ public final function Text Pop(optional bool doNotRemove)
     lastIndex = components.length - 1;
     //  Do not use `GetComponent()` to avoid unnecessary `Text` copying
     if (components[lastIndex].asText == none) {
-        result = _.text.FromIntM(components[lastIndex].asNumber);
+        result = _.text.FromInt(components[lastIndex].asNumber);
     }
     else {
         result = components[lastIndex].asText.Copy();
