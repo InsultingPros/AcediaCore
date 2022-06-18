@@ -199,65 +199,6 @@ protected final function ReformatRange(
 }
 
 /**
- *  Static method for creating an immutable `Text` object from (plain) `string`.
- *
- *  It is preferred to use `TextAPI` methods for creating `Text` instances.
- *
- *  @param  source  Plain `string` to convert into `Text`.
- *  @return `Text` instance (guaranteed to be not `none`) that stores contents
- *      of `source` if treated as a plain `string`.
- */
-public static final function Text ConstFromPlainString(string source)
-{
-    local MutableText   builder;
-    local Text          result;
-    builder = MutableText(__().memory.Allocate(class'MutableText'));
-    result = builder.AppendString(source).Copy();
-    builder.FreeSelf();
-    return result;
-}
-
-/**
- *  Static method for creating an immutable `Text` object from
- *  (colored) `string`.
- *
- *  It is preferred to use `TextAPI` methods for creating `Text` instances.
- *
- *  @param  source  Colored `string` to convert into `Text`.
- *  @return `Text` instance (guaranteed to be not `none`) that stores contents
- *      of `source` if treated as a colored `string`.
- */
-public static final function Text ConstFromColoredString(string source)
-{
-    local MutableText   builder;
-    local Text          result;
-    builder = MutableText(__().memory.Allocate(class'MutableText'));
-    result = builder.AppendColoredString(source).Copy();
-    builder.FreeSelf();
-    return result;
-}
-
-/**
- *  Static method for creating an immutable `Text` object from
- *  (formatted) `string`.
- *
- *  It is preferred to use `TextAPI` methods for creating `Text` instances.
- *
- *  @param  source  Formatted `string` to convert into `Text`.
- *  @return `Text` instance (guaranteed to be not `none`) that stores contents
- *      of `source` if treated as a formatted `string`.
- */
-public static final function Text ConstFromFormattedString(string source)
-{
-    local MutableText   builder;
-    local Text          result;
-    builder = MutableText(__().memory.Allocate(class'MutableText'));
-    result = builder.AppendFormattedString(source).Copy();
-    builder.FreeSelf();
-    return result;
-}
-
-/**
  *  Makes an immutable copy (`class'Text'`) of the caller `BaseText`.
  *
  *  Copies characters in the range `[startIndex; startIndex + maxLength - 1]`

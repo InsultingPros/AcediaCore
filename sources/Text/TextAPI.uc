@@ -665,7 +665,12 @@ public final function MutableText Empty()
  */
 public final function Text FromString(string source)
 {
-    return class'Text'.static.ConstFromPlainString(source);
+    local MutableText   builder;
+    local Text          result;
+    builder = MutableText(_.memory.Allocate(class'MutableText'));
+    result = builder.AppendString(source).Copy();
+    builder.FreeSelf();
+    return result;
 }
 
 /**
@@ -695,7 +700,12 @@ public final function MutableText FromStringM(string source)
  */
 public final function Text FromColoredString(string source)
 {
-    return class'Text'.static.ConstFromColoredString(source);
+    local MutableText   builder;
+    local Text          result;
+    builder = MutableText(_.memory.Allocate(class'MutableText'));
+    result = builder.AppendColoredString(source).Copy();
+    builder.FreeSelf();
+    return result;
 }
 
 /**
@@ -725,7 +735,12 @@ public final function MutableText FromColoredStringM(string source)
  */
 public final function Text FromFormattedString(string source)
 {
-    return class'Text'.static.ConstFromFormattedString(source);
+    local MutableText   builder;
+    local Text          result;
+    builder = MutableText(_.memory.Allocate(class'MutableText'));
+    result = builder.AppendFormattedString(source).Copy();
+    builder.FreeSelf();
+    return result;
 }
 
 /**
