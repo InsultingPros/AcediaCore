@@ -321,19 +321,19 @@ private final function Color GetColorFor(int index)
 
 private final function FormattingInfo ParseFormattingInfo(BaseText colorTag)
 {
-    local int                   i;
-    local Parser                colorParser;
-    local Color                 nextColor;
-    local array<MutableText>    specifiedColors;
-    local array<Color>          gradientColors;
-    local array<float>          gradientPoints;
-    local FormattingInfo        targetInfo;
+    local int               i;
+    local Parser            colorParser;
+    local Color             nextColor;
+    local array<BaseText>   specifiedColors;
+    local array<Color>      gradientColors;
+    local array<float>      gradientPoints;
+    local FormattingInfo    targetInfo;
     if (colorTag.IsEmpty())
     {
         Report(FSE_EmptyColorTag);
         return targetInfo;  // not colored
     }
-    specifiedColors = colorTag.SplitByCharacter(separatorCharacter, true);
+    specifiedColors = colorTag.SplitByCharacter(separatorCharacter, true, true);
     for (i = 0; i < specifiedColors.length; i += 1)
     {
         colorParser = _.text.Parse(specifiedColors[i]);

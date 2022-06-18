@@ -1332,19 +1332,29 @@ public final function string ToFormattedString(
  *  If `separator` does not match anywhere in the string, method returns a
  *  single-element array containing copy of this `Text`.
  *
- *  @param  separator   Character that separates different parts of this `Text`.
- *  @param  skipEmpty   Set this to `true` to filter out empty `MutableText`s
- *      from the output.
- *  @return Array of `MutableText`s that contain separated substrings.
+ *  @param  separator       Character that separates different parts of
+ *      this `Text`. If `separator` is an invalid character, method will do
+ *      nothing and return empty result.
+ *  @param  skipEmpty       Set this to `true` to filter out empty
+ *      `MutableText`s from the output.
+ *  @param  returnMutable   Decides whether this method will return
+ *      `Text` (`false`, by default) or `MutableText` (`true`) instances.
+ *  @return Array of `BaseText`s (whether it's `Text` or `MutableText` depends
+ *      on `returnMutable` parameter) that contain separated substrings.
+ *      Always empty if `separator` is an invalid character.
  */
-public final function array<MutableText> SplitByCharacter(
+public final function array<BaseText> SplitByCharacter(
     Character       separator,
-    optional bool   skipEmpty)
+    optional bool   skipEmpty,
+    optional bool   returnMutable)
 {
-    local int                   i, length;
-    local Character             nextCharacter;
-    local MutableText           nextText;
-    local array<MutableText>    result;
+    local int               i, length;
+    local Character         nextCharacter;
+    local MutableText       nextText;
+    local array<BaseText>   result;
+    if (!_.text.IsValidCharacter(separator)) {
+        return result;
+    }
     length = GetLength();
     nextText = _.text.Empty();
     i = 0;
@@ -1353,8 +1363,14 @@ public final function array<MutableText> SplitByCharacter(
         nextCharacter = GetCharacter(i);
         if (_.text.AreEqual(separator, nextCharacter))
         {
-            if (!skipEmpty || !nextText.IsEmpty()) {
-                result[result.length] = nextText;
+            if (!skipEmpty || !nextText.IsEmpty())
+            {
+                if (returnMutable) {
+                    result[result.length] = nextText;
+                }
+                else {
+                    result[result.length] = nextText.IntoText();
+                }
             }
             else {
                 _.memory.Free(nextText);
@@ -1366,10 +1382,44 @@ public final function array<MutableText> SplitByCharacter(
         }
         i += 1;
     }
-    if (!skipEmpty || !nextText.IsEmpty()) {
-        result[result.length] = nextText;
+    if (!skipEmpty || !nextText.IsEmpty())
+    {
+        if (returnMutable) {
+            result[result.length] = nextText;
+        }
+        else {
+            result[result.length] = nextText.IntoText();
+        }
     }
     return result;
+}
+
+/**
+ *  Splits the string into substrings wherever `separator` occurs, and returns
+ *  array of those strings.
+ *
+ *  If `separator` does not match anywhere in the string, method returns a
+ *  single-element array containing copy of this `Text`.
+ *
+ *  @param  separatorSource `string`, first character of which will be used as
+ *      a separator. If `separatorSource` is empty, method will do nothing and
+ *      return empty result.
+ *  @param  skipEmpty       Set this to `true` to filter out empty
+ *      `MutableText`s from the output.
+ *  @param  returnMutable   Decides whether this method will return
+ *      `Text` (`false`, by default) or `MutableText` (`true`) instances.
+ *  @return Array of `BaseText`s (whether it's `Text` or `MutableText` depends
+ *      on `returnMutable` parameter) that contain separated substrings.
+ *      Always empty if `separatorSource` is empty.
+ */
+public final function array<BaseText> SplitByCharacterS(
+    string          separatorSource,
+    optional bool   skipEmpty,
+    optional bool   returnMutable)
+{
+    local Character separator;
+    separator = _.text.GetCharacter(separatorSource, 0);
+    return SplitByCharacter(separator, skipEmpty, returnMutable);
 }
 
 /**

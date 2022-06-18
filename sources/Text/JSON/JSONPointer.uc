@@ -92,16 +92,17 @@ public final function JSONPointer Empty()
  */
 public final function JSONPointer Set(BaseText pointerAsText)
 {
-    local int                   i;
-    local bool                  hasEscapedSequences;
-    local Component             nextComponent;
-    local array<MutableText>    parts;
+    local int               i;
+    local bool              hasEscapedSequences;
+    local Component         nextComponent;
+    local MutableText       nextPart;
+    local array<BaseText>   parts;
     Empty();
     if (pointerAsText == none) {
         return self;
     }
     hasEscapedSequences = (pointerAsText.IndexOf(T(TJSON_ESCAPE)) >= 0);
-    parts = pointerAsText.SplitByCharacter(T(TSLASH).GetCharacter(0));
+    parts = pointerAsText.SplitByCharacter(T(TSLASH).GetCharacter(0),, true);
     //  First element of the array is expected to be empty, so throw it away;
     //  If it is not empty - then `pointerAsText` does not start with "/" and
     //  we will pretend that we have already removed first element, thus
@@ -119,13 +120,14 @@ public final function JSONPointer Set(BaseText pointerAsText)
         //  https://tools.ietf.org/html/rfc6901
         for (i = 0; i < parts.length; i += 1)
         {
-            parts[i].Replace(T(TJSON_ESCAPED_SLASH), T(TSLASH));
-            parts[i].Replace(T(TJSON_ESCAPED_ESCAPE), T(TJSON_ESCAPE));
+            nextPart = MutableText(parts[i]);
+            nextPart.Replace(T(TJSON_ESCAPED_SLASH), T(TSLASH));
+            nextPart.Replace(T(TJSON_ESCAPED_ESCAPE), T(TJSON_ESCAPE));
         }
     }
     for (i = 0; i < parts.length; i += 1)
     {
-        nextComponent.asText = parts[i];
+        nextComponent.asText = MutableText(parts[i]);
         components[components.length] = nextComponent;
     }
     return self;

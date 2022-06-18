@@ -628,17 +628,42 @@ public final function BaseText.Character ToUpper(BaseText.Character character)
  *  @return Separated words. Empty array if passed `source` was empty,
  *      otherwise contains at least one element.
  */
-public final function array<MutableText> Parts(BaseText source)
+public final function array<BaseText> Parts(BaseText source)
 {
-    local array<MutableText> result;
+    local array<BaseText> result;
     if (source == none)             return result;
     if (source.GetLength() <= 0)    return result;
-    result = source.SplitByCharacter(source.GetCharacter(0));
+    result = source.SplitByCharacter(source.GetCharacter(0),, true);
     //  Since we use first character as a separator:
     //      1. `result` is guaranteed to be non-empty;
     //      2. We can just drop first (empty) substring.
     result[0].FreeSelf();
     result.Remove(0, 1);
+    return result;
+}
+
+/**
+ *      Prepares an array of parts from a given single `BaseText`.
+ *      First character is treated as a separator with which the rest of
+ *  the given `BaseText` is split into parts:
+ *      ~ "/ab/c/d" => ["ab", "c", "d"]
+ *      ~ "zWordzomgzz" => ["Word", "omg", "", ""]
+ *
+ *  This method is useful to easily prepare array of words for `Parser`'s
+ *  methods.
+ *
+ *  @param  source  `string` that contains separator with parts to
+ *      separate and extract.
+ *  @return Separated words. Empty array if passed `source` was empty,
+ *      otherwise contains at least one element.
+ */
+public final function array<BaseText> PartsS(string source)
+{
+    local MutableText       wrapper;
+    local array<BaseText>   result;
+    wrapper = _.text.FromStringM(source);
+    result = Parts(wrapper);
+    _.memory.Free(wrapper);
     return result;
 }
 
