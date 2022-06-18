@@ -209,12 +209,20 @@ public final function Free(Object objectToDeallocate)
         if (!objectAsAcediaObject.IsAllocated()) {
             return;
         }
+        objectAsAcediaObject._deref();
+        if (objectAsAcediaObject._getRefCount() > 0) {
+            return;
+        }
         relevantPool = objectAsAcediaObject._getPool();
         objectAsAcediaObject._finalizer();
     }
     if (objectAsAcediaActor != none)
     {
         if (!objectAsAcediaActor.IsAllocated()) {
+            return;
+        }
+        objectAsAcediaActor._deref();
+        if (objectAsAcediaActor._getRefCount() > 0) {
             return;
         }
         objectAsAcediaActor._finalizer();

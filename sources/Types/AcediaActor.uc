@@ -26,6 +26,12 @@ class AcediaActor extends Actor
 //  Reference to Acedia's APIs for simple access.
 var protected Global _;
 
+//  To make logic simpler and increase efficiency, we allow storing a reference
+//  to any actors in many different places. To know when we can actually
+//  deallocate an actor, we keep this reference counter and only move actor
+//  to the actor pool once nothing refers to it anymore.
+var private int _refCounter;
+
 //  Store allocation status to prevent possible issues
 //  with freeing the same object several times without reallocating it
 //  (such as preventing finalizers or constructors being called several times)
@@ -66,6 +72,7 @@ public function _constructor()
 {
     if (_isAllocated) return;
     _isAllocated = true;
+    _refCounter = 1;
     _ = class'Global'.static.GetInstance();
     if (!default._staticConstructorWasCalled)
     {
@@ -89,6 +96,7 @@ public function _finalizer()
 {
     if (!_isAllocated) return;
     _isAllocated = false;
+    _refCounter = 0;
     Finalizer();
     _ = none;
 }
@@ -179,7 +187,53 @@ private final static function CreateTextCache(optional bool forceCreation)
 }
 
 /**
- *  Acedia actors cannot be deallocated into an object pool, but they still
+ *  This function is called each time this object is freed, to decrease it
+ *  internal reference counter and know when it can be actually deallocated.
+ *
+ *  AVOID MANUALLY CALLING IT.
+ */
+public final function _deref()
+{
+    if (!_isAllocated) {
+        return;
+    }
+    _refCounter = Max(0, _refCounter - 1);
+}
+
+/**
+ *  This function returns current reference counter for the caller actor.
+ *  It is an amount of times it can be freed before being deallocated.
+ *  This should correspond to the amount of places that reference it.
+ *
+ *  AVOID MANUALLY CALLING IT.
+ */
+public final function int _getRefCount()
+{
+    if (!_isAllocated) {
+        return 0;
+    }
+    return _refCounter;
+}
+
+/**
+ *  Method that creates new reference to the given actor.
+ *  Call this if you do not have ownership over the actor, but want to store
+ *  somewhere - this way it should not get deallocated until you free your
+ *  own reference.
+ *
+ *  @return Caller actor, to allow for easier use.
+ */
+public final function AcediaActor NewRef()
+{
+    if (!_isAllocated) {
+        return none;
+    }
+    _refCounter = Max(0, _refCounter + 1);
+    return self;
+}
+
+/**
+ *  Acedia actors cannot be deallocated into an actor pool, but they still
  *  support constructors and destructors and, therefore, track their own
  *  allocation status (`AcediaActor` is considered allocated between constructor
  *  and finalizer calls).

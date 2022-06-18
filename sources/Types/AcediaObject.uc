@@ -35,6 +35,12 @@ var public const bool           usesObjectPool;
 //      This value can be changes through Acedia's system settings.
 var public const int            defaultMaxPoolSize;
 
+//  To make logic simpler and increase efficiency, we allow storing a reference
+//  to any objects in many different places. To know when we can actually
+//  deallocate an object, we keep this reference counter and only move object
+//  to the object pool once nothing refers to it anymore.
+var private int _refCounter;
+
 //      Same object can be reallocated for different purposes and, as far as
 //  users are concerned, - it should be considered a different object after each
 //  reallocation.
@@ -106,9 +112,12 @@ public final static function AcediaObjectPool _getPool()
  */
 public final function _constructor()
 {
-    if (_isAllocated) return;
+    if (_isAllocated) {
+        return;
+    }
     _isAllocated = true;
     _lifeVersion += 1;
+    _refCounter = 1;
     _ = class'Global'.static.GetInstance();
     if (!default._staticConstructorWasCalled)
     {
@@ -131,6 +140,7 @@ public final function _finalizer()
 {
     if (!_isAllocated) return;
     _isAllocated = false;
+    _refCounter = 0;
     Finalizer();
     _ = none;
 }
@@ -218,6 +228,52 @@ private final static function CreateTextCache(optional bool forceCreation)
     for (i = 0; i < stringConstantsCopy.length; i += 1) {
         default._textCache.AddIndexedText(stringConstantsCopy[i]);
     }
+}
+
+/**
+ *  This function is called each time this object is freed, to decrease it
+ *  internal reference counter and know when it can be actually deallocated.
+ *
+ *  AVOID MANUALLY CALLING IT.
+ */
+public final function _deref()
+{
+    if (!_isAllocated) {
+        return;
+    }
+    _refCounter = Max(0, _refCounter - 1);
+}
+
+/**
+ *  This function returns current reference counter for the caller object.
+ *  It is an amount of times it can be freed before being deallocated.
+ *  This should correspond to the amount of places that reference it.
+ *
+ *  AVOID MANUALLY CALLING IT.
+ */
+public final function int _getRefCount()
+{
+    if (!_isAllocated) {
+        return 0;
+    }
+    return _refCounter;
+}
+
+/**
+ *  Method that creates new reference to the given object.
+ *  Call this if you do not have ownership over the object, but want to store
+ *  somewhere - this way it should not get deallocated until you free your
+ *  own reference.
+ *
+ *  @return Caller object, to allow for easier use.
+ */
+public final function AcediaObject NewRef()
+{
+    if (!_isAllocated) {
+        return none;
+    }
+    _refCounter = Max(0, _refCounter + 1);
+    return self;
 }
 
 /**

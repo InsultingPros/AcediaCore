@@ -27,6 +27,7 @@ protected static function TESTS()
     Test_ActorConstructorsFinalizers();
     Test_ObjectPoolUsage();
     Test_LifeVersionIsUnique();
+    Test_RefCounting();
 }
 
 protected static function Test_LifeVersionIsUnique()
@@ -163,6 +164,116 @@ protected static function Test_ObjectPoolUsage()
     obj2 = MockObjectNoPool(__().memory.Allocate(class'MockObjectNoPool'));
     TEST_ExpectTrue(obj1 != obj2);
 }
+
+protected static function Test_RefCounting()
+{
+    Context("Testing usage of reference counting.");
+    SubTest_RefCountingObjectFreeSelf();
+    SubTest_RefCountingObjectFree();
+    SubTest_RefCountingActorFreeSelf();
+    SubTest_RefCountingActorFree();
+}
+
+protected static function SubTest_RefCountingObjectFreeSelf()
+{
+    local MockObject temp;
+    Issue("Reference counting for `AcediaObject`s does not work correctly"
+        @ "with `FreeSelf()`");
+    temp = MockObject(__().memory.Allocate(class'MockObject'));
+    temp.NewRef().NewRef().NewRef();
+    TEST_ExpectTrue(temp._getRefCount() == 4);
+    TEST_ExpectTrue(temp.IsAllocated());
+    temp.FreeSelf();
+    TEST_ExpectTrue(temp._getRefCount() == 3);
+    TEST_ExpectTrue(temp.IsAllocated());
+    temp.FreeSelf();
+    TEST_ExpectTrue(temp._getRefCount() == 2);
+    TEST_ExpectTrue(temp.IsAllocated());
+    temp.FreeSelf();
+    TEST_ExpectTrue(temp._getRefCount() == 1);
+    TEST_ExpectTrue(temp.IsAllocated());
+    temp.FreeSelf();
+    TEST_ExpectTrue(temp._getRefCount() == 0);
+    TEST_ExpectFalse(temp.IsAllocated());
+}
+
+protected static function SubTest_RefCountingObjectFree()
+{
+    local MockObject temp;
+    Issue("Reference counting for `AcediaObject`s does not work correctly"
+        @ "with `__().memory.Free()`");
+    temp = MockObject(__().memory.Allocate(class'MockObject'));
+    temp.NewRef().NewRef().NewRef();
+    TEST_ExpectTrue(temp._getRefCount() == 4);
+    TEST_ExpectTrue(temp.IsAllocated());
+    __().memory.Free(temp);
+    TEST_ExpectTrue(temp._getRefCount() == 3);
+    TEST_ExpectTrue(temp.IsAllocated());
+    __().memory.Free(temp);
+    TEST_ExpectTrue(temp._getRefCount() == 2);
+    TEST_ExpectTrue(temp.IsAllocated());
+    __().memory.Free(temp);
+    TEST_ExpectTrue(temp._getRefCount() == 1);
+    TEST_ExpectTrue(temp.IsAllocated());
+    __().memory.Free(temp);
+    TEST_ExpectTrue(temp._getRefCount() == 0);
+    TEST_ExpectFalse(temp.IsAllocated());
+}
+
+protected static function SubTest_RefCountingActorFreeSelf()
+{
+    local MockActor temp;
+    class'MockActor'.default.actorCount = 0;
+    Issue("Reference counting for `AcediaActor`s does not work correctly"
+        @ "with `FreeSelf()`");
+    temp = MockActor(__().memory.Allocate(class'MockActor'));
+    temp.NewRef().NewRef().NewRef();
+    TEST_ExpectTrue(class'MockActor'.default.actorCount == 1);
+    TEST_ExpectTrue(temp._getRefCount() == 4);
+    TEST_ExpectTrue(temp.IsAllocated());
+    temp.FreeSelf();
+    TEST_ExpectTrue(class'MockActor'.default.actorCount == 1);
+    TEST_ExpectTrue(temp._getRefCount() == 3);
+    TEST_ExpectTrue(temp.IsAllocated());
+    temp.FreeSelf();
+    TEST_ExpectTrue(class'MockActor'.default.actorCount == 1);
+    TEST_ExpectTrue(temp._getRefCount() == 2);
+    TEST_ExpectTrue(temp.IsAllocated());
+    temp.FreeSelf();
+    TEST_ExpectTrue(class'MockActor'.default.actorCount == 1);
+    TEST_ExpectTrue(temp._getRefCount() == 1);
+    TEST_ExpectTrue(temp.IsAllocated());
+    temp.FreeSelf();
+    TEST_ExpectTrue(class'MockActor'.default.actorCount == 0);
+}
+
+protected static function SubTest_RefCountingActorFree()
+{
+    local MockActor temp;
+    class'MockActor'.default.actorCount = 0;
+    Issue("Reference counting for `AcediaActor`s does not work correctly"
+        @ "with `Free()`");
+    temp = MockActor(__().memory.Allocate(class'MockActor'));
+    temp.NewRef().NewRef().NewRef();
+    TEST_ExpectTrue(class'MockActor'.default.actorCount == 1);
+    TEST_ExpectTrue(temp._getRefCount() == 4);
+    TEST_ExpectTrue(temp.IsAllocated());
+    __().memory.Free(temp);
+    TEST_ExpectTrue(class'MockActor'.default.actorCount == 1);
+    TEST_ExpectTrue(temp._getRefCount() == 3);
+    TEST_ExpectTrue(temp.IsAllocated());
+    __().memory.Free(temp);
+    TEST_ExpectTrue(class'MockActor'.default.actorCount == 1);
+    TEST_ExpectTrue(temp._getRefCount() == 2);
+    TEST_ExpectTrue(temp.IsAllocated());
+    __().memory.Free(temp);
+    TEST_ExpectTrue(class'MockActor'.default.actorCount == 1);
+    TEST_ExpectTrue(temp._getRefCount() == 1);
+    TEST_ExpectTrue(temp.IsAllocated());
+    __().memory.Free(temp);
+    TEST_ExpectTrue(class'MockActor'.default.actorCount == 0);
+}
+
 
 defaultproperties
 {
