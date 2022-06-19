@@ -20,6 +20,41 @@
 class CollectionsAPI extends AcediaObject;
 
 /**
+ *  Creates a new `ArrayList`, optionally filling it with objects from
+ *  a given native array.
+ *
+ *  @param  objectArray Objects to place inside created `ArrayList`;
+ *      if empty (by default) - new, empty `ArrayList` will be returned.
+ *      Objects will be added in the same order as in `objectArray`.
+ *  @param   managed    Flag that indicates whether objects from
+ *      `objectArray` argument should be added as managed.
+ *      By default `false` - they would not be managed.
+ *  @return New `ArrayList`, optionally filled with contents of
+ *      `objectArray`. Guaranteed to be not `none` and to not contain any items
+ *      outside of `objectArray`.
+ */
+public final function ArrayList NewArrayList(array<AcediaObject> objectArray)
+{
+    local int       i;
+    local ArrayList result;
+    result = ArrayList(_.memory.Allocate(class'ArrayList'));
+    for (i = 0; i < objectArray.length; i += 1) {
+        result.AddItem(objectArray[i]);
+    }
+    return result;
+}
+
+/**
+ *  Creates a new empty `ArrayList`.
+ *
+ *  @return New empty instance of `ArrayList`.
+ */
+public final function ArrayList EmptyArrayList()
+{
+    return ArrayList(_.memory.Allocate(class'ArrayList'));
+}
+
+/**
  *  Creates a new `DynamicArray`, optionally filling it with objects from
  *  a given native array.
  *
