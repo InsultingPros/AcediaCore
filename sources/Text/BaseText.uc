@@ -1556,6 +1556,17 @@ public function MutableText IntoMutableText()
     return none;
 }
 
+/**
+ *  Creates `Parser` to parse caller `BaseText`.
+ *
+ *  @return `Parser` that is setup to parse caller `BaseText`.
+ *      Guaranteed to not be `none`.
+ */
+public final function Parser Parse()
+{
+    return _.text.Parse(self);
+}
+
 defaultproperties
 {
     STRING_SEPARATOR_FORMAT = " "
