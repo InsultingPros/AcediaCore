@@ -28,6 +28,10 @@ var private array<Text>         commandDelimiters;
 //  Keys should be deallocated when their entry is removed.
 var private AssociativeArray    registeredCommands;
 
+//  When this flag is set to true, mutate input becomes available
+//  despite `useMutateInput` flag to allow to unlock server in case of an error
+var private bool emergencyEnabledMutate;
+
 //  Setting this to `true` enables players to input commands right in the chat
 //  by prepending them with `chatCommandPrefix`.
 //  Default is `true`.
@@ -54,6 +58,12 @@ protected function OnEnabled()
     commandDelimiters[2] = P("[");
     //  Negation of the selector
     commandDelimiters[3] = P("!");
+    //  `SwapConfig()` will no longer touch `_.unreal.mutator.OnMutate(self)`
+    //  with `emergencyEnabledMutate` set to `true`, so we need to give
+    //  access here
+    if (emergencyEnabledMutate) {
+        _.unreal.mutator.OnMutate(self).connect = HandleMutate;
+    }
 }
 
 protected function OnDisabled()
@@ -96,7 +106,9 @@ protected function SwapConfig(FeatureConfig config)
             _.chat.OnMessage(self).Disconnect();
         }
     }
-    if (useMutateInput != newConfig.useMutateInput)
+    //  Do not make any modifications here in case "mutate" was
+    //  emergency-enabled
+    if (useMutateInput != newConfig.useMutateInput && !emergencyEnabledMutate)
     {
         useMutateInput = newConfig.useMutateInput;
         if (newConfig.useMutateInput) {
@@ -106,6 +118,87 @@ protected function SwapConfig(FeatureConfig config)
             _.unreal.mutator.OnMutate(self).Disconnect();
         }
     }
+}
+
+/**
+ *  `Command_Feature` is a critical command to have running on your server and,
+ *  if disabled by accident, there will be no way of starting it again without
+ *  restarting the level or even editing configs.
+ *
+ *  This method allows to enable it along with "mutate" input in case something
+ *  goes wrong.
+ */
+public final static function EmergencyEnable()
+{
+    local Text              autoConfig;
+    local Commands_Feature  feature;
+    if (!IsEnabled())
+    {
+        autoConfig = GetAutoEnabledConfig();
+        EnableMe(autoConfig);
+        __().memory.Free(autoConfig);
+    }
+    feature = Commands_Feature(GetInstance());
+    if (    !feature.emergencyEnabledMutate
+        &&  !feature.IsUsingMutateInput() && !feature.IsUsingChatInput())
+    {
+        default.emergencyEnabledMutate = true;
+        feature.emergencyEnabledMutate = true;
+        __().unreal.mutator.OnMutate(feature).connect = HandleMutate;
+    }
+}
+
+/**
+ *  Checks if `Commands_Feature` currently uses chat as input.
+ *  If `Commands_Feature` is not enabled, then it does not use anything
+ *  as input.
+ *
+ *  @return `true` if `Commands_Feature` is currently enabled and is using chat
+ *      as input and `false` otherwise.
+ */
+public final static function bool IsUsingChatInput()
+{
+    local Commands_Feature instance;
+    instance = Commands_Feature(GetInstance());
+    if (instance != none) {
+        return instance.useChatInput;
+    }
+    return false;
+}
+
+/**
+ *  Checks if `Commands_Feature` currently uses mutate command as input.
+ *  If `Commands_Feature` is not enabled, then it does not use anything
+ *  as input.
+ *
+ *  @return `true` if `Commands_Feature` is currently enabled and is using
+ *      mutate command as input and `false` otherwise.
+ */
+public final static function bool IsUsingMutateInput()
+{
+    local Commands_Feature instance;
+    instance = Commands_Feature(GetInstance());
+    if (instance != none) {
+        return instance.useMutateInput;
+    }
+    return false;
+}
+
+/**
+ *  Returns prefix that will indicate that chat message is intended to be
+ *  a command. By default "!".
+ *
+ *  @return Prefix that indicates that chat message is intended to be a command.
+ *      If `Commands_Feature` is disabled, always returns `false`.
+ */
+public final static function Text GetChatPrefix()
+{
+    local Commands_Feature instance;
+    instance = Commands_Feature(GetInstance());
+    if (instance != none && instance.chatCommandPrefix != none) {
+        return instance.chatCommandPrefix.Copy();
+    }
+    return none;
 }
 
 /**

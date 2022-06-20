@@ -56,6 +56,7 @@ var public const class<FeatureConfig> configClass;
 //      Only a default value is ever used.
 var protected bool blockSpawning;
 
+//  TODO: remove this?
 //      Setting that tells Acedia whether or not to enable this feature
 //  during initialization.
 //      Only it's default value is ever used.
@@ -124,9 +125,10 @@ protected function Finalizer()
     default.currentConfigName   = none;
     currentConfigName           = none;
     currentConfig               = none;
-    default.activeInstance = none;
+    default.activeInstance      = none;
 }
 
+//  TODO: free `newConfigName`?
 /**
  *  Changes config for the caller `Feature` class.
  *
@@ -142,9 +144,6 @@ private final function ApplyConfig(BaseText newConfigName)
 {
     local Text          configNameCopy;
     local FeatureConfig newConfig;
-    if (newConfigName == none) {
-        return;
-    }
     newConfig =
         FeatureConfig(configClass.static.GetConfigInstance(newConfigName));
     if (newConfig == none)
@@ -174,15 +173,6 @@ private final function ApplyConfig(BaseText newConfigName)
  */
 public final static function Feature GetInstance()
 {
-    if (default.activeInstance == none) {
-        return none;
-    }
-    if (    default.activeInstance.GetLifeVersion()
-        !=  default.activeInstanceLifeVersion)
-    {
-        default.activeInstance = none;
-        return none;
-    }
     return default.activeInstance;
 }
 
@@ -246,14 +236,11 @@ public static final function bool IsEnabled()
 /**
  *  Enables the feature and returns it's active instance.
  *
- *  Does nothing if passed `configName` is `none`.
- *
  *  Cannot fail as long as `configName != none`. Any checks on whether it's
  *  appropriate to enable `Feature` must be done separately, before calling
  *  this method.
  *
- *  If `Feature` is already enabled - changes its config to `configName`
- *  (unless it's `none`).
+ *  If `Feature` is already enabled - changes its config to `configName`.
  *
  *  @param  configName  Name of the config to use for this `Feature`.
  *      Passing `none` will make caller `Feature` use "default" config.
@@ -262,16 +249,18 @@ public static final function bool IsEnabled()
 public static final function Feature EnableMe(BaseText configName)
 {
     local Feature myInstance;
-    if (configName == none) {
-        return none;
-    }
     myInstance = GetInstance();
     if (myInstance != none)
     {
         myInstance.ApplyConfig(configName);
         return myInstance;
     }
-    default.currentConfigName = configName.Copy();
+    if (configName != none) {
+        default.currentConfigName = configName.Copy();
+    }
+    else {
+        default.currentConfigName = none;
+    }
     default.blockSpawning = false;
     myInstance = Feature(__().memory.Allocate(default.class));
     default.activeInstance              = myInstance;

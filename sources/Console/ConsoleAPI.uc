@@ -177,7 +177,7 @@ public final function Color GetDefaultColor(int newMaxTotalLineWidth)
 }
 
 /**
- *  Sets current global default color for console output.,
+ *  Sets current global default color for console output.
  *
  *  Instances of `ConsoleWriter` are initialized with this value,
  *  but can later change this value independently.
@@ -193,7 +193,6 @@ public final function SetDefaultColor(Color newDefaultColor)
 /**
  *      Returns new `ConsoleWriter` instance that will write into
  *  consoles of all players.
- *      Should be freed after use.
  *
  *  @return ConsoleWriter   New `ConsoleWriter` instance, configured to
  *      write into consoles of all players.
@@ -212,13 +211,12 @@ public final function ConsoleWriter ForAll()
 /**
  *      Returns new `ConsoleWriter` instance that will write into
  *  console of the given player.
- *      Should be freed after use.
  *
  *  @param  targetPlayer    Player, to whom console we want to write.
  *      If `none` - returned `ConsoleWriter` would be configured to
  *      throw messages away.
  *  @return New `ConsoleWriter` instance, configured to
- *      write into consoles of all players.
+ *      write into console of `targetPlayer`.
  *      Guaranteed to not be `none`.
  */
 public final function ConsoleWriter For(EPlayer targetPlayer)
@@ -229,6 +227,27 @@ public final function ConsoleWriter For(EPlayer targetPlayer)
     globalSettings.maxVisibleLineWidth  = maxVisibleLineWidth;
     return ConsoleWriter(_.memory.Allocate(class'ConsoleWriter'))
         .Initialize(globalSettings).ForPlayer(targetPlayer);
+}
+
+/**
+ *      Returns new `ConsoleWriter` instance that will write into
+ *  console of the given player.
+ *
+ *  @param  targetPlayer    Player, to whom console we want to write.
+ *      If `none` - returned `ConsoleWriter` would be configured to
+ *      throw messages away.
+ *  @return New `ConsoleWriter` instance, configured to
+ *      write into console of `targetPlayer`.
+ *      Guaranteed to not be `none`.
+ */
+public final function ConsoleWriter ForController(PlayerController targetPlayer)
+{
+    local EPlayer       wrapper;
+    local ConsoleWriter result;
+    wrapper = _.players.FromController(targetPlayer);
+    result = For(wrapper);
+    _.memory.Free(wrapper);
+    return result;
 }
 
 defaultproperties

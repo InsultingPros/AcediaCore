@@ -52,7 +52,7 @@ var private LoggerAPI.Definition errorNoManifest, errorCannotRunTests;
 
 //  We do not implement `OnShutdown()`, because total Acedia's clean up
 //  is supposed to happen before that event.
-protected function OnCreated()
+protected function OnLaunch()
 {
     BootUp();
     default.packagesToLoad.length = 0;
@@ -161,6 +161,8 @@ private final function BootUp()
     if (class'TestingService'.default.runTestsOnStartUp) {
         RunStartUpTests();
     }
+    class'InfoQueryHandler'.static.StaticConstructor();
+    _.unreal.mutator.OnMutate(_self).connect = EnableCommandsFeature;
 }
 
 private final function LoadManifest(class<_manifest> manifestClass)
@@ -240,6 +242,15 @@ private final function RunStartUpTests()
     }
     if (!testService.Run()) {
         _.logger.Auto(errorCannotRunTests);
+    }
+}
+
+private final function EnableCommandsFeature(
+    string              command,
+    PlayerController    sendingPlayer)
+{
+    if (command ~= "acediacommands") {
+        class'Commands_Feature'.static.EmergencyEnable();
     }
 }
 
