@@ -25,25 +25,27 @@ class Global extends Object;
 //  main instance in this variable's default value.
 var protected Global myself;
 
-var public RefAPI           ref;
-var public BoxAPI           box;
-var public LoggerAPI        logger;
-var public CollectionsAPI   collections;
-var public UnrealAPI        unreal;
-var public TimeAPI          time;
-var public AliasesAPI       alias;
-var public TextAPI          text;
-var public MemoryAPI        memory;
-var public ConsoleAPI       console;
-var public ChatAPI          chat;
-var public ColorAPI         color;
-var public UserAPI          users;
-var public PlayersAPI       players;
-var public JSONAPI          json;
-var public DBAPI            db;
-var public AvariceAPI       avarice;
+var public RefAPI               ref;
+var public BoxAPI               box;
+var public LoggerAPI            logger;
+var public CollectionsAPI       collections;
+var public UnrealAPI            unreal;
+var public TimeAPI              time;
+var public AliasesAPI           alias;
+var public TextAPI              text;
+var public MemoryAPI            memory;
+var public ConsoleAPI           console;
+var public ChatAPI              chat;
+var public ColorAPI             color;
+var public UserAPI              users;
+var public PlayersAPI           players;
+var public JSONAPI              json;
+var public DBAPI                db;
+var public AvariceAPI           avarice;
 
-var public KFFrontend       kf;
+var public AcediaEnvironment    environment;
+
+var public KFFrontend           kf;
 
 public final static function Global GetInstance()
 {
@@ -79,13 +81,37 @@ protected function Initialize()
     db          = DBAPI(memory.Allocate(class'DBAPI'));
     avarice     = AvariceAPI(memory.Allocate(class'AvariceAPI'));
     kf          = KFFrontend(memory.Allocate(class'KF1_Frontend'));
-    json.StaticConstructor();
+    environment = AcediaEnvironment(memory.Allocate(class'AcediaEnvironment'));
+    class'InfoQueryHandler'.static.StaticConstructor();
+}
+
+public final function bool ConnectServerLevelCore()
+{
+    if (class'ServerLevelCore'.static.GetInstance() == none) {
+        return false;
+    }
+    class'UnrealService'.static.Require();
+    class'ConnectionService'.static.Require();
+    //  TODO: this is hack as fuck, needs to be redone
+    unreal.mutator.OnMutate(
+        ServiceAnchor(memory.Allocate(class'ServiceAnchor')))
+            .connect = EnableCommandsFeature;
+    return true;
 }
 
 public function DropGameplayAPI()
 {
     memory.Free(kf);
     kf = none;
+}
+
+private final function EnableCommandsFeature(
+    string              command,
+    PlayerController    sendingPlayer)
+{
+    if (command ~= "acediacommands") {
+        class'Commands_Feature'.static.EmergencyEnable();
+    }
 }
 
 public function DropCoreAPI()

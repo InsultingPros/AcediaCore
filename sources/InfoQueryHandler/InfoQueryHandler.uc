@@ -288,11 +288,11 @@ defaultproperties
     TACEDIA_HELP                            = 2
     stringConstants(2)  = "Acedia always supports four commands: {$TextEmphasis help}, {$TextEmphasis status}, {$TextEmphasis version} and {$TextEmphasis credits}"
     TACEDIA_HELP_COMMANDS_CHAT              = 3
-    stringConstants(3)  = "To get detailed information about available to you commands, please type {$TextEmphasis %PREFIX%help -l} in chat"
+    stringConstants(3)  = "To get detailed information about available to you commands, please type {$TextEmphasis %PREFIX%help} in chat"
     TACEDIA_HELP_COMMANDS_CONSOLE           = 4
     stringConstants(4)  = "To get detailed information about available to you commands, please type {$TextEmphasis mutate help -l} in console"
     TACEDIA_HELP_COMMANDS_CHAT_AND_CONSOLE  = 5
-    stringConstants(5)  = "To get detailed information about available to you commands, please type {$TextEmphasis %PREFIX%help -l} in chat or {$TextEmphasis mutate help -l} in console"
+    stringConstants(5)  = "To get detailed information about available to you commands, please type {$TextEmphasis %PREFIX%help} in chat or {$TextEmphasis mutate help -l} in console"
     TACEDIA_HELP_COMMANDS_NO                = 6
     stringConstants(6)  = "Unfortunately other commands aren't available right now. To enable them please type {$TextEmphasis mutate acediacommands} in console if you have enough rights to reenable them."
     TACEDIA_HELP_COMMANDS_USELESS           = 7

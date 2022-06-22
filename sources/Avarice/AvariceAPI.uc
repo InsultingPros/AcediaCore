@@ -31,7 +31,7 @@ public final function array<AvariceLink> GetAllLinks()
     local Avarice_Feature       avariceFeature;
     local array<AvariceLink>    emptyResult;
     avariceFeature =
-        Avarice_Feature(class'Avarice_Feature'.static.GetInstance());
+        Avarice_Feature(class'Avarice_Feature'.static.GetEnabledInstance());
     if (avariceFeature != none) {
         return avariceFeature.GetAllLinks();
     }

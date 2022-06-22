@@ -72,7 +72,7 @@ private final function DisplayCommandList(EPlayer player)
     local Commands_Feature  commandsFeature;
     if (player == none)             return;
     commandsFeature =
-        Commands_Feature(class'Commands_Feature'.static.GetInstance());
+        Commands_Feature(class'Commands_Feature'.static.GetEnabledInstance());
     if (commandsFeature == none)    return;
 
     console = player.BorrowConsole();
@@ -101,7 +101,7 @@ private final function DisplayCommandHelpPages(
     local Commands_Feature  commandsFeature;
     if (player == none)             return;
     commandsFeature =
-        Commands_Feature(class'Commands_Feature'.static.GetInstance());
+        Commands_Feature(class'Commands_Feature'.static.GetEnabledInstance());
     if (commandsFeature == none)    return;
 
     //  If arguments were empty - at least display our own help page

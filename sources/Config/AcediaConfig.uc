@@ -110,8 +110,6 @@ public static function Initialize()
     if (default.existingConfigs != none) {
         return;
     }
-    CoreService(class'CoreService'.static.GetInstance())
-        ._registerObjectClass(default.class);
     default.existingConfigs = __().collections.EmptyAssociativeArray();
     names = GetPerObjectNames(  default.configName, string(default.class.name),
                                 MaxInt);

@@ -158,8 +158,6 @@ protected final static function bool StaticConstructorGuard()
     if (!default._staticConstructorWasCalled)
     {
         default._staticConstructorWasCalled = true;
-        CoreService(class'CoreService'.static.GetInstance())
-            ._registerObjectClass(default.class);
         return false;
     }
     return true;

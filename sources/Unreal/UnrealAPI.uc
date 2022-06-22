@@ -111,7 +111,7 @@ public final function SimpleSlot OnDestructionFor(
  */
 public final function LevelInfo GetLevel()
 {
-    return class'CoreService'.static.GetInstance().level;
+    return class'ServerLevelCore'.static.GetInstance().level;
 }
 
 /**
@@ -123,7 +123,7 @@ public final function LevelInfo GetLevel()
  */
 public final function GameReplicationInfo GetGameRI()
 {
-    return class'CoreService'.static.GetInstance().level.GRI;
+    return class'ServerLevelCore'.static.GetInstance().level.GRI;
 }
 
 /**
@@ -150,7 +150,7 @@ public final function KFGameReplicationInfo GetKFGameRI()
  */
 public final function GameInfo GetGameType()
 {
-    return class'CoreService'.static.GetInstance().level.game;
+    return class'ServerLevelCore'.static.GetInstance().level.game;
 }
 
 /**
@@ -177,10 +177,10 @@ public final function KFGameType GetKFGameType()
  */
 public final function Actor FindActorInstance(class<Actor> classToFind)
 {
-    local Actor result;
-    local Service service;
-    service = class'CoreService'.static.Require();
-    foreach service.AllActors(classToFind, result)
+    local Actor     result;
+    local LevelCore core;
+    core = class'ServerLevelCore'.static.GetInstance();
+    foreach core.AllActors(classToFind, result)
     {
         if (result != none) {
             break;
@@ -198,7 +198,7 @@ public final function Actor FindActorInstance(class<Actor> classToFind)
  */
 public final function PlayerController GetLocalPlayer()
 {
-    return class'CoreService'.static.GetInstance().level
+    return class'ServerLevelCore'.static.GetInstance().level
         .GetLocalPlayerController();
 }
 

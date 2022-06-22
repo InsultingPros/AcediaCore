@@ -24,7 +24,6 @@ defaultproperties
 {
     features(0)     = class'Commands_Feature'
     features(1)     = class'Avarice_Feature'
-    services(0)     = class'ConnectionService'
     aliasSources(0) = class'AliasSource'
     aliasSources(1) = class'WeaponAliasSource'
     aliasSources(2) = class'ColorAliasSource'
@@ -42,7 +41,7 @@ defaultproperties
     testCases(10)   = class'TEST_Parser'
     testCases(11)   = class'TEST_JSON'
     testCases(12)   = class'TEST_TextCache'
-    testCases(13)    = class'TEST_FormattedStrings'
+    testCases(13)   = class'TEST_FormattedStrings'
     testCases(14)   = class'TEST_User'
     testCases(15)   = class'TEST_Memory'
     testCases(16)   = class'TEST_DynamicArray'

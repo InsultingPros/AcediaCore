@@ -58,12 +58,6 @@ protected function OnEnabled()
     commandDelimiters[2] = P("[");
     //  Negation of the selector
     commandDelimiters[3] = P("!");
-    //  `SwapConfig()` will no longer touch `_.unreal.mutator.OnMutate(self)`
-    //  with `emergencyEnabledMutate` set to `true`, so we need to give
-    //  access here
-    if (emergencyEnabledMutate) {
-        _.unreal.mutator.OnMutate(self).connect = HandleMutate;
-    }
 }
 
 protected function OnDisabled()
@@ -90,6 +84,7 @@ protected function OnDisabled()
 protected function SwapConfig(FeatureConfig config)
 {
     local Commands newConfig;
+
     newConfig = Commands(config);
     if (newConfig == none) {
         return;
@@ -132,13 +127,14 @@ public final static function EmergencyEnable()
 {
     local Text              autoConfig;
     local Commands_Feature  feature;
+
     if (!IsEnabled())
     {
         autoConfig = GetAutoEnabledConfig();
         EnableMe(autoConfig);
         __().memory.Free(autoConfig);
     }
-    feature = Commands_Feature(GetInstance());
+    feature = Commands_Feature(GetEnabledInstance());
     if (    !feature.emergencyEnabledMutate
         &&  !feature.IsUsingMutateInput() && !feature.IsUsingChatInput())
     {
@@ -159,7 +155,8 @@ public final static function EmergencyEnable()
 public final static function bool IsUsingChatInput()
 {
     local Commands_Feature instance;
-    instance = Commands_Feature(GetInstance());
+
+    instance = Commands_Feature(GetEnabledInstance());
     if (instance != none) {
         return instance.useChatInput;
     }
@@ -177,7 +174,8 @@ public final static function bool IsUsingChatInput()
 public final static function bool IsUsingMutateInput()
 {
     local Commands_Feature instance;
-    instance = Commands_Feature(GetInstance());
+
+    instance = Commands_Feature(GetEnabledInstance());
     if (instance != none) {
         return instance.useMutateInput;
     }
@@ -194,7 +192,8 @@ public final static function bool IsUsingMutateInput()
 public final static function Text GetChatPrefix()
 {
     local Commands_Feature instance;
-    instance = Commands_Feature(GetInstance());
+
+    instance = Commands_Feature(GetEnabledInstance());
     if (instance != none && instance.chatCommandPrefix != none) {
         return instance.chatCommandPrefix.Copy();
     }
@@ -214,6 +213,7 @@ public final function RegisterCommand(class<Command> commandClass)
 {
     local Text      commandName;
     local Command   newCommandInstance, existingCommandInstance;
+
     if (commandClass == none)       return;
     if (registeredCommands == none) return;
 
@@ -252,6 +252,7 @@ public final function RemoveCommand(class<Command> commandClass)
     local Command       nextCommand;
     local Text          nextCommandName;
     local array<Text>   keysToRemove;
+
     if (commandClass == none)       return;
     if (registeredCommands == none) return;
 
@@ -282,8 +283,10 @@ public final function Command GetCommand(BaseText commandName)
 {
     local Text      commandNameLowerCase;
     local Command   commandInstance;
+
     if (commandName == none)        return none;
     if (registeredCommands == none) return none;
+
     commandNameLowerCase = commandName.LowerCopy();
     commandInstance = Command(registeredCommands.GetItem(commandNameLowerCase));
     commandNameLowerCase.FreeSelf();
@@ -301,8 +304,10 @@ public final function array<Text> GetCommandNames()
     local array<AcediaObject>   keys;
     local Text                  nextKeyAsText;
     local array<Text>           keysAsText;
-    if (registeredCommands == none) return keysAsText;
-    
+
+    if (registeredCommands == none) {
+        return keysAsText;
+    }
     keys = registeredCommands.GetKeys();
     for (i = 0; i < keys.length; i += 1)
     {
@@ -327,6 +332,7 @@ public final function HandleInput(Parser parser, EPlayer callerPlayer)
     local Command           commandInstance;
     local Command.CallData  callData;
     local MutableText       commandName;
+
     if (parser == none) return;
     if (!parser.Ok())   return;
 
@@ -347,6 +353,7 @@ private function bool HandleCommands(
     bool        teamMessage)
 {
     local Parser parser;
+
     //  We are only interested in messages that start with `chatCommandPrefix`
     parser = _.text.Parse(message);
     if (!parser.Match(chatCommandPrefix).Ok())
@@ -364,6 +371,11 @@ private function HandleMutate(string command, PlayerController sendingPlayer)
 {
     local Parser    parser;
     local EPlayer   sender;
+
+    //  Ignore just "help", since a lot of other mutators use it
+    if (command ~= "help") {
+        return;
+    }
     parser = _.text.ParseString(command);
     sender = _.players.FromController(sendingPlayer);
     HandleInput(parser, sender);

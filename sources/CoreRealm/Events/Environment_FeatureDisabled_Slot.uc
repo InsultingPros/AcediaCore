@@ -1,7 +1,6 @@
 /**
- *  `Manifest` is meant to describe contents of the Acedia's package.
- *  This is the base class, every package's `Manifest` must directly extend it.
- *      Copyright 2020 Anton Tarasenko
+ *  Slot class for `AcediaEnvironment`'s `FeatureDisabled()` signal.
+ *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -18,20 +17,23 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
- class _manifest extends Object
-    abstract;
+class Environment_FeatureDisabled_Slot extends Slot;
 
-//  List of alias sources in this manifest's package.
-var public const array< class<AliasSource> >    aliasSources;
+delegate connect(class<Feature> disabledFeatureClass)
+{
+    DummyCall();
+}
 
-//  List of features in this manifest's package.
-var public const array< class<Feature> >        features;
+protected function Constructor()
+{
+    connect = none;
+}
 
-//  List of test cases in this manifest's package.
-var public const array< class<TestCase> >       testCases;
-
-//  List of required services.
-var public const array< class<Service> >        services;
+protected function Finalizer()
+{
+    super.Finalizer();
+    connect = none;
+}
 
 defaultproperties
 {

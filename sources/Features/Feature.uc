@@ -1,19 +1,8 @@
 /**
- *      Feature represents a certain subset of Acedia's functionality that
- *  can be enabled or disabled, according to server owner's wishes.
- *  In the current version of Acedia enabling or disabling a feature requires
- *  manually editing configuration file and restarting a server.
- *      Creating a `Feature` instance should be done by using
- *  `EnableMe()` / `DisableMe()` methods; instead of regular `Constructor()`
- *  and `Finalizer()` one should use `OnEnabled() and `OnDisabled()` methods.
- *  Any instances created through other means will be automatically deallocated,
- *  enforcing `Singleton`-like behavior for the `Feature` class.
- *      `Feature`s store their configuration in a different object
- *  `FeatureConfig`, that uses per-object-config and allows users to define
- *  several different versions of `Feature`'s settings. Each `Feature` must be
- *  in 1-to-1 relationship with one sub-class of `FeatureConfig`, that should be
- *  defined in `configClass` variable.
- *      Copyright 2019 - 2021 Anton Tarasenko
+ *      Features are intended as a replacement for mutators: a certain subset of
+ *  functionality that can be enabled or disabled, according to server owner's
+ *  wishes.
+ *      Copyright 2019 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -33,42 +22,137 @@
 class Feature extends AcediaObject
     abstract;
 
-//      Default value of this variable will store one and only existing version
-//  of `Feature` of this class.
-var private Feature activeInstance;
-var private int     activeInstanceLifeVersion;
+/**
+ *  # `Feature`
+ *
+ *      This class is Acedia's replacement for `Mutators`: a certain subset of
+ *  functionality that can be enabled or disabled, according to server owner's
+ *  wishes. Unlike `Mutator`s:
+ *      * There is not limit for the amount of `Feature`s that can be active
+ *          at the same time;
+ *      * They also provide built-in ability to have several different configs
+ *          that can be swapped during the runtime;
+ *      * They can be enabled / disabled during the runtime.
+ *  Achieving these points currently comes at the cost of developer having to
+ *  perform additional work.
+ *
+ *  ## Enabling `Feature`
+ *
+ *      Creating a `Feature` instance should be done by using
+ *  `EnableMe()` / `DisableMe()` methods; instead of regular `Constructor()`
+ *  and `Finalizer()` one should use `OnEnabled() and `OnDisabled()` methods.
+ *  There is nothing preventing you from allocating several more instances,
+ *  however only one `Feature` per its class can be considered "enabled" at
+ *  the same time. This is governed by `AcediaEnvironment` residing in
+ *  the acting `Global` class.
+ *
+ *  ## Configuration
+ *
+ *      `Feature`s store their configuration in a different object
+ *  `FeatureConfig`, that uses per-object-config and allows users to define
+ *  several different versions of `Feature`'s settings. Each `Feature` must be
+ *  in 1-to-1 relationship with one sub-class of `FeatureConfig`, that should be
+ *  defined in `configClass` variable.
+ *
+ *  ## Creating new `Feature` classes
+ *
+ *  To create a new `Feature` one need:
+ *      1. Create child class for `Feature` (usual naming scheme
+ *          "MyAwesomeThing_Feature") and a child class for feature config
+ *          `FeatureConfig` (usual naming scheme is simply "MyAwesomeThing" to 
+ *          make config files more readable) and link them by setting
+ *          `configClass` variable in `defaultproperties` in your `Feature`
+ *          child class.
+ *      2. Properly setup `FeatureConfig` (read more in its own documentation);
+ *      3. Define `OnEnabled()` / `OnDisabled()` / `SwapConfig()` methods in
+ *          a way that accounts for the possibility of them running during
+ *          the gameplay (meaning that this must be possible - it can still be
+ *          considered a heavy operation and it is allowed to cause lag).
+ *          NOTE: `SwapConfig()` is always called just before `OnEnabled()` to
+ *          set initial configuration up, so the bulk of `Feature` configuration
+ *          can be done there.
+ *      4. Implement whatever it is your `Feature` will be doing.
+ */
 
-//      Variables that store name and data from the config object that was
-//  chosen for this `Feature`.
-//      Data is expected to be in format that allows for JSON deserialization
-//  (see `JSONAPI.IsCompatible()` for details).
-var private Text                currentConfigName;
-var private AssociativeArray    currentConfig;
+//      Remembers if `EnableMe()` was called to indicate that `DisableMe()`
+//  should be called.
+var private bool wasEnabled;
+//      Variable that store name of the config object that was chosen for this
+//  `Feature`.
+var private Text currentConfigName;
 
-//  Class of this `Feature`'s config objects. Classes must be in 1-to-1
-//  correspondence.
+//  Class of this `Feature`'s config objects.
+//  These classes must be in 1-to-1 correspondence.
 var public const class<FeatureConfig> configClass;
 
-//      Setting default value of this variable to 'true' prevents creation of
-//  a `Feature`, even if no instances of it exist. This is used to ensure active
-//  `Feature`s can only be created through the proper means and behave like
-//  singletons.
-//      Only a default value is ever used.
-var protected bool blockSpawning;
-
-//  TODO: remove this?
-//      Setting that tells Acedia whether or not to enable this feature
-//  during initialization.
-//      Only it's default value is ever used.
-var private config bool autoEnable;
-
 //  `Service` that will be launched and shut down along with this `Feature`.
-//  One should never launch or shut down this service manually.
+//  One should never launch or shut down this `Service` manually.
 var protected const class<FeatureService> serviceClass;
 
-var private string defaultConfigName;
-
 var private LoggerAPI.Definition errorBadConfigData;
+
+const defaultConfigName = "default";
+
+protected function Finalizer()
+{
+    DisableInternal();
+    _.memory.Free(currentConfigName);
+    currentConfigName = none;
+}
+
+/**
+ *  Calling this method for `Feature` instance that was added to the `Global`'s
+ *  `AcediaEnvironment` will actually enable `Feature`, including calling
+ *  `OnEnabled()` method. Otherwise this method will do nothing.
+ *
+ *  This is internal method, it should not be called manually and neither will
+ *  it do anything.
+ *
+ *  @param  newConfigName   Config name to enable caller `Feature` with.
+ */
+public final /* internal */ function EnableInternal(BaseText newConfigName)
+{
+    local FeatureService myService;
+    if (wasEnabled)                             return;
+    if (!_.environment.IsFeatureEnabled(self))  return;
+
+    wasEnabled = true;
+    if (serviceClass != none) {
+        myService = FeatureService(serviceClass.static.Require());
+    }
+    if (myService != none) {
+        myService.SetOwnerFeature(self);
+    }
+    ApplyConfig(newConfigName);
+    OnEnabled();
+}
+
+/**
+ *  Calling this for once enabled `Feature` instance that is no longer added to
+ *  the active `Global`'s `AcediaEnvironment` will actually disable `Feature`,
+ *  including calling `OnDisabled()` method. Otherwise this method will do
+ *  nothing.
+ *
+ *  This is internal method, it should not be called manually and neither will
+ *  it do anything.
+ */
+public final /* internal */ function DisableInternal()
+{
+    local FeatureService service;
+    if (!wasEnabled)                            return;
+    if (_.environment.IsFeatureEnabled(self))   return;
+
+    OnDisabled();
+    if (serviceClass != none) {
+        service = FeatureService(serviceClass.static.GetInstance());
+    }
+    if (service != none) {
+        service.Destroy();
+    }
+    _.memory.Free(currentConfigName);
+    currentConfigName = none;
+    wasEnabled = false;
+}
 
 /**
  *  Loads all configs defined for the caller `Feature`'s class into internal
@@ -83,62 +167,15 @@ public static final function LoadConfigs()
     }
 }
 
-protected function Constructor()
-{
-    local FeatureService myService;
-    if (default.blockSpawning)
-    {
-        FreeSelf();
-        return;
-    }
-    if (serviceClass != none) {
-        myService = FeatureService(serviceClass.static.Require());
-    }
-    if (myService != none) {
-        myService.SetOwnerFeature(self);
-    }
-    currentConfigName = none;
-    ApplyConfig(default.currentConfigName);
-    _.memory.Free(default.currentConfigName);
-    default.currentConfigName = none;
-    OnEnabled();
-}
-
-protected function Finalizer()
-{
-    local FeatureService service;
-    if (GetInstance() != self) {
-        return;
-    }
-    OnDisabled();
-    if (serviceClass != none) {
-        service = FeatureService(serviceClass.static.GetInstance());
-    }
-    if (service != none) {
-        service.Destroy();
-    }
-    if (currentConfig != none) {
-        currentConfig.Empty(true);
-    }
-    _.memory.Free(currentConfigName);
-    _.memory.Free(currentConfig);
-    default.currentConfigName   = none;
-    currentConfigName           = none;
-    currentConfig               = none;
-    default.activeInstance      = none;
-}
-
-//  TODO: free `newConfigName`?
 /**
  *  Changes config for the caller `Feature` class.
  *
- *  This method should only be called when caller `Feature` is enabled
- *  (allocated). To set initial config on this `Feature`'s start - specify it
- *  as a parameter to `EnableMe()` method.
- *
- *  Method will do nothing if `newConfigName` parameter is set to `none`.
+ *  This method should only be called when caller `Feature` is enabled.
+ *  To set initial config on this `Feature`'s start - specify it as a parameter
+ *  to `EnableMe()` method.
  *
  *  @param  newConfigName   Name of the config to apply to the caller `Feature`.
+ *      If `none`, method will use "default" config, creating it if necessary.
  */
 private final function ApplyConfig(BaseText newConfigName)
 {
@@ -168,12 +205,12 @@ private final function ApplyConfig(BaseText newConfigName)
  *  this method.
  *
  *  @return Active `Feature` instance of the class used to call
- *      this method (i.e. `class'MyFunFeature'.static.GetInstance()`).
+ *      this method (i.e. `class'MyFunFeature'.static.GetEnabledInstance()`).
  *      `none` if particular `Feature` in question is not currently active.
  */
-public final static function Feature GetInstance()
+public final static function Feature GetEnabledInstance()
 {
-    return default.activeInstance;
+    return __().environment.GetEnabledFeature(default.class);
 }
 
 /**
@@ -214,12 +251,16 @@ public static final function Text GetAutoEnabledConfig()
  */
 public static final function Text GetCurrentConfig()
 {
-    local Feature myInstance;
-    myInstance = GetInstance();
+    local Text      configNameCopy;
+    local Feature   myInstance;
+
+    myInstance = GetEnabledInstance();
     if (myInstance == none)                     return none;
     if (myInstance.currentConfigName == none)   return none;
 
-    return myInstance.currentConfigName.Copy();
+    configNameCopy = myInstance.currentConfigName.Copy();
+    __().memory.Free(myInstance);
+    return configNameCopy;
 }
 
 /**
@@ -230,15 +271,14 @@ public static final function Text GetCurrentConfig()
  */
 public static final function bool IsEnabled()
 {
-    return (GetInstance() != none); 
+    return __().environment.IsFeatureClassEnabled(default.class);
 }
 
 /**
  *  Enables the feature and returns it's active instance.
  *
- *  Cannot fail as long as `configName != none`. Any checks on whether it's
- *  appropriate to enable `Feature` must be done separately, before calling
- *  this method.
+ *  Any checks on whether it's appropriate to enable `Feature` must be done
+ *  separately, before calling this method.
  *
  *  If `Feature` is already enabled - changes its config to `configName`.
  *
@@ -249,23 +289,14 @@ public static final function bool IsEnabled()
 public static final function Feature EnableMe(BaseText configName)
 {
     local Feature myInstance;
-    myInstance = GetInstance();
+    myInstance = GetEnabledInstance();
     if (myInstance != none)
     {
         myInstance.ApplyConfig(configName);
         return myInstance;
     }
-    if (configName != none) {
-        default.currentConfigName = configName.Copy();
-    }
-    else {
-        default.currentConfigName = none;
-    }
-    default.blockSpawning = false;
     myInstance = Feature(__().memory.Allocate(default.class));
-    default.activeInstance              = myInstance;
-    default.activeInstanceLifeVersion   = myInstance.GetLifeVersion();
-    default.blockSpawning = true;
+    __().environment.EnableFeature(myInstance, configName);
     return myInstance;
 }
 
@@ -277,11 +308,12 @@ public static final function Feature EnableMe(BaseText configName)
  */
 public static final function bool DisableMe()
 {
-    local Feature myself;
-    myself = GetInstance();
-    if (myself != none)
+    local Feature myInstance;
+    myInstance = GetEnabledInstance();
+    if (myInstance != none)
     {
-        myself.FreeSelf();
+        __().environment.DisableFeature(myInstance);
+        __().memory.Free(myInstance);
         return true;
     }
     return false;
@@ -319,12 +351,7 @@ protected function SwapConfig(FeatureConfig newConfig){}
 
 defaultproperties
 {
-    autoEnable      = false
-    blockSpawning   = true
     configClass     = none
     serviceClass    = none
-
-    defaultConfigName = "default"
-
     errorBadConfigData = (l=LOG_Error,m="Bad config value was provided for `%1`. Falling back to the \"default\".")
 }

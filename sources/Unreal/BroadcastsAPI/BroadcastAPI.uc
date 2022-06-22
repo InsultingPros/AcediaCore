@@ -282,7 +282,9 @@ public final function BroadcastHandler Add(
     //      I don't know why, I don't know when exactly, but not resetting it
     //  can lead to certain issues, including infinite recursion crashes.
     class'BroadcastHandler'.default.nextBroadcastHandlerClass = none;
-    newBroadcastHandler = class'CoreService'.static.Require().Spawn(newBHClass);
+    newBroadcastHandler = class'ServerLevelCore'.static
+        .GetInstance()
+        .Spawn(newBHClass);
     if (injectionLevel == BHIJ_Registered)
     {
         //  There is guaranteed to be SOME broadcast handler

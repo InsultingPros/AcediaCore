@@ -104,7 +104,7 @@ public final function Object Allocate(
         actorClassToAllocate  = class<Actor>(classToAllocate);
         if (actorClassToAllocate != none)
         {
-            allocatedObject = class'CoreService'.static
+            allocatedObject = class'ServerLevelCore'.static
                 .GetInstance()
                 .Spawn(actorClassToAllocate);
         }
@@ -278,7 +278,7 @@ public final function CollectGarbage(optional bool keepAcediaPools)
         }
     }
     //  This makes Unreal Engine do garbage collection
-    class'CoreService'.static.GetInstance().ConsoleCommand("obj garbage");
+    class'ServerLevelCore'.static.GetInstance().ConsoleCommand("obj garbage");
 }
 
 defaultproperties
