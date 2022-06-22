@@ -413,8 +413,8 @@ public final function MutableText ReplaceS(
  *  Sets `newFormatting` for every non-formatted character in
  *  the caller `MutableText`.
  *
- *  @param  newFormatting   Formatting to use for all non-formatted character in
- *      the caller `MutableText`. If `newFormatting` is not colored itself -
+ *  @param  newFormatting   Formatting to use for all non-formatted characters
+ *      in the caller `MutableText`. If `newFormatting` is not colored itself -
  *      method does nothing.
  *  @return Returns caller `MutableText`, to allow for method chaining.
  */
@@ -423,6 +423,19 @@ public final function MutableText ChangeDefaultFormatting(
 {
     _changeDefaultFormatting(newFormatting);
     return self;
+}
+
+/**
+ *  Colors every non-formatted character in the caller `MutableText` in
+ *  the given `defaultColor`.
+ *
+ *  @param  defaultColor   Color to use for all non-formatted characters in
+ *      the caller `MutableText`.
+ *  @return Returns caller `MutableText`, to allow for method chaining.
+ */
+public final function MutableText ChangeDefaultColor(Color defaultColor)
+{
+    return ChangeDefaultFormatting(_.text.FormattingFromColor(defaultColor));
 }
 
 /**
