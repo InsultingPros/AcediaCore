@@ -233,14 +233,16 @@ private final static function OutAcediaHelp()
     default.currentOutput
         .Flush()
         .WriteLine(T(default.TACEDIA_HELP));
+    if (!class'Commands_Feature'.static.IsEnabled())
+    {
+        default.currentOutput.WriteLine(T(default.TACEDIA_HELP_COMMANDS_NO));
+        return;
+    }
     prefix = class'Commands_Feature'.static
         .GetChatPrefix()
         .IntoMutableText()
         .ChangeDefaultColor(__().color.TextEmphasis);
-    if (!class'Commands_Feature'.static.IsEnabled()) {
-        default.currentOutput.WriteLine(T(default.TACEDIA_HELP_COMMANDS_NO));
-    }
-    else if (   class'Commands_Feature'.static.IsUsingChatInput()
+    if (   class'Commands_Feature'.static.IsUsingChatInput()
             &&  class'Commands_Feature'.static.IsUsingMutateInput())
     {
         builder =
@@ -303,7 +305,7 @@ defaultproperties
     TACEDIA_HELP_COMMANDS_NO                = 6
     stringConstants(6)  = "Unfortunately other commands aren't available right now. To enable them please type {$TextEmphasis mutate acediacommands} in console if you have enough rights to reenable them."
     TACEDIA_HELP_COMMANDS_USELESS           = 7
-    stringConstants(7)  = "Unfortunately every known way to access other command is disabled on this server. To enable them please type {$TextEmphasis mutate acediacommands} in console if you have enough rights to reenable them."
+    stringConstants(7)  = "Unfortunately every known way to access other commands is disabled on this server. To enable them please type {$TextEmphasis mutate acediacommands} in console if you have enough rights to reenable them."
     TACEDIA_RUNNING                         = 8
     stringConstants(8)  = "AcediaCore is running"
     TACEDIA_VERSION                         = 9
