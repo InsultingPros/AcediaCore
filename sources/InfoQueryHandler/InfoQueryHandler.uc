@@ -67,6 +67,7 @@ public final static function InfoQueryHandler_OnQuery_Slot OnHelp(
     Text            header)
 {
     local InfoQueryHandler_OnQuery_Slot newSlot;
+
     StaticConstructor();
     newSlot = InfoQueryHandler_OnQuery_Slot(
         default.onHelpSignal.NewSlot(receiver));
@@ -87,6 +88,7 @@ public final static function InfoQueryHandler_OnQuery_Slot OnStatus(
     Text            header)
 {
     local InfoQueryHandler_OnQuery_Slot newSlot;
+
     StaticConstructor();
     newSlot = InfoQueryHandler_OnQuery_Slot(
         default.onStatusSignal.NewSlot(receiver));
@@ -108,6 +110,7 @@ public final static function InfoQueryHandler_OnQuery_Slot OnVersion(
     Text            header)
 {
     local InfoQueryHandler_OnQuery_Slot newSlot;
+
     StaticConstructor();
     newSlot = InfoQueryHandler_OnQuery_Slot(
         default.onVersionSignal.NewSlot(receiver));
@@ -129,6 +132,7 @@ public final static function InfoQueryHandler_OnQuery_Slot OnCredits(
     Text            header)
 {
     local InfoQueryHandler_OnQuery_Slot newSlot;
+
     StaticConstructor();
     newSlot = InfoQueryHandler_OnQuery_Slot(
         default.onCreditsSignal.NewSlot(receiver));
@@ -224,12 +228,15 @@ private final static function StopOutput()
 
 private final static function OutAcediaHelp()
 {
-    local Text          prefix;
-    local MutableText   builder;
+    local MutableText prefix, builder;
+
     default.currentOutput
         .Flush()
         .WriteLine(T(default.TACEDIA_HELP));
-    prefix = class'Commands_Feature'.static.GetChatPrefix();
+    prefix = class'Commands_Feature'.static
+        .GetChatPrefix()
+        .IntoMutableText()
+        .ChangeDefaultColor(__().color.TextEmphasis);
     if (!class'Commands_Feature'.static.IsEnabled()) {
         default.currentOutput.WriteLine(T(default.TACEDIA_HELP_COMMANDS_NO));
     }
@@ -306,7 +313,7 @@ defaultproperties
     TACEDIA_ACKNOWLEDGMENT                  = 11
     stringConstants(11) = "Special thanks for NikC- and Chaos for suggestions, testing and discussion"
     TPREFIX                                 = 12
-    stringConstants(12) = "{$TextEmphasis %PREFIX%}"
+    stringConstants(12) = "%PREFIX%"
     TSEPARATOR                              = 13
     stringConstants(13) = "============================="
 }
