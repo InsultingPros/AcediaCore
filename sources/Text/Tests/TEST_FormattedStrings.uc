@@ -373,6 +373,7 @@ protected static function Test_Errors()
     SubTest_ErrorBadColor();
     SubTest_ErrorBadShortColorTag();
     SubTest_ErrorBadGradientPoint();
+    SubTest_ErrorBadGradientPointEmptyBlock();
     SubTest_AllErrors();
 }
 
@@ -509,6 +510,18 @@ protected static function SubTest_ErrorBadGradientPoint()
     TEST_ExpectTrue(errors[0].cause.ToString() == "[45%%]");
     TEST_ExpectTrue(errors[1].cause.ToString() == "point");
     TEST_ExpectTrue(errors[2].cause.ToString() == "3c");
+}
+
+protected static function SubTest_ErrorBadGradientPointEmptyBlock()
+{
+    local array<FormattingErrorsReport.FormattedStringError> errors;
+    Issue("Bad gradient point with empty text block is not reported.");
+    errors = class'FormattingStringParser'.static.ParseFormatted(
+        P("{$red$red}"),, true);
+    TEST_ExpectTrue(errors.length == 1);
+    TEST_ExpectTrue(errors[0].type == FSE_BadGradientPoint);
+    TEST_ExpectTrue(errors[0].cause.ToString() == "$red}");
+    TEST_ExpectTrue(errors[0].count == 0);
 }
 
 protected static function SubTest_AllErrors()

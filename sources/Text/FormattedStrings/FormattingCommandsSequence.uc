@@ -244,8 +244,9 @@ private final function BuildSelf()
         currentContents[currentContents.length] = nextCharacter;
         characterCounter += 1;
     }
-    //  Only put in empty command if there is nothing else
-    if (currentContents.length > 0 || commandSequence.length == 0)
+    //  Only put in empty command if it is push command or there is nothing else
+    if (    currentCommand.type == FST_StackPush
+        ||  currentContents.length > 0 || commandSequence.length == 0)
     {
         currentCommand.contents = currentContents;
         commandSequence[commandSequence.length] = currentCommand;
