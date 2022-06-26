@@ -668,6 +668,41 @@ public final function array<BaseText> PartsS(string source)
 }
 
 /**
+ *  Creates and initializes with `source` new `TextTemplate` instance.
+ *
+ *  @param  source  Data to initialize new `TextTemplate` with.
+ *  @return `TextTemplate` based on `source`.
+ *      `none` if given `source` is `none`.
+ */
+public final function TextTemplate MakeTemplate(BaseText source)
+{
+    local TextTemplate newTemplate;
+    if (source == none) {
+        return none;
+    }
+    newTemplate = TextTemplate(_.memory.Allocate(class'TextTemplate'));
+    newTemplate.Initialize(source);
+    return NewTemplate;
+}
+
+/**
+ *  Creates and initializes with `source` new `TextTemplate` instance.
+ *
+ *  @param  source  Data to initialize new `TextTemplate` with.
+ *  @return `TextTemplate` based on `source`.
+ *      `none` if given `source` is `none`.
+ */
+public final function TextTemplate MakeTemplate_S(string source)
+{
+    local MutableText   wrapper;
+    local TextTemplate  result;
+    wrapper = FromStringM(source);
+    result = MakeTemplate(wrapper);
+    _.memory.Free(wrapper);
+    return result;
+}
+
+/**
  *  Creates a new, empty `MutableText`.
  *
  *  This is a shortcut, same result can be achieved by
@@ -751,12 +786,56 @@ public final function MutableText FromColoredStringM(string source)
 }
 
 /**
- *  Creates a `Text` that will contain a given formatted `string`.
+ *  Creates a `Text` that will contain a parsed formatted string inside
+ *  the given `BaseText`.
+ *
+ *  To create `MutableText` instead use `FromFormattedM()` method.
+ *
+ *  @param  source  Formatted string inside `Text` that will be parsed into
+ *      returned `Text`.
+ *  @return New instance of `Text` that will contain parsed formatted `source`.
+ */
+public final function Text FromFormatted(BaseText source)
+{
+    local MutableText   builder;
+    local Text          result;
+    if (source == none) {
+        return none;
+    }
+    builder = MutableText(_.memory.Allocate(class'MutableText'));
+    result = builder.AppendFormatted(source).Copy();
+    builder.FreeSelf();
+    return result;
+}
+
+/**
+ *  Creates a `MutableText` that will contain a parsed formatted string inside
+ *  the given `BaseText`.
+ *
+ *  To create `Text` instead use `FromFormatted()` method.
+ *
+ *  @param  source  Formatted string inside `Text` that will be parsed into
+ *      returned `Text`.
+ *  @return New instance of `MutableText` that will contain parser formatted
+ *      `source`.
+ */
+public final function MutableText FromFormattedM(BaseText source)
+{
+    local MutableText newText;
+    if (source == none) {
+        return none;
+    }
+    newText = MutableText(_.memory.Allocate(class'MutableText'));
+    return newText.AppendFormatted(source);
+}
+
+/**
+ *  Creates a `Text` that will contain parsed formatted `string`.
  *
  *  To create `MutableText` instead use `FromFormattedStringM()` method.
  *
  *  @param  source  Formatted `string` that will be copied into returned `Text`.
- *  @return New instance of `Text` that will contain passed formatted `string`.
+ *  @return New instance of `Text` that will contain parsed formatted `string`.
  */
 public final function Text FromFormattedString(string source)
 {
@@ -769,13 +848,13 @@ public final function Text FromFormattedString(string source)
 }
 
 /**
- *  Creates a `MutableText` that will contain a given formatted `string`.
+ *  Creates a `MutableText` that will contain parsed formatted `string`.
  *
  *  To create immutable `Text` instead use `FromFormattedString()` method.
  *
  *  @param  source  Formatted `string` that will be copied into
  *      returned `MutableText`.
- *  @return New instance of `MutableText` that will contain passed
+ *  @return New instance of `MutableText` that will contain parsed
  *      formatted `string`.
  */
 public final function MutableText FromFormattedStringM(string source)
