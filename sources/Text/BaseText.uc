@@ -1257,6 +1257,112 @@ public final function string ToColoredString(
 }
 
 /**
+ *  Converts data from the caller `BaseText` instance into a `Text` containing
+ *  formatted `string`.
+ *  Can be used to extract only substrings.
+ *
+ *  If provided parameters `startIndex` and `maxLength` define a range that
+ *  goes beyond `[0; self.GetLength() - 1]`, then intersection with a valid
+ *  range will be used.
+ *
+ *  @param  startIndex      Position of the first symbol to extract into a
+ *      formatted `string`. By default `0`, corresponding to the first symbol.
+ *  @param  maxLength       Max length of the extracted `string`.
+ *      By default `0` - that and all negative values are replaces by `MaxInt`,
+ *      effectively extracting as much of a `string` as possible.
+ *      NOTE:   this parameter only counts actual visible symbols,
+ *              ignoring formatting blocks ('{<color> }')
+ *              or escape sequences (i.e. '&{' is one character),
+ *              so method `Len()`, applied to the result of
+ *              `ToFormattedString()`, will return a bigger value
+ *              than `maxLength`.
+ *  @return Formatted string representation inside `Text` of the caller
+ *      `BaseText`.
+ */
+public final function Text ToFormattedText(
+    optional int startIndex,
+    optional int maxLength)
+{
+    return ToFormattedTextM(startIndex, maxLength).IntoText();
+}
+
+/**
+ *  Converts data from the caller `BaseText` instance into a `MutableText`
+ *  containing formatted `string`.
+ *  Can be used to extract only substrings.
+ *
+ *  If provided parameters `startIndex` and `maxLength` define a range that
+ *  goes beyond `[0; self.GetLength() - 1]`, then intersection with a valid
+ *  range will be used.
+ *
+ *  @param  startIndex      Position of the first symbol to extract into a
+ *      formatted `string`. By default `0`, corresponding to the first symbol.
+ *  @param  maxLength       Max length of the extracted `string`.
+ *      By default `0` - that and all negative values are replaces by `MaxInt`,
+ *      effectively extracting as much of a `string` as possible.
+ *      NOTE:   this parameter only counts actual visible symbols,
+ *              ignoring formatting blocks ('{<color> }')
+ *              or escape sequences (i.e. '&{' is one character),
+ *              so method `Len()`, applied to the result of
+ *              `ToFormattedString()`, will return a bigger value
+ *              than `maxLength`.
+ *  @return Formatted string representation inside `MutableText` of the caller
+ *      `BaseText`.
+ */
+public final function MutableText ToFormattedTextM(
+    optional int startIndex,
+    optional int maxLength)
+{
+    local int           i;
+    local bool          isInsideBlock;
+    local MutableText   result;
+    local Formatting    newFormatting;
+
+    if (maxLength <= 0) {
+        maxLength = MaxInt;
+    }
+    else if (startIndex < 0) {
+        maxLength += startIndex;
+    }
+    startIndex = Max(0, startIndex);
+    result = _.text.Empty();
+    for (i = startIndex; i < codePoints.length; i += 1)
+    {
+        if (maxLength <= 0) {
+            break;
+        }
+        maxLength -= 1;
+        if (IsFormattingChangedAt(i) || i == startIndex)
+        {
+            newFormatting = GetFormatting(i);
+            if (isInsideBlock && i != startIndex)
+            {
+                result.AppendString(STRING_CLOSE_FORMAT);
+                isInsideBlock = false;
+            }
+            if (newFormatting.isColored)
+            {
+                result
+                    .AppendString(STRING_OPEN_FORMAT)
+                    .Append(_.color.ToText(newFormatting.color))
+                    .AppendString(STRING_SEPARATOR_FORMAT);
+                isInsideBlock = true;
+            }
+        }
+        if (    codePoints[i] == CODEPOINT_OPEN_FORMAT
+            ||  codePoints[i] == CODEPOINT_CLOSE_FORMAT)
+        {
+            result.AppendString(STRING_FORMAT_ESCAPE);
+        }
+        result.AppendString(Chr(codePoints[i]));
+    }
+    if (isInsideBlock) {
+        result.AppendString(STRING_CLOSE_FORMAT);
+    }
+    return result;
+}
+
+/**
  *  Converts data from the caller `BaseText` instance into a formatted `string`.
  *  Can be used to extract only substrings.
  *
@@ -1282,47 +1388,7 @@ public final function string ToFormattedString(
     optional int startIndex,
     optional int maxLength)
 {
-    local int           i;
-    local bool          isInsideBlock;
-    local string        result;
-    local Formatting    newFormatting;
-    if (maxLength <= 0) {
-        maxLength = MaxInt;
-    }
-    else if (startIndex < 0) {
-        maxLength += startIndex;
-    }
-    startIndex = Max(0, startIndex);
-    for (i = startIndex; i < codePoints.length; i += 1)
-    {
-        if (maxLength <= 0) {
-            break;
-        }
-        maxLength -= 1;
-        if (IsFormattingChangedAt(i) || i == startIndex)
-        {
-            newFormatting = GetFormatting(i);
-            if (isInsideBlock && i != startIndex) {
-                result $= STRING_CLOSE_FORMAT;
-                isInsideBlock = false;
-            }
-            if (newFormatting.isColored) {
-                result $= STRING_OPEN_FORMAT
-                    $ _.color.ToString(newFormatting.color)
-                    $ STRING_SEPARATOR_FORMAT;
-                isInsideBlock = true;
-            }
-        }
-        if (    codePoints[i] == CODEPOINT_OPEN_FORMAT
-            ||  codePoints[i] == CODEPOINT_CLOSE_FORMAT) {
-            result $= STRING_FORMAT_ESCAPE;
-        }
-        result $= Chr(codePoints[i]);
-    }
-    if (isInsideBlock) {
-        result $= STRING_CLOSE_FORMAT;
-    }
-    return result;
+    return _.text.ToString(ToFormattedTextM(startIndex, maxLength));
 }
 
 /**
