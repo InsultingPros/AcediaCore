@@ -262,11 +262,11 @@ protected function BuildData(CommandDataBuilder builder){}
  *  Overload this method to perform required actions when
  *  your command is called.
  *
- *  @param  callData        `struct` filled with parameters that your command
+ *  @param  callData    `struct` filled with parameters that your command
  *      has been called with. Guaranteed to not be in error state.
- *  @param  callerPlayer    Player that instigated this execution.
+ *  @param  instigator  Player that instigated this execution.
  */
-protected function Executed(CallData callData, EPlayer callerPlayer){}
+protected function Executed(CallData callData, EPlayer instigator){}
 
 /**
  *  Overload this method to perform required actions when your command is called
@@ -275,16 +275,16 @@ protected function Executed(CallData callData, EPlayer callerPlayer){}
  *
  *  If your command does not require a target - this method will not be called.
  *
- *  @param  targetPlayer    Player that this command must perform an action on.
+ *  @param  target          Player that this command must perform an action on.
  *  @param  callData        `struct` filled with parameters that your command
  *      has been called with. Guaranteed to not be in error state and contain
  *      all the required data.
- *  @param  callerPlayer    Player that instigated this call.
+ *  @param  instigator      Player that instigated this call.
  */
 protected function ExecutedFor(
-    EPlayer     targetPlayer,
+    EPlayer     target,
     CallData    callData,
-    EPlayer     callerPlayer){}
+    EPlayer     instigator){}
 
 /**
  *  Returns an instance of command (of particular class) that is stored
