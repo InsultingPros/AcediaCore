@@ -133,6 +133,7 @@ const CODEPOINT_AMPERSAND   = 38;   // '&'
 protected function Finalizer()
 {
     local int i;
+
     //  Clear user input
     Reset();
     //  Clear numeric labels
@@ -176,6 +177,7 @@ public final function bool IsInitialized()
 public final function Initialize_S(string input)
 {
     local MutableText wrapper;
+
     wrapper = _.text.FromStringM(input);
     Initialize(wrapper);
     _.memory.Free(wrapper);
@@ -247,6 +249,7 @@ private final function MatchTextLabel(
 private final function MatchNumericLabel(Parser parser)
 {
     local int nextNumericLabel;
+
     if (parser.MInteger(nextNumericLabel).Ok()) {
         labels[labels.length] = MakeNumericLabel(nextNumericLabel);
     }
@@ -266,6 +269,7 @@ private final function NormalizeArguments()
     local int           nextArgument;
     local int           lowestArgument, lowestArgumentIndex;
     local array<int>    argumentsOrder, normalizedArguments;
+
     for (i = 0; i < labels.length; i += 1)
     {
         if (labels[i].textLabel == none)
@@ -305,6 +309,7 @@ private final function NormalizeArguments()
 private final function Label MakeTextLabel(MutableText Label2)
 {
     local Label result;
+
     result.textLabel = Label2;
     result.insertionIndex = parts.length;
     return result;
@@ -313,6 +318,7 @@ private final function Label MakeTextLabel(MutableText Label2)
 private final function Label MakeNumericLabel(int Label2)
 {
     local Label result;
+
     result.numberLabel = Label2;
     result.insertionIndex = parts.length;
     return result;
@@ -412,6 +418,7 @@ public final function array<Text> GetTextArgs()
     local int           i, j;
     local bool          duplicate;
     local array<Text>   result;
+
     if (!initialized) {
         return result;
     }
@@ -448,6 +455,7 @@ public final function array<Text> GetTextArgs()
 public final function TextTemplate Arg_S(string argument)
 {
     local MutableText wrapper;
+
     wrapper = _.text.FromStringM(argument);
     Arg(wrapper);
     _.memory.Free(wrapper);
@@ -459,17 +467,31 @@ public final function TextTemplate Arg_S(string argument)
  *
  *  If all numeric arguments were already filled this call will do nothing.
  *
- *  @param  argument    Value to replace next numeric argument in the caller
- *      `TextTemplate`. `none` equals to an empty text.
+ *  @param  argument            Value to replace next numeric argument in
+ *      the caller `TextTemplate`. `none` equals to an empty text.
+ *  @param  ignoreFormatting    `false` means `argument` will be inserted along
+ *      with its formatting information. Setting this option to `true` will
+ *      insert it into template as plain text without any formatting
+ *      (which should also be faster).
  *  @return Reference to the caller `TextTemplate` to allow for method chaining.
  */
-public final function TextTemplate Arg(BaseText argument)
+public final function TextTemplate Arg(
+    BaseText        argument,
+    optional bool   ignoreFormatting)
 {
     if (numericLabelsAmount <= numericArguments.length) {
         return self;
     }
-    if (argument != none) {
-        numericArguments[numericArguments.length] = argument.Copy();
+    if (argument != none)
+    {
+        if (ignoreFormatting) {
+            numericArguments[numericArguments.length] = argument.Copy();
+        }
+        else
+         {
+            numericArguments[numericArguments.length] =
+                argument.ToFormattedText();
+        }
     }
     else {
         numericArguments[numericArguments.length] = none;
@@ -489,6 +511,7 @@ public final function TextTemplate Arg(BaseText argument)
 public final function TextTemplate ArgInt(int argument)
 {
     local MutableText textRepresentation;
+
     textRepresentation = _.text.FromIntM(argument);
     Arg(textRepresentation);
     _.memory.Free(textRepresentation);
@@ -507,6 +530,7 @@ public final function TextTemplate ArgInt(int argument)
 public final function TextTemplate ArgFloat(float argument)
 {
     local MutableText textRepresentation;
+
     textRepresentation = _.text.FromFloatM(argument);
     Arg(textRepresentation);
     _.memory.Free(textRepresentation);
@@ -525,6 +549,7 @@ public final function TextTemplate ArgFloat(float argument)
 public final function TextTemplate ArgBool(bool argument)
 {
     local MutableText textRepresentation;
+
     textRepresentation = _.text.FromBoolM(argument);
     Arg(textRepresentation);
     _.memory.Free(textRepresentation);
@@ -543,6 +568,7 @@ public final function TextTemplate ArgBool(bool argument)
 public final function TextTemplate ArgClass(class<Object> argument)
 {
     local MutableText textRepresentation;
+
     textRepresentation = _.text.FromClassM(argument);
     Arg(textRepresentation);
     _.memory.Free(textRepresentation);
@@ -563,6 +589,7 @@ public final function TextTemplate ArgClass(class<Object> argument)
 public final function TextTemplate TextArg_S(string label, string argument)
 {
     local MutableText labelWrapper, argumentWrapper;
+
     labelWrapper    = _.text.FromStringM(label);
     argumentWrapper = _.text.FromStringM(argument);
     TextArg(labelWrapper, argumentWrapper);
@@ -577,14 +604,22 @@ public final function TextTemplate TextArg_S(string label, string argument)
  *  If all text argument with that label was already set, then it will override
  *  previous value.
  *
- *  @param  label       Label of the text argument to replace.
- *  @param  argument    Value to replace specified text argument in the caller
- *      `TextTemplate` with. `none` is equal to an empty text.
+ *  @param  label               Label of the text argument to replace.
+ *  @param  argument            Value to replace specified text argument in
+ *      the caller `TextTemplate` with. `none` is equal to an empty text.
+ *  @param  ignoreFormatting    `false` means `argument` will be inserted along
+ *      with its formatting information. Setting this option to `true` will
+ *      insert it into template as plain text without any formatting
+ *      (which should also be faster).
  *  @return Reference to the caller `TextTemplate` to allow for method chaining.
  */
-public final function TextTemplate TextArg(BaseText label, BaseText argument)
+public final function TextTemplate TextArg(
+    BaseText        label,
+    BaseText        argument,
+    optional bool   ignoreFormatting)
 {
     local int i;
+
     if (label == none) {
         return self;
     }
@@ -608,8 +643,14 @@ public final function TextTemplate TextArg(BaseText label, BaseText argument)
     else {
         textLabels[textLabels.length] = none;   
     }
-    if (argument != none) {
-        textArguments[i] = argument.Copy();
+    if (argument != none)
+    {
+        if (ignoreFormatting) {
+            textArguments[i] = argument.Copy();
+        }
+        else {
+            textArguments[i] = argument.ToFormattedText();
+        }
     }
     else {
         textArguments[i] = none;
@@ -633,6 +674,7 @@ public final function TextTemplate TextArgInt_S(string label, int argument)
 {
     local MutableText labelWrapper;
     local MutableText textRepresentation;
+
     labelWrapper = _.text.FromStringM(label);
     textRepresentation = _.text.FromIntM(argument);
     TextArg(labelWrapper, textRepresentation);
@@ -656,6 +698,7 @@ public final function TextTemplate TextArgInt_S(string label, int argument)
 public final function TextTemplate TextArgInt(BaseText label, int argument)
 {
     local MutableText textRepresentation;
+
     textRepresentation = _.text.FromIntM(argument);
     TextArg(label, textRepresentation);
     _.memory.Free(textRepresentation);
@@ -678,6 +721,7 @@ public final function TextTemplate TextArgFloat_S(string label, float argument)
 {
     local MutableText labelWrapper;
     local MutableText textRepresentation;
+
     labelWrapper = _.text.FromStringM(label);
     textRepresentation = _.text.FromFloatM(argument);
     TextArg(labelWrapper, textRepresentation);
@@ -701,6 +745,7 @@ public final function TextTemplate TextArgFloat_S(string label, float argument)
 public final function TextTemplate TextArgFloat(BaseText label, float argument)
 {
     local MutableText textRepresentation;
+
     textRepresentation = _.text.FromFloatM(argument);
     TextArg(label, textRepresentation);
     _.memory.Free(textRepresentation);
@@ -723,6 +768,7 @@ public final function TextTemplate TextArgBool_S(string label, bool argument)
 {
     local MutableText labelWrapper;
     local MutableText textRepresentation;
+
     labelWrapper = _.text.FromStringM(label);
     textRepresentation = _.text.FromBoolM(argument);
     TextArg(labelWrapper, textRepresentation);
@@ -746,6 +792,7 @@ public final function TextTemplate TextArgBool_S(string label, bool argument)
 public final function TextTemplate TextArgBool(BaseText label, bool argument)
 {
     local MutableText textRepresentation;
+
     textRepresentation = _.text.FromBoolM(argument);
     TextArg(label, textRepresentation);
     _.memory.Free(textRepresentation);
@@ -769,6 +816,7 @@ public final function TextTemplate TextArgClass_S(
 {
     local MutableText labelWrapper;
     local MutableText textRepresentation;
+
     labelWrapper = _.text.FromStringM(label);
     textRepresentation = _.text.FromClassM(argument);
     TextArg(labelWrapper, textRepresentation);
@@ -793,6 +841,7 @@ public final function TextTemplate TextArgClass(
     class<Object>   argument)
 {
     local MutableText textRepresentation;
+
     textRepresentation = _.text.FromClassM(argument);
     TextArg(label, textRepresentation);
     _.memory.Free(textRepresentation);
@@ -810,6 +859,7 @@ private final function Text BorrowNumericArg(int index)
 private final function Text BorrowTextArg(BaseText Label)
 {
     local int i;
+
     if (Label == none) {
         return none;
     }
@@ -877,6 +927,7 @@ public final function MutableText CollectM()
     local int           i, labelCounter;
     local Label         nextLabel;
     local MutableText   builder;
+
     if (!initialized) {
         return none;
     }
@@ -930,6 +981,7 @@ public final function Text CollectFormatted()
 {
     local Text          result;
     local MutableText   source;
+
     source = CollectM();
     if (source == none) {
         return none;
@@ -957,6 +1009,7 @@ public final function Text CollectFormatted()
 public final function MutableText CollectFormattedM()
 {
     local MutableText result, source;
+
     source = CollectM();
     if (source == none) {
         return none;
