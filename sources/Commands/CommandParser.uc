@@ -400,23 +400,29 @@ private final function bool ParseSingleValue(
     AssociativeArray    parsedParameters,
     Command.Parameter   expectedParameter)
 {
-    //  First we try `CPT_Remainder` parameter, since it is a special case that
-    //  consumes all further input
-    if (expectedParameter.type == CPT_Remainder) {
-        return ParseRemainderValue(parsedParameters, expectedParameter);
-    }
     //      Before parsing any other value we need to check if user has
     //  specified any options instead.
     //      However this might lead to errors if we are already parsing
     //  necessary parameters of another option:
     //  we must handle such situation and report an error.
-    if (    currentTargetIsOption && currentTarget != CPT_ExtraParameter
-        &&  TryParsingOptions())
+    if (currentTargetIsOption)
     {
-        DeclareError(CET_NoRequiredParamForOption, targetOption.longName);
-        return false;
+        //  There is no problem is option's parameter is remainder
+        if (expectedParameter.type == CPT_Remainder) {
+            return ParseRemainderValue(parsedParameters, expectedParameter);
+        }
+        if (currentTarget != CPT_ExtraParameter && TryParsingOptions())
+        {
+            DeclareError(CET_NoRequiredParamForOption, targetOption.longName);
+            return false;
+        }
     }
     while (TryParsingOptions());
+    //  First we try `CPT_Remainder` parameter, since it is a special case that
+    //  consumes all further input
+    if (expectedParameter.type == CPT_Remainder) {
+        return ParseRemainderValue(parsedParameters, expectedParameter);
+    }
     //  Propagate errors after parsing options
     if (nextResult.parsingError != CET_None) {
         return false;
@@ -567,15 +573,13 @@ private final function bool ParseRemainderValue(
     AssociativeArray    parsedParameters,
     Command.Parameter   expectedParameter)
 {
-    local string textValue;
-    //  TODO: use parsing methods into `Text`
-    //  (needs some work for reading formatting `string`s from `Text` objects)
-    commandParser.Skip().MUntilS(textValue);
+    local MutableText value;
+
+    commandParser.Skip().MUntil(value);
     if (!commandParser.Ok()) {
         return false;
     }
-    RecordParameter(parsedParameters, expectedParameter,
-                    _.text.FromString(textValue));
+    RecordParameter(parsedParameters, expectedParameter, value.IntoText());
     return true;
 }
 

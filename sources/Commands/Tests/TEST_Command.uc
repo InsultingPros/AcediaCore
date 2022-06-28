@@ -395,24 +395,24 @@ protected static function SubTest_MockBQ2()
 
 protected static function SubTest_MockBQ3Remainder()
 {
-    local Command.CallData       result;
+    local Command.CallData  result;
     local DynamicArray      subArray;
     local AssociativeArray  options, subObject;
     Issue("Cannot parse command queries with `CPT_Remainder` type parameters.");
     result = class'MockCommandB'.static.GetInstance()
         .ParseInputWith(PRS(default.queryBSuccess3), none);
-    TEST_ExpectTrue(result.Parameters.GetLength() == 1);
-    subArray = DynamicArray(result.Parameters.GetItem(P("list")));
+    TEST_ExpectTrue(result.parameters.GetLength() == 1);
+    subArray = DynamicArray(result.parameters.GetItem(P("list")));
     TEST_ExpectTrue(FloatBox(subArray.GetItem(0)).Get() == 3);
     TEST_ExpectTrue(FloatBox(subArray.GetItem(1)).Get() == -76);
-    options = result.Options;
+    options = result.options;
     TEST_ExpectTrue(options.GetLength() == 1);
     TEST_ExpectTrue(options.HasKey(P("remainder")));
     subObject = AssociativeArray(options.GetItem(P("remainder")));
     TEST_ExpectTrue(    Text(subObject.GetItem(P("everything"))).ToString()
                     ==  "--type \"value\" -va 8 -sV --forced -T  \"\" 32");
 }
-// [1, 2, 3, 6]
+
 defaultproperties
 {
     caseName = "Command"
