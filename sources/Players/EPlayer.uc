@@ -441,7 +441,8 @@ public final function SetDosh(int newDoshAmount)
  *  Return `ConsoleWriter` that can be used to write into this player's console.
  *
  *  Provided that returned object is never deallocated - returns the same object
- *  with each call, otherwise can allocate new instance of `ConsoleWriter`.
+ *  with each call. If somebody does deallocate it - method will allocate new
+ *  instance of `ConsoleWriter`.
  *
  *  @return `ConsoleWriter` that can be used to write into this player's
  *      console. Returned object should not be deallocated, but it is
