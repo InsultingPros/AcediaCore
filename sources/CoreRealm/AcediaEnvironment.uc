@@ -432,8 +432,8 @@ public final function bool DisableFeature(Feature featureToDisable)
             featureToDisable.DisableInternal();
             onFeatureDisabledSignal.Emit(featureToDisable.class);
             _.memory.Free(featureToDisable);
+            return true;
         }
-        return true;
     }
     return false;
 }
