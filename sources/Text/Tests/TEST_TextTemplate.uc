@@ -31,12 +31,14 @@ protected static function TESTS()
     Test_NumericDeclarationsOrder();
     Test_NumericDeclarationsNoOrder();
     Test_NumericDeclarationsRandomValues();
+    Test_NumericDeclarationsIgnoreFormatting();
     Context("Testing `TextTemplate` class' ability to handle text"
         @ "argument declarations.");
     Test_TextDeclarationsGet();
     Test_TextDeclarationsEmptyCollect();
     Test_TextDeclarationsCollect();
     Test_TextDeclarationsOverwriteCollect();
+    Test_TextDeclarationsIgnoreFormatting();
     Context("Testing complex `TextTemplate` scenarios.");
     Test_Reset();
     Test_Complex();
@@ -187,6 +189,25 @@ protected static function Test_NumericDeclarationsRandomValues()
         == "just a c e b d h f g");
 }
 
+protected static function Test_NumericDeclarationsIgnoreFormatting()
+{
+    local TextTemplate instance;
+
+    Issue("Basic numeric declarations are not using arguments formatting by"
+        @ "default.");
+    instance = __().text.MakeTemplate_S("Simple {#ff0000 test %1}");
+    instance.Arg(F("{#00ff00 arg}"));
+    TEST_ExpectTrue(instance.CollectFormatted().ToFormattedString()
+        == "Simple {rgb(255,0,0) test }{rgb(0,255,0) arg}");
+
+    Issue("Basic numeric declarations are using arguments formatting when"
+        @ "method is told to ignore it.");
+    instance = __().text.MakeTemplate_S("Simple {#ff0000 test %1}");
+    instance.Arg(F("{#00ff00 arg}"), true);
+    TEST_ExpectTrue(instance.CollectFormatted().ToFormattedString()
+        == "Simple {rgb(255,0,0) test arg}");
+}
+
 protected static function Test_TextDeclarationsGet()
 {
     local TextTemplate  instance;
@@ -283,6 +304,25 @@ protected static function Test_TextDeclarationsOverwriteCollect()
         .TextArg(P("complex"), P("nasty")).TextArg(P("/exe"), P("???"));
     TEST_ExpectTrue(instance.Collect().ToString()
         == "More nasty  !! here, yes. Very nasty!");
+}
+
+protected static function Test_TextDeclarationsIgnoreFormatting()
+{
+    local TextTemplate instance;
+
+    Issue("Basic numeric declarations are not using arguments formatting by"
+        @ "default.");
+    instance = __().text.MakeTemplate_S("Simple {#ff0000 test %%it%%}");
+    instance.TextArg(P("it"), F("{#00ff00 arg}"));
+    TEST_ExpectTrue(instance.CollectFormatted().ToFormattedString()
+        == "Simple {rgb(255,0,0) test }{rgb(0,255,0) arg}");
+
+    Issue("Basic numeric declarations are using arguments formatting when"
+        @ "method is told to ignore it.");
+    instance = __().text.MakeTemplate_S("Simple {#ff0000 test %%it%%}");
+    instance.TextArg(P("it"), F("{#00ff00 arg}"), true);
+    TEST_ExpectTrue(instance.CollectFormatted().ToFormattedString()
+        == "Simple {rgb(255,0,0) test arg}");
 }
 
 protected static function Test_Reset()
