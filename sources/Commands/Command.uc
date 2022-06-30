@@ -550,17 +550,6 @@ private final function array<EPlayer> ParseTargets(
     return targetPlayers;
 }
 
-//  TODO: This is a hack to insert new line symbol,
-//  this needs to be redone in a better way
-private final function BaseText.Character GetNewLine(
-    BaseText.Formatting formatting)
-{
-    local BaseText.Character newLine;
-    newLine.codePoint   = 10;
-    newLine.formatting  = formatting;
-    return newLine;
-}
-
 /**
  *  Returns name (in lower case) of the caller command class.
  *
