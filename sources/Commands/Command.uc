@@ -1,9 +1,9 @@
 /**
  *      This class is meant to represent a command type: to create new command
  *  one should extend it, then simply define required sub-commands/options and
- *  parameters in `BuildData()` and overload `Execute()` / `ExecuteFor()`
+ *  parameters in `BuildData()` and overload `Executed()` / `ExecutedFor()`
  *  to perform required actions when command is executed by a player.
- *      `Execute()` is called first, whenever command is executed and
+ *      `Executed()` is called first, whenever command is executed and
  *  `ExecuteFor()` is called only for targeted commands, once for each
  *  targeted player.
  *      Copyright 2021 - 2022 Anton Tarasenko
