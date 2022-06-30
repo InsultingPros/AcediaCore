@@ -128,9 +128,10 @@ public final function LocalDatabaseInstance NewLocal(BaseText databaseName)
     local Text                  rootRecordName;
     local LocalDatabase         newConfig;
     local LocalDatabaseInstance newLocalDBInstance;
+
     CreateLocalDBMapIfMissing();
-    //  No need to check `databaseName` for being valid,
-    //  since `Load()` will just return `none` if it is not.
+    if (databaseName == none)                       return none;
+    if (!databaseName.IsValidName())                return none;
     newConfig = class'LocalDatabase'.static.Load(databaseName);
     if (newConfig == none)                          return none;
     if (newConfig.HasDefinedRoot())                 return none;
