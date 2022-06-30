@@ -338,6 +338,14 @@ public final function HandleInput(Parser parser, EPlayer callerPlayer)
 
     parser.MUntilMany(commandName, commandDelimiters, true, true);
     commandInstance = GetCommand(commandName);
+    if (    commandInstance == none
+        &&  callerPlayer != none && callerPlayer.IsExistent())
+    {
+        callerPlayer
+            .BorrowConsole()
+            .Flush()
+            .Say(F("{$TextFailure Command not found!}"));
+    }
     commandName.FreeSelf();
     if (parser.Ok() && commandInstance != none)
     {
