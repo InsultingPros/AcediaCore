@@ -174,7 +174,7 @@ public function SetCountdown(int newTradingInterval);
  *  @return `true` if trading countdown was paused and `false` otherwise.
  *      If trading is inactive - returns `false`.
  */
-public function bool IsCountDownPaused();
+public function bool IsCountdownPaused();
 
 /**
  *  Changes whether trading countdown should be paused.
@@ -185,7 +185,7 @@ public function bool IsCountDownPaused();
  *  @return doPause `true` to pause trading countdown and `false` to resume.
  *      If trading time is currently inactive - does nothing.
  */
-public function SetCountDownPause(bool doPause);
+public function SetCountdownPause(bool doPause);
 
 /**
  *  Returns currently selected trader.
