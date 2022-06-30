@@ -112,6 +112,7 @@ public final function SetSelf(EPlayer newSelfPlayer)
 private final function InsertPlayer(EPlayer toInsert)
 {
     local int i;
+
     if (toInsert == none) {
         return;
     }
@@ -128,6 +129,7 @@ private final function InsertPlayer(EPlayer toInsert)
 private final function AddByKey(int key)
 {
     local int i;
+
     for (i = 0; i < playersSnapshot.length; i += 1)
     {
         if (playersSnapshot[i].GetIdentity().GetKey() == key) {
@@ -141,6 +143,7 @@ private final function AddByKey(int key)
 private final function RemoveByKey(int key)
 {
     local int i;
+
     while (i < currentSelection.length)
     {
         if (currentSelection[i].GetIdentity().GetKey() == key) {
@@ -157,7 +160,10 @@ private final function AddByName(BaseText name)
 {
     local int   i;
     local Text  nextPlayerName;
-    if (name == none) return;
+
+    if (name == none) {
+        return;
+    }
     for (i = 0; i < playersSnapshot.length; i += 1)
     {
         nextPlayerName = playersSnapshot[i].GetName();
@@ -174,6 +180,7 @@ private final function RemoveByName(BaseText name)
 {
     local int   i;
     local Text  nextPlayerName;
+
     while (i < currentSelection.length)
     {
         nextPlayerName = currentSelection[i].GetName();
@@ -191,6 +198,7 @@ private final function RemoveByName(BaseText name)
 private final function AddAdmins()
 {
     local int i;
+
     for (i = 0; i < playersSnapshot.length; i += 1)
     {
         if (playersSnapshot[i].IsAdmin()) {
@@ -203,6 +211,7 @@ private final function AddAdmins()
 private final function RemoveAdmins()
 {
     local int i;
+
     while (i < currentSelection.length)
     {
         if (currentSelection[i].IsAdmin()) {
@@ -242,6 +251,7 @@ private final function AddByMacro(BaseText macroText)
 private final function RemoveByMacro(BaseText macroText)
 {
     local int i;
+
     if (macroText.Compare(T(TADMIN), SCASE_INSENSITIVE))
     {
         RemoveAdmins();
@@ -272,6 +282,7 @@ private final function ParseSelector(Parser parser)
 {
     local bool                  additiveSelector;
     local Parser.ParserState    confirmedState;
+
     if (parser == none) return;
     if (!parser.Ok())   return;
 
@@ -314,9 +325,11 @@ private final function ParseSelector(Parser parser)
 private final function ParseKeySelector(Parser parser, bool additiveSelector)
 {
     local int key;
+
     if (parser == none)             return;
     if (!parser.Ok())               return;
     if (!parser.MInteger(key).Ok()) return;
+
     if (additiveSelector) {
         AddByKey(key);
     }
@@ -331,6 +344,7 @@ private final function ParseMacroSelector(Parser parser, bool additiveSelector)
 {
     local MutableText           macroName;
     local Parser.ParserState    confirmedState;
+
     if (parser == none) return;
     if (!parser.Ok())   return;
 
@@ -356,12 +370,13 @@ private final function ParseNameSelector(Parser parser, bool additiveSelector)
 {
     local MutableText           playerName;
     local Parser.ParserState    confirmedState;
+
     if (parser == none) return;
     if (!parser.Ok())   return;
 
     confirmedState = parser.GetCurrentState();
     playerName = ParseLiteral(parser);
-    if (!parser.Ok())
+    if (!parser.Ok() || playerName.IsEmpty())
     {
         _.memory.Free(playerName);
         return;
@@ -383,6 +398,7 @@ private final function MutableText ParseLiteral(Parser parser)
 {
     local MutableText           literal;
     local Parser.ParserState    confirmedState;
+
     if (parser == none) return none;
     if (!parser.Ok())   return none;
 
@@ -405,6 +421,7 @@ public final function array<EPlayer> GetPlayers()
 {
     local int               i;
     local array<EPlayer>    result;
+
     for (i = 0; i < currentSelection.length; i += 1)
     {
         if (currentSelection[i].IsExistent()) {
@@ -426,8 +443,10 @@ public final function array<EPlayer> GetPlayers()
 public final function bool ParseWith(Parser parser)
 {
     local Parser.ParserState confirmedState;
-    if (parser == none) return false;
-    if (!parser.Ok())   return false;
+
+    if (parser == none)         return false;
+    if (!parser.Ok())           return false;
+    if (parser.HasFinished())   return false;
 
     Reset();
     confirmedState = parser.Skip().GetCurrentState();
@@ -482,6 +501,7 @@ public final function bool Parse(BaseText toParse)
 {
     local bool      wasSuccessful;
     local Parser    parser;
+
     if (toParse == none) {
         return false;
     }
