@@ -405,25 +405,37 @@ public final function MutableText UpperMutableCopy(
 }
 
 /**
- *  Checks if caller `BaseText` contains a valid name for a config object or
- *  not.
+ *  Checks if caller `BaseText` contains a valid name object or not.
  *
- *  Valid names contain only ASCII characters, digits and '.' / '_' characters.
- *  Empty `BaseText` is not considered a valid name.
+ *  Valid names are case-insensitive `BaseText`s that:
+ *      1. No longer than 50 characters long;
+ *      2. Contain only ASCII characters, digits and '.' / '_' characters;
+ *      3. Has to start with a latin letter or '_';
+ *      4. Empty `BaseText` is not considered a valid name.
  *
  *  @return `true` if caller `BaseText` contains a valid config object name and
  *      `false` otherwise.
  */
-public final function bool IsValidConfigName()
+public final function bool IsValidName()
 {
     local int       i;
     local int       codePoint;
     local bool      isValidCodePoint;
     local Character nextCharacter;
-    if (IsEmpty()) {
+
+    if (IsEmpty())          return false;
+    if (GetLength() > 50)   return false;
+
+    //  Test first character separately, since it cannot be digit
+    nextCharacter = GetCharacter(0);
+    codePoint = nextCharacter.codePoint;
+    isValidCodePoint = ( codePoint == 0x5F              //  '_'
+        ||  (0x41 <= codePoint && codePoint <= 0x5A)    //  'A' to 'Z'
+        ||  (0x61 <= codePoint && codePoint <= 0x7A));  //  'a' to 'z'
+    if (!isValidCodePoint) {
         return false;
     }
-    for (i = 0; i < GetLength(); i += 1)
+    for (i = 1; i < GetLength(); i += 1)
     {
         nextCharacter = GetCharacter(i);
         codePoint = nextCharacter.codePoint;

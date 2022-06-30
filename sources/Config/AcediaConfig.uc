@@ -5,8 +5,8 @@
  *  Making a child class for `AcediaConfig` defines "<data_class_name>" and
  *  contents of appropriate section. Then any such class can have multiple
  *  records with different "<config_object_name>" values. The only requirement
- *  is that "<config_object_name>" must only contain latin letters, digits,
- *  dot ('.') and underscore ('_'). Otherwise they will be ignored.
+ *  is that "<config_object_name>" must be considered *valid* by
+ *  `BaseText.IsValidName()` standards, otherwise method will return `none`.
  *
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
@@ -38,12 +38,20 @@ class AcediaConfig extends AcediaObject
  *      https://wiki.beyondunreal.com/Legacy:PerObjectConfig)
  *      lists a couple of limitations: whitespace and ']' character.
  *      However there are more, including '.'. 
- *      We limit available character set to ASCII latin letters, digits and
+ *          We limit available character set to ASCII latin letters, digits and
  *      the dot ('.') / underscore ('_'). Dot is a forbidden character, but it
  *      is often used in class names and, therefore, was added via workaround:
  *      it is automatically converted into colon ':' character to allow its
  *      storage inside ini config files. It also will not lead to the name
  *      conflicts, since colon is a forbidden character for `AcediaConfig`.
+ *          Unreal Engine also doesn't handle long object names very well:
+ *      if it considers "[<config_object_name> <data_class_name>]" too long, it
+ *      might cut some of the trailing letters of what is between brackets '['
+ *      and ']' basically mangling class' name. Since such config header seems
+ *      to be able to contain at least 100 character (at least in our tests),
+ *      we deal with that issue by limiting name to 50 characters at most.
+ *      Depending on the class' name it might still cause problems, so don't
+ *      make them too long.
  *  2. Behavior of loading `perobjectconfig`-objects a second time is wonky and
  *      is fixed by `AcediaConfig`: it provides concrete behavior guarantees
  *      for all of its config object-managing methods.
@@ -119,7 +127,7 @@ public static function Initialize()
             continue;
         }
         nextName = __().text.FromString(NameToActualVersion(names[i]));
-        if (nextName.IsValidConfigName()) {
+        if (nextName.IsValidName()) {
             default.existingConfigs.SetItem(nextName.LowerCopy(), none);
         }
         nextName.FreeSelf();
@@ -140,14 +148,14 @@ private static function string NameToActualVersion(string configObjectName)
  *  Creates a brand new config object with a given name.
  *
  *  Fails if config object with that name already exists.
- *  Names are case-insensitive, must contain only ASCII latin letters, digits
- *  and dot ('.') character.
+ *  Config name must be considered *valid* by `BaseText.IsValidName()`
+ *  standards, otherwise method will return `none`.
  *
  *  Always writes new config inside the ini file on disk.
  *
  *  @param  name    Name of the new config object.
- *      Case-insensitive, must contain only ASCII latin letters, digits
- *      and dot ('.') character.
+ *      Must be considered *valid* by `BaseText.IsValidName()`
+ *      standards, otherwise method will fail.
  *  @return `false` iff config object name `name` already existed
  *      or `name` is invalid for config object.
  */
@@ -155,7 +163,7 @@ public final static function bool NewConfig(BaseText name)
 {
     local AcediaConfig newConfig;
     if (name == none)                       return false;
-    if (!name.IsValidConfigName())          return false;
+    if (!name.IsValidName())                return false;
     if (default.existingConfigs == none)    return false;
 
     name = name.LowerCopy();
@@ -176,19 +184,16 @@ public final static function bool NewConfig(BaseText name)
 /**
  *  Checks if a config object with a given name exists.
  *
- *  Names are case-insensitive, must contain only ASCII latin letters, digits
- *  and dot ('.') character.
- *
  *  @param  name    Name of the new config object.
- *      Case-insensitive, must contain only ASCII latin letters, digits
- *      and dot ('.') character.
+ *      Must be considered *valid* by `BaseText.IsValidName()` standards,
+ *      otherwise method will return `false`.
  *  @return `true` iff new config object was created.
  */
 public final static function bool Exists(BaseText name)
 {
     local bool result;
     if (name == none)                       return false;
-    if (!name.IsValidConfigName())          return false;
+    if (!name.IsValidName())                return false;
     if (default.existingConfigs == none)    return false;
 
     name = name.LowerCopy();
@@ -200,17 +205,12 @@ public final static function bool Exists(BaseText name)
 /**
  *  Deletes config object with a given name.
  *
- *  Names are case-insensitive, must contain only ASCII latin letters, digits
- *  and dot ('.') character.
- *
  *  If given config object exists, this method cannot fail.
  *  `Exists()` is guaranteed to return `false` after this method call.
  *
  *  Always removes any present config entries from ini files.
  *
  *  @param  name    Name of the config object to delete.
- *      Case-insensitive, must contain only ASCII latin letters, digits
- *      and dot ('.') character.
 */
 public final static function DeleteConfig(BaseText name)
 {
@@ -244,15 +244,15 @@ public static function array<Text> AvailableConfigs()
  *  Returns `AcediaConfig` of caller class with name `name`.
  *
  *  @param  name    Name of the config object, whos settings data is to
- *      be loaded. Case-insensitive, must contain only ASCII latin letters,
- *      digits and dot ('.') character.
+ *      be loaded. Must be considered *valid* by `BaseText.IsValidName()`
+ *      standards, otherwise method will return `none`.
  *  @return `AcediaConfig` of caller class with name `name`.
  */
 public final static function AcediaConfig GetConfigInstance(BaseText name)
 {
     local AssociativeArray.Entry configEntry;
     if (name == none)                       return none;
-    if (!name.IsValidConfigName())          return none;
+    if (!name.IsValidName())                return none;
     if (default.existingConfigs == none)    return none;
 
     name = name.LowerCopy();
@@ -276,8 +276,8 @@ public final static function AcediaConfig GetConfigInstance(BaseText name)
  *  `true`.
  *
  *  @param  name    Name of the config object, whos data is to be loaded.
- *      Case-insensitive, must contain only ASCII latin letters, digits
- *      and dot ('.') character.
+ *      Name must be considered *valid* by `BaseText.IsValidName()` standards, 
+ *      otherwise method will return `false`.
  *  @return Data of a particular config object, given by the `name`.
  *      Expected to be in format that allows for JSON serialization
  *      (see `JSONAPI.IsCompatible()` for details).
@@ -303,8 +303,8 @@ public final static function AssociativeArray LoadData(BaseText name)
  *  `true`.
  *
  *  @param  name    Name of the config object, whos data is to be modified.
- *      Case-insensitive, must contain only ASCII latin letters, digits
- *      and dot ('.') character.
+ *      Name must be considered *valid* by `BaseText.IsValidName()` standards, 
+ *      otherwise method will return `false`.
  *  @param  data    New data for config variables. Expected to be in format that
  *      allows for JSON deserialization (see `JSONAPI.IsCompatible()` for
  *      details).
