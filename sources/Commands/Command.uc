@@ -378,7 +378,8 @@ public final function bool Execute(CallData callData, EPlayer callerPlayer)
         return false;
     }
     targetPlayers = callData.targetPlayers;
-    MakeConsoles(targetPlayers, callerPlayer);
+    publicConsole = _.console.ForAll();
+    callerConsole = _.console.For(callerPlayer);
     callerConsole.Write(P("Executing command `"))
         .Write(commandData.name)
         .Say(P("`"));
@@ -388,26 +389,19 @@ public final function bool Execute(CallData callData, EPlayer callerPlayer)
         for (i = 0; i < targetPlayers.length; i += 1)
         {
             targetConsole = _.console.For(targetPlayers[i]);
+            othersConsole = _.console
+                .ForAll()
+                .ButPlayer(callerPlayer)
+                .ButPlayer(targetPlayers[i]);
             ExecutedFor(targetPlayers[i], callData, callerPlayer);
+            _.memory.Free(othersConsole);
             _.memory.Free(targetConsole);
-            targetConsole = none;
         }
     }
+    othersConsole = none;
+    targetConsole = none;
     DeallocateConsoles();
     return true;
-}
-
-private final function MakeConsoles(
-    array<EPlayer>  targetPlayers,
-    EPlayer         callerPlayer)
-{
-    local int i;
-    publicConsole = _.console.ForAll();
-    callerConsole = _.console.For(callerPlayer);
-    othersConsole = _.console.ForAll().ButPlayer(callerPlayer);
-    for (i = 0; i < targetPlayers.length; i += 1) {
-            othersConsole.ButPlayer(targetPlayers[i]);
-    }
 }
 
 private final function DeallocateConsoles()
