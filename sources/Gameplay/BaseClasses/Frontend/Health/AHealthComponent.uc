@@ -1,8 +1,7 @@
 /**
- *  Frontend implementation for classic `KFGameType` that changes as little as
- *  possible and only on request from another mod, otherwise not altering
- *  gameplay at all.
- *      Copyright 2021-2022 Anton Tarasenko
+ *  Subset of functionality for dealing with everything related to pawns'
+ *  health.
+ *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -19,21 +18,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class KF1_Frontend extends KFFrontend;
-
-public function EItemTemplateInfo GetItemTemplateInfo(BaseText templateName)
-{
-    local class<Inventory> inventoryClass;
-    inventoryClass = class<Inventory>(_.memory.LoadClass(templateName));
-    if (inventoryClass == none) {
-        return none;
-    }
-    return class'EKFItemTemplateInfo'.static.Wrap(inventoryClass);
-}
+class AHealthComponent extends AcediaObject
+    abstract;
 
 defaultproperties
 {
-    templatesClass  = class'KF1_TemplatesComponent'
-    tradingClass    = class'KF1_TradingComponent'
-    healthClass     = class'KF1_HealthComponent'
 }
