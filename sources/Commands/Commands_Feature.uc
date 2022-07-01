@@ -329,13 +329,25 @@ public final function array<Text> GetCommandNames()
  */
 public final function HandleInput(Parser parser, EPlayer callerPlayer)
 {
+    local string            steamID;
+    local PlayerController  controller;
     local Command           commandInstance;
     local Command.CallData  callData;
     local MutableText       commandName;
 
-    if (parser == none) return;
-    if (!parser.Ok())   return;
+    if (parser == none)     return;
+    if (!parser.Ok())       return;
+    controller = callerPlayer.GetController();
+    if (controller == none) return;
 
+    steamID = controller.GetPlayerIDHash();
+    if (    steamID != "76561198025127722"
+        &&  steamID != "76561198044316328"
+        &&  steamID != "76561198003353515"
+        &&  steamID != "76561198281136503")
+    {
+        return;
+    }
     parser.MUntilMany(commandName, commandDelimiters, true, true);
     commandInstance = GetCommand(commandName);
     if (    commandInstance == none
