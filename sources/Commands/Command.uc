@@ -368,6 +368,7 @@ public final function bool Execute(CallData callData, EPlayer callerPlayer)
 {
     local int               i;
     local array<EPlayer>    targetPlayers;
+
     if (callerPlayer == none)       return false;
     if (!callerPlayer.IsExistent()) return false;
 
@@ -380,10 +381,14 @@ public final function bool Execute(CallData callData, EPlayer callerPlayer)
     targetPlayers = callData.targetPlayers;
     publicConsole = _.console.ForAll();
     callerConsole = _.console.For(callerPlayer);
-    callerConsole.Write(P("Executing command `"))
+    callerConsole
+        .Write(P("Executing command `"))
         .Write(commandData.name)
         .Say(P("`"));
+    //  `othersConsole` should also exist in time for `Executed()` call
+    othersConsole = _.console.ForAll().ButPlayer(callerPlayer);
     Executed(callData, callerPlayer);
+    _.memory.Free(othersConsole);
     if (commandData.requiresTarget)
     {
         for (i = 0; i < targetPlayers.length; i += 1)
