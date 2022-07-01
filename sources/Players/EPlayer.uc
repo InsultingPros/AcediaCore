@@ -180,6 +180,27 @@ public final function Vector GetLocation()
     return Vect(0.0, 0.0, 0.0);
 }
 
+/**
+ *  If caller `EPlayer` currently owns a pawn, then this method will return
+ *  `EPawn` interface to it.
+ *
+ *  @return `EPawn` interface to pawn of the caller `EPlayer`.
+ *      `none` if caller `EPayer` is non-existent or does not have a pawn.
+ */
+public final function EPawn GetPawn()
+{
+    local Pawn              myPawn;
+    local PlayerController  myController;
+
+    if (controller == none)     return none;
+    myController = PlayerController(controller.Get());
+    if (myController == none)   return none;
+    myPawn = myController.pawn;
+    if (myPawn == none)         return none;
+
+    return class'EKFPawn'.static.Wrap(myPawn);
+}
+
 //  `PlayerReplicationInfo` associated with the caller `EPlayer`.
 //  Can return `none` if:
 //      1. Caller `EPlayer` has already disconnected;
