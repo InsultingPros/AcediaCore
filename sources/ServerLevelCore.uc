@@ -18,6 +18,13 @@
  */
 class ServerLevelCore extends LevelCore;
 
+protected function Constructor()
+{
+    super.Constructor();
+    //  TODO: this is hack, needs to be redone later
+    KF1_HealthComponent(_.kf.health).PresudoConstructor();
+}
+
 public static function LevelCore CreateLevelCore(Actor source)
 {
     if (source == none)                             return none;

@@ -53,9 +53,29 @@ var private bool blockSpawning;
 //  `LevelCore`
 var private LevelCore activeInstance;
 
+var private SimpleSignal onShutdownSignal;
+
+protected function Constructor()
+{
+    onShutdownSignal = SimpleSignal(_.memory.Allocate(class'SimpleSignal'));
+}
+
 protected function Finalizer()
 {
+    _.memory.Free(onShutdownSignal);
     default.activeInstance = none;
+}
+
+/**
+ *  Signal that will be emitted when caller level core is shut down.
+ *
+ *  [Signature]
+ *  void <slot>()
+ */
+/* SIGNAL */
+public final function SimpleSlot OnShutdown(AcediaObject receiver)
+{
+    return SimpleSlot(onShutdownSignal.NewSlot(receiver));
 }
 
 public static function LevelCore CreateLevelCore(Actor source)
@@ -95,6 +115,7 @@ event PreBeginPlay()
 //  Clean up
 event Destroyed()
 {
+    onShutdownSignal.Emit();
     if (self == default.activeInstance) {
         default.activeInstance = none;
     }
