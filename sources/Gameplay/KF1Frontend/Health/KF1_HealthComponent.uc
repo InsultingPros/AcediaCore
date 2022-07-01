@@ -21,6 +21,7 @@ class KF1_HealthComponent extends AHealthComponent
     dependson(ConnectionService)
     config(AcediaSystem);
 
+//  TODO: document here and in config
 var private const config bool replaceBloatAndSirenDamageTypes;
 
 var private LoggerAPI.Definition infoReplacingDamageTypes, errNoServerLevelCore;
