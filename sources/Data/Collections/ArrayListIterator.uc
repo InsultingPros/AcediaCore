@@ -22,9 +22,12 @@ class ArrayListIterator extends Iter;
 var private ArrayList   relevantCollection;
 var private int         currentIndex;
 
+var private bool skipNoneReferences;
+
 protected function Finalizer()
 {
     relevantCollection = none;
+    skipNoneReferences = false;
 }
 
 public function bool Initialize(Collection relevantArray)
@@ -37,10 +40,15 @@ public function bool Initialize(Collection relevantArray)
     return true;
 }
 
-public function Iter Next(optional bool skipNone)
+public function LeaveOnlyNotNone()
+{
+    skipNoneReferences = true;
+}
+
+public function Iter Next()
 {
     local int collectionLength;
-    if (!skipNone)
+    if (!skipNoneReferences)
     {
         currentIndex += 1;
         return self;
