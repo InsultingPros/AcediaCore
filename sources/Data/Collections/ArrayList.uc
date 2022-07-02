@@ -26,10 +26,6 @@ class ArrayList extends Collection;
 
 //  Actual storage of all our data.
 var private array<AcediaObject> storedObjects;
-//      Recorded `lifeVersions` of all stored objects.
-//      Invariant `lifeVersions.length == storedObjects.length` should be
-//  enforced by all methods.
-var private array<int>          lifeVersions;
 
 //  Free array data
 protected function Finalizer()
@@ -77,8 +73,7 @@ public final function ArrayList SetLength(int newLength)
     for (i = newLength; i < storedObjects.length; i += 1) {
         FreeItem(i);
     }
-    storedObjects.length    = newLength;
-    lifeVersions.length     = newLength;
+    storedObjects.length = newLength;
     return self;
 }
 
@@ -95,7 +90,7 @@ protected final function ArrayList FreeItem(int index)
     if (storedObjects[index] == none) {
         return self;
     }
-    storedObjects[index].FreeSelf(lifeVersions[index]);
+    storedObjects[index].FreeSelf();
     storedObjects[index] = none;
     return self;
 }
@@ -176,10 +171,6 @@ protected final function Swap(int index1, int index2)
     temporaryItem = storedObjects[index1];
     storedObjects[index1] = storedObjects[index2];
     storedObjects[index2] = temporaryItem;
-    //  Swap life versions
-    temporaryNumber = lifeVersions[index1];
-    lifeVersions[index1] = lifeVersions[index2];
-    lifeVersions[index2] = temporaryNumber;
 }
 
 /**
@@ -209,7 +200,6 @@ public final function ArrayList Remove(int index, int count)
         FreeItem(index + i);
     }
     storedObjects.Remove(index, count);
-    lifeVersions.Remove(index, count);
     return self;
 }
 
@@ -234,8 +224,7 @@ public final function ArrayList RemoveIndex(int index)
  *  reference.
  *
  *  @param  index   Index of an item to validate/
- *  @return `true` if `index` is valid for `storedObjects` / `lifeVersions`
- *      and there is no need to check it.
+ *  @return `true` if `index` is valid for `storedObjects` array.
  */
 private final function bool ValidateIndex(int index)
 {
@@ -244,13 +233,7 @@ private final function bool ValidateIndex(int index)
     if (index < 0)                      return false;
     if (index >= storedObjects.length)  return false;
     item = storedObjects[index];
-    if (item == none)                   return true;
 
-    if (item.GetLifeVersion() != lifeVersions[index])
-    {
-        storedObjects[index]    = none;
-        lifeVersions[index]     = 0;
-    }
     return true;
 }
 
@@ -268,8 +251,7 @@ public final function AcediaObject TakeItem(int index)
     if (ValidateIndex(index))
     {
         result = storedObjects[index];
-        storedObjects[index]    = none;
-        lifeVersions[index]     = 0;
+        storedObjects[index] = none;
     }
     return result;
 }
@@ -302,8 +284,7 @@ public final function AcediaObject GetItem(int index)
     if (ValidateIndex(index))
     {
         result = storedObjects[index];
-        storedObjects[index]    = none;
-        lifeVersions[index]     = 0;
+        storedObjects[index] = none;
     }
     if (result != none) {
         result.NewRef();
@@ -334,8 +315,7 @@ public final function ArrayList SetItem(int index, AcediaObject item)
     if (item != none && item.IsAllocated())
     {
         item.NewRef();
-        storedObjects[index]    = item;
-        lifeVersions[index]     = item.GetLifeVersion();
+        storedObjects[index] = item;
     }
     return self;
 }
