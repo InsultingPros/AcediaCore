@@ -280,10 +280,8 @@ public final function AcediaObject GetItem(int index)
 {
     local AcediaObject result;
 
-    if (ValidateIndex(index))
-    {
+    if (ValidateIndex(index)) {
         result = storedObjects[index];
-        storedObjects[index] = none;
     }
     if (result != none) {
         result.NewRef();
