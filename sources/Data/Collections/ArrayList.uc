@@ -518,12 +518,16 @@ public final function ArrayList SetBool(
     bool            value,
     optional bool   asRef)
 {
+    local AcediaObject newValue;
+
     if (asRef) {
-        SetItem(index, _.ref.bool(value));
+        newValue = _.ref.bool(value);
     }
     else {
-        SetItem(index, _.box.bool(value));
+        newValue = _.box.bool(value);
     }
+    SetItem(index, newValue);
+    newValue.FreeSelf();
     return self;
 }
 
@@ -581,12 +585,16 @@ public final function ArrayList SetByte(
     byte            value,
     optional bool   asRef)
 {
+    local AcediaObject newValue;
+
     if (asRef) {
-        SetItem(index, _.ref.byte(value));
+        newValue = _.ref.byte(value);
     }
     else {
-        SetItem(index, _.box.byte(value));
+        newValue = _.box.byte(value);
     }
+    SetItem(index, newValue);
+    newValue.FreeSelf();
     return self;
 }
 
@@ -644,12 +652,16 @@ public final function ArrayList SetInt(
     int             value,
     optional bool   asRef)
 {
+    local AcediaObject newValue;
+
     if (asRef) {
-        SetItem(index, _.ref.int(value));
+        newValue = _.ref.int(value);
     }
     else {
-        SetItem(index, _.box.int(value));
+        newValue = _.box.int(value);
     }
+    SetItem(index, newValue);
+    newValue.FreeSelf();
     return self;
 }
 
@@ -707,12 +719,16 @@ public final function ArrayList SetFloat(
     float           value,
     optional bool   asRef)
 {
+    local AcediaObject newValue;
+
     if (asRef) {
-        SetItem(index, _.ref.float(value));
+        newValue = _.ref.float(value);
     }
     else {
-        SetItem(index, _.box.float(value));
+        newValue = _.box.float(value);
     }
+    SetItem(index, newValue);
+    newValue.FreeSelf();
     return self;
 }
 
