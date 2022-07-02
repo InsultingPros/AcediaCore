@@ -164,8 +164,7 @@ public final function ArrayList Insert(int index, int count)
  */
 protected final function Swap(int index1, int index2)
 {
-    local AcediaObject  temporaryItem;
-    local int           temporaryNumber;
+    local AcediaObject temporaryItem;
 
     //  Swap object
     temporaryItem = storedObjects[index1];
