@@ -390,6 +390,7 @@ public final function ArrayList RemoveItem(
     optional bool   onlyFirstItem)
 {
     local int i;
+
     while (i < storedObjects.length)
     {
         if (AreEqual(storedObjects[i], item))
@@ -417,6 +418,7 @@ public final function ArrayList RemoveItem(
 public final function int Find(AcediaObject item)
 {
     local int i;
+
     if (item != none && !item.IsAllocated()) {
         item = none;
     }
@@ -433,6 +435,7 @@ protected function AcediaObject GetByText(BaseText key)
 {
     local int       index, consumed;
     local Parser    parser;
+
     parser = _.text.Parse(key);
     parser.MUnsignedInteger(index,,, consumed);
     if (!parser.Ok())
@@ -481,6 +484,7 @@ public final function bool GetBool(int index, optional bool defaultValue)
     local AcediaObject  result;
     local BoolBox       asBox;
     local BoolRef       asRef;
+
     result = BorrowItem(index);
     if (result == none) {
         return defaultValue;
@@ -543,6 +547,7 @@ public final function byte GetByte(int index, optional byte defaultValue)
     local AcediaObject  result;
     local ByteBox       asBox;
     local ByteRef       asRef;
+
     result = BorrowItem(index);
     if (result == none) {
         return defaultValue;
@@ -605,6 +610,7 @@ public final function int GetInt(int index, optional int defaultValue)
     local AcediaObject  result;
     local IntBox        asBox;
     local IntRef        asRef;
+
     result = BorrowItem(index);
     if (result == none) {
         return defaultValue;
@@ -667,6 +673,7 @@ public final function float GetFloat(int index, optional float defaultValue)
     local AcediaObject  result;
     local FloatBox      asBox;
     local FloatRef      asRef;
+
     result = BorrowItem(index);
     if (result == none) {
         return defaultValue;
@@ -724,6 +731,7 @@ public final function ArrayList SetFloat(
 public final function BaseText GetBaseText(int index)
 {
     local BaseText result;
+
     result = BaseText(BorrowItem(index));
     if (result != none) {
         result.NewRef();
@@ -746,6 +754,7 @@ public final function BaseText GetBaseText(int index)
 public final function Text GetText(int index)
 {
     local Text result;
+
     result = Text(BorrowItem(index));
     if (result != none) {
         result.NewRef();
@@ -767,6 +776,7 @@ public final function Text GetText(int index)
 public final function MutableText GetMutableText(int index)
 {
     local MutableText result;
+
     result = MutableText(BorrowItem(index));
     if (result != none) {
         result.NewRef();
@@ -790,6 +800,7 @@ public final function MutableText GetMutableText(int index)
 public final function AssociativeArray GetAssociativeArray(int index)
 {
     local AssociativeArray result;
+
     result = AssociativeArray(BorrowItem(index));
     if (result != none) {
         result.NewRef();
@@ -813,6 +824,7 @@ public final function AssociativeArray GetAssociativeArray(int index)
 public final function DynamicArray GetDynamicArray(int index)
 {
     local DynamicArray result;
+
     result = DynamicArray(BorrowItem(index));
     if (result != none) {
         result.NewRef();
@@ -836,6 +848,7 @@ public final function DynamicArray GetDynamicArray(int index)
 public final function ArrayList GetArrayList(int index)
 {
     local ArrayList result;
+
     result = ArrayList(BorrowItem(index));
     if (result != none) {
         result.NewRef();

@@ -49,6 +49,7 @@ public function LeaveOnlyNotNone()
 public function Iter Next(optional bool deprecated)
 {
     local int collectionLength;
+
     if (!skipNoneReferences)
     {
         currentIndex += 1;
