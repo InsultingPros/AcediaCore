@@ -23,6 +23,9 @@ class KF1_TradingComponent extends ATradingComponent;
 //  Variables for enforcing a trader time pause by repeatedly setting
 //  `waveCountDown`'s value to `pausedCountDownValue`
 var protected bool  tradingCountDownPaused;
+//  Non-negative values mean at what point to freeze time,
+//  negative values mean that we should check current trader timer as soon as
+//  trading resumes
 var protected int   pausedCountDownValue;
 
 //  For detecting events of trading becoming active/inactive and selecting
@@ -108,7 +111,7 @@ public function bool IsTradingActive()
 {
     local KFGameType kfGame;
     kfGame = _.unreal.GetKFGameType();
-    return kfGame.IsInState('MatchInProgress') && kfGame.bTradingDoorsOpen;
+    return kfGame.IsInState('MatchInProgress') && !kfGame.bWaveInProgress;
 }
 
 public function SetTradingStatus(bool makeActive)
@@ -221,27 +224,46 @@ public function SetCountDown(int newCountDownValue)
 
 public function bool IsCountDownPaused()
 {
-    if (!IsTradingActive()) {
-        return false;
-    }
     return tradingCountDownPaused;
 }
 
 public function SetCountDownPause(bool doPause)
 {
-    tradingCountDownPaused  = doPause;
+    if (tradingCountDownPaused == doPause) {
+        return;
+    }
+    tradingCountDownPaused = doPause;
     if (doPause) {
-        pausedCountDownValue = _.unreal.GetKFGameType().waveCountDown;
+        if (IsTradingActive()) {
+            //  `+1` makes client counter stop closer to the moment
+            //  `SetCountDownPause()` was called
+            pausedCountDownValue = _.unreal.GetKFGameType().waveCountDown + 1;
+        }
+        else {
+            //  If trading time isn't active, then we do not yet know how long
+            //  trading time will last (it can be changed during the wave),
+            //  so set it to negative until we find out
+            pausedCountDownValue = -1;
+        }
+    }
+    //  These values are problematic because `KFGameType` either plays a message
+    //  or updates its state during these
+    if (    pausedCountDownValue == 30
+        ||  pausedCountDownValue == 10
+        ||  pausedCountDownValue == 5)
+    {
+        pausedCountDownValue -= 1;
+    }
+    //  Also a special value (ends wave), but decreasing it will simply
+    //  end trading time
+    if (pausedCountDownValue == 1) {
+        pausedCountDownValue = 2;
     }
 }
 
 protected function Tick(float delta, float timeScaleCoefficient)
 {
     local bool isActiveNow;
-    //  Enforce pause
-    if (tradingCountDownPaused) {
-        _.unreal.GetKFGameType().waveCountDown = pausedCountDownValue;
-    }
     //  Selected trader check
     CheckNativeTraderSwap();
     //  Active status check
@@ -257,6 +279,17 @@ protected function Tick(float delta, float timeScaleCoefficient)
             onEndSignal.Emit();
             //  Reset pause after trading time has ended
             tradingCountDownPaused = false;
+        }
+    }
+    //  Enforce pause
+    //  Do this *after* check if `tradingCountDownPaused` should be reset
+    if (isActiveNow && tradingCountDownPaused)
+    {
+        if (pausedCountDownValue >= 0) {
+            _.unreal.GetKFGameType().waveCountDown = pausedCountDownValue;
+        }
+        else {
+            pausedCountDownValue = _.unreal.GetKFGameType().waveCountDown;
         }
     }
 }
