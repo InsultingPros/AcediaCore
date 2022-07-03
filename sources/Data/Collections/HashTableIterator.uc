@@ -51,9 +51,10 @@ public function bool Initialize(Collection relevantArray)
     return true;
 }
 
-public function LeaveOnlyNotNone()
+public function Iter LeaveOnlyNotNone()
 {
     skipNoneReferences = true;
+    return self;
 }
 
 public function Iter Next(optional bool deprecated)

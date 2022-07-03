@@ -86,6 +86,13 @@ public function AcediaObject GetKey();
  */
 public function bool HasFinished();
 
+/**
+ *  Makes caller iterator skip any `none` items during iteration.
+ *
+ *  @return Reference to caller `Iterator` to allow for method chaining.
+ */
+public function Iter LeaveOnlyNotNone();
+
 defaultproperties
 {
 }
