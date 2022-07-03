@@ -1,6 +1,6 @@
 /**
- *  Set of tests for `AssociativeArray` class.
- *      Copyright 2020 Anton Tarasenko
+ *  Set of tests for `ArrayList` and `HashTable` classes.
+ *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -27,16 +27,14 @@ protected static function TESTS()
     Context("Testing accessing collections by JSON pointers.");
     Test_GetBy();
     Test_GetTypeBy();
-    Context("Testing erasing collections with keys via `Empty()` method.");
-    Test_EmptyWithKeys();
 }
 
 protected static function Test_GetBy()
 {
-    local AcediaObject      result;
-    local AssociativeArray  obj;
+    local AcediaObject  result;
+    local HashTable     obj;
     Issue("`GetItemBy()` does not return correct objects.");
-    obj = __().json.ParseObjectWith(
+    obj = __().json.ParseHashTableWith(
         __().text.ParseString(default.complexJSONObject));
     TEST_ExpectTrue(obj.GetItemBy(P("")) == obj);
     result = obj.GetItemBy(P("/innerObject/array/1"));
@@ -55,7 +53,7 @@ protected static function Test_GetBy()
     TEST_ExpectNotNone(IntBox(result));
     TEST_ExpectTrue(IntBox(result).Get() == 324532);
     TEST_ExpectNotNone(
-        DynamicArray(obj.GetItemBy(P("/innerObject/array"))));
+        ArrayList(obj.GetItemBy(P("/innerObject/array"))));
 
     Issue("`GetItemBy()` does not return `none` for incorrect pointers");
     TEST_ExpectNone(obj.GetItemBy(P("//")));
@@ -66,14 +64,14 @@ protected static function Test_GetBy()
 
 protected static function Test_GetTypeBy()
 {
-    local AssociativeArray obj;
-    obj = __().json.ParseObjectWith(
+    local HashTable obj;
+    obj = __().json.ParseHashTableWith(
         __().text.ParseString(default.complexJSONObject));
     obj.SetItem(P("byte"), __().ref.byte(56));
     Issue("`Get<Type>By()` methods do not return correct"
         @ "existing values.");
-    TEST_ExpectTrue(obj.GetAssociativeArrayBy(P("")) == obj);
-    TEST_ExpectNotNone(obj.GetDynamicArrayBy(P("/innerObject/array")));
+    TEST_ExpectTrue(obj.GetHashTableBy(P("")) == obj);
+    TEST_ExpectNotNone(obj.GetArrayListBy(P("/innerObject/array")));
     TEST_ExpectTrue(
             obj.GetBoolBy(P("/innerObject/array/1"), true)
         ==  false);
@@ -96,33 +94,6 @@ protected static function Test_GetTypeBy()
             .GetFloatBy(P("/innerObject/array"), 2.34)
         ==  2.34);
     TEST_ExpectNone(obj.GetTextBy(P("")));
-}
-
-protected static function Test_EmptyWithKeys()
-{
-    local Text              outerKey, innerKey1, innerKey2, innerKey3;
-    local DynamicArray      middleArray;
-    local AssociativeArray  outerObject, innerObject1, innerObject2;
-    outerKey = __().text.FromString("first");
-    innerKey1 = __().text.FromString("third?");
-    innerKey2 = __().text.FromString("Or not?");
-    innerKey3 = __().text.FromString("Like hell if I know!!!1111");
-    outerObject = __().collections.EmptyAssociativeArray();
-    innerObject1 = __().collections.EmptyAssociativeArray();
-    innerObject2 = __().collections.EmptyAssociativeArray();
-    middleArray = __().collections.EmptyDynamicArray();
-    innerObject1.SetItem(innerKey1, __().box.int(4));
-    innerObject1.SetItem(innerKey2, __().box.float(-4.6));
-    innerObject2.SetItem(innerKey2, __().ref.bool(true));
-    innerObject2.SetItem(innerKey3, none);
-    middleArray.AddItem(innerObject1).AddItem(innerObject2);
-    outerObject.SetItem(outerKey, middleArray);
-    outerObject.Empty(true);
-    Issue("Collection keys are not deallocated by `Empty(true)` method");
-    TEST_ExpectFalse(outerKey.IsAllocated());
-    TEST_ExpectFalse(innerKey1.IsAllocated());
-    TEST_ExpectFalse(innerKey2.IsAllocated());
-    TEST_ExpectFalse(innerKey3.IsAllocated());
 }
 
 defaultproperties
