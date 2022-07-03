@@ -5,7 +5,7 @@
  *  both valid and invalid JSON. However only correctly parsing valid JSON 
  *  is guaranteed. This means that you should not rely on these methods to parse
  *  any JSON extensions or validate JSON for you.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -897,8 +897,14 @@ public final function MutableText Print(AcediaObject toPrint)
     if (toPrint.class == class'DynamicArray') {
         return PrintArray(DynamicArray(toPrint));
     }
+    if (toPrint.class == class'ArrayList') {
+        return PrintArrayList(ArrayList(toPrint));
+    }
     if (toPrint.class == class'AssociativeArray') {
         return PrintObject(AssociativeArray(toPrint));
+    }
+    if (toPrint.class == class'HashTable') {
+        return PrintHashTable(HashTable(toPrint));
     }
     return none;
 }
@@ -935,6 +941,56 @@ public final function MutableText PrintArray(DynamicArray toPrint)
             result.Append(T(default.TCOMMA));
         }
         printedItem = Print(toPrint.GetItem(i));
+        if (printedItem != none)
+        {
+            result.Append(printedItem);
+            printedItem.FreeSelf();
+        }
+        else {
+            result.Append(T(default.TNULL));
+        }
+    }
+    result.Append(T(default.TCLOSE_BRACKET));
+    return result;
+}
+
+/**
+ *  "Prints" given `ArrayList` value, saving it as a JSON array in
+ *  `MutableText`.
+ *
+ *  "Prints" given `ArrayList` in a minimal way, for a human-readable output
+ *  use `PrettyPrintArrayList()` method.
+ *
+ *      It's items must either be equal to `none` or have one of the following
+ *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
+ *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
+ *      Otherwise items will be printed as "null" values.
+ *      Also see `Print()` method.
+ *
+ *  @param  toPrint Array to "print" into `MutableText`.
+ *  @return Text version of given `toPrint`, if it has one of the printable
+ *      classes. Otherwise returns `none`.
+ *      Note that `none` is considered printable and will produce "null".
+ */
+public final function MutableText PrintArrayList(ArrayList toPrint)
+{
+    local int           i, length;
+    local AcediaObject  nextItem;
+    local MutableText   result, printedItem;
+
+    if (toPrint == none) {
+        return none;
+    }
+    length = toPrint.GetLength();
+    result = T(default.TOPEN_BRACKET).MutableCopy();
+    for (i = 0; i < length; i += 1)
+    {
+        if (i > 0) {
+            result.Append(T(default.TCOMMA));
+        }
+        nextItem = toPrint.GetItem(i);
+        printedItem = Print(nextItem);
+        _.memory.Free(nextItem);
         if (printedItem != none)
         {
             result.Append(printedItem);
@@ -990,6 +1046,73 @@ public final function MutableText PrintObject(AssociativeArray toPrint)
         if (nextKey.class != class'Text')   continue;
         printedKey      = DisplayText(nextKey);
         printedValue    = Print(nextValue);
+        result.Append(printedKey).Append(T(default.TCOLON));
+        printedKey.FreeSelf();
+        if (printedValue != none)
+        {
+            result.Append(printedValue);
+            printedValue.FreeSelf();
+        }
+        else {
+            result.Append(T(default.TNULL));
+        }
+        printedKeyValuePair = true;
+    }
+    iter.FreeSelf();
+    result.Append(T(default.TCLOSE_BRACE));
+    return result;
+}
+
+/**
+ *  "Prints" given `HashTable` value, saving it as a JSON object in
+ *  `MutableText`.
+ *
+ *      "Prints" given `HashTable` in a minimal way, for
+ *  a human-readable output use `PrettyPrintHashTable()` method.
+ *
+ *      Only prints items recorded with `Text` key, the rest is omitted.
+ *
+ *      It's items must either be equal to `none` or have one of the following
+ *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
+ *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
+ *      Otherwise items will be printed as "null" values.
+ *      Also see `Print()` method.
+ *
+ *  @param  toPrint Array to "print" into `MutableText`.
+ *  @return Text version of given `toPrint`, if it has one of the printable
+ *      classes. Otherwise returns `none`.
+ *      Note that `none` is considered printable and will produce "null".
+ */
+public final function MutableText PrintHashTable(HashTable toPrint)
+{
+    local bool          printedKeyValuePair;
+    local Iter          iter;
+    local Text          nextKey;
+    local AcediaObject  nextValue;
+    local MutableText   result, printedKey, printedValue;
+
+    if (toPrint == none) {
+        return none;
+    }
+    result = T(default.TOPEN_BRACE).MutableCopy();
+    iter = toPrint.Iterate();
+    for (iter = toPrint.Iterate(); !iter.HasFinished(); iter.Next())
+    {
+        if (printedKeyValuePair) {
+            result.Append(T(default.TCOMMA));
+        }
+        nextKey     = Text(iter.GetKey());
+        nextValue   = iter.Get();
+        if (nextKey == none || nextKey.class != class'Text')
+        {
+            _.memory.Free(nextKey);
+            _.memory.Free(nextValue);
+            continue;
+        }
+        printedKey      = DisplayText(nextKey);
+        printedValue    = Print(nextValue);
+        _.memory.Free(nextKey);
+        _.memory.Free(nextValue);
         result.Append(printedKey).Append(T(default.TCOLON));
         printedKey.FreeSelf();
         if (printedValue != none)
@@ -1074,6 +1197,36 @@ public final function MutableText PrettyPrintArray(DynamicArray toPrint)
 }
 
 /**
+ *  "Prints" given `ArrayList` value, saving it as a JSON array in
+ *  `MutableText`.
+ *
+ *  "Prints" given `ArrayList` in human-readable way, for minimal output
+ *  use `PrintArrayList()` method.
+ *
+ *      It's items must either be equal to `none` or have one of the following
+ *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
+ *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
+ *      Otherwise items will be printed as "null" values.
+ *      Also see `Print()` method.
+ *
+ *  @param  toPrint Array to "print" into `MutableText`.
+ *  @return Text version of given `toPrint`, if it has one of the printable
+ *      classes. Otherwise returns `none`.
+ *      Note that `none` is considered printable and will produce "null".
+ */
+public final function MutableText PrettyPrintArrayList(ArrayList toPrint)
+{
+    local MutableText result;
+    local MutableText accumulatedIndent;
+
+    InitFormatting();
+    accumulatedIndent = _.text.Empty();
+    result = PrettyPrintArrayListWithIndent(toPrint, accumulatedIndent);
+    accumulatedIndent.FreeSelf();
+    return result;
+}
+
+/**
  *  "Prints" given `AssociativeArray` value, saving it as a JSON object in
  *  `MutableText`.
  *
@@ -1100,6 +1253,38 @@ public final function MutableText PrettyPrintObject(AssociativeArray toPrint)
     InitFormatting();
     accumulatedIndent = _.text.Empty();
     result = PrettyPrintObjectWithIndent(toPrint, accumulatedIndent);
+    accumulatedIndent.FreeSelf();
+    return result;
+}
+
+/**
+ *  "Prints" given `HashTable` value, saving it as a JSON object in
+ *  `MutableText`.
+ *
+ *      "Prints" given `HashTable` in a human readable way, for
+ *  a minimal output use `PrintHashTable()` method.
+ *
+ *      Only prints items recorded with `Text` key, the rest is omitted.
+ *
+ *      It's items must either be equal to `none` or have one of the following
+ *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
+ *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
+ *      Otherwise items will be printed as "null" values.
+ *      Also see `Print()` method.
+ *
+ *  @param  toPrint Array to "print" into `MutableText`.
+ *  @return Text version of given `toPrint`, if it has one of the printable
+ *      classes. Otherwise returns `none`.
+ *      Note that `none` is considered printable and will produce "null".
+ */
+public final function MutableText PrettyPrintHashTable(HashTable toPrint)
+{
+    local MutableText result;
+    local MutableText accumulatedIndent;
+
+    InitFormatting();
+    accumulatedIndent = _.text.Empty();
+    result = PrettyPrintHashTableWithIndent(toPrint, accumulatedIndent);
     accumulatedIndent.FreeSelf();
     return result;
 }
@@ -1152,9 +1337,18 @@ private final function MutableText PrettyPrintWithIndent(
         return PrettyPrintArrayWithIndent(  DynamicArray(toPrint),
                                             accumulatedIndent);
     }
+    if (toPrint.class == class'ArrayList')
+    {
+        return PrettyPrintArrayListWithIndent(  ArrayList(toPrint),
+                                                accumulatedIndent);
+    }
     if (toPrint.class == class'AssociativeArray') {
         return PrettyPrintObjectWithIndent( AssociativeArray(toPrint),
                                             accumulatedIndent);
+    }
+    if (toPrint.class == class'HashTable') {
+        return PrettyPrintHashTableWithIndent(  HashTable(toPrint),
+                                                accumulatedIndent);
     }
     return none;
 }
@@ -1184,6 +1378,52 @@ private final function MutableText PrettyPrintArrayWithIndent(
             result.Append(T(default.TCOMMA), jComma);
         }
         printedItem = PrettyPrintWithIndent(toPrint.GetItem(i), extendedIndent);
+        if (printedItem != none)
+        {
+            result.AppendLineBreak().Append(extendedIndent).Append(printedItem);
+            printedItem.FreeSelf();
+        }
+        else {
+            result.Append(T(default.TNULL), jNull);
+        }
+    }
+    if (i > 0) {
+        result.AppendLineBreak().Append(accumulatedIndent);
+    }
+    result.Append(T(default.TCLOSE_BRACKET), jArrayBraces);
+    extendedIndent.FreeSelf();
+    return result;
+}
+
+//      Does the actual job for `PrettyPrintArray()` method.
+//      Separated to hide `accumulatedIndent` parameter that is necessary for
+//  pretty printing.
+//      Assumes `InitFormatting()` was made and json formatting variables are
+//  initialized.
+private final function MutableText PrettyPrintArrayListWithIndent(
+    ArrayList   toPrint,
+    MutableText accumulatedIndent)
+{
+    local int           i, length;
+    local AcediaObject  nextItem;
+    local MutableText   extendedIndent;
+    local MutableText   result, printedItem;
+
+    if (toPrint == none) {
+        return none;
+    }
+    length = toPrint.GetLength();
+    extendedIndent = accumulatedIndent.MutableCopy().Append(T(TJSON_INDENT));
+    result = T(default.TOPEN_BRACKET).MutableCopy()
+        .ChangeFormatting(jArrayBraces);
+    for (i = 0; i < length; i += 1)
+    {
+        if (i > 0) {
+            result.Append(T(default.TCOMMA), jComma);
+        }
+        nextItem = toPrint.GetItem(i);
+        printedItem = PrettyPrintWithIndent(nextItem, extendedIndent);
+        _.memory.Free(nextItem);
         if (printedItem != none)
         {
             result.AppendLineBreak().Append(extendedIndent).Append(printedItem);
@@ -1234,6 +1474,55 @@ private final function MutableText PrettyPrintObjectWithIndent(
         if (nextKey.class != class'Text')   continue;
         PrettyPrintKeyValue(result, nextKey, nextValue, extendedIndent);
         printedKeyValuePair = true;
+    }
+    if (printedKeyValuePair) {
+        result.AppendLineBreak().Append(accumulatedIndent);
+    }
+    iter.FreeSelf();
+    result.Append(T(default.TCLOSE_BRACE), jObjectBraces);
+    extendedIndent.FreeSelf();
+    return result;
+}
+
+//      Does the actual job for `PrettyPrintHashTable()` method.
+//      Separated to hide `accumulatedIndent` parameter that is necessary for
+//  pretty printing.
+//      Assumes `InitFormatting()` was made and json formatting variables are
+//  initialized.
+private final function MutableText PrettyPrintHashTableWithIndent(
+    HashTable   toPrint,
+    MutableText accumulatedIndent)
+{
+    local bool          printedKeyValuePair;
+    local Iter          iter;
+    local Text          nextKey;
+    local AcediaObject  nextValue;
+    local MutableText   extendedIndent;
+    local MutableText   result;
+    if (toPrint == none) {
+        return none;
+    }
+    extendedIndent = accumulatedIndent.MutableCopy().Append(T(TJSON_INDENT));
+    result = T(default.TOPEN_BRACE).MutableCopy()
+        .ChangeFormatting(jObjectBraces);
+    iter = toPrint.Iterate();
+    for (iter = toPrint.Iterate(); !iter.HasFinished(); iter.Next())
+    {
+        if (printedKeyValuePair) {
+            result.Append(T(default.TCOMMA), jComma);
+        }
+        nextKey     = Text(iter.GetKey());
+        nextValue   = iter.Get();
+        if (nextKey == none || nextKey.class != class'Text')
+        {
+            _.memory.Free(nextKey);
+            _.memory.Free(nextValue);
+            continue;
+        }
+        PrettyPrintKeyValue(result, nextKey, nextValue, extendedIndent);
+        printedKeyValuePair = true;
+        _.memory.Free(nextKey);
+        _.memory.Free(nextValue);
     }
     if (printedKeyValuePair) {
         result.AppendLineBreak().Append(accumulatedIndent);
