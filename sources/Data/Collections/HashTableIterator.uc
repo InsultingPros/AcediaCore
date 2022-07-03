@@ -1,6 +1,6 @@
 /**
- *  Iterator for iterating over `AssociativeArray`'s items.
- *      Copyright 2020 Anton Tarasenko
+ *  Iterator for iterating over `HashTable`'s items.
+ *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -20,9 +20,9 @@
 class HashTableIterator extends Iter
     dependson(HashTable);
 
-var private bool                    hasNotFinished;
-var private AssociativeArray        relevantCollection;
-var private AssociativeArray.Index  currentIndex;
+var private bool            hasNotFinished;
+var private HashTable       relevantCollection;
+var private HashTable.Index currentIndex;
 
 var private bool skipNoneReferences;
 
@@ -34,17 +34,20 @@ protected function Finalizer()
 
 public function bool Initialize(Collection relevantArray)
 {
-    local AssociativeArray.Index emptyIndex;
+    local AcediaObject      currentKey;
+    local HashTable.Index   emptyIndex;
 
     currentIndex = emptyIndex;
-    relevantCollection = AssociativeArray(relevantArray);
+    relevantCollection = HashTable(relevantArray);
     if (relevantCollection == none) {
         return false;
     }
     hasNotFinished = (relevantCollection.GetLength() > 0);
-    if (GetKey() == none) {
+    currentKey = GetKey();
+    if (currentKey == none) {
         relevantCollection.IncrementIndex(currentIndex);
     }
+    _.memory.Free(currentKey);
     return true;
 }
 
@@ -66,7 +69,7 @@ public function Iter Next(optional bool deprecated)
     while (hasNotFinished)
     {
         hasNotFinished = relevantCollection.IncrementIndex(currentIndex);
-        if (relevantCollection.GetEntryByIndex(currentIndex).value != none) {
+        if (relevantCollection.IsSomethingByIndex(currentIndex)) {
             return self;
         }
     }
@@ -75,12 +78,12 @@ public function Iter Next(optional bool deprecated)
 
 public function AcediaObject Get()
 {
-    return relevantCollection.GetEntryByIndex(currentIndex).value;
+    return relevantCollection.GetItemByIndex(currentIndex);
 }
 
 public function AcediaObject GetKey()
 {
-    return relevantCollection.GetEntryByIndex(currentIndex).key;
+    return relevantCollection.GetKeyByIndex(currentIndex);
 }
 
 public function bool HasFinished()
