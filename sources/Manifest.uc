@@ -46,7 +46,7 @@ defaultproperties
     testCases(15)   = class'TEST_User'
     testCases(16)   = class'TEST_Memory'
     testCases(17)   = class'TEST_ArrayList'
-    testCases(18)   = class'TEST_AssociativeArray'
+    testCases(18)   = class'TEST_HashTable'
     testCases(19)   = class'TEST_CollectionsMixed'
     testCases(20)   = class'TEST_Iterator'
     testCases(21)   = class'TEST_Command'

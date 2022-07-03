@@ -480,7 +480,7 @@ public function Empty(optional bool deprecated)
  *
  *  Collecting all keys from the `HashTable` is O(<number_of_elements>).
  *
- *  See also `CopyTextKeys()` methods.
+ *  See also `GetTextKeys()` methods.
  *
  *  @return Array of all the caller `HashTable`'s keys.
  *      This method does not return copies of keys, but actual keys instead -
