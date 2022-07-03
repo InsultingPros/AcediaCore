@@ -389,6 +389,43 @@ public final function DynamicArray GetDynamicArrayBy(BaseText jsonPointerAsText)
 }
 
 /**
+ *  Returns an `HashTable` value stored (in the caller `Collection` or
+ *  one of it's sub-collections) pointed by
+ *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
+ *  See `GetItemBy()` for more information.
+ *
+ *  Referred value must be stored as `HashTable`
+ *  (or one of it's sub-classes) for this method to work.
+ *
+ *  @param  jsonPointerAsText   Description of a path to the `HashTable` value.
+ *  @return `HashTable` value, stored at `jsonPointerAsText` or
+ *      `none` if it is missing or has a different type.
+ */
+public final function HashTable GetHashTableBy(
+    BaseText jsonPointerAsText)
+{
+    return HashTable(GetItemBy(jsonPointerAsText));
+}
+
+/**
+ *  Returns an `ArrayList` value stored (in the caller `Collection` or
+ *  one of it's sub-collections) pointed by
+ *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
+ *  See `GetItemBy()` for more information.
+ *
+ *  Referred value must be stored as `ArrayList`
+ *  (or one of it's sub-classes) for this method to work.
+ *
+ *  @param  jsonPointerAsText   Description of a path to the `ArrayList` value.
+ *  @return `ArrayList` value, stored at `jsonPointerAsText` or
+ *      `none` if it is missing or has a different type.
+ */
+public final function ArrayList GetArrayListBy(BaseText jsonPointerAsText)
+{
+    return ArrayList(GetItemBy(jsonPointerAsText));
+}
+
+/**
  *  Returns a `bool` value stored (in the caller `Collection` or
  *  one of it's sub-collections) pointed by JSON pointer.
  *  See `GetItemByJSON()` for more information.
@@ -587,6 +624,42 @@ public final function DynamicArray GetDynamicArrayByJSON(
     JSONPointer jsonPointer)
 {
     return DynamicArray(GetItemByJSON(jsonPointer));
+}
+
+/**
+ *  Returns an `HashTable` value stored (in the caller `Collection` or
+ *  one of it's sub-collections) pointed by JSON pointer.
+ *  See `GetItemByJSON()` for more information.
+ *
+ *  Referred value must be stored as `HashTable`
+ *  (or one of it's sub-classes) for this method to work.
+ *
+ *  @param  jsonPointer JSON path to the `HashTable` value.
+ *  @return `HashTable` value, stored at `jsonPointerAsText` or
+ *      `none` if it is missing or has a different type.
+ */
+public final function HashTable GetHashTableByJSON(
+    JSONPointer jsonPointer)
+{
+    return HashTable(GetItemByJSON(jsonPointer));
+}
+
+/**
+ *  Returns an `ArrayList` value stored (in the caller `Collection` or
+ *  one of it's sub-collections) pointed by JSON pointer.
+ *  See `GetItemByJSON()` for more information.
+ *
+ *  Referred value must be stored as `ArrayList`
+ *  (or one of it's sub-classes) for this method to work.
+ *
+ *  @param  jsonPointer JSON path to the `ArrayList` value.
+ *  @return `ArrayList` value, stored at `jsonPointerAsText` or
+ *      `none` if it is missing or has a different type.
+ */
+public final function ArrayList GetArrayListByJSON(
+    JSONPointer jsonPointer)
+{
+    return ArrayList(GetItemByJSON(jsonPointer));
 }
 
 defaultproperties
