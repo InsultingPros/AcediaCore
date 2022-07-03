@@ -724,7 +724,7 @@ public final function ArrayList ParseArrayListWith(
             confirmedState = parser.GetCurrentState();
         }
         //  Parse next value
-        nextValue = ParseWith(parser, parseAsMutable);
+        nextValue = ParseWith(parser, parseAsMutable, true);
         parsedValues[parsedValues.length] = nextValue;
         if (!parser.Ok()) {
             break;
@@ -914,7 +914,7 @@ private function HashTable.Entry ParseHashTableProperty(
     local HashTable.Entry   entry;
     parser.MStringLiteral(nextKey).Skip().Match(T(default.TCOLON)).Skip();
     entry.key = nextKey.IntoText();
-    entry.value = ParseWith(parser, parseAsMutable);
+    entry.value = ParseWith(parser, parseAsMutable, true);
     return entry;
 }
 
