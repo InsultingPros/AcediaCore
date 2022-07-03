@@ -1,6 +1,6 @@
 /**
  *  Set of tests for `AcediaConfig` class.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -68,19 +68,19 @@ protected static function TEST_AvailableConfigs()
 
 protected static function TEST_DataGetSet()
 {
-    local AssociativeArray data, newData;
+    local HashTable data, newData;
     data = class'MockConfig'.static.LoadData(P("other"));
     Issue("Wrong value is loaded from config.");
     TEST_ExpectTrue(data.GetIntBy(P("/value")) == 11);
 
-    newData = __().collections.EmptyAssociativeArray();
+    newData = __().collections.EmptyHashTable();
     newData.SetItem(P("value"), __().box.int(903));
     class'MockConfig'.static.SaveData(P("other"), newData);
     data = class'MockConfig'.static.LoadData(P("other"));
     Issue("Wrong value is loaded from config after saving another value.");
     TEST_ExpectTrue(data.GetIntBy(P("/value")) == 903);
 
-    Issue("`AcediaConfig` returns `AssociativeArray` reference that was"
+    Issue("`AcediaConfig` returns `HashTable` reference that was"
         @ "passed in `SaveData()` call instead of a new collection.");
     TEST_ExpectTrue(data != newData);
 
@@ -91,7 +91,7 @@ protected static function TEST_DataGetSet()
 
 protected static function TEST_DataNew()
 {
-    local AssociativeArray data;
+    local HashTable data;
     Issue("Creating new config with existing name succeeds.");
     TEST_ExpectFalse(class'MockConfig'.static.NewConfig(P("another.config")));
     data = class'MockConfig'.static.LoadData(P("another.config"));

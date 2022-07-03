@@ -8,7 +8,7 @@
  *  is that "<config_object_name>" must be considered *valid* by
  *  `BaseText.IsValidName()` standards, otherwise method will return `none`.
  *
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -26,7 +26,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class AcediaConfig extends AcediaObject
-    dependson(AssociativeArray)
+    dependson(HashTable)
     abstract;
 
 /**
@@ -65,7 +65,7 @@ class AcediaConfig extends AcediaObject
 //  In case it has a `none` value stored under some key - it means that value
 //  was detected in config, but not yet loaded.
 //      Only its default value is ever used.
-var private AssociativeArray existingConfigs;
+var private HashTable existingConfigs;
 
 //  Stores name of the config where settings are to be stored.
 //  Must correspond to value in `config(...)` modifier in class definition.
@@ -79,10 +79,10 @@ var public const bool supportsDataConversion;
 
 /**
  *      These methods must be overloaded to store and load all the config
- *  variables inside an `AssociativeArray` collection. How exactly to store
+ *  variables inside an `HashTable` collection. How exactly to store
  *  them is up to each config class to decide, as long as it allows conversion
  *  into JSON (see `JSONAPI.IsCompatible()` for details).
- *      Note that `AssociativeArray` reference `FromData()` receives is
+ *      Note that `HashTable` reference `FromData()` receives is
  *  not necessarily the same one your `ToData()` method returns - any particular
  *  value boxes can be replaced with value references and vice versa.
  *      NOTE: DO NOT use `P()`, `C()`, `F()` or `T()` methods for keys or
@@ -90,20 +90,14 @@ var public const bool supportsDataConversion;
  *  deallocated when necessary, so these methods for creating `Text` values are
  *  not suitable.
 */
-protected function AssociativeArray ToData() { return none; }
-protected function FromData(AssociativeArray source) {}
+protected function HashTable ToData() { return none; }
+protected function FromData(HashTable source) {}
 
 /**
  *  This method must be overloaded to setup default values for all config
  *  variables. You should use it instead of the `defaultproperties` block.
  */
 protected function DefaultIt() {}
-
-protected static function StaticFinalizer()
-{
-    __().memory.Free(default.existingConfigs);
-    default.existingConfigs = none;
-}
 
 /**
  *      This reads all of the `AcediaConfig`'s settings objects into internal
@@ -113,12 +107,12 @@ protected static function StaticFinalizer()
 public static function Initialize()
 {
     local int           i;
-    local Text          nextName;
+    local Text          nextName, lowerName;
     local array<string> names;
     if (default.existingConfigs != none) {
         return;
     }
-    default.existingConfigs = __().collections.EmptyAssociativeArray();
+    default.existingConfigs = __().collections.EmptyHashTable();
     names = GetPerObjectNames(  default.configName, string(default.class.name),
                                 MaxInt);
     for (i = 0; i < names.length; i += 1)
@@ -127,8 +121,11 @@ public static function Initialize()
             continue;
         }
         nextName = __().text.FromString(NameToActualVersion(names[i]));
-        if (nextName.IsValidName()) {
-            default.existingConfigs.SetItem(nextName.LowerCopy(), none);
+        if (nextName.IsValidName())
+        {
+            lowerName = nextName.LowerCopy();
+            default.existingConfigs.SetItem(lowerName, none);
+            lowerName.FreeSelf();
         }
         nextName.FreeSelf();
     }
@@ -178,6 +175,7 @@ public final static function bool NewConfig(BaseText name)
     newConfig.DefaultIt();
     newConfig.SaveConfig();
     default.existingConfigs.SetItem(name, newConfig);
+    name.FreeSelf();
     return true;
 }
 
@@ -214,15 +212,16 @@ public final static function bool Exists(BaseText name)
 */
 public final static function DeleteConfig(BaseText name)
 {
-    local AssociativeArray.Entry entry;
-    if (default.existingConfigs == none) {
-        return;
+    local AcediaObject value;
+    if (name == none)                       return;
+    if (default.existingConfigs == none)    return;
+
+    name = name.LowerCopy();
+    value = default.existingConfigs.TakeItem(name);
+    if (value != none) {
+        value.ClearConfig();
     }
-    entry = default.existingConfigs.TakeEntry(name);
-    if (entry.value != none) {
-        entry.value.ClearConfig();
-    }
-    __().memory.Free(entry.key);
+    __().memory.Free(name);
 }
 
 /**
@@ -235,7 +234,7 @@ public static function array<Text> AvailableConfigs()
 {
     local array<Text> emptyResult;
     if (default.existingConfigs != none) {
-        return default.existingConfigs.CopyTextKeys();
+        return default.existingConfigs.GetTextKeys();
     }
     return emptyResult;
 }
@@ -250,7 +249,7 @@ public static function array<Text> AvailableConfigs()
  */
 public final static function AcediaConfig GetConfigInstance(BaseText name)
 {
-    local AssociativeArray.Entry configEntry;
+    local HashTable.Entry configEntry;
     if (name == none)                       return none;
     if (!name.IsValidName())                return none;
     if (default.existingConfigs == none)    return none;
@@ -265,6 +264,8 @@ public final static function AcediaConfig GetConfigInstance(BaseText name)
         default.existingConfigs.SetItem(configEntry.key, configEntry.value);
     }
     __().memory.Free(name);
+    //  We return value, so do not deallocate it
+    __().memory.Free(configEntry.key);
     return AcediaConfig(configEntry.value);
 }
 
@@ -284,10 +285,10 @@ public final static function AcediaConfig GetConfigInstance(BaseText name)
  *      For correctly implemented config objects should only return `none` if
  *      their class was not yet initialized (see `self.Initialize()` method).
 */
-public final static function AssociativeArray LoadData(BaseText name)
+public final static function HashTable LoadData(BaseText name)
 {
-    local AssociativeArray  result;
-    local AcediaConfig      requiredConfig;
+    local HashTable     result;
+    local AcediaConfig  requiredConfig;
     requiredConfig = GetConfigInstance(name);
     if (requiredConfig != none) {
         result = requiredConfig.ToData();
@@ -309,7 +310,7 @@ public final static function AssociativeArray LoadData(BaseText name)
  *      allows for JSON deserialization (see `JSONAPI.IsCompatible()` for
  *      details).
 */
-public final static function SaveData(BaseText name, AssociativeArray data)
+public final static function SaveData(BaseText name, HashTable data)
 {
     local AcediaConfig requiredConfig;
     requiredConfig = GetConfigInstance(name);

@@ -43,58 +43,67 @@ var public config array<AvariceLinkRecord> link;
 //  connection too long.
 var public config float reconnectTime;
 
-protected function AssociativeArray ToData()
+protected function HashTable ToData()
 {
-    local int               i;
-    local AssociativeArray  data;
-    local AssociativeArray  linkData;
-    local DynamicArray      linksArray;
-    data = __().collections.EmptyAssociativeArray();
+    local int       i;
+    local Text      nextValue;
+    local HashTable data;
+    local HashTable linkData;
+    local ArrayList linksArray;
+    data = __().collections.EmptyHashTable();
     data.SetFloat(P("reconnectTime"), reconnectTime, true);
-    linksArray = __().collections.EmptyDynamicArray();
+    linksArray = __().collections.EmptyArrayList();
     data.SetItem(P("link"), linksArray);
     for (i = 0; i < link.length; i += 1)
     {
-        linkData = __().collections.EmptyAssociativeArray();
-        linkData.SetItem(P("name"), __().text.FromString(link[i].name));
-        linkData.SetItem(P("address"), __().text.FromString(link[i].address));
+        linkData = __().collections.EmptyHashTable();
+        nextValue = __().text.FromString(link[i].name);
+        linkData.SetItem(P("name"), nextValue);
+        nextValue.FreeSelf();
+        nextValue = __().text.FromString(link[i].address);
+        linkData.SetItem(P("address"), nextValue);
+        nextValue.FreeSelf();
         linksArray.AddItem(linkData);
+        linkData.FreeSelf();
     }
+    linksArray.FreeSelf();
     return data;
 }
 
-protected function FromData(AssociativeArray source)
+protected function FromData(HashTable source)
 {
     local int               i;
     local Text              nextText;
-    local DynamicArray      linksArray;
-    local AssociativeArray  nextLink;
+    local ArrayList         linksArray;
+    local HashTable         nextLink;
     local AvariceLinkRecord nextRecord;
     if (source == none) {
         return;
     }
     reconnectTime = source.GetFloat(P("reconnectTime"));
     link.length = 0;
-    linksArray = source.GetDynamicArray(P("link"));
+    linksArray = source.GetArrayList(P("link"));
     if (linksArray == none) {
         return;
     }
     for (i = 0; i < linksArray.GetLength(); i += 1)
     {
-        nextLink = linksArray.GetAssociativeArray(i);
+        nextLink = linksArray.GetHashTable(i);
         if (nextLink == none) {
             continue;
         }
         nextText = nextLink.GetText(P("name"));
         if (nextText != none) {
-            nextRecord.name = nextText.ToString();
+            nextRecord.name = __().text.ToString(nextText);
         }
         nextText = nextLink.GetText(P("address"));
         if (nextText != none) {
-            nextRecord.address = nextText.ToString();
+            nextRecord.address = __().text.ToString(nextText);
         }
         link[i] = nextRecord;
+        _.memory.Free(nextLink);
     }
+    _.memory.Free(linksArray);
 }
 
 protected function DefaultIt()

@@ -388,6 +388,7 @@ public final function HashTable SetItem(
         storedElementCount += 1;
     }
     key.NewRef();
+    _.memory.Free(oldEntry.key);
     newEntry.key    = key;
     newEntry.value  = value;
     if (value != none) {

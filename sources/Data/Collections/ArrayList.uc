@@ -870,6 +870,30 @@ public final function ArrayList GetArrayList(int index)
     return result;
 }
 
+/**
+ *  Returns `HashTable` item at `index`. If index is invalid or
+ *  stores a non-`HashTable` value, returns `none`.
+ *
+ *  Referred value must be stored as `Text` (or one of it's sub-classes,
+ *  such as `MutableText`) for this method to work.
+ *
+ *  @param  index   Index of a `HashTable` item that caller `ArrayList`
+ *      has to return.
+ *  @return `HashTable` value at `index` in the caller `ArrayList`.
+ *      `none` if passed `index` is invalid or non-`HashTable` value
+ *      is stored there.
+ */
+public final function HashTable GetHashTable(int index)
+{
+    local HashTable result;
+
+    result = HashTable(BorrowItem(index));
+    if (result != none) {
+        result.NewRef();
+    }
+    return result;
+}
+
 defaultproperties
 {
     iteratorClass = class'ArrayListIterator'

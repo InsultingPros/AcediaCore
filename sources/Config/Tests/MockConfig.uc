@@ -1,6 +1,6 @@
 /**
  *  Mock object for testing config functionality of Acedia's `Feature`s.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -23,15 +23,15 @@ class MockConfig extends AcediaConfig
 
 var public config int value;
 
-protected function AssociativeArray ToData()
+protected function HashTable ToData()
 {
-    local AssociativeArray data;
-    data = __().collections.EmptyAssociativeArray();
+    local HashTable data;
+    data = __().collections.EmptyHashTable();
     data.SetInt(P("value").Copy(), value, true);
     return data;
 }
 
-protected function FromData(AssociativeArray source)
+protected function FromData(HashTable source)
 {
     if (source != none) {
         value = source.GetIntBy(P("/value"));

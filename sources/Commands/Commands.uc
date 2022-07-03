@@ -25,18 +25,20 @@ var public config bool      useChatInput;
 var public config bool      useMutateInput;
 var public config string    chatCommandPrefix;
 
-protected function AssociativeArray ToData()
+protected function HashTable ToData()
 {
-    local AssociativeArray data;
-    data = __().collections.EmptyAssociativeArray();
+    local Text      chatPrefix;
+    local HashTable data;
+    data = __().collections.EmptyHashTable();
     data.SetBool(P("useChatInput"), useChatInput, true);
     data.SetBool(P("useMutateInput"), useMutateInput, true);
-    data.SetItem(   P("chatCommandPrefix"),
-                    _.text.FromString(chatCommandPrefix), true);
+    chatPrefix = _.text.FromString(chatCommandPrefix);
+    data.SetItem(P("chatCommandPrefix"), chatPrefix);
+    _.memory.Free(chatPrefix);
     return data;
 }
 
-protected function FromData(AssociativeArray source)
+protected function FromData(HashTable source)
 {
     local Text newChatPrefix;
     if (source == none) {
