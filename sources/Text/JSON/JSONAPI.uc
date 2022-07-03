@@ -667,6 +667,80 @@ public final function DynamicArray ParseArrayWith(
 }
 
 /**
+ *  Uses given parser to parse a JSON array.
+ *
+ *  This method will parse JSON values that are contained in parsed JSON array
+ *  according to description given for `ParseWith()` method.
+ *
+ *  It does not matter what content follows parsed value in the `parser`,
+ *  method will be successful as long as it manages to parse correct
+ *  JSON array (from the current `parser`'s position).
+ *
+ *  To check whether parsing have failed, simply check if `parser` is in
+ *  a failed state after the method call.
+ *
+ *  @param  parser          Parser that method would use to parse JSON array
+ *      from it's current position. It's confirmed state will not be changed.
+ *      If parsing was successful it will point at the next available character.
+ *      Parser will be in a failed state after this method iff
+ *      parsing has failed.
+ *  @param parseAsMutable   `true` if you want this method to parse array's
+ *      items as mutable values and `false` otherwise (as immutable ones).
+ *  @return Parsed JSON array as `ArrayList` if parsing was successful and
+ *      `none` otherwise. To check for parsing success check the state of
+ *      the `parser`.
+ */
+public final function ArrayList ParseArrayListWith(
+    Parser          parser,
+    optional bool   parseAsMutable)
+{
+    local bool                  parsingSucceeded;
+    local Parser.ParserState    confirmedState;
+    local AcediaObject          nextValue;
+    local array<AcediaObject>   parsedValues;
+    local ArrayList             result;
+
+    if (parser == none) {
+        return none;
+    }
+    confirmedState =
+        parser.Skip().Match(T(default.TOPEN_BRACKET)).GetCurrentState();
+    while (parser.Ok() && !parser.HasFinished())
+    {
+        confirmedState = parser.Skip().GetCurrentState();
+        //  Check for JSON array ending and ONLY THEN declare parsing
+        //  is successful, not encountering '}' implies bad JSON format.
+        if (parser.Match(T(default.TCLOSE_BRACKET)).Ok()) {
+            parsingSucceeded = true;
+            break;
+        }
+        parser.RestoreState(confirmedState);
+        //  Look for comma after each element
+        if (parsedValues.length > 0)
+        {
+            if (!parser.Match(T(default.TCOMMA)).Skip().Ok()) {
+                break;
+            }
+            confirmedState = parser.GetCurrentState();
+        }
+        //  Parse next value
+        nextValue = ParseWith(parser, parseAsMutable);
+        parsedValues[parsedValues.length] = nextValue;
+        if (!parser.Ok()) {
+            break;
+        }
+    }
+    if (parsingSucceeded) {
+        result = _.collections.NewArrayList(parsedValues);
+    }
+    else {
+        parser.Fail();
+    }
+    _.memory.FreeMany(parsedValues);
+    return result;
+}
+
+/**
  *  Uses given parser to parse a JSON object.
  *
  *  This method will parse JSON values that are contained in parsed JSON object
@@ -739,6 +813,84 @@ public function AssociativeArray ParseObjectWith(
     return none;
 }
 
+/**
+ *  Uses given parser to parse a JSON object.
+ *
+ *  This method will parse JSON values that are contained in parsed JSON object
+ *  according to description given for `ParseWith()` method.
+ *
+ *  It does not matter what content follows parsed value in the `parser`,
+ *  method will be successful as long as it manages to parse correct
+ *  JSON object (from the current `parser`'s position).
+ *
+ *  To check whether parsing have failed, simply check if `parser` is in
+ *  a failed state after the method call.
+ *
+ *  @param  parser          Parser that method would use to parse JSON object
+ *      from it's current position. It's confirmed state will not be changed.
+ *      If parsing was successful it will point at the next available character.
+ *      Parser will be in a failed state after this method iff
+ *      parsing has failed.
+ *  @param parseAsMutable   `true` if you want this method to parse object's
+ *      items as mutable values and `false` otherwise (as immutable ones).
+ *  @return Parsed JSON object as `HashTable` if parsing was successful
+ *      and `none` otherwise. To check for parsing success check the state of
+ *      the `parser`.
+ */
+public function HashTable ParseHashTableWith(
+    Parser          parser,
+    optional bool   parseAsMutable)
+{
+    local bool                      parsingSucceeded;
+    local Parser.ParserState        confirmedState;
+    local array<HashTable.Entry>    parsedEntries;
+    local HashTable                 result;
+
+    if (parser == none) {
+        return none;
+    }
+    //  Ensure that parser starts pointing at what looks like a JSON object
+    confirmedState =
+        parser.Skip().Match(T(default.TOPEN_BRACE)).GetCurrentState();
+    if (!parser.Ok()) {
+        return none;
+    }
+    while (parser.Ok() && !parser.HasFinished())
+    {
+        confirmedState = parser.Skip().GetCurrentState();
+        //  Check for JSON object ending and ONLY THEN declare parsing
+        //  is successful, not encountering '}' implies bad JSON format.
+        if (parser.Match(T(default.TCLOSE_BRACE)).Ok())
+        {
+            parsingSucceeded = true;
+            break;
+        }
+        parser.RestoreState(confirmedState);
+        //  Look for comma after each key-value pair
+        if (parsedEntries.length > 0)
+        {
+            if (!parser.Match(T(default.TCOMMA)).Skip().Ok()) {
+                break;
+            }
+            confirmedState = parser.GetCurrentState();
+        }
+        //  Parse property
+        parsedEntries[parsedEntries.length] =
+            ParseHashTableProperty(parser, parseAsMutable);
+        if (!parser.Ok()) {
+            break;
+        }
+    }
+    if (parsingSucceeded) {
+        result = _.collections.NewHashTable(parsedEntries);
+    }
+    else {
+        parser.Fail();
+    }
+    FreeHashTableEntries(parsedEntries);
+    return result;
+}
+
 //  Parses a JSON key-value pair (there must not be any leading spaces).
 private function AssociativeArray.Entry ParseProperty(
     Parser  parser,
@@ -753,8 +905,32 @@ private function AssociativeArray.Entry ParseProperty(
     return entry;
 }
 
+//  Parses a JSON key-value pair (there must not be any leading spaces).
+private function HashTable.Entry ParseHashTableProperty(
+    Parser  parser,
+    bool    parseAsMutable)
+{
+    local MutableText       nextKey;
+    local HashTable.Entry   entry;
+    parser.MStringLiteral(nextKey).Skip().Match(T(default.TCOLON)).Skip();
+    entry.key = nextKey.IntoText();
+    entry.value = ParseWith(parser, parseAsMutable);
+    return entry;
+}
+
 //  Auxiliary method for deallocating unneeded objects in entry pairs.
 private function FreeEntries(array<AssociativeArray.Entry> entries)
+{
+    local int i;
+    for (i = 0; i < entries.length; i += 1)
+    {
+        _.memory.Free(entries[i].key);
+        _.memory.Free(entries[i].value);
+    }
+}
+
+//  Auxiliary method for deallocating unneeded objects in entry pairs.
+private function FreeHashTableEntries(array<HashTable.Entry> entries)
 {
     local int i;
     for (i = 0; i < entries.length; i += 1)
@@ -806,7 +982,8 @@ private function FreeEntries(array<AssociativeArray.Entry> entries)
  */
 public final function AcediaObject ParseWith(
     Parser          parser,
-    optional bool   parseAsMutable)
+    optional bool   parseAsMutable,
+    optional bool   parseAsNew)
 {
     local AcediaObject          result;
     local Parser.ParserState    initState;
@@ -830,13 +1007,35 @@ public final function AcediaObject ParseWith(
     if (parser.Ok()) {
         return result;
     }
-    result = ParseArrayWith(parser.RestoreState(initState), parseAsMutable);
-    if (parser.Ok()) {
-        return result;
+    if (parseAsNew)
+    {
+        result = ParseArrayListWith(
+            parser.RestoreState(initState),
+            parseAsMutable);
+        if (parser.Ok()) {
+            return result;
+        }
+        result = ParseHashTableWith(
+            parser.RestoreState(initState),
+            parseAsMutable);
+        if (parser.Ok()) {
+            return result;
+        }
     }
-    result = ParseObjectWith(parser.RestoreState(initState), parseAsMutable);
-    if (parser.Ok()) {
-        return result;
+    else
+    {
+        result = ParseArrayWith(
+            parser.RestoreState(initState),
+            parseAsMutable);
+        if (parser.Ok()) {
+            return result;
+        }
+        result = ParseObjectWith(
+            parser.RestoreState(initState),
+            parseAsMutable);
+        if (parser.Ok()) {
+            return result;
+        }
     }
     return none;
 }
