@@ -944,6 +944,77 @@ public final function HashTable SetFloat(
 }
 
 /**
+ *  Returns `string` item at key `key`. If key is invalid or
+ *  stores a non-`Text`/`MutableText` value, returns `defaultValue`.
+ *
+ *  Referred value must be stored as `Text` or `MutableText`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  key             Key of a `string` item that `HashTable` has to
+ *      return.
+ *  @param  defaultValue    Value to return if there is either no item recorded
+ *      at `key` or it has a wrong type.
+ *  @return `string` value at `key` in the caller `HashTable`.
+ *      `defaultValue` if passed `key` is invalid or non-`Text`/`MutableText`
+ *      value is stored with it.
+ */
+public final function string GetString(
+    AcediaObject    key,
+    optional string defaultValue)
+{
+    local AcediaObject  result;
+    local Text          asText;
+    local MutableText   asMutableText;
+
+    result = BorrowItem(key);
+    if (result == none) {
+        return defaultValue;
+    }
+    asText = Text(result);
+    if (asText != none) {
+        return asText.ToString();
+    }
+    asMutableText = MutableText(result);
+    if (asMutableText != none) {
+        return asMutableText.ToString();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Changes `HashTable`'s value at key `key` to `value` that will be
+ *  recorded as either `Text` or `MutableText`, depending of `asMutable`
+ *  optional parameter.
+ *
+ *  @param  key         Key, at which to change the value. If `DynamicArray` is
+ *      not long enough to hold it, it will be automatically expanded.
+ *      If passed key is negative - method will do nothing.
+ *  @param  value       Value to be set at a given key.
+ *  @param  asMutable   Given `float` value will be recorded as immutable
+ *      `Text` by default (`asMutable == false`). Setting this parameter to
+ *      `true` will make this method record it as a mutable `MutableText`.
+ *  @return Reference to the caller `HashTable` to allow for
+ *      method chaining.
+ */
+public final function HashTable SetString(
+    AcediaObject    key,
+    string          value,
+    optional bool   asMutable)
+{
+    local AcediaObject newValue;
+
+    if (asMutable) {
+        newValue = _.text.FromStringM(value);
+    }
+    else {
+        newValue = _.text.FromString(value);
+    }
+    SetItem(key, newValue);
+    newValue.FreeSelf();
+    return self;
+}
+
+/**
  *  Returns `Text` item stored at key `key`. If key is invalid or
  *  stores a non-`Text` value, returns `none`.
  *

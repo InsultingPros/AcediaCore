@@ -731,6 +731,74 @@ public final function ArrayList SetFloat(
 }
 
 /**
+ *  Returns `string` item at `index`. If index is invalid or
+ *  stores a non-`Text`/`MutableText` value, returns `defaultValue`.
+ *
+ *  Referred value must be stored as `Text` or `MutableText`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  index           Index of a `string` item that `ArrayList`
+ *      has to return.
+ *  @param  defaultValue    Value to return if there is either no item recorded
+ *      at `index` or it has a wrong type.
+ *  @return `string` value at `index` in the caller `ArrayList`.
+ *      `defaultValue` if passed `index` is invalid or non-`Text`/`MutableText`
+ *      value is stored there.
+ */
+public final function string GetString(int index, optional string defaultValue)
+{
+    local AcediaObject  result;
+    local Text          asText;
+    local MutableText   asMutableText;
+
+    result = BorrowItem(index);
+    if (result == none) {
+        return defaultValue;
+    }
+    asText = Text(result);
+    if (asText != none) {
+        return asText.ToString();
+    }
+    asMutableText = MutableText(result);
+    if (asMutableText != none) {
+        return asMutableText.ToString();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Changes `ArrayList`'s value at `index` to `value` that will be recorded
+ *  as either `Text` or `MutableText`, depending of `asMutable` optional
+ *  parameter.
+ *
+ *  @param  index       Index, at which to change the value. If `ArrayList` is
+ *      not long enough to hold it, it will be automatically expanded.
+ *      If passed index is negative - method will do nothing.
+ *  @param  value       Value to be set at a given index.
+ *  @param  asMutable   Given `string` value will be recorded as immutable
+ *      `Text` by default (`asMutable == false`). Setting this parameter to
+ *      `true` will make this method record it as a mutable `MutableText`.
+ *  @return Reference to the caller `ArrayList` to allow for method chaining.
+ */
+public final function ArrayList SetString(
+    int             index,
+    string          value,
+    optional bool   asMutable)
+{
+    local AcediaObject newValue;
+
+    if (asMutable) {
+        newValue = _.text.FromStringM(value);
+    }
+    else {
+        newValue = _.text.FromString(value);
+    }
+    SetItem(index, newValue);
+    newValue.FreeSelf();
+    return self;
+}
+
+/**
  *  Returns `BaseText` item at `index`. If index is invalid or
  *  stores a non-`BaseText` value, returns `none`.
  *

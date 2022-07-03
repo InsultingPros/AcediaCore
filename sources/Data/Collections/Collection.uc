@@ -2,7 +2,7 @@
  *      Acedia provides a small set of collections for easier data storage.
  *      This is their base class that provides a simple interface for
  *  common methods.
- *      Copyright 2020 - 2021 Anton Tarasenko
+ *      Copyright 2020 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -332,6 +332,44 @@ public final function float GetFloatBy(
 }
 
 /**
+ *  Returns a `string` value stored (in the caller `Collection` or
+ *  one of it's sub-collections) pointed by
+ *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
+ *  See `GetItemBy()` for more information.
+ *
+ *  Referred value must be stored as `Text` or `MutableText`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  jsonPointerAsText   Description of a path to the `string` value.
+ *  @param  defaultValue        Value to return in case `jsonPointerAsText`
+ *      does not point at any existing value or if that value does not have
+ *      appropriate type.
+ *  @return `string` value, stored at `jsonPointerAsText` or `defaultValue` if
+ *      it is missing or has a different type.
+ */
+public final function string GetStringBy(
+    BaseText        jsonPointerAsText,
+    optional string defaultValue)
+{
+    local AcediaObject  result;
+    local Text          asText;
+    local MutableText   asMutableText;
+    result = GetItemBy(jsonPointerAsText);
+    if (result == none) {
+        return defaultValue;
+    }
+    asText = Text(result);
+    if (asText != none) {
+        return asText.ToString();
+    }
+    asMutableText = MutableText(result);
+    if (asMutableText != none) {
+        return asMutableText.ToString();
+    }
+    return defaultValue;
+}
+
+/**
  *  Returns a `Text` value stored (in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
@@ -569,6 +607,43 @@ public final function float GetFloatByJSON(
     asRef = FloatRef(result);
     if (asRef != none) {
         return asRef.Get();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Returns a `string` value stored (in the caller `Collection` or
+ *  one of it's sub-collections) pointed by JSON pointer.
+ *  See `GetItemByJSON()` for more information.
+ *
+ *  Referred value must be stored as `Text` or `MutableText`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  jsonPointer     JSON path to the `string` value.
+ *  @param  defaultValue    Value to return in case `jsonPointer`
+ *      does not point at any existing value or if that value does not have
+ *      appropriate type.
+ *  @return `string` value, stored at `jsonPointerAsText` or `defaultValue` if
+ *      it is missing or has a different type.
+ */
+public final function string GetStringByJSON(
+    JSONPointer     jsonPointer,
+    optional string defaultValue)
+{
+    local AcediaObject  result;
+    local Text          asText;
+    local MutableText   asMutableText;
+    result = GetItemByJSON(jsonPointer);
+    if (result == none) {
+        return defaultValue;
+    }
+    asText = Text(result);
+    if (asText != none) {
+        return asText.ToString();
+    }
+    asMutableText = MutableText(result);
+    if (asMutableText != none) {
+        return asMutableText.ToString();
     }
     return defaultValue;
 }
