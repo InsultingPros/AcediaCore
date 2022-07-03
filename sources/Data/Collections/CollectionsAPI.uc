@@ -55,6 +55,43 @@ public final function ArrayList EmptyArrayList()
 }
 
 /**
+ *  Creates a new `HashTable`, optionally filling it with entries
+ *  (key/value pairs) from a given native array.
+ *
+ *  @param  entriesArray    Entries (key/value pairs) to place inside created
+ *      `HashTable`; if empty (by default) - new,
+ *      empty `HashTable` will be returned.
+ *  @param   managed        Flag that indicates whether values from
+ *      `entriesArray` argument should be added as managed.
+ *      By default `false` - they would not be managed.
+ *  @return New `HashTable`, optionally filled with contents of
+ *      `entriesArray`. Guaranteed to be not `none` and to not contain any items
+ *      outside of `entriesArray`.
+ */
+public final function HashTable NewHashTable(
+    array<HashTable.Entry> entriesArray)
+{
+    local int       i;
+    local HashTable result;
+
+    result = HashTable(_.memory.Allocate(class'HashTable'));
+    for (i = 0; i < entriesArray.length; i += 1) {
+        result.SetItem(entriesArray[i].key, entriesArray[i].value);
+    }
+    return result;
+}
+
+/**
+ *  Creates a new empty `HashTable`.
+ *
+ *  @return New empty instance of `HashTable`.
+ */
+public final function HashTable EmptyHashTable()
+{
+    return HashTable(_.memory.Allocate(class'HashTable'));
+}
+
+/**
  *  Creates a new `DynamicArray`, optionally filling it with objects from
  *  a given native array.
  *
