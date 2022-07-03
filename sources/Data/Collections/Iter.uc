@@ -62,19 +62,24 @@ public function Iter Next(optional bool skipNone);
  *
  *  @return Current value being iterated over. If `Iterator()` has finished
  *      iterating over all values or was not initialized - returns `none`.
- *      Note that `none` can also be returned if it's stored in a collection.
+ *      Note that `none` can also be returned if it's stored in a collection,
+ *      use `LeaveOnlyNotNone()` method to prevent that.
  */
 public function AcediaObject Get();
 
 /**
  *  Returns key of current value pointed to by an iterator.
  *
+ *  NOTE: this method is guaranteed to return reference to the key used in
+ *  relevant `Collection` if it actually stores key objects inside.
+ *  However for other `Collection`s this method may create a "replacement"
+ *  object (like `ArrayList` creating `IntBox` to simply return integer index).
+ *
  *  Does not advance iteration: use `Next()` to pick next value.
  *
  *  @return Key of the current value being iterated over.
  *      If `Iterator()` has finished iterating over all values or
  *      was not initialized - returns `none`.
- *      Note that `none` can also be returned if it's stored in a collection.
  */
 public function AcediaObject GetKey();
 
