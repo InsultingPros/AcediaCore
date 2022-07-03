@@ -27,31 +27,22 @@ var public config string    chatCommandPrefix;
 
 protected function HashTable ToData()
 {
-    local Text      chatPrefix;
     local HashTable data;
     data = __().collections.EmptyHashTable();
     data.SetBool(P("useChatInput"), useChatInput, true);
     data.SetBool(P("useMutateInput"), useMutateInput, true);
-    chatPrefix = _.text.FromString(chatCommandPrefix);
-    data.SetItem(P("chatCommandPrefix"), chatPrefix);
-    _.memory.Free(chatPrefix);
+    data.SetString(P("chatCommandPrefix"), chatCommandPrefix);
     return data;
 }
 
 protected function FromData(HashTable source)
 {
-    local Text newChatPrefix;
     if (source == none) {
         return;
     }
-    useChatInput    = source.GetBool(P("useChatInput"));
-    useMutateInput  = source.GetBool(P("useMutateInput"));
-    newChatPrefix   = source.GetText(P("chatCommandPrefix"));
-    chatCommandPrefix = "!";
-    if (newChatPrefix != none) {
-        chatCommandPrefix = newChatPrefix.ToString();
-    }
-    _.memory.Free(newChatPrefix);
+    useChatInput        = source.GetBool(P("useChatInput"));
+    useMutateInput      = source.GetBool(P("useMutateInput"));
+    chatCommandPrefix   = source.GetString(P("chatCommandPrefix"), "!");
 }
 
 protected function DefaultIt()

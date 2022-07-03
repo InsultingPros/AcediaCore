@@ -46,7 +46,6 @@ var public config float reconnectTime;
 protected function HashTable ToData()
 {
     local int       i;
-    local Text      nextValue;
     local HashTable data;
     local HashTable linkData;
     local ArrayList linksArray;
@@ -57,12 +56,8 @@ protected function HashTable ToData()
     for (i = 0; i < link.length; i += 1)
     {
         linkData = __().collections.EmptyHashTable();
-        nextValue = __().text.FromString(link[i].name);
-        linkData.SetItem(P("name"), nextValue);
-        nextValue.FreeSelf();
-        nextValue = __().text.FromString(link[i].address);
-        linkData.SetItem(P("address"), nextValue);
-        nextValue.FreeSelf();
+        linkData.SetString(P("name"), link[i].name);
+        linkData.SetString(P("address"), link[i].address);
         linksArray.AddItem(linkData);
         linkData.FreeSelf();
     }
@@ -73,7 +68,6 @@ protected function HashTable ToData()
 protected function FromData(HashTable source)
 {
     local int               i;
-    local Text              nextText;
     local ArrayList         linksArray;
     local HashTable         nextLink;
     local AvariceLinkRecord nextRecord;
@@ -92,14 +86,8 @@ protected function FromData(HashTable source)
         if (nextLink == none) {
             continue;
         }
-        nextText = nextLink.GetText(P("name"));
-        if (nextText != none) {
-            nextRecord.name = __().text.ToString(nextText);
-        }
-        nextText = nextLink.GetText(P("address"));
-        if (nextText != none) {
-            nextRecord.address = __().text.ToString(nextText);
-        }
+        nextRecord.name = nextLink.GetString(P("name"));
+        nextRecord.address = nextLink.GetString(P("address"));
         link[i] = nextRecord;
         _.memory.Free(nextLink);
     }
