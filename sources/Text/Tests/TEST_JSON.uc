@@ -1,6 +1,6 @@
 /**
  *  Set of tests for functionality of JSON printing/parsing.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -226,9 +226,9 @@ protected static function SubTest_SimplePrint()
 
 protected static function SubTest_ArrayPrint()
 {
-    local DynamicArray array, subArray;
-    array = DynamicArray(__().memory.Allocate(class'DynamicArray'));
-    subArray = DynamicArray(__().memory.Allocate(class'DynamicArray'));
+    local ArrayList array, subArray;
+    array = ArrayList(__().memory.Allocate(class'ArrayList'));
+    subArray = ArrayList(__().memory.Allocate(class'ArrayList'));
     subArray.AddItem(__().box.int(-752));
     subArray.AddItem(__().ref.bool(true));
     subArray.AddItem(__().box.float(3.44));
@@ -239,7 +239,7 @@ protected static function SubTest_ArrayPrint()
     array.AddItem(__().text.FromString("	"));
     Issue("JSON arrays are not printed as expected.");
     TEST_ExpectTrue(
-            __().json.PrintArray(array).ToString()
+            __().json.PrintArrayList(array).ToString()
         ==  "[34.1,null,[-752,true,3.44,\"\\\"quoted text\\\"\"],\"\\t\"]");
     TEST_ExpectTrue(
             __().json.Print(array).ToString()
@@ -461,19 +461,19 @@ protected static function SubTest_ParseString()
 
 protected static function SubTest_ParseArraySuccess()
 {
-    local Parser        parser;
-    local DynamicArray  result;
-    Issue("`ParseArrayWith()` fails to parse empty JSON array.");
+    local Parser    parser;
+    local ArrayList result;
+    Issue("`ParseArrayListWith()` fails to parse empty JSON array.");
     parser = __().text.ParseString("[]");
-    result = __().json.ParseArrayWith(parser);
+    result = __().json.ParseArrayListWith(parser);
     TEST_ExpectNotNone(result);
     TEST_ExpectTrue(parser.OK());
     TEST_ExpectTrue(result.GetLength() == 0);
 
-    Issue("`ParseArrayWith()` fails to parse correct JSON arrays"
+    Issue("`ParseArrayListWith()` fails to parse correct JSON arrays"
         @ "(as immutable).");
     parser = __().text.ParseString("[true, 76.4, \"val\", null, 5]");
-    result = __().json.ParseArrayWith(parser);
+    result = __().json.ParseArrayListWith(parser);
     TEST_ExpectNotNone(result);
     TEST_ExpectTrue(parser.OK());
     TEST_ExpectTrue(result.GetLength() == 5);
@@ -483,9 +483,9 @@ protected static function SubTest_ParseArraySuccess()
     TEST_ExpectNone(result.GetItem(3));
     TEST_ExpectTrue(IntBox(result.GetItem(4)).Get() == 5);
 
-    Issue("`ParseArrayWith()` fails to parse correct JSON arrays"
+    Issue("`ParseArrayListWith()` fails to parse correct JSON arrays"
         @ "(as mutable).");
-    result = __().json.ParseArrayWith(parser.R(), true);
+    result = __().json.ParseArrayListWith(parser.R(), true);
     TEST_ExpectNotNone(result);
     TEST_ExpectTrue(parser.OK());
     TEST_ExpectTrue(result.GetLength() == 5);
@@ -498,22 +498,22 @@ protected static function SubTest_ParseArraySuccess()
 
 protected static function SubTest_ParseArrayFailure()
 {
-    local Parser        parser;
-    local DynamicArray  result;
-    Issue("`ParseArrayWith()` incorrectly handles parsing invalid"
+    local Parser    parser;
+    local ArrayList result;
+    Issue("`ParseArrayListWith()` incorrectly handles parsing invalid"
         @ "JSON arrays.");
     parser = __().text.ParseString("[,]");
-    result = __().json.ParseArrayWith(parser);
+    result = __().json.ParseArrayListWith(parser);
     TEST_ExpectNone(result);
     TEST_ExpectFalse(parser.OK());
 
     parser = __().text.ParseString("[true, 76.4, \"val\", null, 5");
-    result = __().json.ParseArrayWith(parser);
+    result = __().json.ParseArrayListWith(parser);
     TEST_ExpectNone(result);
     TEST_ExpectFalse(parser.OK());
 
     parser = __().text.ParseString("[true, 76.4, \"val\", null,]");
-    result = __().json.ParseArrayWith(parser, true);
+    result = __().json.ParseArrayListWith(parser, true);
     TEST_ExpectNone(result);
     TEST_ExpectFalse(parser.OK());
 }
@@ -525,17 +525,17 @@ protected static function SubTest_ParseSimpleValueSuccess()
     api = __().json;
     Issue("`ParseWith()` fails to parse correct JSON values.");
     parser = __().text.ParseString("false, 98.2, 42, \"hmmm\", null");
-    TEST_ExpectFalse(BoolBox(api.ParseWith(parser)).Get());
+    TEST_ExpectFalse(BoolBox(api.ParseWith(parser,, true)).Get());
     parser.MatchS(",").Skip();
-    TEST_ExpectTrue(FloatBox(api.ParseWith(parser)).Get() == 98.2);
+    TEST_ExpectTrue(FloatBox(api.ParseWith(parser,, true)).Get() == 98.2);
     parser.MatchS(",").Skip();
-    TEST_ExpectTrue(IntRef(api.ParseWith(parser, true)).Get() == 42);
+    TEST_ExpectTrue(IntRef(api.ParseWith(parser, true, true)).Get() == 42);
     parser.MatchS(",").Skip();
     TEST_ExpectTrue(
-            MutableText(api.ParseWith(parser, true)).ToString()
+            MutableText(api.ParseWith(parser, true, true)).ToString()
         ==  "hmmm");
     parser.MatchS(",").Skip();
-    TEST_ExpectNone(api.ParseWith(parser));
+    TEST_ExpectNone(api.ParseWith(parser,, true));
     TEST_ExpectTrue(parser.Ok());
 }
 protected static function SubTest_ParseSimpleValueFailure()
@@ -546,31 +546,31 @@ protected static function SubTest_ParseSimpleValueFailure()
     Issue("`ParseWith()` does not correctly handle parsing invalid"
         @ "JSON values.");
     parser = __().text.ParseString("tru");
-    TEST_ExpectNone(api.ParseWith(parser));
+    TEST_ExpectNone(api.ParseWith(parser,, true));
     TEST_ExpectFalse(parser.Ok());
     parser = __().text.ParseString("");
-    TEST_ExpectNone(api.ParseWith(parser));
+    TEST_ExpectNone(api.ParseWith(parser,, true));
     TEST_ExpectFalse(parser.Ok());
     parser = __().text.ParseString("NUL");
-    TEST_ExpectNone(api.ParseWith(parser));
+    TEST_ExpectNone(api.ParseWith(parser,, true));
     TEST_ExpectFalse(parser.Ok());
 }
 
 protected static function SubTest_ParseObjectSuccess()
 {
-    local Parser            parser;
-    local AssociativeArray  result;
-    Issue("`ParseObjectWith()` fails to parse empty JSON object.");
+    local Parser    parser;
+    local HashTable result;
+    Issue("`ParseHashTableWith()` fails to parse empty JSON object.");
     parser = __().text.ParseString("{ }");
-    result = __().json.ParseObjectWith(parser);
+    result = __().json.ParseHashTableWith(parser);
     TEST_ExpectNotNone(result);
     TEST_ExpectTrue(parser.OK());
     TEST_ExpectTrue(result.GetLength() == 0);
 
-    Issue("`ParseObjectWith()` fails to parse correct JSON objects"
+    Issue("`ParseHashTableWith()` fails to parse correct JSON objects"
         @ "(as immutable).");
     parser = __().text.ParseString(default.simpleJSONObject);
-    result = __().json.ParseObjectWith(parser);
+    result = __().json.ParseHashTableWith(parser);
     TEST_ExpectNotNone(result);
     TEST_ExpectTrue(parser.OK());
     TEST_ExpectTrue(result.GetLength() == 4);
@@ -581,9 +581,9 @@ protected static function SubTest_ParseObjectSuccess()
     TEST_ExpectNone(MutableText(result.GetItem(P("string one"))));
     TEST_ExpectNone(result.GetItem(P("last")));
 
-    Issue("`ParseObjectWith()` fails to parse correct JSON objects"
+    Issue("`ParseHashTableWith()` fails to parse correct JSON objects"
         @ "(as mutable).");
-    result = __().json.ParseObjectWith(parser.R(), true);
+    result = __().json.ParseHashTableWith(parser.R(), true);
     TEST_ExpectNotNone(result);
     TEST_ExpectTrue(IntRef(result.GetItem(P("var"))).Get() == 13);
     TEST_ExpectTrue(BoolRef(result.GetItem(P("another"))).Get() == true);
@@ -595,52 +595,52 @@ protected static function SubTest_ParseObjectSuccess()
 
 protected static function SubTest_ParseObjectFailure()
 {
-    local Parser            parser;
-    local AssociativeArray  result;
-    Issue("`ParseObjectWith()` incorrectly handles parsing invalid"
+    local Parser    parser;
+    local HashTable result;
+    Issue("`ParseHashTableWith()` incorrectly handles parsing invalid"
         @ "JSON objects.");
     parser = __().text.ParseString("{,}");
-    result = __().json.ParseObjectWith(parser);
+    result = __().json.ParseHashTableWith(parser);
     TEST_ExpectNone(result);
     TEST_ExpectFalse(parser.OK());
     parser = __().text.ParseString("{var:null}");
-    result = __().json.ParseObjectWith(parser);
+    result = __().json.ParseHashTableWith(parser);
     TEST_ExpectNone(result);
     TEST_ExpectFalse(parser.OK());
     parser = __().text.ParseString("{\"var\":57,}");
-    result = __().json.ParseObjectWith(parser);
+    result = __().json.ParseHashTableWith(parser);
     TEST_ExpectNone(result);
     TEST_ExpectFalse(parser.OK());
     parser = __().text.ParseString("{,\"var\":true}");
-    result = __().json.ParseObjectWith(parser);
+    result = __().json.ParseHashTableWith(parser);
     TEST_ExpectNone(result);
     TEST_ExpectFalse(parser.OK());
 }
 
 protected static function SubTest_ParseComplex()
 {
-    local Parser            parser;
-    local DynamicArray      subArr;
-    local AssociativeArray  root, mainObj, subObj, inner;
-    Issue("`ParseObjectWith()` cannot handle complex values.");
+    local Parser    parser;
+    local ArrayList subArr;
+    local HashTable root, mainObj, subObj, inner;
+    Issue("`ParseHashTableWith()` cannot handle complex values.");
     parser = __().text.ParseString(default.complexJSONObject);
-    root = AssociativeArray(__().json.ParseWith(parser));
+    root = HashTable(__().json.ParseWith(parser,, true));
     TEST_ExpectTrue(root.GetLength() == 3);
     TEST_ExpectTrue(FloatBox(root.GetItem(P("some_var"))).Get() == -7.32);
     TEST_ExpectTrue(    Text(root.GetItem(P("another_var"))).ToString()
                     ==  "aye!");
-    mainObj = AssociativeArray(root.GetItem(P("innerObject")));
+    mainObj = HashTable(root.GetItem(P("innerObject")));
     TEST_ExpectTrue(root.GetLength() == 3);
     TEST_ExpectTrue(BoolBox(mainObj.GetItem(P("my_bool"))).Get() == true);
     TEST_ExpectTrue(IntBox(mainObj.GetItem(P("my_int"))).Get() == -9823452);
-    subObj  = AssociativeArray(mainObj.GetItem(P("one more")));
-    subArr  = DynamicArray(mainObj.GetItem(P("array")));
+    subObj  = HashTable(mainObj.GetItem(P("one more")));
+    subArr  = ArrayList(mainObj.GetItem(P("array")));
     TEST_ExpectTrue(subObj.GetLength() == 3);
     TEST_ExpectTrue(IntBox(subObj.GetItem(P("nope"))).Get() == 324532);
     TEST_ExpectTrue(BoolBox(subObj.GetItem(P("whatever"))).Get() == false);
     TEST_ExpectTrue(    Text(subObj.GetItem(P("o rly?"))).ToString()
                     ==  "ya rly");
-    inner = AssociativeArray(subArr.GetItem(3));
+    inner = HashTable(subArr.GetItem(3));
     TEST_ExpectTrue(Text(subArr.GetItem(0)).ToString() == "Engine.Actor");
     TEST_ExpectTrue(BoolBox(subArr.GetItem(1)).Get() == false);
     TEST_ExpectNone(subArr.GetItem(2));
