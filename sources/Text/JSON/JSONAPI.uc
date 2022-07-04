@@ -110,6 +110,7 @@ public function bool IsCompatible(AcediaObject data)
         ||  dataClass == class'IntBox'      || dataClass == class'IntRef'
         ||  dataClass == class'FloatBox'    || dataClass == class'FloatRef'
         ||  dataClass == class'Text'        || dataClass == class'MutableText'
+        ||  dataClass == class'ArrayList'   || dataClass == class'HashTable'
         ||  dataClass == class'DynamicArray'
         ||  dataClass == class'AssociativeArray';
 }
