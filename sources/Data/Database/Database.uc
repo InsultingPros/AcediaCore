@@ -7,7 +7,7 @@
  *      All of the methods are asynchronous - they do not return requested
  *  values immediately and instead require user to provide a handler function
  *  that will be called once operation is completed.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -99,7 +99,7 @@ public function DBReadTask ReadData(
  *  Schedules writing `data` at the location inside the caller database,
  *  given by the `pointer`.
  *
- *  Only `AssociativeArray` (that represents JSON object) can be recorded as
+ *  Only `HashTable` (that represents JSON object) can be recorded as
  *  a database's root value (referred to by an empty JSON pointer "").
  *
  *  @param  pointer JSON pointer to the location in the database, where `data`
@@ -121,7 +121,7 @@ public function DBReadTask ReadData(
  *      *   Data is actually written inside the database iff
  *          `result == DBR_Success`;
  *      *   `result == DBR_InvalidData` iff either given `data`'s type is not
- *          JSON-compatible or a non-`AssociativeArray` was attempted to be
+ *          JSON-compatible or a non-`HashTable` was attempted to be
  *          recorded as caller database's root value;
  *      *   `DBR_InvalidPointer` can be produced if either `pointer == none` or
  *          container of the value `pointer` points at does not exist.
@@ -230,7 +230,7 @@ public function DBSizeTask GetDataSize(JSONPointer pointer)
  *      *   Use it to connect a handler for when reading task is complete:
  *          `GetDataKeys(...).connect = handler`,
  *          where `handler` must have the following signature:
- *          `connect(DBQueryResult result, DynamicArray keys)`.
+ *          `connect(DBQueryResult result, ArrayList keys)`.
  *      *   Ownership of `keys` array returned in the `connect()` is considered
  *          to be transferred to whoever handled result of this query.
  *          It must be deallocated once no longer needed.

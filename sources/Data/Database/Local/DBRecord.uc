@@ -7,7 +7,7 @@
  *      Auxiliary data object that can store either a JSON array or an object in
  *  the local Acedia database. It is supposed to be saved and loaded
  *  to / from packages.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -414,7 +414,7 @@ public final function bool SaveObject(
             return false;
         }
         EmptySelf();
-        isJSONArray = (newItemAsCollection.class == class'DynamicArray');
+        isJSONArray = (newItemAsCollection.class == class'ArrayList');
         FromCollection(newItemAsCollection);
         return true;
     }
@@ -558,11 +558,10 @@ public final function int GetObjectSize(JSONPointer jsonPointer)
  *  @return If `pointer` refers to the JSON object - all available keys.
  *      `none` otherwise (including case of JSON arrays).
  */
-public final function DynamicArray GetObjectKeys(JSONPointer jsonPointer)
+public final function ArrayList GetObjectKeys(JSONPointer jsonPointer)
 {
     local int                   i;
-    local TextAPI               api;
-    local DynamicArray          resultKeys;
+    local ArrayList             resultKeys;
     local array<StorageItem>    items;
     local DBRecord              referredObject;
     local DBRecordPointer       pointer;
@@ -573,11 +572,10 @@ public final function DynamicArray GetObjectKeys(JSONPointer jsonPointer)
     referredObject = pointer.record;
     if (referredObject.isJSONArray)     return none;
 
-    api         = __().text;
-    resultKeys  = __().collections.EmptyDynamicArray();
+    resultKeys  = __().collections.EmptyArrayList();
     items       = referredObject.storage;
     for (i = 0; i < items.length; i += 1) {
-        resultKeys.AddItem(api.FromString(items[i].k));
+        resultKeys.AddString(items[i].k);
     }
     return resultKeys;
 }
@@ -604,7 +602,7 @@ public final function Database.DBQueryResult IncrementObject(
     local int               index;
     local string            itemKey;
     local DBRecord          directContainer;
-    local AssociativeArray  objectAsAssociativeArray;
+    local HashTable         objectAsHashTable;
     local DBRecordPointer   pointer;
     if (jsonPointer == none) {
         return DBR_InvalidPointer;
@@ -612,11 +610,11 @@ public final function Database.DBQueryResult IncrementObject(
     if (jsonPointer.IsEmpty())
     {
         //  Special case - incrementing caller `DBRecord` itself
-        objectAsAssociativeArray = AssociativeArray(object);
-        if (objectAsAssociativeArray == none) {
+        objectAsHashTable = HashTable(object);
+        if (objectAsHashTable == none) {
             return DBR_InvalidData;
         }
-        FromCollection(objectAsAssociativeArray);
+        FromCollection(objectAsHashTable);
         return DBR_Success;
     }
     //      All the work will be done by the separate `IncrementItem()` method;
@@ -768,7 +766,7 @@ private final function bool IncrementItem(
 
 /**
  *  Extracts JSON object or array data from caller `DBRecord` as either
- *  `AssociativeArray` (for JSON objects) or `DynamicArray` (for JSON arrays).
+ *  `HashTable` (for JSON objects) or `ArrayList` (for JSON arrays).
  *
  *  Type conversion rules in immutable case:
  *      1. 'null'       -> `none`;
@@ -776,8 +774,8 @@ private final function bool IncrementItem(
  *      3. 'number'     -> either `IntBox` or `FloatBox`, depending on
  *          what seems to fit better;
  *      4. 'string'     -> `Text`;
- *      5. 'array'      -> `DynamicArray`;
- *      6. 'object'     -> `AssociativeArray`.
+ *      5. 'array'      -> `ArrayList`;
+ *      6. 'object'     -> `HashTable`.
  *
  *  Type conversion rules in mutable case:
  *      1. 'null'       -> `none`;
@@ -785,13 +783,13 @@ private final function bool IncrementItem(
  *      3. 'number'     -> either `IntRef` or `FloatRef`, depending on
  *          what seems to fit better;
  *      4. 'string'     -> `MutableText`;
- *      5. 'array'      -> `DynamicArray`;
- *      6. 'object'     -> `AssociativeArray`.
+ *      5. 'array'      -> `ArrayList`;
+ *      6. 'object'     -> `HashTable`.
  *
  *  @param  makeMutable `false` if you want this method to produce
  *      immutable types and `true` otherwise.
- *  @return `AssociativeArray` if caller `DBRecord` represents a JSON object
- *      and `DynamicArray` if it represents JSON array.
+ *  @return `HashTable` if caller `DBRecord` represents a JSON object
+ *      and `ArrayList` if it represents JSON array.
  *      Returned collection must have all of it's keys deallocated before being
  *      discarded.
  *      `none` iff caller `DBRecord` was not initialized as either.
@@ -804,10 +802,10 @@ public final function Collection ToCollection(bool makeMutable)
     }
     lockToCollection = true;
     if (isJSONArray) {
-        result = ToDynamicArray(makeMutable);
+        result = ToArrayList(makeMutable);
     }
     else {
-        result = ToAssociativeArray(makeMutable);
+        result = ToHashTable(makeMutable);
     }
     lockToCollection = false;
     return result;
@@ -815,28 +813,37 @@ public final function Collection ToCollection(bool makeMutable)
 
 //  Does not do any validation check, assumes caller `DBRecord`
 //  represents an array.
-private final function Collection ToDynamicArray(bool makeMutable)
+private final function Collection ToArrayList(bool makeMutable)
 {
     local int           i;
-    local DynamicArray  result;
-    result = __().collections.EmptyDynamicArray();
-    for (i = 0; i < storage.length; i += 1) {
-        result.AddItem(ConvertItemToObject(storage[i], makeMutable));
+    local ArrayList     result;
+    local AcediaObject  nextObject;
+    result = __().collections.EmptyArrayList();
+    for (i = 0; i < storage.length; i += 1)
+    {
+        nextObject = ConvertItemToObject(storage[i], makeMutable);
+        result.AddItem(nextObject);
+        __().memory.Free(nextObject);
     }
     return result;
 }
 
 //  Does not do any validation check, assumes caller `DBRecord`
 //  represents an object.
-private final function Collection ToAssociativeArray(bool makeMutable)
+private final function Collection ToHashTable(bool makeMutable)
 {
-    local int               i;
-    local AssociativeArray  result;
-    result = __().collections.EmptyAssociativeArray();
+    local int           i;
+    local HashTable     result;
+    local Text          nextKey;
+    local AcediaObject  nextObject;
+    result = __().collections.EmptyHashTable();
     for (i = 0; i < storage.length; i += 1)
     {
-        result.SetItem( __().text.FromString(storage[i].k),
-                        ConvertItemToObject(storage[i], makeMutable));
+        nextKey = __().text.FromString(storage[i].k);
+        nextObject = ConvertItemToObject(storage[i], makeMutable);
+        result.SetItem(nextKey, nextObject);
+        __().memory.Free(nextKey);
+        __().memory.Free(nextObject);
     }
     return result;
 }
@@ -874,11 +881,11 @@ public final function EmptySelf()
  *  in case of the conflict.
  *
  *      Can only convert items in passed collection that return `true` for
- *  `_.json.IsCompatible()` check. Any other values will be treated as `none`.
+ *  `__().json.IsCompatible()` check. Any other values will be treated as `none`.
  *
  *  Only works as long as caller `DBRecord` has the same container type as
- *  `source`. `isJSONArray` iff `source.class == class'DynamicArray` and
- *  `!isJSONArray` iff `source.class == class'AssociativeArray`.
+ *  `source`. `isJSONArray` iff `source.class == class'ArrayList` and
+ *  `!isJSONArray` iff `source.class == class'HashTable`.
  *
  *  Values that cannot be converted into JSON will be replaced with `none`.
  *
@@ -886,42 +893,47 @@ public final function EmptySelf()
  */
 public final function FromCollection(Collection source)
 {
-    local DynamicArray      asDynamicArray;
-    local AssociativeArray  asAssociativeArray;
-    asDynamicArray      = DynamicArray(source);
-    asAssociativeArray  = AssociativeArray(source);
-    if (asDynamicArray != none && isJSONArray) {
-        FromDynamicArray(asDynamicArray);
+    local ArrayList asArrayList;
+    local HashTable asHashTable;
+    asArrayList = ArrayList(source);
+    asHashTable = HashTable(source);
+    if (asArrayList != none && isJSONArray) {
+        FromArrayList(asArrayList);
     }
-    if (asAssociativeArray != none && !isJSONArray) {
-        FromAssociativeArray(asAssociativeArray);
+    if (asHashTable != none && !isJSONArray) {
+        FromHashTable(asHashTable);
     }
 }
 
 //  Does not do any validation check.
-private final function FromDynamicArray(DynamicArray source)
+private final function FromArrayList(ArrayList source)
 {
-    local int i, length;
+    local int           i, length;
+    local AcediaObject  nextObject;
     length = source.GetLength();
-    for (i = 0; i < length; i += 1) {
-        storage[storage.length] = ConvertObjectToItem(source.GetItem(i));
+    for (i = 0; i < length; i += 1)
+    {
+        nextObject = source.GetItem(i);
+        storage[storage.length] = ConvertObjectToItem(nextObject);
+        __().memory.Free(nextObject);
     }
 }
 
 //  Does not do any validation check.
-private final function FromAssociativeArray(AssociativeArray source)
+private final function FromHashTable(HashTable source)
 {
-    local int       i, originalStorageLength;
-    local Iter      iter;
-    local string    nextKey;
-    local bool      isNewKey;
+    local int           i, originalStorageLength;
+    local Iter          iter;
+    local string        nextKey;
+    local bool          isNewKey;
+    local AcediaObject  nextObject;
     originalStorageLength = storage.length;
     for (iter = source.Iterate(); !iter.HasFinished(); iter.Next())
     {
         if (iter.GetKey() == none) {
             continue;
         }
-        nextKey = Text(iter.GetKey()).ToString();
+        nextKey = __().text.ToString(BaseText(iter.GetKey()));
         isNewKey = true;
         for (i = 0; i < originalStorageLength; i += 1)
         {
@@ -931,8 +943,11 @@ private final function FromAssociativeArray(AssociativeArray source)
                 break;
             }
         }
-        if (isNewKey) {
-            SetItem(storage.length, ConvertObjectToItem(iter.Get()), nextKey);
+        if (isNewKey)
+        {
+            nextObject = iter.Get();
+            SetItem(storage.length, ConvertObjectToItem(nextObject), nextKey);
+            __().memory.Free(nextObject);
         }
     }
     iter.FreeSelf();
@@ -952,7 +967,7 @@ private final function StorageItem ConvertObjectToItem(AcediaObject data)
     {
         result.t = DBAT_Reference;
         newDBRecord = NewRecordFor(package);
-        newDBRecord.isJSONArray = (data.class == class'DynamicArray');
+        newDBRecord.isJSONArray = (data.class == class'ArrayList');
         newDBRecord.FromCollection(Collection(data));
         result.s = string(newDBRecord.name);
     }
@@ -1063,11 +1078,11 @@ private final function bool IncrementItemByObject(
         {
             itemRecord = NewRecordFor(package); // DB was broken somehow
             item.s = string(itemRecord.name);
-            itemRecord.isJSONArray = (object.class == class'DynamicArray');
+            itemRecord.isJSONArray = (object.class == class'ArrayList');
         }
-        if (    (itemRecord.isJSONArray && object.class != class'DynamicArray')
+        if (    (itemRecord.isJSONArray && object.class != class'ArrayList')
             ||  (   !itemRecord.isJSONArray
-                &&  object.class != class'AssociativeArray'))
+                &&  object.class != class'HashTable'))
         {
             return false;
         }

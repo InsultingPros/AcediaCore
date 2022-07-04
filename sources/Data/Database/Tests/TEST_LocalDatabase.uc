@@ -1,6 +1,6 @@
 /**
  *  Set of tests for `DBRecord` class.
- *      Copyright 2020 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -22,10 +22,10 @@ class TEST_LocalDatabase extends TestCase
 
 //  Results of callback are written here
 var protected int                       resultSize;
-var protected DynamicArray              resultKeys;
+var protected ArrayList                 resultKeys;
 var protected Database.DBQueryResult    resultType;
 var protected Database.DataType         resultDataType;
-var protected AssociativeArray          resultData;
+var protected HashTable                 resultData;
 var protected AcediaObject              resultObject;
 
 protected function DBReadingHandler(
@@ -35,12 +35,12 @@ protected function DBReadingHandler(
 {
     default.resultType      = result;
     default.resultObject    = data;
-    default.resultData      = AssociativeArray(data);
+    default.resultData      = HashTable(data);
 }
 
 protected function DBKeysHandler(
     Database.DBQueryResult  result,
-    DynamicArray            keys,
+    ArrayList               keys,
     Database                source)
 {
     default.resultType = result;
@@ -112,11 +112,11 @@ contains it:
 
 local string                source;
 local Parser                parser;
-local AssociativeArray      root;
+local HashTable             root;
 local LocalDatabaseInstance db;
 source = GetJSONTemplateString();
 parser = __().text.ParseString(source);
-root = AssociativeArray(__().json.ParseWith(parser));
+root = HashTable(__().json.ParseWith(parser));
 db = __().db.NewLocal(P("TEST_ReadOnly"));
 db.WriteData(__().json.Pointer(), root);
 */
@@ -253,11 +253,11 @@ protected static function SubTest_LoadingPreparedSuccessRoot(
     TEST_ExpectTrue(default.resultType == DBR_Success);
     TEST_ExpectTrue(default.resultData.GetLength() == 1);
     TEST_ExpectTrue(default.resultData
-        .GetAssociativeArrayBy(P("/web-app")).GetLength() == 3);
+        .GetHashTableBy(P("/web-app")).GetLength() == 3);
     TEST_ExpectTrue(default.resultData
-        .GetDynamicArrayBy(P("/web-app/servlet")).GetLength() == 5);
+        .GetArrayListBy(P("/web-app/servlet")).GetLength() == 5);
     TEST_ExpectTrue(default.resultData
-        .GetAssociativeArrayBy(P("/web-app/servlet/0/init-param"))
+        .GetHashTableBy(P("/web-app/servlet/0/init-param"))
         .GetLength() == 42);
     TEST_ExpectTrue(default.resultData
         .GetTextBy(P("/web-app/servlet/2/servlet-class"))
@@ -536,18 +536,18 @@ protected static function Test_TaskChaining()
     __().db.DeleteLocal(P("TEST_DB"));
 }
 
-protected static function AssociativeArray GetJSONSubTemplateObject()
+protected static function HashTable GetJSONSubTemplateObject()
 {
     local Parser parser;
     parser = __().text.ParseString("{\"A\":\"simpleValue\",\"B\":11.12}");
-    return AssociativeArray(__().json.ParseWith(parser));
+    return HashTable(__().json.ParseWith(parser,, true));
 }
 
-protected static function DynamicArray GetJSONSubTemplateArray()
+protected static function ArrayList GetJSONSubTemplateArray()
 {
     local Parser parser;
     parser = __().text.ParseString("[true, null, \"huh\"]");
-    return DynamicArray(__().json.ParseWith(parser));
+    return ArrayList(__().json.ParseWith(parser,, true));
 }
 
 /*
@@ -568,9 +568,9 @@ the database by using templates provided by `GetJSONSubTemplateObject()` and
 */
 protected static function SubTest_WritingSuccess(LocalDatabaseInstance db)
 {
-    local DBWriteTask  task;
-    local DynamicArray      templateArray;
-    local AssociativeArray  templateObject;
+    local DBWriteTask   task;
+    local ArrayList     templateArray;
+    local HashTable     templateObject;
     templateObject = GetJSONSubTemplateObject();
     templateArray = GetJSONSubTemplateArray();
     Issue("`WriteData()` call that is supposed to succeed reports failure.");
@@ -666,9 +666,9 @@ protected static function SubTest_WritingDataCheck_Mutable(
 
 protected static function SubTest_WritingFailure(LocalDatabaseInstance db)
 {
-    local DBWriteTask       task;
-    local DynamicArray      templateArray;
-    local AssociativeArray  templateObject;
+    local DBWriteTask   task;
+    local ArrayList     templateArray;
+    local HashTable     templateObject;
     templateObject = GetJSONSubTemplateObject();
     templateArray = GetJSONSubTemplateArray();
     Issue("`WriteData()` does not report error when attempting writing data at"
@@ -712,10 +712,10 @@ protected static function SubTest_WritingIntoSimpleValues(
 
 protected static function SubTest_WritingArrayIndicies(LocalDatabaseInstance db)
 {
-    local DBWriteTask       writeTask;
-    local DynamicArray      resultArray;
-    local DynamicArray      templateArray;
-    local AssociativeArray  templateObject;
+    local DBWriteTask   writeTask;
+    local ArrayList     resultArray;
+    local ArrayList     templateArray;
+    local HashTable     templateObject;
     templateObject = GetJSONSubTemplateObject();
     templateArray = GetJSONSubTemplateArray();
     db.WriteData(__().json.Pointer(P("")), templateObject);
@@ -731,7 +731,7 @@ protected static function SubTest_WritingArrayIndicies(LocalDatabaseInstance db)
     Issue("Database cannot extend stored JSON array's length by assigning to"
         @ "the out-of-bounds index or \"-\".");
     ReadFromDB(db, "/A");
-    resultArray = DynamicArray(default.resultObject);
+    resultArray = ArrayList(default.resultObject);
     TEST_ExpectTrue(resultArray.GetLength() == 102);
     TEST_ExpectNone(resultArray.GetItem(99));
     TEST_ExpectTrue(resultArray.GetInt(100) == -342);
@@ -741,9 +741,9 @@ protected static function SubTest_WritingArrayIndicies(LocalDatabaseInstance db)
 
 protected static function SubTest_TaskChaining(LocalDatabaseInstance db)
 {
-    local DBWriteTask  writeTask;
-    local DynamicArray      templateArray;
-    local AssociativeArray  templateObject;
+    local DBWriteTask   writeTask;
+    local ArrayList     templateArray;
+    local HashTable     templateObject;
     templateObject = GetJSONSubTemplateObject();
     templateArray = GetJSONSubTemplateArray();
     db.WriteData(__().json.Pointer(P("")), templateObject);
@@ -759,16 +759,16 @@ protected static function SubTest_TaskChaining(LocalDatabaseInstance db)
     TEST_ExpectTrue(Text(default.resultObject).ToString() == "huh");
     ReadFromDB(db, "/B/2");
     TEST_ExpectTrue(default.resultType == DBR_Success);
-    TEST_ExpectTrue(default.resultObject.class == class'DynamicArray');
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetLength() == 3);
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetBool(0)   );
+    TEST_ExpectTrue(default.resultObject.class == class'ArrayList');
+    TEST_ExpectTrue(ArrayList(default.resultObject).GetLength() == 3);
+    TEST_ExpectTrue(ArrayList(default.resultObject).GetBool(0)   );
 }
 
 protected static function Test_Removal()
 {
     local LocalDatabaseInstance db;
-    local DynamicArray          templateArray;
-    local AssociativeArray      templateObject;
+    local ArrayList             templateArray;
+    local HashTable             templateObject;
     templateObject = GetJSONSubTemplateObject();
     templateArray = GetJSONSubTemplateArray();
     db = __().db.NewLocal(P("TEST_DB"));
@@ -828,9 +828,9 @@ protected static function SubTest_RemovalCheckValuesAfter(
     TEST_ExpectTrue(default.resultData.GetLength() == 1);
     TEST_ExpectTrue(default.resultData.HasKey(P("A")));
     TEST_ExpectTrue(
-        default.resultData.GetDynamicArray(P("A")).GetLength() == 2);
-    TEST_ExpectTrue(default.resultData.GetDynamicArray(P("A")).GetBool(0));
-    TEST_ExpectTrue(default.resultData.GetDynamicArray(P("A"))
+        default.resultData.GetArrayList(P("A")).GetLength() == 2);
+    TEST_ExpectTrue(default.resultData.GetArrayList(P("A")).GetBool(0));
+    TEST_ExpectTrue(default.resultData.GetArrayList(P("A"))
             .GetText(1).ToString()
         ==  "huh");
 }
@@ -852,8 +852,8 @@ protected static function SubTest_RemovalRoot(LocalDatabaseInstance db)
 protected static function Test_Increment()
 {
     local LocalDatabaseInstance db;
-    local DynamicArray          templateArray;
-    local AssociativeArray      templateObject;
+    local ArrayList             templateArray;
+    local HashTable             templateObject;
     templateObject = GetJSONSubTemplateObject();
     templateArray = GetJSONSubTemplateArray();
     db = __().db.NewLocal(P("TEST_DB"));
@@ -911,8 +911,8 @@ protected static function SubTest_IncrementNull(LocalDatabaseInstance db)
     task.TryCompleting();
     TEST_ExpectTrue(default.resultType == DBR_Success);
     ReadFromDB(db, "/B/A/1/");
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetLength() == 3);
-    TEST_ExpectNone(DynamicArray(default.resultObject).GetItem(1));
+    TEST_ExpectTrue(ArrayList(default.resultObject).GetLength() == 3);
+    TEST_ExpectNone(ArrayList(default.resultObject).GetItem(1));
     task = db.IncrementData(
         __().json.Pointer(P("/B/A/1//1")), GetJSONSubTemplateArray());
     task.connect = DBIncrementHandler;
@@ -924,10 +924,10 @@ protected static function SubTest_IncrementNull(LocalDatabaseInstance db)
     task.TryCompleting();
     TEST_ExpectTrue(default.resultType == DBR_Success);
     ReadFromDB(db, "/B/A/1/");
-    TEST_ExpectTrue(default.resultObject.class == class'DynamicArray');
-    TEST_ExpectNotNone(DynamicArray(default.resultObject).GetDynamicArray(1));
+    TEST_ExpectTrue(default.resultObject.class == class'ArrayList');
+    TEST_ExpectNotNone(ArrayList(default.resultObject).GetArrayList(1));
     TEST_ExpectTrue(
-        DynamicArray(default.resultObject).GetDynamicArray(1).GetInt(1) == 2);
+        ArrayList(default.resultObject).GetArrayList(1).GetInt(1) == 2);
 }
 
 protected static function SubTest_IncrementBool(LocalDatabaseInstance db)
@@ -1009,10 +1009,10 @@ protected static function SubTest_IncrementString(LocalDatabaseInstance db)
         Text(default.resultObject).ToString() == "simpleValue!?");
 }
 
-protected static function AssociativeArray GetHelperObject()
+protected static function HashTable GetHelperObject()
 {
-    local AssociativeArray result;
-    result = __().collections.EmptyAssociativeArray();
+    local HashTable result;
+    result = __().collections.EmptyHashTable();
     result.SetItem(P("A"), __().text.FromString("complexString"));
     result.SetItem(P("E"), __().text.FromString("str"));
     result.SetItem(P("F"), __().ref.float(45));
@@ -1024,7 +1024,7 @@ protected static function SubTest_IncrementObject(LocalDatabaseInstance db)
     local DBIncrementTask task;
     Issue("JSON objects are not incremented properly.");
     task = db.IncrementData(__().json.Pointer(P("")),
-                            __().collections.EmptyAssociativeArray());
+                            __().collections.EmptyHashTable());
     task.connect = DBIncrementHandler;
     task.TryCompleting();
     TEST_ExpectTrue(default.resultType == DBR_Success);
@@ -1046,16 +1046,16 @@ protected static function SubTest_IncrementObject(LocalDatabaseInstance db)
         default.resultData.GetText(P("E")).ToString() == "str");
     TEST_ExpectTrue(default.resultData.GetFloat(P("F")) == 45);
     TEST_ExpectTrue(
-        default.resultData.GetItem(P("B")).class == class'AssociativeArray');
+        default.resultData.GetItem(P("B")).class == class'HashTable');
     Issue("Incrementing JSON objects can overwrite existing data.");
     TEST_ExpectTrue(
         default.resultData.GetText(P("A")).ToString() == "simpleValue!?");
 }
 
-protected static function DynamicArray GetHelperArray()
+protected static function ArrayList GetHelperArray()
 {
-    local DynamicArray result;
-    result = __().collections.EmptyDynamicArray();
+    local ArrayList result;
+    result = __().collections.EmptyArrayList();
     result.AddItem(__().text.FromString("complexString"));
     result.AddItem(__().ref.float(45));
     result.AddItem(none);
@@ -1068,45 +1068,45 @@ protected static function SubTest_IncrementArray(LocalDatabaseInstance db)
     local DBIncrementTask task;
     Issue("JSON arrays are not incremented properly.");
     task = db.IncrementData(__().json.Pointer(P("/B/A")),
-                            __().collections.EmptyDynamicArray());
+                            __().collections.EmptyArrayList());
     task.connect = DBIncrementHandler;
     task.TryCompleting();
     TEST_ExpectTrue(default.resultType == DBR_Success);
     ReadFromDB(db, "/B/A");
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetLength() == 3);
+    TEST_ExpectTrue(ArrayList(default.resultObject).GetLength() == 3);
     TEST_ExpectTrue(
-        DynamicArray(default.resultObject).GetText(2).ToString() == "huh");
+        ArrayList(default.resultObject).GetText(2).ToString() == "huh");
     task = db.IncrementData(__().json.Pointer(P("/B/A")),
                             GetHelperArray());
     task.connect = DBIncrementHandler;
     task.TryCompleting();
     TEST_ExpectTrue(default.resultType == DBR_Success);
     ReadFromDB(db, "/B/A");
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetLength() == 7);
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetBool(0));
+    TEST_ExpectTrue(ArrayList(default.resultObject).GetLength() == 7);
+    TEST_ExpectTrue(ArrayList(default.resultObject).GetBool(0));
     TEST_ExpectNotNone(
-        DynamicArray(default.resultObject).GetAssociativeArray(1));
+        ArrayList(default.resultObject).GetHashTable(1));
     TEST_ExpectTrue(
-        DynamicArray(default.resultObject).GetText(2).ToString() == "huh");
+        ArrayList(default.resultObject).GetText(2).ToString() == "huh");
     TEST_ExpectTrue(
-            DynamicArray(default.resultObject).GetText(3).ToString()
+            ArrayList(default.resultObject).GetText(3).ToString()
         ==  "complexString");
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetFloat(4) == 45);
-    TEST_ExpectNone(DynamicArray(default.resultObject).GetItem(5));
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetBool(6));
+    TEST_ExpectTrue(ArrayList(default.resultObject).GetFloat(4) == 45);
+    TEST_ExpectNone(ArrayList(default.resultObject).GetItem(5));
+    TEST_ExpectTrue(ArrayList(default.resultObject).GetBool(6));
 }
 
-protected static function CheckValuesAfterIncrement(AssociativeArray root)
+protected static function CheckValuesAfterIncrement(HashTable root)
 {
-    local DynamicArray jsonArray;
+    local ArrayList jsonArray;
     TEST_ExpectTrue(root.GetBoolBy(P("/D")));
     TEST_ExpectTrue(root.GetFloatBy(P("/B/B")) == 10.12);
     TEST_ExpectTrue(
             root.GetTextBy(P("/A")).ToString()
         ==  "simpleValue!?");
-    jsonArray = root.GetDynamicArrayBy(P("/B/A"));
+    jsonArray = root.GetArrayListBy(P("/B/A"));
     TEST_ExpectTrue(jsonArray.GetBool(0));
-    TEST_ExpectNotNone(jsonArray.GetAssociativeArray(1));
+    TEST_ExpectNotNone(jsonArray.GetHashTable(1));
     TEST_ExpectTrue(jsonArray.GetText(2).ToString() == "huh");
     TEST_ExpectTrue(jsonArray.GetText(3).ToString() ==  "complexString");
     TEST_ExpectTrue(jsonArray.GetFloat(4) == 45);
@@ -1115,7 +1115,7 @@ protected static function CheckValuesAfterIncrement(AssociativeArray root)
     //  Test root itself
     TEST_ExpectTrue(root.GetLength() == 6);
     TEST_ExpectTrue(root.GetText(P("A")).ToString() == "simpleValue!?");
-    TEST_ExpectTrue(root.GetItem(P("B")).class == class'AssociativeArray');
+    TEST_ExpectTrue(root.GetItem(P("B")).class == class'HashTable');
     TEST_ExpectTrue(root.GetFloat(P("C")) == 5.5);
     TEST_ExpectTrue(root.GetBool(P("D")));
     TEST_ExpectTrue(root.GetText(P("E")).ToString() == "str");
@@ -1142,8 +1142,8 @@ protected static function IncrementExpectingFail(
 
 protected static function SubTest_IncrementRewriteBool(
     LocalDatabaseInstance   db,
-    DynamicArray            templateArray,
-    AssociativeArray        templateObject)
+    ArrayList               templateArray,
+    HashTable               templateObject)
 {
     Issue("JSON boolean values are rewritten by non-boolean values.");
     IncrementExpectingFail(db, "/D", none);
@@ -1159,8 +1159,8 @@ protected static function SubTest_IncrementRewriteBool(
 
 protected static function SubTest_IncrementRewriteNumeric(
     LocalDatabaseInstance   db,
-    DynamicArray            templateArray,
-    AssociativeArray        templateObject)
+    ArrayList               templateArray,
+    HashTable               templateObject)
 {
     Issue("JSON numeric values are rewritten by non-numeric values.");
     IncrementExpectingFail(db, "/B/B", none);
@@ -1175,8 +1175,8 @@ protected static function SubTest_IncrementRewriteNumeric(
 
 protected static function SubTest_IncrementRewriteString(
     LocalDatabaseInstance   db,
-    DynamicArray            templateArray,
-    AssociativeArray        templateObject)
+    ArrayList               templateArray,
+    HashTable               templateObject)
 {
     Issue("JSON string values are rewritten by non-`Text`/`MutableText`"
         @ "values.");
@@ -1193,10 +1193,10 @@ protected static function SubTest_IncrementRewriteString(
 
 protected static function SubTest_IncrementRewriteObject(
     LocalDatabaseInstance   db,
-    DynamicArray            templateArray,
-    AssociativeArray        templateObject)
+    ArrayList               templateArray,
+    HashTable               templateObject)
 {
-    Issue("JSON objects are rewritten by non-`AssociativeArray` values.");
+    Issue("JSON objects are rewritten by non-`HashTable` values.");
     IncrementExpectingFail(db, "", none);
     IncrementExpectingFail(db, "", db);
     IncrementExpectingFail(db, "", __().box.bool(true));
@@ -1210,10 +1210,10 @@ protected static function SubTest_IncrementRewriteObject(
 
 protected static function SubTest_IncrementRewriteArray(
     LocalDatabaseInstance   db,
-    DynamicArray            templateArray,
-    AssociativeArray        templateObject)
+    ArrayList               templateArray,
+    HashTable               templateObject)
 {
-    Issue("JSON arrays are rewritten by non-`DynamicArray` values.");
+    Issue("JSON arrays are rewritten by non-`ArrayList` values.");
     IncrementExpectingFail(db, "/B/A", none);
     IncrementExpectingFail(db, "/B/A", db);
     IncrementExpectingFail(db, "/B/A", __().box.bool(true));
@@ -1243,8 +1243,8 @@ protected static function SubTest_IncrementMissing(LocalDatabaseInstance db)
     db.CheckDataType(__().json.Pointer(P("/L"))).connect = DBCheckHandler;
     ReadFromDB(db, "/B/A/1/");
     TEST_ExpectTrue(default.resultDataType == JSON_Number);
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetLength() == 12);
-    TEST_ExpectTrue(DynamicArray(default.resultObject).GetInt(11) == 85);
+    TEST_ExpectTrue(ArrayList(default.resultObject).GetLength() == 12);
+    TEST_ExpectTrue(ArrayList(default.resultObject).GetInt(11) == 85);
 }
 
 defaultproperties

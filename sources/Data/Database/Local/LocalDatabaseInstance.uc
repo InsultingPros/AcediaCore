@@ -4,7 +4,7 @@
  *      This class SHOULD NOT be deallocated manually.
  *      This name was chosen so that more readable `LocalDatabase` could be
  *  used in config for defining local databases through per-object-config.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -223,7 +223,7 @@ public function DBWriteTask WriteData(JSONPointer pointer, AcediaObject data)
 
     //  We can only write JSON array as the root value
     if (data != none && pointer.GetLength() <= 0) {
-        isDataStorable = (data.class == class'AssociativeArray');
+        isDataStorable = (data.class == class'HashTable');
     }
     else {
         isDataStorable = _.json.IsCompatible(data);
@@ -294,7 +294,7 @@ public function DBSizeTask GetDataSize(JSONPointer pointer)
 
 public function DBKeysTask GetDataKeys(JSONPointer pointer)
 {
-    local DynamicArray  keys;
+    local ArrayList     keys;
     local DBKeysTask    keysTask;
     keysTask = DBKeysTask(MakeNewTask(class'DBKeysTask'));
     if (!ValidatePointer(pointer, keysTask))    return keysTask;

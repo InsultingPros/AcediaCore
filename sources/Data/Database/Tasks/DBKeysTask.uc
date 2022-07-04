@@ -1,6 +1,6 @@
 /**
  *  Variant of `DBTask` for `GetDataKeys()` query.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -19,11 +19,11 @@
  */
 class DBKeysTask extends DBTask;
 
-var private DynamicArray queryKeysResponse;
+var private ArrayList queryKeysResponse;
 
 delegate connect(
     Database.DBQueryResult  result,
-    DynamicArray            keys,
+    ArrayList               keys,
     Database                source) {}
 
 protected function Finalizer()
@@ -33,7 +33,7 @@ protected function Finalizer()
     connect             = none;
 }
 
-public function SetDataKeys(DynamicArray keys)
+public function SetDataKeys(/* take */ ArrayList keys)
 {
     queryKeysResponse = keys;
 }
