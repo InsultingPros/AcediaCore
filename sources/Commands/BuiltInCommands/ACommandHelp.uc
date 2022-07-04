@@ -42,8 +42,8 @@ protected function BuildData(CommandDataBuilder builder)
 
 protected function Executed(Command.CallData callData, EPlayer callerPlayer)
 {
-    local AssociativeArray  parameters, options;;
-    local DynamicArray      commandsToDisplay;
+    local HashTable parameters, options;;
+    local ArrayList commandsToDisplay;
     parameters  = callData.parameters;
     options     = callData.options;
     //  Print command list if "--list" option was specified
@@ -57,8 +57,9 @@ protected function Executed(Command.CallData callData, EPlayer callerPlayer)
     //          print a help page for this command.
     if (!options.HasKey(P("list")) || parameters.HasKey(P("commands")))
     {
-        commandsToDisplay = DynamicArray(parameters.GetItem(P("commands")));
+        commandsToDisplay = parameters.GetArrayList(P("commands"));
         DisplayCommandHelpPages(callerPlayer, commandsToDisplay);
+        _.memory.Free(commandsToDisplay);
     }
 }
 
@@ -82,7 +83,7 @@ private final function DisplayCommandList(EPlayer player)
         nextCommand = commandsFeature.GetCommand(commandNames[i]);
         if (nextCommand == none) continue;
 
-        nextData = nextCommand.GetData();
+        nextData = nextCommand.BorrowData();
         console.UseColor(_.color.textEmphasis)
             .Write(nextData.name)
             .ResetColor()
@@ -93,10 +94,11 @@ private final function DisplayCommandList(EPlayer player)
 }
 
 private final function DisplayCommandHelpPages(
-    EPlayer         player,
-    DynamicArray    commandList)
+    EPlayer     player,
+    ArrayList   commandList)
 {
     local int               i;
+    local Text              nextCommandName;
     local Command           nextCommand;
     local Commands_Feature  commandsFeature;
     if (player == none)             return;
@@ -107,15 +109,17 @@ private final function DisplayCommandHelpPages(
     //  If arguments were empty - at least display our own help page
     if (commandList == none)
     {
-        PrintHelpPage(player.BorrowConsole(), GetData());
+        PrintHelpPage(player.BorrowConsole(), BorrowData());
         return;
     }
     //  Otherwise - print help for specified commands
     for (i = 0; i < commandList.GetLength(); i += 1)
     {
-        nextCommand = commandsFeature.GetCommand(Text(commandList.GetItem(i)));
+        nextCommandName = commandList.GetText(i);
+        nextCommand = commandsFeature.GetCommand(nextCommandName);
+        _.memory.Free(nextCommandName);
         if (nextCommand == none) continue;
-        PrintHelpPage(player.BorrowConsole(), nextCommand.GetData());
+        PrintHelpPage(player.BorrowConsole(), nextCommand.BorrowData());
     }
 }
 

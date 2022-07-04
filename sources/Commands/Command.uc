@@ -70,8 +70,8 @@ struct CallData
     //  Specified sub-command and parameters/options
     var public Text             subCommandName;
     //  Provided parameters and specified options
-    var public AssociativeArray parameters;
-    var public AssociativeArray options;
+    var public HashTable        parameters;
+    var public HashTable        options;
     //  Errors that occurred during command call processing are described by
     //  error type and optional error textual name of the object
     //  (parameter, option, etc.) that caused it.
@@ -94,9 +94,9 @@ enum ParameterType
     CPT_Text,
     //  Special parameter that consumes the rest of the input into `Text`
     CPT_Remainder,
-    //  Parses into `AssociativeArray`
+    //  Parses into `HashTable`
     CPT_Object,
-    //  Parses into `DynamicArray`
+    //  Parses into `ArrayList`
     CPT_Array
 };
 
@@ -202,7 +202,7 @@ protected function Constructor()
     dataBuilder =
         CommandDataBuilder(_.memory.Allocate(class'CommandDataBuilder'));
     BuildData(dataBuilder);
-    commandData = dataBuilder.GetData();
+    commandData = dataBuilder.BorrowData();
     dataBuilder.FreeSelf();
     dataBuilder = none;
 }
@@ -577,7 +577,7 @@ public final function Text GetName()
  *      so deallocating any objects in the returned `struct` would lead to
  *      undefined behavior.
  */
-public final function Data GetData()
+public final function Data BorrowData()
 {
     return commandData;
 }

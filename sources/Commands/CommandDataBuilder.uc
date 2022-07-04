@@ -540,7 +540,7 @@ public final function CommandDataBuilder OptionalParams()
  *  @return Returns the caller `CommandDataBuilder` to allow for
  *      method chaining.
  */
-public final function Command.Data GetData()
+public final function Command.Data BorrowData()
 {
     local Command.Data newData;
     RecordSelection();
@@ -594,7 +594,7 @@ private final function Command.Parameter NewParameter(
  *      this setting only affects how parameter will be displayed in
  *      generated help.
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -629,7 +629,7 @@ public final function CommandDataBuilder ParamBoolean(
  *      this setting only affects how parameter will be displayed in
  *      generated help.
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -660,7 +660,7 @@ public final function CommandDataBuilder ParamBooleanList(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -687,7 +687,7 @@ public final function CommandDataBuilder ParamInteger(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -714,7 +714,7 @@ public final function CommandDataBuilder ParamIntegerList(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -741,7 +741,7 @@ public final function CommandDataBuilder ParamNumber(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -768,7 +768,7 @@ public final function CommandDataBuilder ParamNumberList(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -795,7 +795,7 @@ public final function CommandDataBuilder ParamText(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -822,7 +822,7 @@ public final function CommandDataBuilder ParamTextList(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -849,7 +849,7 @@ public final function CommandDataBuilder ParamRemainder(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -876,7 +876,7 @@ public final function CommandDataBuilder ParamObject(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -903,7 +903,7 @@ public final function CommandDataBuilder ParamObjectList(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for
@@ -930,7 +930,7 @@ public final function CommandDataBuilder ParamArray(
  *  @param  name            Name of the parameter, will be copied
  *      (as it would appear in the generated help info).
  *  @param  variableName    Name of the variable that will store this
- *      parameter's value in `AssociativeArray` after user's command input
+ *      parameter's value in `HashTable` after user's command input
  *      is parsed. Provided value will be copied.
  *      If left `none`, - will coincide with `name` parameter.
  *  @return Returns the caller `CommandDataBuilder` to allow for

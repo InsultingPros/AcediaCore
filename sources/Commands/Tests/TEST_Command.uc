@@ -192,10 +192,10 @@ protected static function Test_SubCommandName()
 
 protected static function SubTest_MockAQ1AndFailed()
 {
-    local Parser            parser;
-    local Command           command;
-    local DynamicArray      paramArray;
-    local AssociativeArray  parameters;
+    local Parser    parser;
+    local Command   command;
+    local ArrayList paramArray;
+    local HashTable parameters;
     parser = Parser(__().memory.Allocate(class'Parser'));
     command = class'MockCommandA'.static.GetInstance();
     Issue("Command queries that should fail succeed instead.");
@@ -211,7 +211,7 @@ protected static function SubTest_MockAQ1AndFailed()
         command.ParseInputWith(parser.InitializeS(default.queryASuccess1), none)
         .Parameters;
     TEST_ExpectTrue(parameters.GetLength() == 2);
-    paramArray = DynamicArray(parameters.GetItem(P("isItSimple?")));
+    paramArray = ArrayList(parameters.GetItem(P("isItSimple?")));
     TEST_ExpectTrue(paramArray.GetLength() == 1);
     TEST_ExpectFalse(BoolBox(paramArray.GetItem(0)).Get());
     TEST_ExpectTrue(IntBox(parameters.GetItem(P("int"))).Get() == 8);
@@ -221,27 +221,27 @@ protected static function SubTest_MockAQ1AndFailed()
 
 protected static function SubTest_MockAQ2()
 {
-    local DynamicArray      paramArray, subArray;
-    local AssociativeArray  result, subObject;
+    local ArrayList paramArray, subArray;
+    local HashTable result, subObject;
     Issue("Cannot parse command queries without optional parameters.");
     result = class'MockCommandA'.static.GetInstance()
         .ParseInputWith(PRS(default.queryASuccess2), none).Parameters;
     TEST_ExpectTrue(result.GetLength() == 2);
-    subObject = AssociativeArray(result.GetItem(P("just_obj")));
+    subObject = HashTable(result.GetItem(P("just_obj")));
     TEST_ExpectTrue(IntBox(subObject.GetItem(P("var"))).Get() == 7);
     TEST_ExpectTrue(subObject.HasKey(P("another")));
     TEST_ExpectNone(subObject.GetItem(P("another")));
-    paramArray = DynamicArray(result.GetItem(P("manyLists")));
+    paramArray = ArrayList(result.GetItem(P("manyLists")));
     TEST_ExpectTrue(paramArray.GetLength() == 4);
-    subArray = DynamicArray(paramArray.GetItem(0));
+    subArray = ArrayList(paramArray.GetItem(0));
     TEST_ExpectTrue(subArray.GetLength() == 2);
     TEST_ExpectTrue(IntBox(subArray.GetItem(0)).Get() == 1);
     TEST_ExpectTrue(IntBox(subArray.GetItem(1)).Get() == 2);
-    subArray = DynamicArray(paramArray.GetItem(1));
+    subArray = ArrayList(paramArray.GetItem(1));
     TEST_ExpectTrue(subArray.GetLength() == 1);
     TEST_ExpectTrue(IntBox(subArray.GetItem(0)).Get() == 3);
-    TEST_ExpectTrue(DynamicArray(paramArray.GetItem(2)).GetLength() == 0);
-    subArray = DynamicArray(paramArray.GetItem(3));
+    TEST_ExpectTrue(ArrayList(paramArray.GetItem(2)).GetLength() == 0);
+    subArray = ArrayList(paramArray.GetItem(3));
     TEST_ExpectTrue(subArray.GetLength() == 3);
     TEST_ExpectTrue(IntBox(subArray.GetItem(0)).Get() == 8);
     TEST_ExpectTrue(IntBox(subArray.GetItem(1)).Get() == 5);
@@ -251,13 +251,13 @@ protected static function SubTest_MockAQ2()
 
 protected static function SubTest_MockAQ3()
 {
-    local DynamicArray      paramArray;
-    local AssociativeArray  result;
+    local ArrayList paramArray;
+    local HashTable result;
     Issue("Cannot parse command queries with optional parameters.");
     result = class'MockCommandA'.static.GetInstance()
         .ParseInputWith(PRS(default.queryASuccess3), none).Parameters;
     //  Booleans
-    paramArray = DynamicArray(result.GetItem(P("isItSimple?")));
+    paramArray = ArrayList(result.GetItem(P("isItSimple?")));
     TEST_ExpectTrue(paramArray.GetLength() == 7);
     TEST_ExpectTrue(BoolBox(paramArray.GetItem(0)).Get());
     TEST_ExpectFalse(BoolBox(paramArray.GetItem(1)).Get());
@@ -269,13 +269,13 @@ protected static function SubTest_MockAQ3()
     //  Integer
     TEST_ExpectTrue(IntBox(result.GetItem(P("int"))).Get() == -32);
     //  Floats
-    paramArray = DynamicArray(result.GetItem(P("list")));
+    paramArray = ArrayList(result.GetItem(P("list")));
     TEST_ExpectTrue(paramArray.GetLength() == 3);
     TEST_ExpectTrue(FloatBox(paramArray.GetItem(0)).Get() == 0.45);
     TEST_ExpectTrue(FloatBox(paramArray.GetItem(1)).Get() == 234.7);
     TEST_ExpectTrue(FloatBox(paramArray.GetItem(2)).Get() == 13);
     //  `Text`s
-    paramArray = DynamicArray(result.GetItem(P("another list")));
+    paramArray = ArrayList(result.GetItem(P("another list")));
     TEST_ExpectTrue(paramArray.GetLength() == 3);
     TEST_ExpectTrue(Text(paramArray.GetItem(0)).ToString() == "dk");
     TEST_ExpectTrue(Text(paramArray.GetItem(1)).ToString() == "someone");
@@ -285,19 +285,19 @@ protected static function SubTest_MockAQ3()
 
 protected static function SubTest_MockAQ4()
 {
-    local DynamicArray      paramArray;
-    local AssociativeArray  result, subObject;
+    local ArrayList paramArray;
+    local HashTable result, subObject;
     Issue("Cannot parse command queries with optional parameters.");
     result = class'MockCommandA'.static.GetInstance()
         .ParseInputWith(PRS(default.queryASuccess4), none).Parameters;
     TEST_ExpectTrue(result.GetLength() == 3);
-    subObject = AssociativeArray(result.GetItem(P("just_obj")));
+    subObject = HashTable(result.GetItem(P("just_obj")));
     TEST_ExpectTrue(IntBox(subObject.GetItem(P("var"))).Get() == 7);
     TEST_ExpectTrue(subObject.HasKey(P("another")));
     TEST_ExpectNone(subObject.GetItem(P("another")));
-    paramArray = DynamicArray(result.GetItem(P("manyLists")));
+    paramArray = ArrayList(result.GetItem(P("manyLists")));
     TEST_ExpectTrue(paramArray.GetLength() == 4);
-    subObject = AssociativeArray(result.GetItem(P("last_obj")));
+    subObject = HashTable(result.GetItem(P("last_obj")));
     TEST_ExpectTrue(subObject.GetLength() == 0);
 }
 
@@ -336,15 +336,15 @@ protected static function SubTest_MockBFailed()
 
 protected static function SubTest_MockBQ1()
 {
-    local Command.CallData     result;
-    local DynamicArray      subArray;
-    local AssociativeArray  params, options, subObject;
+    local Command.CallData  result;
+    local ArrayList         subArray;
+    local HashTable         params, options, subObject;
     Issue("Cannot parse command queries with options.");
     result = class'MockCommandB'.static.GetInstance()
         .ParseInputWith(PRS(default.queryBSuccess1), none);
     params = result.Parameters;
     TEST_ExpectTrue(params.GetLength() == 2);
-    subArray = DynamicArray(params.GetItem(P("just_array")));
+    subArray = ArrayList(params.GetItem(P("just_array")));
     TEST_ExpectTrue(subArray.GetLength() == 2);
     TEST_ExpectTrue(IntBox(subArray.GetItem(0)).Get() == 7);
     TEST_ExpectNone(subArray.GetItem(1));
@@ -352,9 +352,9 @@ protected static function SubTest_MockBQ1()
                     ==  "text");
     options = result.options;
     TEST_ExpectTrue(options.GetLength() == 1);
-    subObject = AssociativeArray(options.GetItem(P("values")));
+    subObject = HashTable(options.GetItem(P("values")));
     TEST_ExpectTrue(subObject.GetLength() == 1);
-    subArray = DynamicArray(subObject.GetItem(P("types")));
+    subArray = ArrayList(subObject.GetItem(P("types")));
     TEST_ExpectTrue(subArray.GetLength() == 5);
     TEST_ExpectTrue(IntBox(subArray.GetItem(0)).Get() == 1);
     TEST_ExpectTrue(IntBox(subArray.GetItem(1)).Get() == 3);
@@ -365,9 +365,9 @@ protected static function SubTest_MockBQ1()
 
 protected static function SubTest_MockBQ2()
 {
-    local Command.CallData       result;
-    local DynamicArray      subArray;
-    local AssociativeArray  options, subObject;
+    local Command.CallData  result;
+    local ArrayList         subArray;
+    local HashTable         options, subObject;
     Issue("Cannot parse command queries with mixed-in options.");
     result = class'MockCommandB'.static.GetInstance()
         .ParseInputWith(PRS(default.queryBSuccess2), none);
@@ -382,13 +382,13 @@ protected static function SubTest_MockBQ2()
     TEST_ExpectNone(options.GetItem(P("verbose")));
     TEST_ExpectTrue(options.HasKey(P("forced")));
     TEST_ExpectNone(options.GetItem(P("forced")));
-    subObject = AssociativeArray(options.GetItem(P("type")));
+    subObject = HashTable(options.GetItem(P("type")));
     TEST_ExpectTrue(    Text(subObject.GetItem(P("type"))).ToString()
                     ==  "value");
-    subObject = AssociativeArray(options.GetItem(P("Test")));
+    subObject = HashTable(options.GetItem(P("Test")));
     TEST_ExpectTrue(Text(subObject.GetItem(P("to_test"))).IsEmpty());
-    subObject = AssociativeArray(options.GetItem(P("values")));
-    subArray = DynamicArray(subObject.GetItem(P("types")));
+    subObject = HashTable(options.GetItem(P("values")));
+    subArray = ArrayList(subObject.GetItem(P("types")));
     TEST_ExpectTrue(subArray.GetLength() == 1);
     TEST_ExpectTrue(IntBox(subArray.GetItem(0)).Get() == 8);
 }
@@ -396,19 +396,19 @@ protected static function SubTest_MockBQ2()
 protected static function SubTest_MockBQ3Remainder()
 {
     local Command.CallData  result;
-    local DynamicArray      subArray;
-    local AssociativeArray  options, subObject;
+    local ArrayList         subArray;
+    local HashTable         options, subObject;
     Issue("Cannot parse command queries with `CPT_Remainder` type parameters.");
     result = class'MockCommandB'.static.GetInstance()
         .ParseInputWith(PRS(default.queryBSuccess3), none);
     TEST_ExpectTrue(result.parameters.GetLength() == 1);
-    subArray = DynamicArray(result.parameters.GetItem(P("list")));
+    subArray = ArrayList(result.parameters.GetItem(P("list")));
     TEST_ExpectTrue(FloatBox(subArray.GetItem(0)).Get() == 3);
     TEST_ExpectTrue(FloatBox(subArray.GetItem(1)).Get() == -76);
     options = result.options;
     TEST_ExpectTrue(options.GetLength() == 1);
     TEST_ExpectTrue(options.HasKey(P("remainder")));
-    subObject = AssociativeArray(options.GetItem(P("remainder")));
+    subObject = HashTable(options.GetItem(P("remainder")));
     TEST_ExpectTrue(    Text(subObject.GetItem(P("everything"))).ToString()
                     ==  "--type \"value\" -va 8 -sV --forced -T  \"\" 32");
 }

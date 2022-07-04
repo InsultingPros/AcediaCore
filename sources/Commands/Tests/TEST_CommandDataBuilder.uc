@@ -91,7 +91,7 @@ protected static function Test_Empty()
         @ "blank command data.");
     builder =
         CommandDataBuilder(__().memory.Allocate(class'CommandDataBuilder'));
-    data = builder.GetData();
+    data = builder.BorrowData();
     TEST_ExpectTrue(data.subcommands.length == 1);
     TEST_ExpectTrue(data.subcommands[0].name.IsEmpty());
     TEST_ExpectNone(data.subcommands[0].description);
@@ -104,7 +104,7 @@ protected static function Test_Empty()
 protected static function Test_Full()
 {
     local Command.Data data;
-    data = PrepareBuilder().GetData();
+    data = PrepareBuilder().BorrowData();
     Context("Testing that `CommandDataBuilder` properly builds command data for"
         @ "complex commands.");
     Issue("Incorrect amount of sub-commands and/or option.");

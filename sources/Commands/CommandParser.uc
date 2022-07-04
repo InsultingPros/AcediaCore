@@ -210,11 +210,11 @@ public final function Command.CallData ParseWith(
     Parser          parser,
     Command.Data    commandData)
 {
-    local AssociativeArray  commandParameters;
+    local HashTable         commandParameters;
     //  Temporary object to return `nextResult` while setting variable to `none`
     local Command.CallData  toReturn;
-    nextResult.parameters   = _.collections.EmptyAssociativeArray();
-    nextResult.options      = _.collections.EmptyAssociativeArray();
+    nextResult.parameters   = _.collections.EmptyHashTable();
+    nextResult.options      = _.collections.EmptyHashTable();
     if (commandData.subCommands.length == 0)
     {
         DeclareError(CET_NoSubCommands, none);
@@ -265,17 +265,17 @@ private final function AssertNoTrailingInput()
 //      Assumes `commandParser` is not `none`.
 //      Parses given required and optional parameters along with any
 //  possible option declarations.
-//      Returns `AssociativeArray` filled with (variable, parsed value) pairs.
+//      Returns `HashTable` filled with (variable, parsed value) pairs.
 //      Failure is equal to `commandParser` entering into a failed state.
-private final function AssociativeArray ParseParameterArrays(
+private final function HashTable ParseParameterArrays(
     array<Command.Parameter> requiredParameters,
     array<Command.Parameter> optionalParameters)
 {
-    local AssociativeArray parsedParameters;
+    local HashTable parsedParameters;
     if (!commandParser.Ok()) {
         return none;
     }
-    parsedParameters = _.collections.EmptyAssociativeArray();
+    parsedParameters = _.collections.EmptyHashTable();
     //  Parse parameters
     ParseRequiredParameterArray(parsedParameters, requiredParameters);
     ParseOptionalParameterArray(parsedParameters, optionalParameters);
@@ -286,9 +286,9 @@ private final function AssociativeArray ParseParameterArrays(
 
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses given required parameters along with any possible option
-//  declarations into given `parsedParameters` associative array.
+//  declarations into given `parsedParameters` `HashTable`.
 private final function ParseRequiredParameterArray(
-    AssociativeArray            parsedParameters,
+    HashTable                   parsedParameters,
     array<Command.Parameter>    requiredParameters)
 {
     local int i;
@@ -324,9 +324,9 @@ private final function ParseRequiredParameterArray(
 
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses given optional parameters along with any possible option
-//  declarations into given `parsedParameters` associative array.
+//  declarations into given `parsedParameters` hash table.
 private final function ParseOptionalParameterArray(
-    AssociativeArray            parsedParameters,
+    HashTable                   parsedParameters,
     array<Command.Parameter>    optionalParameters)
 {
     local int i;
@@ -354,11 +354,11 @@ private final function ParseOptionalParameterArray(
 
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses one given parameter along with any possible option
-//  declarations into given `parsedParameters` associative array.
+//  declarations into given `parsedParameters` `HashTable`.
 //      Returns `true` if we've successfully parsed given parameter without
 //  any errors.
 private final function bool ParseParameter(
-    AssociativeArray    parsedParameters,
+    HashTable           parsedParameters,
     Command.Parameter   expectedParameter)
 {
     local bool parsedEnough;
@@ -393,11 +393,11 @@ private final function bool ParseParameter(
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses a single value for a given parameter (e.g. one integer for
 //  integer or integer list parameter types) along with any possible option
-//  declarations into given `parsedParameters` associative array.
+//  declarations into given `parsedParameters` `HashTable`.
 //      Returns `true` if we've successfully parsed a single value without
 //  any errors.
 private final function bool ParseSingleValue(
-    AssociativeArray    parsedParameters,
+    HashTable           parsedParameters,
     Command.Parameter   expectedParameter)
 {
     //      Before parsing any other value we need to check if user has
@@ -454,9 +454,9 @@ private final function bool ParseSingleValue(
 
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses a single boolean value into given `parsedParameters`
-//  associative array.
+//  hash table.
 private final function bool ParseBooleanValue(
-    AssociativeArray    parsedParameters,
+    HashTable           parsedParameters,
     Command.Parameter   expectedParameter)
 {
     local int           i;
@@ -501,9 +501,9 @@ private final function bool ParseBooleanValue(
 
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses a single integer value into given `parsedParameters`
-//  associative array.
+//  hash table.
 private final function bool ParseIntegerValue(
-    AssociativeArray    parsedParameters,
+    HashTable           parsedParameters,
     Command.Parameter   expectedParameter)
 {
     local int integerValue;
@@ -518,9 +518,9 @@ private final function bool ParseIntegerValue(
 
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses a single number (float) value into given `parsedParameters`
-//  associative array.
+//  hash table.
 private final function bool ParseNumberValue(
-    AssociativeArray    parsedParameters,
+    HashTable           parsedParameters,
     Command.Parameter   expectedParameter)
 {
     local float numberValue;
@@ -535,9 +535,9 @@ private final function bool ParseNumberValue(
 
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses a single `Text` value into given `parsedParameters`
-//  associative array.
+//  hash table.
 private final function bool ParseTextValue(
-    AssociativeArray    parsedParameters,
+    HashTable           parsedParameters,
     Command.Parameter   expectedParameter)
 {
     local bool                  failedParsing;
@@ -568,9 +568,9 @@ private final function bool ParseTextValue(
 
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses a single `Text` value into given `parsedParameters`
-//  associative array, consuming all remaining contents.
+//  hash table, consuming all remaining contents.
 private final function bool ParseRemainderValue(
-    AssociativeArray    parsedParameters,
+    HashTable           parsedParameters,
     Command.Parameter   expectedParameter)
 {
     local MutableText value;
@@ -585,13 +585,13 @@ private final function bool ParseRemainderValue(
 
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses a single JSON object into given `parsedParameters`
-//  associative array.
+//  hash table.
 private final function bool ParseObjectValue(
-    AssociativeArray    parsedParameters,
+    HashTable           parsedParameters,
     Command.Parameter   expectedParameter)
 {
-    local AssociativeArray objectValue;
-    objectValue = _.json.ParseObjectWith(commandParser);
+    local HashTable objectValue;
+    objectValue = _.json.ParseHashTableWith(commandParser);
     if (!commandParser.Ok()) {
         return false;
     }
@@ -601,13 +601,13 @@ private final function bool ParseObjectValue(
 
 //      Assumes `commandParser` and `parsedParameters` are not `none`.
 //      Parses a single JSON array into given `parsedParameters`
-//  associative array.
+//  hash table.
 private final function bool ParseArrayValue(
-    AssociativeArray    parsedParameters,
+    HashTable           parsedParameters,
     Command.Parameter   expectedParameter)
 {
-    local DynamicArray arrayValue;
-    arrayValue = _.json.ParseArrayWith(commandParser);
+    local ArrayList arrayValue;
+    arrayValue = _.json.ParseArrayListWith(commandParser);
     if (!commandParser.Ok()) {
         return false;
     }
@@ -623,24 +623,27 @@ private final function bool ParseArrayValue(
 //  recorded at `parameter.variableName` key (creating it if missing).
 //      All recorded values are managed by `parametersArray`.
 private final function RecordParameter(
-    AssociativeArray    parametersArray,
-    Command.Parameter   parameter,
-    AcediaObject        value)
+    HashTable               parametersArray,
+    Command.Parameter       parameter,
+    /* take */AcediaObject  value)
 {
-    local DynamicArray parameterVariable;
+    local ArrayList parameterVariable;
 
     if (!parameter.allowsList)
     {
-        parametersArray.SetItem(parameter.variableName, value, true);
+        parametersArray.SetItem(parameter.variableName, value);
+        _.memory.Free(value);
         return;
     }
     parameterVariable =
-        DynamicArray(parametersArray.GetItem(parameter.variableName));
+        ArrayList(parametersArray.GetItem(parameter.variableName));
     if (parameterVariable == none) {
-        parameterVariable = _.collections.EmptyDynamicArray();
+        parameterVariable = _.collections.EmptyArrayList();
     }
-    parameterVariable.AddItem(value, true);
-    parametersArray.SetItem(parameter.variableName, parameterVariable, true);
+    parameterVariable.AddItem(value);
+    _.memory.Free(value);
+    parametersArray.SetItem(parameter.variableName, parameterVariable);
+    _.memory.Free(parameterVariable);
 }
 
 //      Assumes `commandParser` is not `none`.
@@ -815,7 +818,7 @@ private final function bool AddOptionByCharacter(
 //      Assumes `commandParser` and `nextResult` are not `none`.
 private final function bool ParseOptionParameters(Command.Option pickedOption)
 {
-    local AssociativeArray optionParameters;
+    local HashTable optionParameters;
     //  If we are already parsing other option's parameters and did not finish
     //  parsing all required ones - we cannot start another option
     if (currentTargetIsOption && currentTarget != CPT_ExtraParameter)
@@ -825,9 +828,7 @@ private final function bool ParseOptionParameters(Command.Option pickedOption)
     }
     if (pickedOption.required.length == 0 && pickedOption.optional.length == 0)
     {
-        //  Here `optionParameters == none`
-        nextResult.options
-            .SetItem(pickedOption.longName, optionParameters, true);
+        nextResult.options.SetItem(pickedOption.longName, none);
         return true;
     }
     currentTargetIsOption   = true;
@@ -838,9 +839,11 @@ private final function bool ParseOptionParameters(Command.Option pickedOption)
     if (commandParser.Ok())
     {
         nextResult.options
-            .SetItem(pickedOption.longName, optionParameters, true);
+            .SetItem(pickedOption.longName, optionParameters);
+        _.memory.Free(optionParameters);
         return true;
     }
+    _.memory.Free(optionParameters);
     return false;
 }
 
