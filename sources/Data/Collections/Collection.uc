@@ -332,39 +332,67 @@ public final function float GetFloatBy(
 }
 
 /**
- *  Returns a `string` value stored (in the caller `Collection` or
+ *  Returns a plain string value stored (in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
  *  See `GetItemBy()` for more information.
  *
- *  Referred value must be stored as `Text` or `MutableText`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `BaseText` (or one of its sub-classes) for
+ *  this method to work.
  *
  *  @param  jsonPointerAsText   Description of a path to the `string` value.
  *  @param  defaultValue        Value to return in case `jsonPointerAsText`
  *      does not point at any existing value or if that value does not have
  *      appropriate type.
- *  @return `string` value, stored at `jsonPointerAsText` or `defaultValue` if
- *      it is missing or has a different type.
+ *  @return Plain string value, stored at `jsonPointerAsText` or `defaultValue`
+ *      if it is missing or has a different type.
  */
 public final function string GetStringBy(
     BaseText        jsonPointerAsText,
     optional string defaultValue)
 {
     local AcediaObject  result;
-    local Text          asText;
-    local MutableText   asMutableText;
+    local Basetext      asText;
     result = GetItemBy(jsonPointerAsText);
     if (result == none) {
         return defaultValue;
     }
-    asText = Text(result);
+    asText = BaseText(result);
     if (asText != none) {
         return asText.ToString();
     }
-    asMutableText = MutableText(result);
-    if (asMutableText != none) {
-        return asMutableText.ToString();
+    return defaultValue;
+}
+
+/**
+ *  Returns a formatted string value stored (in the caller `Collection` or
+ *  one of it's sub-collections) pointed by
+ *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
+ *  See `GetItemBy()` for more information.
+ *
+ *  Referred value must be stored as `BaseText` (or one of its sub-classes) for
+ *  this method to work.
+ *
+ *  @param  jsonPointerAsText   Description of a path to the `string` value.
+ *  @param  defaultValue        Value to return in case `jsonPointerAsText`
+ *      does not point at any existing value or if that value does not have
+ *      appropriate type.
+ *  @return Formatted string value, stored at `jsonPointerAsText` or
+ *      `defaultValue` if it is missing or has a different type.
+ */
+public final function string GetFormattedStringBy(
+    BaseText        jsonPointerAsText,
+    optional string defaultValue)
+{
+    local AcediaObject  result;
+    local Basetext      asText;
+    result = GetItemBy(jsonPointerAsText);
+    if (result == none) {
+        return defaultValue;
+    }
+    asText = BaseText(result);
+    if (asText != none) {
+        return asText.ToFormattedString();
     }
     return defaultValue;
 }
@@ -612,7 +640,7 @@ public final function float GetFloatByJSON(
 }
 
 /**
- *  Returns a `string` value stored (in the caller `Collection` or
+ *  Returns a plain string value stored (in the caller `Collection` or
  *  one of it's sub-collections) pointed by JSON pointer.
  *  See `GetItemByJSON()` for more information.
  *
@@ -623,27 +651,54 @@ public final function float GetFloatByJSON(
  *  @param  defaultValue    Value to return in case `jsonPointer`
  *      does not point at any existing value or if that value does not have
  *      appropriate type.
- *  @return `string` value, stored at `jsonPointerAsText` or `defaultValue` if
- *      it is missing or has a different type.
+ *  @return Plain string value, stored at `jsonPointerAsText` or `defaultValue`
+ *      if it is missing or has a different type.
  */
 public final function string GetStringByJSON(
     JSONPointer     jsonPointer,
     optional string defaultValue)
 {
     local AcediaObject  result;
-    local Text          asText;
-    local MutableText   asMutableText;
+    local BaseText      asText;
     result = GetItemByJSON(jsonPointer);
     if (result == none) {
         return defaultValue;
     }
-    asText = Text(result);
+    asText = BaseText(result);
     if (asText != none) {
         return asText.ToString();
     }
-    asMutableText = MutableText(result);
-    if (asMutableText != none) {
-        return asMutableText.ToString();
+    return defaultValue;
+}
+
+/**
+ *  Returns a formatted string value stored (in the caller `Collection` or
+ *  one of it's sub-collections) pointed by JSON pointer.
+ *  See `GetItemByJSON()` for more information.
+ *
+ *  Referred value must be stored as `BaseText` (or one of its sub-classes) for
+ *  this method to work.
+ *
+ *  @param  jsonPointer     JSON path to the `string` value.
+ *  @param  defaultValue    Value to return in case `jsonPointer`
+ *      does not point at any existing value or if that value does not have
+ *      appropriate type.
+ *  @return Formatted string value, stored at `jsonPointerAsText` or
+ *      `defaultValue` if it is missing or has a different type.
+ */
+public final function string GetFormattedStringByJSON(
+    JSONPointer     jsonPointer,
+    optional string defaultValue)
+{
+    local AcediaObject  result;
+    local BaseText      asText;
+    result = GetItemByJSON(jsonPointer);
+    if (result == none) {
+        return defaultValue;
+    }
+    asText = BaseText(result);
+    if (asText != none) {
+        return asText.ToFormattedString();
     }
     return defaultValue;
 }

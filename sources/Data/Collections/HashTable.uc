@@ -706,9 +706,7 @@ public final function bool GetBool(AcediaObject key, optional bool defaultValue)
  *  recorded as either `BoolBox` or `BoolRef`, depending of `asRef`
  *  optional parameter.
  *
- *  @param  key     Key, at which to change the value. If `DynamicArray` is
- *      not long enough to hold it, it will be automatically expanded.
- *      If passed key is negative - method will do nothing.
+ *  @param  key     Key, at which to change the value.
  *  @param  value   Value to be set at a given key.
  *  @param  asRef   Given `bool` value will be recorded as immutable `BoolBox`
  *      by default (`asRef == false`). Setting this parameter to `true` will
@@ -775,9 +773,7 @@ public final function byte GetByte(AcediaObject key, optional byte defaultValue)
  *  recorded as either `ByteBox` or `ByteBox`, depending of `asRef`
  *  optional parameter.
  *
- *  @param  key     Key, at which to change the value. If `DynamicArray` is
- *      not long enough to hold it, it will be automatically expanded.
- *      If passed key is negative - method will do nothing.
+ *  @param  key     Key, at which to change the value.
  *  @param  value   Value to be set at a given key.
  *  @param  asRef   Given `byte` value will be recorded as immutable `ByteBox`
  *      by default (`asRef == false`). Setting this parameter to `true` will
@@ -844,9 +840,7 @@ public final function int GetInt(AcediaObject key, optional int defaultValue)
  *  recorded as either `IntBox` or `IntRef`, depending of `asRef`
  *  optional parameter.
  *
- *  @param  key     Key, at which to change the value. If `DynamicArray` is
- *      not long enough to hold it, it will be automatically expanded.
- *      If passed key is negative - method will do nothing.
+ *  @param  key     Key, at which to change the value.
  *  @param  value   Value to be set at a given key.
  *  @param  asRef   Given `int` value will be recorded as immutable `IntBox`
  *      by default (`asRef == false`). Setting this parameter to `true` will
@@ -915,15 +909,12 @@ public final function float GetFloat(
  *  recorded as either `FloatBox` or `FloatRef`, depending of `asRef`
  *  optional parameter.
  *
- *  @param  key     Key, at which to change the value. If `DynamicArray` is
- *      not long enough to hold it, it will be automatically expanded.
- *      If passed key is negative - method will do nothing.
+ *  @param  key     Key, at which to change the value.
  *  @param  value   Value to be set at a given key.
  *  @param  asRef   Given `float` value will be recorded as immutable `FloatBox`
  *      by default (`asRef == false`). Setting this parameter to `true` will
  *      make this method record it as a mutable `FloatRef`.
- *  @return Reference to the caller `HashTable` to allow for
- *      method chaining.
+ *  @return Reference to the caller `HashTable` to allow for method chaining.
  */
 public final function HashTable SetFloat(
     AcediaObject    key,
@@ -944,53 +935,46 @@ public final function HashTable SetFloat(
 }
 
 /**
- *  Returns `string` item at key `key`. If key is invalid or
- *  stores a non-`Text`/`MutableText` value, returns `defaultValue`.
+ *  Returns plain string item at key `key`. If key is invalid or stores
+ *  a non-`BaseText` value, returns `defaultValue`.
  *
- *  Referred value must be stored as `Text` or `MutableText`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `Text` or `MutableText` (or one of their
+ *  sub-classes) for this method to work.
  *
  *  @param  key             Key of a `string` item that `HashTable` has to
  *      return.
  *  @param  defaultValue    Value to return if there is either no item recorded
  *      at `key` or it has a wrong type.
- *  @return `string` value at `key` in the caller `HashTable`.
- *      `defaultValue` if passed `key` is invalid or non-`Text`/`MutableText`
- *      value is stored with it.
+ *  @return Plain string value at `key` in the caller `HashTable`.
+ *      `defaultValue` if passed `key` is invalid or non-`BaseText` value is
+ *      stored with it.
  */
 public final function string GetString(
     AcediaObject    key,
     optional string defaultValue)
 {
     local AcediaObject  result;
-    local Text          asText;
-    local MutableText   asMutableText;
+    local BaseText      asText;
 
     result = BorrowItem(key);
     if (result == none) {
         return defaultValue;
     }
-    asText = Text(result);
+    asText = BaseText(result);
     if (asText != none) {
         return asText.ToString();
-    }
-    asMutableText = MutableText(result);
-    if (asMutableText != none) {
-        return asMutableText.ToString();
     }
     return defaultValue;
 }
 
 /**
- *  Changes `HashTable`'s value at key `key` to `value` that will be
- *  recorded as either `Text` or `MutableText`, depending of `asMutable`
+ *  Changes `HashTable`'s value at key `key` to plain string `value` that will
+ *  be recorded as either `Text` or `MutableText`, depending of `asMutable`
  *  optional parameter.
  *
- *  @param  key         Key, at which to change the value. If `DynamicArray` is
- *      not long enough to hold it, it will be automatically expanded.
- *      If passed key is negative - method will do nothing.
+ *  @param  key         Key, at which to change the value.
  *  @param  value       Value to be set at a given key.
- *  @param  asMutable   Given `float` value will be recorded as immutable
+ *  @param  asMutable   Given plain string value will be recorded as immutable
  *      `Text` by default (`asMutable == false`). Setting this parameter to
  *      `true` will make this method record it as a mutable `MutableText`.
  *  @return Reference to the caller `HashTable` to allow for
@@ -1008,6 +992,71 @@ public final function HashTable SetString(
     }
     else {
         newValue = _.text.FromString(value);
+    }
+    SetItem(key, newValue);
+    newValue.FreeSelf();
+    return self;
+}
+
+/**
+ *  Returns formatted string item at key `key`. If key is invalid or stores
+ *  a non-`BaseText` value, returns `defaultValue`.
+ *
+ *  Referred value must be stored as `Text` or `MutableText` (or one of their
+ *  sub-classes) for this method to work.
+ *
+ *  @param  key             Key of a `string` item that `HashTable` has to
+ *      return.
+ *  @param  defaultValue    Value to return if there is either no item recorded
+ *      at `key` or it has a wrong type.
+ *  @return Formatted string value at `key` in the caller `HashTable`.
+ *      `defaultValue` if passed `key` is invalid or non-`BaseText` value is
+ *      stored with it.
+ */
+public final function string GetFormattedString(
+    AcediaObject    key,
+    optional string defaultValue)
+{
+    local AcediaObject  result;
+    local BaseText      asText;
+
+    result = BorrowItem(key);
+    if (result == none) {
+        return defaultValue;
+    }
+    asText = BaseText(result);
+    if (asText != none) {
+        return asText.ToFormattedString();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Changes `HashTable`'s value at key `key` to formatted string `value` that
+ *  will be recorded as either `Text` or `MutableText`, depending of `asMutable`
+ *  optional parameter.
+ *
+ *  @param  key         Key, at which to change the value.
+ *  @param  value       Value to be set at a given key.
+ *  @param  asMutable   Given formatted string value will be recorded as
+ *      immutable `Text` by default (`asMutable == false`). Setting this
+ *      parameter to `true` will make this method record it as a mutable
+ *      `MutableText`.
+ *  @return Reference to the caller `HashTable` to allow for
+ *      method chaining.
+ */
+public final function HashTable SetFormattedString(
+    AcediaObject    key,
+    string          value,
+    optional bool   asMutable)
+{
+    local AcediaObject newValue;
+
+    if (asMutable) {
+        newValue = _.text.FromFormattedStringM(value);
+    }
+    else {
+        newValue = _.text.FromFormattedString(value);
     }
     SetItem(key, newValue);
     newValue.FreeSelf();

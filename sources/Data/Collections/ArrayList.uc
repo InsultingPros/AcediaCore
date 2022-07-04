@@ -731,8 +731,8 @@ public final function ArrayList SetFloat(
 }
 
 /**
- *  Returns `string` item at `index`. If index is invalid or
- *  stores a non-`Text`/`MutableText` value, returns `defaultValue`.
+ *  Returns plain string item at `index`. If index is invalid or
+ *  stores a non-`BaseText` value, returns `defaultValue`.
  *
  *  Referred value must be stored as `Text` or `MutableText`
  *  (or one of their sub-classes) for this method to work.
@@ -741,35 +741,30 @@ public final function ArrayList SetFloat(
  *      has to return.
  *  @param  defaultValue    Value to return if there is either no item recorded
  *      at `index` or it has a wrong type.
- *  @return `string` value at `index` in the caller `ArrayList`.
- *      `defaultValue` if passed `index` is invalid or non-`Text`/`MutableText`
+ *  @return Plain string value at `index` in the caller `ArrayList`.
+ *      `defaultValue` if passed `index` is invalid or non-`BaseText`
  *      value is stored there.
  */
 public final function string GetString(int index, optional string defaultValue)
 {
     local AcediaObject  result;
-    local Text          asText;
-    local MutableText   asMutableText;
+    local BaseText      asText;
 
     result = BorrowItem(index);
     if (result == none) {
         return defaultValue;
     }
-    asText = Text(result);
+    asText = BaseText(result);
     if (asText != none) {
         return asText.ToString();
-    }
-    asMutableText = MutableText(result);
-    if (asMutableText != none) {
-        return asMutableText.ToString();
     }
     return defaultValue;
 }
 
 /**
- *  Changes `ArrayList`'s value at `index` to `value` that will be recorded
- *  as either `Text` or `MutableText`, depending of `asMutable` optional
- *  parameter.
+ *  Changes `ArrayList`'s value at `index` to `value` (treated as a plain
+ *  string) that will be recorded as either `Text` or `MutableText`, depending
+ *  of `asMutable` optional parameter.
  *
  *  @param  index       Index, at which to change the value. If `ArrayList` is
  *      not long enough to hold it, it will be automatically expanded.
@@ -796,6 +791,165 @@ public final function ArrayList SetString(
     SetItem(index, newValue);
     newValue.FreeSelf();
     return self;
+}
+
+/**
+ *  Returns formatted string item at `index`. If index is invalid or
+ *  stores a non-`BaseText` value, returns `defaultValue`.
+ *
+ *  Referred value must be stored as `Text` or `MutableText`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  index           Index of a `string` item that `ArrayList`
+ *      has to return.
+ *  @param  defaultValue    Value to return if there is either no item recorded
+ *      at `index` or it has a wrong type.
+ *  @return Formatted string value at `index` in the caller `ArrayList`.
+ *      `defaultValue` if passed `index` is invalid or non-`BaseText`
+ *      value is stored there.
+ */
+public final function string GetFormattedString(
+    int             index,
+    optional string defaultValue)
+{
+    local AcediaObject  result;
+    local BaseText      asText;
+
+    result = BorrowItem(index);
+    if (result == none) {
+        return defaultValue;
+    }
+    asText = BaseText(result);
+    if (asText != none) {
+        return asText.ToFormattedString();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Changes `ArrayList`'s value at `index` to `value` (treated as a formatted
+ *  string) that will be recorded as either `Text` or `MutableText`, depending
+ *  of `asMutable` optional parameter.
+ *
+ *  @param  index       Index, at which to change the value. If `ArrayList` is
+ *      not long enough to hold it, it will be automatically expanded.
+ *      If passed index is negative - method will do nothing.
+ *  @param  value       Value to be set at a given index.
+ *  @param  asMutable   Given `string` value will be recorded as immutable
+ *      `Text` by default (`asMutable == false`). Setting this parameter to
+ *      `true` will make this method record it as a mutable `MutableText`.
+ *  @return Reference to the caller `ArrayList` to allow for method chaining.
+ */
+public final function ArrayList SetFormattedString(
+    int             index,
+    string          value,
+    optional bool   asMutable)
+{
+    local AcediaObject newValue;
+
+    if (asMutable) {
+        newValue = _.text.FromFormattedStringM(value);
+    }
+    else {
+        newValue = _.text.FromFormattedString(value);
+    }
+    SetItem(index, newValue);
+    newValue.FreeSelf();
+    return self;
+}
+
+/**
+ *      Adds given `bool` at the end of the `ArrayList`, expanding it by
+ *  one item.
+ *
+ *  @param  value   `bool` value to be added at the end of the `ArrayList`.
+ *  @param  asRef   Given `bool` value will be recorded as immutable `BoolBox`
+ *      by default (`asRef == false`). Setting this parameter to `true` will
+ *      make this method record it as a mutable `BoolRef`.
+ *  @return Reference to the caller `ArrayList` to allow for method chaining.
+ */
+public final function ArrayList AddBool(bool value, optional bool asRef)
+{
+    return SetBool(storedObjects.length, value, asRef);
+}
+
+/**
+ *      Adds given `byte` at the end of the `ArrayList`, expanding it by
+ *  one item.
+ *
+ *  @param  value   `byte` value to be added at the end of the `ArrayList`.
+ *  @param  asRef   Given `byte` value will be recorded as immutable `ByteBox`
+ *      by default (`asRef == false`). Setting this parameter to `true` will
+ *      make this method record it as a mutable `ByteRef`.
+ *  @return Reference to the caller `ArrayList` to allow for method chaining.
+ */
+public final function ArrayList AddByte(byte value, optional bool asRef)
+{
+    return SetByte(storedObjects.length, value, asRef);
+}
+
+/**
+ *      Adds given `int` at the end of the `ArrayList`, expanding it by
+ *  one item.
+ *
+ *  @param  value   `int` value to be added at the end of the `ArrayList`.
+ *  @param  asRef   Given `int` value will be recorded as immutable `IntBox`
+ *      by default (`asRef == false`). Setting this parameter to `true` will
+ *      make this method record it as a mutable `IntRef`.
+ *  @return Reference to the caller `ArrayList` to allow for method chaining.
+ */
+public final function ArrayList AddInt(int value, optional bool asRef)
+{
+    return SetInt(storedObjects.length, value, asRef);
+}
+
+/**
+ *      Adds given `float` at the end of the `ArrayList`, expanding it by
+ *  one item.
+ *
+ *  @param  value   `float` value to be added at the end of the `ArrayList`.
+ *  @param  asRef   Given `float` value will be recorded as immutable `FloatBox`
+ *      by default (`asRef == false`). Setting this parameter to `true` will
+ *      make this method record it as a mutable `FloatRef`.
+ *  @return Reference to the caller `ArrayList` to allow for method chaining.
+ */
+public final function ArrayList AddFloat(float value, optional bool asRef)
+{
+    return SetFloat(storedObjects.length, value, asRef);
+}
+
+/**
+ *      Adds given plain string at the end of the `ArrayList`, expanding it by
+ *  one item.
+ *
+ *  @param  value   Plain string value to be added at the end of
+ *      the `ArrayList`.
+ *  @param  asRef   Given plain string value will be recorded as immutable
+ *      `Text` by default (`asRef == false`). Setting this parameter to `true`
+ *      will make this method record it as a mutable `MutableText`.
+ *  @return Reference to the caller `ArrayList` to allow for method chaining.
+ */
+public final function ArrayList AddString(string value, optional bool asRef)
+{
+    return SetString(storedObjects.length, value, asRef);
+}
+
+/**
+ *      Adds given formatted string at the end of the `ArrayList`, expanding it
+ *  by one item.
+ *
+ *  @param  value   Formatted string value to be added at the end of
+ *      the `ArrayList`.
+ *  @param  asRef   Given formatted string value will be recorded as immutable
+ *      `Text` by default (`asRef == false`). Setting this parameter to `true`
+ *      will make this method record it as a mutable `MutableText`.
+ *  @return Reference to the caller `ArrayList` to allow for method chaining.
+ */
+public final function ArrayList AddFormattedString(
+    string          value,
+    optional bool   asRef)
+{
+    return SetFormattedString(storedObjects.length, value, asRef);
 }
 
 /**
