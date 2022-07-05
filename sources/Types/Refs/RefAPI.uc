@@ -170,6 +170,35 @@ public final function IntArrayRef IntArray(array<int> arrayValue)
 }
 
 /**
+ *  Creates reference object to store an `Vector` value.
+ *
+ *  @param  value   Initial value to store in reference.
+ *  @return `VectorRef`, containing `value`.
+ */
+public final function VectorRef Vector(optional Vector value)
+{
+    local VectorRef ref;
+    ref = VectorRef(_.memory.Allocate(class'VectorRef'));
+    ref.Set(value);
+    return ref;
+}
+
+/**
+ *  Creates reference object to store an array of `Vector` values.
+ *  Initializes it with a given array.
+ *
+ *  @param  arrayValue  Initial array value to store in reference.
+ *  @return `VectorArrayRef`, containing `arrayValue`.
+ */
+public final function VectorArrayRef VectorArray(array<Vector> arrayValue)
+{
+    local VectorArrayRef ref;
+    ref = VectorArrayRef(_.memory.Allocate(class'VectorArrayRef'));
+    ref.Set(arrayValue);
+    return ref;
+}
+
+/**
  *  Creates reference object to store an array of `int` values.
  *  Initializes it with an empty array.
  *

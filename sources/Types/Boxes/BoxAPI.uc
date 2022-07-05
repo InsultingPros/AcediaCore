@@ -136,6 +136,35 @@ public final function IntArrayBox IntArray(array<int> arrayValue)
     return box;
 }
 
+/**
+ *  Creates initialized box that stores an `Vector` value.
+ *
+ *  @param  value   Value to store in the box.
+ *  @return `VectorBox`, containing `value`.
+ */
+public final function VectorBox Vector(optional Vector value)
+{
+    local VectorBox box;
+    box = VectorBox(_.memory.Allocate(class'VectorBox'));
+    box.Initialize(value);
+    return box;
+}
+
+/**
+ *  Creates initialized box that stores an array of `Vector` values.
+ *  Initializes it with a given array.
+ *
+ *  @param  arrayValue  Initial array value to store in the box.
+ *  @return `VectorArrayBox`, containing `arrayValue`.
+ */
+public final function VectorArrayBox VectorArray(array<Vector> arrayValue)
+{
+    local VectorArrayBox box;
+    box = VectorArrayBox(_.memory.Allocate(class'VectorArrayBox'));
+    box.Initialize(arrayValue);
+    return box;
+}
+
 defaultproperties
 {
 }
