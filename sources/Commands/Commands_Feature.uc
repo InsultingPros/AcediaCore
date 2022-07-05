@@ -27,6 +27,9 @@ var private array<Text> commandDelimiters;
 //  Registered commands, recorded as (<command_name>, <command_instance>) pairs.
 //  Keys should be deallocated when their entry is removed.
 var private HashTable   registeredCommands;
+//  `HashTable` of "<command_group_name>" <-> `ArrayList` of commands pairs
+//  to allow quick fetch of commands belonging to a single group
+var private HashTable   groupedCommands;
 
 //  When this flag is set to true, mutate input becomes available
 //  despite `useMutateInput` flag to allow to unlock server in case of an error
@@ -48,16 +51,17 @@ var LoggerAPI.Definition errCommandDuplicate;
 
 protected function OnEnabled()
 {
-    registeredCommands = _.collections.EmptyHashTable();
+    registeredCommands  = _.collections.EmptyHashTable();
+    groupedCommands     = _.collections.EmptyHashTable();
     RegisterCommand(class'ACommandHelp');
     //  Macro selector
-    commandDelimiters[0] = P("@");
+    commandDelimiters[0] = _.text.FromString("@");
     //  Key selector
-    commandDelimiters[1] = P("#");
+    commandDelimiters[1] = _.text.FromString("#");
     //  Player array (possibly JSON array)
-    commandDelimiters[2] = P("[");
+    commandDelimiters[2] = _.text.FromString("[");
     //  Negation of the selector
-    commandDelimiters[3] = P("!");
+    commandDelimiters[3] = _.text.FromString("!");
 }
 
 protected function OnDisabled()
@@ -71,10 +75,13 @@ protected function OnDisabled()
     useChatInput    = false;
     useMutateInput  = false;
     _.memory.Free(registeredCommands);
-    registeredCommands = none;
-    commandDelimiters.length = 0;
+    _.memory.Free(groupedCommands);
     _.memory.Free(chatCommandPrefix);
-    chatCommandPrefix = none;
+    _.memory.FreeMany(commandDelimiters);
+    registeredCommands  = none;
+    groupedCommands     = none;
+    chatCommandPrefix   = none;
+    commandDelimiters.length = 0;
 }
 
 protected function SwapConfig(FeatureConfig config)
@@ -207,7 +214,8 @@ public final static function Text GetChatPrefix()
  */
 public final function RegisterCommand(class<Command> commandClass)
 {
-    local Text      commandName;
+    local Text      commandName, groupName;
+    local ArrayList groupArray;
     local Command   newCommandInstance, existingCommandInstance;
 
     if (commandClass == none)       return;
@@ -215,6 +223,7 @@ public final function RegisterCommand(class<Command> commandClass)
 
     newCommandInstance  = Command(_.memory.Allocate(commandClass, true));
     commandName         = newCommandInstance.GetName();
+    groupName           = newCommandInstance.GetGroupName();
     //  Check for duplicates and report them
     existingCommandInstance = Command(registeredCommands.GetItem(commandName));
     if (existingCommandInstance != none)
@@ -223,6 +232,7 @@ public final function RegisterCommand(class<Command> commandClass)
             .ArgClass(existingCommandInstance.class)
             .Arg(commandName)
             .ArgClass(commandClass);
+        _.memory.Free(groupName);
         _.memory.Free(newCommandInstance);
         _.memory.Free(existingCommandInstance);
         return;
@@ -230,6 +240,16 @@ public final function RegisterCommand(class<Command> commandClass)
     //  Otherwise record new command
     //  `commandName` used as a key, do not deallocate it
     registeredCommands.SetItem(commandName, newCommandInstance);
+    //  Add to grouped collection
+    groupArray = groupedCommands.GetArrayList(groupName);
+    if (groupArray == none) {
+        groupArray = _.collections.EmptyArrayList();
+    }
+    groupArray.AddItem(newCommandInstance);
+    groupedCommands.SetItem(groupName, groupArray);
+    _.memory.Free(groupArray);
+    _.memory.Free(groupName);
+    _.memory.Free(commandName);
     _.memory.Free(newCommandInstance);
 }
 
@@ -249,6 +269,7 @@ public final function RemoveCommand(class<Command> commandClass)
     local Iter          iter;
     local Command       nextCommand;
     local Text          nextCommandName;
+    local array<Text>   commandGroup;          
     local array<Text>   keysToRemove;
 
     if (commandClass == none)       return;
@@ -266,6 +287,7 @@ public final function RemoveCommand(class<Command> commandClass)
             continue;
         }
         keysToRemove[keysToRemove.length] = nextCommandName;
+        commandGroup[commandGroup.length] = nextCommand.GetGroupName();
         _.memory.Free(nextCommand);
     }
     iter.FreeSelf();
@@ -274,6 +296,40 @@ public final function RemoveCommand(class<Command> commandClass)
         registeredCommands.RemoveItem(keysToRemove[i]);
         _.memory.Free(keysToRemove[i]);
     }
+
+    for (i = 0; i < commandGroup.length; i += 1) {
+        RemoveClassFromGroup(commandClass, commandGroup[i]);
+    }
+    _.memory.FreeMany(commandGroup);
+}
+
+private final function RemoveClassFromGroup(
+    class<Command>  commandClass,
+    BaseText        commandGroup)
+{
+    local int       i;
+    local ArrayList groupArray;
+    local Command   nextCommand;
+
+    groupArray = groupedCommands.GetArrayList(commandGroup);
+    if (groupArray == none) {
+        return;
+    }
+    while (i < groupArray.GetLength())
+    {
+        nextCommand = Command(groupArray.GetItem(i));
+        if (nextCommand != none && nextCommand.class == commandClass) {
+            groupArray.RemoveIndex(i);
+        }
+        else {
+            i += 1;
+        }
+        _.memory.Free(nextCommand);
+    }
+    if (groupArray.GetLength() == 0) {
+        groupedCommands.RemoveItem(commandGroup);
+    }
+    _.memory.Free(groupArray);
 }
 
 /**
@@ -309,6 +365,50 @@ public final function array<Text> GetCommandNames()
 
     if (registeredCommands != none) {
         return registeredCommands.GetTextKeys();
+    }
+    return emptyResult;
+}
+
+/**
+ *  Returns array of names of all available commands belonging to the group
+ *      `groupName`.
+ *
+ *  @return Array of names of all available (registered) commands, belonging to
+ *      the group `groupName`.
+ */
+public final function array<Text> GetCommandNamesInGroup(BaseText groupName)
+{
+    local int           i;
+    local ArrayList     groupArray;
+    local Command       nextCommand;
+    local array<Text>   result;
+
+    if (groupedCommands == none)    return result;
+    groupArray = groupedCommands.GetArrayList(groupName);
+    if (groupArray == none)         return result;
+
+    for (i = 0; i < groupArray.GetLength(); i += 1)
+    {
+        nextCommand = Command(groupArray.GetItem(i));
+        if (nextCommand != none) {
+            result[result.length] = nextCommand.GetName();
+        }
+        _.memory.Free(nextCommand);
+    }
+    return result;
+}
+
+/**
+ *  Returns all available command groups' names.
+ *
+ *  @return Array of all available command groups' names.
+ */
+public final function array<Text> GetGroupsNames()
+{
+    local array<Text> emptyResult;
+
+    if (groupedCommands != none) {
+        return groupedCommands.GetTextKeys();
     }
     return emptyResult;
 }

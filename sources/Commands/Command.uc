@@ -164,6 +164,8 @@ struct Data
     //  Default command name that will be used unless Acedia is configured to
     //  do otherwise
     var protected Text              name;
+    //  Command group this command belongs to
+    var protected Text              group;
     //  Short summary of what command does (recommended to
     //  keep it to 80 characters)
     var protected Text              summary;
@@ -561,6 +563,20 @@ public final function Text GetName()
         return P("").Copy();
     }
     return commandData.name.LowerCopy();
+}
+
+/**
+ *  Returns group name (in lower case) of the caller command class.
+ *
+ *  @return Group name (in lower case) of the caller command class.
+ *      Guaranteed to be not `none`.
+ */
+public final function Text GetGroupName()
+{
+    if (commandData.group == none) {
+        return P("").Copy();
+    }
+    return commandData.group.LowerCopy();
 }
 
 //  TODO: use `SharedRef` instead

@@ -28,27 +28,35 @@ var public const int TKEY, TDOUBLE_KEY, TCOMMA_SPACE, TBOOLEAN, TINDENT;
 var public const int TBOOLEAN_TRUE_FALSE, TBOOLEAN_ENABLE_DISABLE;
 var public const int TBOOLEAN_ON_OFF, TBOOLEAN_YES_NO;
 var public const int TOPTIONS, TCMD_WITH_TARGET, TCMD_WITHOUT_TARGET;
+var public const int TSEPARATOR, TLIST_REGIRESTED_CMDS, TEMPTY_GROUP;
 
 protected function BuildData(CommandDataBuilder builder)
 {
-    builder.Name(P("help"))
-        .Summary(P("Detailed information about available commands."));
+    builder.Name(P("help")).Group(P("core"))
+        .Summary(P("Displays detailed information about available commands."));
     builder.OptionalParams()
         .ParamTextList(P("commands"))
-        .Describe(P("Display information about all specified commands."));
+        .Describe(P("Displays information about all specified commands."));
     builder.Option(P("list"))
-        .Describe(P("Display list of all available commands."));
+        .Describe(P("Display available commands. Optionally command groups can"
+            @ "be specified and then only commands from such groups will be"
+            @ "listed. Otherwise all commands will be displayed."))
+        .OptionalParams()
+        .ParamTextList(P("groups"));
 }
 
 protected function Executed(Command.CallData callData, EPlayer callerPlayer)
 {
     local HashTable parameters, options;;
-    local ArrayList commandsToDisplay;
+    local ArrayList commandsToDisplay, commandGroupsToDisplay;
     parameters  = callData.parameters;
     options     = callData.options;
     //  Print command list if "--list" option was specified
-    if (options.HasKey(P("list"))) {
-        DisplayCommandList(callerPlayer);
+    if (options.HasKey(P("list")))
+    {
+        commandGroupsToDisplay = options.GetArrayListBy(P("/list/groups"));
+        DisplayCommandLists(commandGroupsToDisplay);
+        _.memory.Free(commandGroupsToDisplay);
     }
     //  Help pages.
     //  Only need to print them if:
@@ -58,58 +66,95 @@ protected function Executed(Command.CallData callData, EPlayer callerPlayer)
     if (!options.HasKey(P("list")) || parameters.HasKey(P("commands")))
     {
         commandsToDisplay = parameters.GetArrayList(P("commands"));
-        DisplayCommandHelpPages(callerPlayer, commandsToDisplay);
+        DisplayCommandHelpPages(commandsToDisplay);
         _.memory.Free(commandsToDisplay);
     }
 }
 
-private final function DisplayCommandList(EPlayer player)
+private final function DisplayCommandLists(ArrayList commandGroupsToDisplay)
 {
     local int               i;
-    local ConsoleWriter     console;
-    local Command           nextCommand;
-    local Command.Data      nextData;
-    local array<Text>       commandNames;
+    local array<Text>       commandNames, groupsNames;
     local Commands_Feature  commandsFeature;
-    if (player == none)             return;
+
     commandsFeature =
         Commands_Feature(class'Commands_Feature'.static.GetEnabledInstance());
-    if (commandsFeature == none)    return;
-
-    console = player.BorrowConsole();
-    commandNames = commandsFeature.GetCommandNames();
-    for (i = 0; i < commandNames.length; i += 1)
+    if (commandsFeature == none) {
+        return;
+    }
+    if (commandGroupsToDisplay == none)
     {
-        nextCommand = commandsFeature.GetCommand(commandNames[i]);
-        if (nextCommand == none) continue;
+        groupsNames = commandsFeature.GetGroupsNames();
+        DisplayCommandsNamesArray(commandsFeature, commandNames);
+    }
+    else
+    {
+        for (i = 0; i < commandGroupsToDisplay.GetLength(); i += 1) {
+            groupsNames[groupsNames.length] = commandGroupsToDisplay.GetText(i);
+        }
+    }
+    callerConsole.WriteLine(T(TLIST_REGIRESTED_CMDS));
+    for (i = 0; i < groupsNames.length; i += 1)
+    {
+        if (groupsNames[i] == none) {
+            continue;
+        }
+        commandNames = commandsFeature.GetCommandNamesInGroup(groupsNames[i]);
+        if (commandNames.length > 0)
+        {
+            callerConsole.UseColorOnce(_.color.TextSubHeader);
+            if (groupsNames[i].IsEmpty()) {
+                callerConsole.WriteLine(T(TEMPTY_GROUP));
+            }
+            else {
+                callerConsole.WriteLine(groupsNames[i]);
+            }
+            DisplayCommandsNamesArray(commandsFeature, commandNames);
+            _.memory.FreeMany(commandNames);
+        }
+    }
+    _.memory.FreeMany(groupsNames);
+}
 
+private final function DisplayCommandsNamesArray(
+    Commands_Feature    commandsFeature,
+    array<Text>         commandsNamesArray)
+{
+    local int           i;
+    local Command       nextCommand;
+    local Command.Data  nextData;
+
+    for (i = 0; i < commandsNamesArray.length; i += 1)
+    {
+        nextCommand = commandsFeature.GetCommand(commandsNamesArray[i]);
+        if (nextCommand == none) {
+            continue;
+        }
         nextData = nextCommand.BorrowData();
-        console.UseColor(_.color.textEmphasis)
+        callerConsole.UseColor(_.color.textEmphasis)
             .Write(nextData.name)
             .ResetColor()
             .Write(T(TCOLUMN_SPACE))
             .WriteLine(nextData.summary);
+        _.memory.Free(nextCommand);
     }
-    _.memory.FreeMany(commandNames);
 }
 
-private final function DisplayCommandHelpPages(
-    EPlayer     player,
-    ArrayList   commandList)
+private final function DisplayCommandHelpPages(ArrayList commandList)
 {
     local int               i;
     local Text              nextCommandName;
     local Command           nextCommand;
     local Commands_Feature  commandsFeature;
-    if (player == none)             return;
     commandsFeature =
         Commands_Feature(class'Commands_Feature'.static.GetEnabledInstance());
-    if (commandsFeature == none)    return;
-
+    if (commandsFeature == none) {
+        return;
+    }
     //  If arguments were empty - at least display our own help page
     if (commandList == none)
     {
-        PrintHelpPage(player.BorrowConsole(), BorrowData());
+        PrintHelpPage(BorrowData());
         return;
     }
     //  Otherwise - print help for specified commands
@@ -118,70 +163,74 @@ private final function DisplayCommandHelpPages(
         nextCommandName = commandList.GetText(i);
         nextCommand = commandsFeature.GetCommand(nextCommandName);
         _.memory.Free(nextCommandName);
-        if (nextCommand == none) continue;
-        PrintHelpPage(player.BorrowConsole(), nextCommand.BorrowData());
+        if (nextCommand == none) {
+            continue;
+        }
+        if (i > 0) {
+            callerConsole.WriteLine(T(TSEPARATOR));
+        }
+        PrintHelpPage(nextCommand.BorrowData());
+        _.memory.Free(nextCommand);
     }
 }
 
-//  Following methods are mostly self-explanatory,
-//  all assume that passed `cout != none` 
-private final function PrintHelpPage(ConsoleWriter cout, Command.Data data)
+//  Following methods are mostly self-explanatory
+private final function PrintHelpPage(Command.Data data)
 {
     local Text commandNameUpperCase;
     //  Get capitalized command name
     commandNameUpperCase = data.name.UpperCopy();
     //  Print header: name + basic info
-    cout.UseColor(_.color.textHeader)
+    callerConsole.UseColor(_.color.textHeader)
         .Write(commandNameUpperCase)
         .UseColor(_.color.textDefault);
     commandNameUpperCase.FreeSelf();
     if (data.requiresTarget) {
-        cout.WriteLine(T(TCMD_WITH_TARGET));
+        callerConsole.WriteLine(T(TCMD_WITH_TARGET));
     }
     else {
-        cout.WriteLine(T(TCMD_WITHOUT_TARGET));
+        callerConsole.WriteLine(T(TCMD_WITHOUT_TARGET));
     }
     //  Print commands and options
-    PrintCommands(cout, data);
-    PrintOptions(cout, data);
+    PrintCommands(data);
+    PrintOptions(data);
     //  Clean up
-    cout.ResetColor().Flush();
+    callerConsole.ResetColor().Flush();
 }
 
-private final function PrintCommands(ConsoleWriter cout, Command.Data data)
+private final function PrintCommands(Command.Data data)
 {
     local int               i;
     local array<SubCommand> subCommands;
     subCommands = data.subCommands;
     for (i = 0; i < subCommands.length; i += 1) {
-        PrintSubCommand(cout, subCommands[i], data.name);
+        PrintSubCommand(subCommands[i], data.name);
     }
 }
 
 private final function PrintSubCommand(
-    ConsoleWriter   cout,
-    SubCommand      subCommand,
-    BaseText        commandName)
+    SubCommand  subCommand,
+    BaseText    commandName)
 {
     //  Command + parameters
     //  Command name + sub command name
-    cout.UseColor(_.color.textEmphasis)
+    callerConsole.UseColor(_.color.textEmphasis)
         .Write(commandName)
         .Write(T(TSPACE));
     if (subCommand.name != none && !subCommand.name.IsEmpty()) {
-        cout.Write(subCommand.name).Write(T(TSPACE));
+        callerConsole.Write(subCommand.name).Write(T(TSPACE));
     }
-    cout.UseColor(_.color.textDefault);
+    callerConsole.UseColor(_.color.textDefault);
     //  Parameters
-    PrintParameters(cout, subCommand.required, subCommand.optional);
-    cout.Flush();
+    PrintParameters(subCommand.required, subCommand.optional);
+    callerConsole.Flush();
     //  Description
     if (subCommand.description != none && !subCommand.description.IsEmpty()) {
-        cout.WriteBlock(subCommand.description);
+        callerConsole.WriteBlock(subCommand.description);
     }
 }
 
-private final function PrintOptions(ConsoleWriter cout, Command.Data data)
+private final function PrintOptions(Command.Data data)
 {
     local int           i;
     local array<Option> options;
@@ -189,22 +238,22 @@ private final function PrintOptions(ConsoleWriter cout, Command.Data data)
     if (options.length <= 0) {
         return;
     }
-    cout.UseColor(_.color.textSubHeader)
+    callerConsole
+        .UseColor(_.color.textSubHeader)
         .WriteLine(T(TOPTIONS))
         .UseColor(_.color.textDefault);
     for (i = 0; i < options.length; i += 1) {
-        PrintOption(cout, options[i]);
+        PrintOption(options[i]);
     }
 }
 
-private final function PrintOption(
-    ConsoleWriter   cout,
-    Option          option)
+private final function PrintOption(Option option)
 {
     local Text shortNameAsText;
     //  Option short and long names with added key characters
     shortNameAsText = _.text.FromCharacter(option.shortName);
-    cout.UseColor(_.color.textEmphasis)
+    callerConsole
+        .UseColor(_.color.textEmphasis)
         .Write(T(TKEY)).Write(shortNameAsText)          //  "-"
         .UseColor(_.color.textDefault)
         .Write(T(TCOMMA_SPACE))                         //  ", "
@@ -215,18 +264,17 @@ private final function PrintOption(
     //  Parameters
     if (option.required.length != 0 || option.optional.length != 0)
     {
-        cout.Write(T(TSPACE));
-        PrintParameters(cout, option.required, option.optional);
+        callerConsole.Write(T(TSPACE));
+        PrintParameters(option.required, option.optional);
     }
-    cout.Flush();
+    callerConsole.Flush();
     //  Description
     if (option.description != none && !option.description.IsEmpty()) {
-        cout.WriteBlock(option.description);
+        callerConsole.WriteBlock(option.description);
     }
 }
 
 private final function PrintParameters(
-    ConsoleWriter       cout,
     array<Parameter>    required,
     array<Parameter>    optional)
 {
@@ -234,57 +282,57 @@ private final function PrintParameters(
     //  Print required
     for (i = 0; i < required.length; i += 1)
     {
-        PrintParameter(cout, required[i]);
+        PrintParameter(required[i]);
         if (i < required.length - 1) {
-            cout.Write(T(TSPACE));
+            callerConsole.Write(T(TSPACE));
         }
     }
     if (optional.length <= 0) {
         return;
     }
     //  Print optional
-    cout.Write(T(TSPACE)).Write(T(TOPEN_BRACKET));
+    callerConsole.Write(T(TSPACE)).Write(T(TOPEN_BRACKET));
     for (i = 0; i < optional.length; i += 1)
     {
-        PrintParameter(cout, optional[i]);
+        PrintParameter(optional[i]);
         if (i < optional.length - 1) {
-            cout.Write(T(TSPACE));
+            callerConsole.Write(T(TSPACE));
         }
     }
-    cout.Write(T(TCLOSE_BRACKET));
+    callerConsole.Write(T(TCLOSE_BRACKET));
 }
 
-private final function PrintParameter(ConsoleWriter cout, Parameter parameter)
+private final function PrintParameter(Parameter parameter)
 {
     switch (parameter.type)
     {
     case CPT_Boolean:
-        cout.UseColor(_.color.typeBoolean);
+        callerConsole.UseColor(_.color.typeBoolean);
         break;
     case CPT_Integer:
-        cout.UseColor(_.color.typeNumber);
+        callerConsole.UseColor(_.color.typeNumber);
         break;
     case CPT_Number:
-        cout.UseColor(_.color.typeNumber);
+        callerConsole.UseColor(_.color.typeNumber);
         break;
     case CPT_Text:
     case CPT_Remainder:
-        cout.UseColor(_.color.typeString);
+        callerConsole.UseColor(_.color.typeString);
         break;
     case CPT_Object:
-        cout.UseColor(_.color.typeLiteral);
+        callerConsole.UseColor(_.color.typeLiteral);
         break;
     case CPT_Array:
-        cout.UseColor(_.color.typeLiteral);
+        callerConsole.UseColor(_.color.typeLiteral);
         break;
     default:
-        cout.UseColor(_.color.textDefault);
+        callerConsole.UseColor(_.color.textDefault);
     }
-    cout.Write(parameter.displayName);
+    callerConsole.Write(parameter.displayName);
     if (parameter.allowsList) {
-        cout.Write(T(TPLUS));
+        callerConsole.Write(T(TPLUS));
     }
-    cout.UseColor(_.color.textDefault);
+    callerConsole.UseColor(_.color.textDefault);
 }
 
 defaultproperties
@@ -323,4 +371,10 @@ defaultproperties
     stringConstants(15) = ": This command does not require target to be specified."
     TOPTIONS                = 16
     stringConstants(16) = "OPTIONS"
+    TSEPARATOR              = 17
+    stringConstants(17) = "============================="
+    TLIST_REGIRESTED_CMDS   = 18
+    stringConstants(18) = "{$TextHeader List of registered commands}"
+    TEMPTY_GROUP            = 19
+    stringConstants(19) = "Empty group"
 }

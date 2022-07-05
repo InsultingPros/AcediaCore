@@ -1,7 +1,7 @@
 /**
  *      Utility class that provides developers with a simple interface to
  *  prepare data that describes command's parameters and options.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -42,7 +42,8 @@ class CommandDataBuilder extends AcediaObject
  */
 
 //  "Prepared data"
-var private Text                        commandName, commandSummary;
+var private Text                        commandName, commandGroup;
+var private Text                        commandSummary;
 var private array<Command.SubCommand>   subcommands;
 var private array<Command.Option>       options;
 var private bool                        requiresTarget;
@@ -84,6 +85,7 @@ protected function Finalizer()
     optionsIsOptional.length        = 0;
     selectedParameterArray.length   = 0;
     commandName                     = none;
+    commandGroup                    = none;
     commandSummary                  = none;
     selectedItemName                = none;
     selectedDescription             = none;
@@ -475,6 +477,29 @@ public final function CommandDataBuilder Name(BaseText newName)
 }
 
 /**
+ *  Sets new group of `Command.Data` under construction. Group name is meant to
+ *  be shared among several commands, allowing user to filter or fetch commands
+ *  of a certain group.
+ *
+ *  @return Returns the caller `CommandDataBuilder` to allow for
+ *      method chaining.
+ */
+public final function CommandDataBuilder Group(BaseText newName)
+{
+    if (newName != none && newName == commandGroup) {
+        return self;
+    }
+    _.memory.Free(commandGroup);
+    if (newName != none) {
+        commandGroup = newName.Copy();
+    }
+    else {
+        commandGroup = none;
+    }
+    return self;
+}
+
+/**
  *  Sets new summary of `Command.Data` under construction. Summary gives a short
  *  description of the command on the whole, to be displayed in a command list.
  *
@@ -545,6 +570,7 @@ public final function Command.Data BorrowData()
     local Command.Data newData;
     RecordSelection();
     newData.name            = commandName;
+    newData.group           = commandGroup;
     newData.summary         = commandSummary;
     newData.subcommands     = subcommands;
     newData.options         = options;
