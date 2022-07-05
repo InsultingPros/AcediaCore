@@ -23,10 +23,10 @@
 class Commands_Feature extends Feature;
 
 //  Delimiters that always separate command name from it's parameters
-var private array<Text>         commandDelimiters;
+var private array<Text> commandDelimiters;
 //  Registered commands, recorded as (<command_name>, <command_instance>) pairs.
 //  Keys should be deallocated when their entry is removed.
-var private AssociativeArray    registeredCommands;
+var private HashTable   registeredCommands;
 
 //  When this flag is set to true, mutate input becomes available
 //  despite `useMutateInput` flag to allow to unlock server in case of an error
@@ -48,7 +48,7 @@ var LoggerAPI.Definition errCommandDuplicate;
 
 protected function OnEnabled()
 {
-    registeredCommands = _.collections.EmptyAssociativeArray();
+    registeredCommands = _.collections.EmptyHashTable();
     RegisterCommand(class'ACommandHelp');
     //  Macro selector
     commandDelimiters[0] = P("@");
@@ -70,12 +70,8 @@ protected function OnDisabled()
     }
     useChatInput    = false;
     useMutateInput  = false;
-    if (registeredCommands != none)
-    {
-        registeredCommands.Empty(true);
-        registeredCommands.FreeSelf();
-        registeredCommands = none;
-    }
+    _.memory.Free(registeredCommands);
+    registeredCommands = none;
     commandDelimiters.length = 0;
     _.memory.Free(chatCommandPrefix);
     chatCommandPrefix = none;
@@ -228,11 +224,13 @@ public final function RegisterCommand(class<Command> commandClass)
             .Arg(commandName)
             .ArgClass(commandClass);
         _.memory.Free(newCommandInstance);
+        _.memory.Free(existingCommandInstance);
         return;
     }
     //  Otherwise record new command
     //  `commandName` used as a key, do not deallocate it
-    registeredCommands.SetItem(commandName, newCommandInstance, true);
+    registeredCommands.SetItem(commandName, newCommandInstance);
+    _.memory.Free(newCommandInstance);
 }
 
 /**
@@ -260,14 +258,21 @@ public final function RemoveCommand(class<Command> commandClass)
     {
         nextCommand     = Command(iter.Get());
         nextCommandName = Text(iter.GetKey());
-        if (nextCommand == none)                continue;
-        if (nextCommandName == none)            continue;
-        if (nextCommand.class != commandClass)  continue;
+        if (    nextCommand == none || nextCommandName == none
+            ||  nextCommand.class != commandClass)
+        {
+            _.memory.Free(nextCommand);
+            _.memory.Free(nextCommandName);
+            continue;
+        }
         keysToRemove[keysToRemove.length] = nextCommandName;
+        _.memory.Free(nextCommand);
     }
     iter.FreeSelf();
-    for (i = 0; i < keysToRemove.length; i += 1) {
-        registeredCommands.RemoveItem(keysToRemove[i], true);
+    for (i = 0; i < keysToRemove.length; i += 1)
+    {
+        registeredCommands.RemoveItem(keysToRemove[i]);
+        _.memory.Free(keysToRemove[i]);
     }
 }
 
@@ -300,23 +305,12 @@ public final function Command GetCommand(BaseText commandName)
  */
 public final function array<Text> GetCommandNames()
 {
-    local int i;
-    local array<AcediaObject>   keys;
-    local Text                  nextKeyAsText;
-    local array<Text>           keysAsText;
+    local array<Text> emptyResult;
 
-    if (registeredCommands == none) {
-        return keysAsText;
+    if (registeredCommands != none) {
+        return registeredCommands.GetTextKeys();
     }
-    keys = registeredCommands.GetKeys();
-    for (i = 0; i < keys.length; i += 1)
-    {
-        nextKeyAsText = Text(keys[i]);
-        if (nextKeyAsText != none) {
-            keysAsText[keysAsText.length] = nextKeyAsText.Copy();
-        }
-    }
-    return keysAsText;
+    return emptyResult;
 }
 
 /**
