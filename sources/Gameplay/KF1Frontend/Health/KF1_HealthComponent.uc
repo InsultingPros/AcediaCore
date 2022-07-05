@@ -49,12 +49,15 @@ class KF1_HealthComponent extends AHealthComponent
  */
 var private const config bool replaceBloatAndSirenDamageTypes;
 
+var private const int TDAMAGE, TORIGINAL_DAMAGE, THIT_LOCATION, TMOMENTUM;
+
 var private LoggerAPI.Definition infoReplacingDamageTypes, errNoServerLevelCore;
 var private LoggerAPI.Definition infoRestoringReplacingDamageTypes;
 
 public function PseudoConstructor()
 {
     local LevelCore core;
+
     _.unreal.gameRules.OnNetDamage(self).connect = OnNetDamageHandler;
     if (!replaceBloatAndSirenDamageTypes) {
         return;
@@ -75,6 +78,7 @@ public function PseudoConstructor()
 
 protected function Finalizer()
 {
+    super.Finalizer();
     _.unreal.gameRules.OnNetDamage(self).Disconnect();
     _.unreal.gameRules.OnScoreKill(self).Disconnect();
     if (replaceBloatAndSirenDamageTypes) {
@@ -135,10 +139,55 @@ private function int OnNetDamageHandler(
     out Vector          momentum,
     class<DamageType>   damageType)
 {
-    if (damageType != class'Dummy_DamTypeVomit')    return damage;
-    if (ZombieBloatBase(injured) != none)           return 0;
-    if (ZombieFleshpoundBase(injured) != none)      return 0;
+    damage = EmitDamageSignal(
+        originalDamage,
+        damage,
+        injured,
+        instigatedBy,
+        hitLocation,
+        momentum,
+        damageType);
+    if (damageType != class'Dummy_DamTypeVomit') {
+        return damage;
+    }
+    if (ZombieBloatBase(injured) != none) {
+        return 0;
+    }
+    if (ZombieFleshpoundBase(injured) != none) {
+        return 0;
+    }
+    return damage;
+}
 
+private function int EmitDamageSignal(
+    int                 originalDamage,
+    int                 damage,
+    Pawn                injured,
+    Pawn                instigatedBy,
+    Vector              hitLocation,
+    out Vector          momentum,
+    class<DamageType>   damageType)
+{
+    local HashTable damageData;
+    local EPawn     target, instigator;
+
+    if (injured != none) {
+        target = class'EKFPawn'.static.Wrap(injured);
+    }
+    if (instigatedBy != none) {
+        instigator = class'EKFPawn'.static.Wrap(instigatedBy);
+    }
+    damageData = _.collections.EmptyHashTable();
+    damageData.SetInt(T(TDAMAGE), damage);
+    damageData.SetInt(T(TORIGINAL_DAMAGE), originalDamage);
+    damageData.SetVector(T(THIT_LOCATION), hitLocation);
+    damageData.SetVector(T(TMOMENTUM), momentum, true);
+    onDamageSignal.Emit(target, instigator, damageData);
+    damage      = damageData.GetInt(T(TDAMAGE), damage);
+    momentum    = damageData.GetVector(T(TMOMENTUM), momentum);
+    _.memory.Free(damageData);
+    _.memory.Free(instigator);
+    _.memory.Free(target);
     return damage;
 }
 
@@ -171,10 +220,17 @@ private function UpdateBileAchievement(Controller killer, Controller killed)
     }
 }
 
-
 defaultproperties
 {
     replaceBloatAndSirenDamageTypes = true
+    TDAMAGE             = 0
+    stringConstants(0) = "damage"
+    TORIGINAL_DAMAGE    = 1
+    stringConstants(1) = "originalDamage"
+    THIT_LOCATION       = 2
+    stringConstants(2) = "hitLocation"
+    TMOMENTUM           = 3
+    stringConstants(3) = "momentum"
     infoReplacingDamageTypes            = (l=LOG_Info,m="Replacing bloat's and siren's damage types to dummy ones.")
     infoRestoringReplacingDamageTypes   = (l=LOG_Info,m="Restoring bloat and siren's damage types to their original values.")
     errNoServerLevelCore                = (l=LOG_Error,m="Server level core is missing. Either this isn't a server or Acedia was wrongly initialized. Bloat and siren damage type will not be replaced.")
