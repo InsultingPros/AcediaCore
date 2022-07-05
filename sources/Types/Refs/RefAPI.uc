@@ -175,7 +175,7 @@ public final function IntArrayRef IntArray(array<int> arrayValue)
  *  @param  value   Initial value to store in reference.
  *  @return `VectorRef`, containing `value`.
  */
-public final function VectorRef Vector(optional Vector value)
+public final function VectorRef Vec(optional Vector value)
 {
     local VectorRef ref;
     ref = VectorRef(_.memory.Allocate(class'VectorRef'));

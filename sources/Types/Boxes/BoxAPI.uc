@@ -142,7 +142,7 @@ public final function IntArrayBox IntArray(array<int> arrayValue)
  *  @param  value   Value to store in the box.
  *  @return `VectorBox`, containing `value`.
  */
-public final function VectorBox Vector(optional Vector value)
+public final function VectorBox Vec(optional Vector value)
 {
     local VectorBox box;
     box = VectorBox(_.memory.Allocate(class'VectorBox'));
