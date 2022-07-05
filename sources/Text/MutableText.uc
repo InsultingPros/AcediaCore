@@ -129,17 +129,6 @@ public final function MutableText AppendManyCharacters(
 }
 
 /**
- *  Adds new line character to the end of the caller `MutableText`.
- *
- *  @return Caller `MutableText` to allow for method chaining.
- */
-public final function MutableText AppendNewLine()
-{
-    AppendCodePoint(CODEPOINT_NEWLINE);
-    return self;
-}
-
-/**
  *  Converts caller `MutableText` instance into lower case.
  */
 public final function ToLower()
