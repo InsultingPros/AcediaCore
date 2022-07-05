@@ -165,6 +165,20 @@ public final function VectorArrayBox VectorArray(array<Vector> arrayValue)
     return box;
 }
 
+/**
+ *  Creates initialized box that stores an `Vector` value.
+ *
+ *  @param  value   Value to store in the box.
+ *  @return `VectorBox`, containing `value`.
+ */
+public final function AcediaType Class(optional class<Object> value)
+{
+    local AcediaType box;
+    box = AcediaType(_.memory.Allocate(class'AcediaType'));
+    box.Initialize(value);
+    return box;
+}
+
 defaultproperties
 {
 }
