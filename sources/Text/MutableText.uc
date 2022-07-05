@@ -200,6 +200,32 @@ public final function MutableText Append(
 }
 
 /**
+ *  Prepends contents of another `BaseText` to the caller `MutableText`.
+ *
+ *  @param  other               Instance of `BaseText`, which content method
+ *      will prepend. Prepends nothing if passed value is `none`.
+ *  @param  defaultFormatting   Formatting to apply to `other`'s character that
+ *      do not have it specified. For example, `defaultFormatting.isColored`,
+ *      but some of `other`'s characters do not have a color defined -
+ *      they will be prepended with a specified color.
+ *  @return Caller `MutableText` to allow for method chaining.
+ */
+public final function MutableText Prepend(
+    BaseText            other,
+    optional Formatting defaultFormatting)
+{
+    local MutableText selfCopy;
+
+    if (other == none) {
+        return self;
+    }
+    selfCopy = MutableCopy();
+    Clear().Append(other, defaultFormatting).Append(selfCopy);
+    _.memory.Free(selfCopy);
+    return self;
+}
+
+/**
  *  Appends contents of the plain `string` to the caller `MutableText`.
  *
  *  @param  source              Plain `string` to be appended to
@@ -221,6 +247,27 @@ public final function MutableText AppendString(
     for (i = 0; i < sourceLength; i += 1) {
         AppendCodePoint(Asc(Mid(source, i, 1)));
     }
+    return self;
+}
+
+/**
+ *  Prepends contents of the plain `string` to the caller `MutableText`.
+ *
+ *  @param  source              Plain `string` to be prepended to
+ *      the caller `MutableText`.
+ *  @param  defaultFormatting   Formatting to be used for `source`'s characters.
+ *      By default defines 'null' formatting (no color set).
+ *  @return Caller `MutableText` to allow for method chaining.
+ */
+public final function MutableText PrependString(
+    string              source,
+    optional Formatting defaultFormatting)
+{
+    local MutableText selfCopy;
+
+    selfCopy = MutableCopy();
+    Clear().AppendString(source, defaultFormatting).Append(selfCopy);
+    _.memory.Free(selfCopy);
     return self;
 }
 
@@ -274,17 +321,77 @@ public final function MutableText AppendColoredString(
 }
 
 /**
+ *  Prepends contents of the colored `string` to the caller `MutableText`.
+ *
+ *  @param  source              Colored `string` to be prepended to
+ *      the caller `MutableText`.
+ *  @param  defaultFormatting   Formatting to be used for `source`'s characters
+ *      that have no color information defined.
+ *      By default defines 'null' formatting (no color set).
+ *  @return Caller `MutableText` to allow for method chaining.
+ */
+public final function MutableText PrependColoredString(
+    string              source,
+    optional Formatting defaultFormatting)
+{
+    local MutableText selfCopy;
+
+    selfCopy = MutableCopy();
+    Clear().AppendColoredString(source, defaultFormatting).Append(selfCopy);
+    _.memory.Free(selfCopy);
+    return self;
+}
+
+/**
  *  Appends contents of the formatted `BaseText` to the caller `MutableText`.
  *
- *  @param  source  `BaseText` (with formatted string contents) to be
+ *  @param  other   `BaseText` (with formatted string contents) to be
  *      appended to the caller `MutableText`.
  *  @return Caller `MutableText` to allow for method chaining.
  */
 public final function MutableText AppendFormatted(
-    BaseText            source,
+    BaseText            other,
     optional Formatting defaultFormatting)
 {
-    class'FormattingStringParser'.static.ParseFormatted(source, self);
+    local MutableText coloredOther;
+
+    if (other == none) {
+        return self;
+    }
+    if (defaultFormatting.isColored)
+    {
+        coloredOther = other
+            .MutableCopy()
+            .ChangeDefaultFormatting(defaultFormatting);
+        class'FormattingStringParser'.static
+            .ParseFormatted(coloredOther, self);
+        _.memory.Free(coloredOther);
+    }
+    else {
+        class'FormattingStringParser'.static.ParseFormatted(other, self);
+    }
+    return self;
+}
+
+/**
+ *  Prepends contents of the formatted `BaseText` to the caller `MutableText`.
+ *
+ *  @param  other   `BaseText` (with formatted string contents) to be
+ *      prepended to the caller `MutableText`.
+ *  @return Caller `MutableText` to allow for method chaining.
+ */
+public final function MutableText PrependFormatted(
+    BaseText            other,
+    optional Formatting defaultFormatting)
+{
+    local MutableText selfCopy;
+
+    if (other == none) {
+        return self;
+    }
+    selfCopy = MutableCopy();
+    Clear().AppendFormatted(other, defaultFormatting).Append(selfCopy);
+    _.memory.Free(selfCopy);
     return self;
 }
 
@@ -303,6 +410,25 @@ public final function MutableText AppendFormattedString(
     sourceAsText = _.text.FromStringM(source);
     AppendFormatted(sourceAsText);
     _.memory.Free(sourceAsText);
+    return self;
+}
+
+/**
+ *  Prepends contents of the formatted `string` to the caller `MutableText`.
+ *
+ *  @param  source  Formatted `string` to be prepended to
+ *      the caller `MutableText`.
+ *  @return Caller `MutableText` to allow for method chaining.
+ */
+public final function MutableText PrependFormattedString(
+    string              source,
+    optional Formatting defaultFormatting)
+{
+    local MutableText selfCopy;
+
+    selfCopy = MutableCopy();
+    Clear().AppendFormattedString(source, defaultFormatting).Append(selfCopy);
+    _.memory.Free(selfCopy);
     return self;
 }
 
