@@ -135,8 +135,6 @@ private function int OnNetDamageHandler(
     out Vector          momentum,
     class<DamageType>   damageType)
 {
-    local KFPlayerReplicationInfo kfPRI;
-
     if (damageType != class'Dummy_DamTypeVomit')    return damage;
     if (ZombieBloatBase(injured) != none)           return 0;
     if (ZombieFleshpoundBase(injured) != none)      return 0;
