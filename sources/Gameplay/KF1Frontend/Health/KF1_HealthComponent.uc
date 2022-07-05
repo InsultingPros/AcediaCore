@@ -105,50 +105,12 @@ private function int OnNetDamageHandler(
     out Vector          momentum,
     class<DamageType>   damageType)
 {
-    if (damageType == class'Dummy_DamTypeVomit') {
-        damage = ReapplyNativeBileAdjustments(originalDamage, damage, injured);
-    }
-    if (damageType == class'Dummy_SirenScreamDamage') {
-        damage = ReapplyNativeScreamAdjustments(damage, injured, hitLocation);
-    }
-    return damage;
-}
-
-private function int ReapplyNativeBileAdjustments(
-    int     originalDamage,
-    int     damage,
-    Pawn    injured)
-{
     local KFPlayerReplicationInfo kfPRI;
 
-    if (ZombieBloatBase(injured) != none) {
-        return 0;
-    }
-    if (ZombieFleshpoundBase(injured) != none) {
-        return 0;
-    }
-    if (injured != none && injured.controller != none)
-    {
-        kfPRI = KFPlayerReplicationInfo(
-            injured.controller.playerReplicationInfo);
-    }
-    return damage;
-}
+    if (damageType != class'Dummy_DamTypeVomit')    return damage;
+    if (ZombieBloatBase(injured) != none)           return 0;
+    if (ZombieFleshpoundBase(injured) != none)      return 0;
 
-private function int ReapplyNativeScreamAdjustments(
-    int     damage,
-    Pawn    injured,
-    Vector  hitLocation)
-{
-    local KFPawn injuredPawn;
-
-    injuredPawn = KFPawn(injured);
-    if (injuredPawn != none)
-    {
-        //  TODO: `PlayHit()` is not informed about siren's damage!!!
-        //  TODO: Neither are bloody projectiles!
-        injuredPawn.lastHitDamType = class'SirenScreamDamage';
-    }
     return damage;
 }
 
@@ -160,6 +122,9 @@ private function UpdateBileAchievement(Controller killer, Controller killed)
     local KFSteamStatsAndAchievements           kfSteamStats;
     local array<ConnectionService.Connection>   activeConnections;
 
+    //  `GameInfo` checks that `killed != none`, but between that and this point
+    //  a lot of things can change, so don't count on it and check
+    if (killed == none)                                                 return;
     killedMonster = KFMonster(killed.pawn);
     if (killedMonster == none)                                          return;
     if (killedMonster.lastDamagedByType != class'Dummy_DamTypeVomit')   return;
