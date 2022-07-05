@@ -24,6 +24,14 @@ class EPawn extends EPlaceable
     abstract;
 
 /**
+ *  If caller pawn is controlled by a player, this method returns that player.
+ *
+ *  @return Player that controls caller pawn. `none` iff caller pawn is not
+ *      controlled by a player.
+ */
+public function EPlayer GetPlayer();
+
+/**
  *  Returns current amount of health caller `EPawn`'s referred entity has,
  *  assuming that entity has a health component.
  *

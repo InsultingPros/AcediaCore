@@ -117,6 +117,19 @@ public function Vector GetLocation()
     return Vect(0.0, 0.0, 0.0);
 }
 
+public function EPlayer GetPlayer()
+{
+    local Pawn pawnInstance;
+
+    pawnInstance = GetNativeInstance();
+    if (pawnInstance != none)
+    {
+        return _.players.FromController(
+            PlayerController(pawnInstance.controller));
+    }
+    return none;
+}
+
 public function int GetHealth()
 {
     local Pawn pawnInstance;
