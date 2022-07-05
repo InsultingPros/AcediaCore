@@ -332,6 +332,44 @@ public final function float GetFloatBy(
 }
 
 /**
+ *  Returns a `Vector` value stored (in the caller `Collection` or
+ *  one of it's sub-collections) pointed by
+ *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
+ *  See `GetItemBy()` for more information.
+ *
+ *  Referred value must be stored as `VectorBox` or `VectorRef`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  jsonPointerAsText   Description of a path to the `Vector` value.
+ *  @param  defaultValue        Value to return in case `jsonPointerAsText`
+ *      does not point at any existing value or if that value does not have
+ *      appropriate type.
+ *  @return `Vector` value, stored at `jsonPointerAsText` or `defaultValue` if it
+ *      is missing or has a different type.
+ */
+public final function Vector GetVectorBy(
+    BaseText        jsonPointerAsText,
+    optional Vector defaultValue)
+{
+    local AcediaObject  result;
+    local VectorBox     asBox;
+    local VectorRef     asRef;
+    result = GetItemBy(jsonPointerAsText);
+    if (result == none) {
+        return defaultValue;
+    }
+    asBox = VectorBox(result);
+    if (asBox != none) {
+        return asBox.Get();
+    }
+    asRef = VectorRef(result);
+    if (asRef != none) {
+        return asRef.Get();
+    }
+    return defaultValue;
+}
+
+/**
  *  Returns a plain string value stored (in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
@@ -633,6 +671,43 @@ public final function float GetFloatByJSON(
         return asBox.Get();
     }
     asRef = FloatRef(result);
+    if (asRef != none) {
+        return asRef.Get();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Returns a `Vector` value stored (in the caller `Collection` or
+ *  one of it's sub-collections) pointed by JSON pointer.
+ *  See `GetItemByJSON()` for more information.
+ *
+ *  Referred value must be stored as `VectorBox` or `VectorRef`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  jsonPointer     JSON path to the `Vector` value.
+ *  @param  defaultValue    Value to return in case `jsonPointer`
+ *      does not point at any existing value or if that value does not have
+ *      appropriate type.
+ *  @return `Vector` value, stored at `jsonPointerAsText` or `defaultValue` if it
+ *      is missing or has a different type.
+ */
+public final function Vector GetVectorByJSON(
+    JSONPointer     jsonPointer,
+    optional Vector defaultValue)
+{
+    local AcediaObject  result;
+    local VectorBox     asBox;
+    local VectorRef     asRef;
+    result = GetItemByJSON(jsonPointer);
+    if (result == none) {
+        return defaultValue;
+    }
+    asBox = VectorBox(result);
+    if (asBox != none) {
+        return asBox.Get();
+    }
+    asRef = VectorRef(result);
     if (asRef != none) {
         return asRef.Get();
     }

@@ -935,6 +935,74 @@ public final function HashTable SetFloat(
 }
 
 /**
+ *  Returns `Vector` item at key `key`. If key is invalid or
+ *  stores a non-`Vector` value, returns `defaultValue`.
+ *
+ *  Referred value must be stored as `VectorBox` or `VectorRef`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  key             Key of a `Vector` item that `HashTable`
+ *      has to return.
+ *  @param  defaultValue    Value to return if there is either no item recorded
+ *      at `key` or it has a wrong type.
+ *  @return `Vector` value at `key` in the caller `HashTable`.
+ *      `defaultValue` if passed `key` is invalid or non-`Vector` value
+ *      is stored with it.
+ */
+public final function Vector GetVector(
+    AcediaObject    key,
+    optional Vector defaultValue)
+{
+    local AcediaObject  result;
+    local VectorBox      asBox;
+    local VectorRef      asRef;
+
+    result = BorrowItem(key);
+    if (result == none) {
+        return defaultValue;
+    }
+    asBox = VectorBox(result);
+    if (asBox != none) {
+        return asBox.Get();
+    }
+    asRef = VectorRef(result);
+    if (asRef != none) {
+        return asRef.Get();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Changes `HashTable`'s value at key `key` to `value` that will be
+ *  recorded as either `VectorBox` or `VectorRef`, depending of `asRef`
+ *  optional parameter.
+ *
+ *  @param  key     Key, at which to change the value.
+ *  @param  value   Value to be set at a given key.
+ *  @param  asRef   Given `Vector` value will be recorded as immutable
+ *      `VectorBox` by default (`asRef == false`). Setting this parameter to
+ *      `true` will make this method record it as a mutable `VectorRef`.
+ *  @return Reference to the caller `HashTable` to allow for method chaining.
+ */
+public final function HashTable SetVector(
+    AcediaObject    key,
+    Vector          value,
+    optional bool   asRef)
+{
+    local AcediaObject newValue;
+
+    if (asRef) {
+        newValue = _.ref.Vec(value);
+    }
+    else {
+        newValue = _.box.Vec(value);
+    }
+    SetItem(key, newValue);
+    newValue.FreeSelf();
+    return self;
+}
+
+/**
  *  Returns plain string item at key `key`. If key is invalid or stores
  *  a non-`BaseText` value, returns `defaultValue`.
  *

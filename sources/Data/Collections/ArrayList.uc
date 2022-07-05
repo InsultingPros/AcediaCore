@@ -731,6 +731,74 @@ public final function ArrayList SetFloat(
 }
 
 /**
+ *  Returns `Vector` item at `index`. If index is invalid or
+ *  stores a non-`int` value, returns `defaultValue`.
+ *
+ *  Referred value must be stored as `VectorBox` or `VectorRef`
+ *  (or one of their sub-classes) for this method to work.
+ *
+ *  @param  index           Index of a `Vector` item that `ArrayList`
+ *      has to return.
+ *  @param  defaultValue    Value to return if there is either no item recorded
+ *      at `index` or it has a wrong type.
+ *  @return `Vector` value at `index` in the caller `ArrayList`.
+ *      `defaultValue` if passed `index` is invalid or non-`Vector` value
+ *      is stored there.
+ */
+public final function Vector GetVector(int index, optional Vector defaultValue)
+{
+    local AcediaObject  result;
+    local VectorBox     asBox;
+    local VectorRef     asRef;
+
+    result = BorrowItem(index);
+    if (result == none) {
+        return defaultValue;
+    }
+    asBox = VectorBox(result);
+    if (asBox != none) {
+        return asBox.Get();
+    }
+    asRef = VectorRef(result);
+    if (asRef != none) {
+        return asRef.Get();
+    }
+    return defaultValue;
+}
+
+/**
+ *  Changes `ArrayList`'s value at `index` to `value` that will be recorded
+ *  as either `VectorBox` or `VectorRef`, depending of `asRef` optional
+ *  parameter.
+ *
+ *  @param  index   Index, at which to change the value. If `ArrayList` is
+ *      not long enough to hold it, it will be automatically expanded.
+ *      If passed index is negative - method will do nothing.
+ *  @param  value   Value to be set at a given index.
+ *  @param  asRef   Given `Vector` value will be recorded as immutable
+ *      `VectorBox` by default (`asRef == false`). Setting this parameter to
+ *      `true` will make this method record it as a mutable `VectorRef`.
+ *  @return Reference to the caller `ArrayList` to allow for method chaining.
+ */
+public final function ArrayList SetVector(
+    int             index,
+    Vector          value,
+    optional bool   asRef)
+{
+    local AcediaObject newValue;
+
+    if (asRef) {
+        newValue = _.ref.Vec(value);
+    }
+    else {
+        newValue = _.box.Vec(value);
+    }
+    SetItem(index, newValue);
+    newValue.FreeSelf();
+    return self;
+}
+
+/**
  *  Returns plain string item at `index`. If index is invalid or
  *  stores a non-`BaseText` value, returns `defaultValue`.
  *
@@ -916,6 +984,21 @@ public final function ArrayList AddInt(int value, optional bool asRef)
 public final function ArrayList AddFloat(float value, optional bool asRef)
 {
     return SetFloat(storedObjects.length, value, asRef);
+}
+
+/**
+ *      Adds given `Vector` at the end of the `ArrayList`, expanding it by
+ *  one item.
+ *
+ *  @param  value   `Vector` value to be added at the end of the `ArrayList`.
+ *  @param  asRef   Given `Vector` value will be recorded as immutable
+ *      `VectorBox` by default (`asRef == false`). Setting this parameter to
+ *      `true` will make this method record it as a mutable `VectorRef`.
+ *  @return Reference to the caller `ArrayList` to allow for method chaining.
+ */
+public final function ArrayList AddVector(Vector value, optional bool asRef)
+{
+    return SetVector(storedObjects.length, value, asRef);
 }
 
 /**
