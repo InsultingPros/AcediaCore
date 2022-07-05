@@ -1,7 +1,7 @@
 /**
  *      Low-level API that provides set of utility methods for working with
  *  `GameRule`s.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -94,7 +94,7 @@ public final function GameRules_OnCheckEndGame_Slot OnCheckEndGame(
     local Signal        signal;
     local UnrealService service;
     service = UnrealService(class'UnrealService'.static.Require());
-    signal = service.GetSignal(class'GameRules_OnHandleRestartGame_Signal');
+    signal = service.GetSignal(class'GameRules_OnCheckEndGame_Signal');
     return GameRules_OnCheckEndGame_Slot(signal.NewSlot(receiver));
 }
 

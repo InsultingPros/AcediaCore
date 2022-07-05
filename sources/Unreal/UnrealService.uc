@@ -1,7 +1,7 @@
 /**
  *      Service for the needs of `UnrealAPI`. Mainly tasked with creating API's
  *  `Signal`s.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -112,12 +112,14 @@ defaultproperties
     serviceSignals(3)   = (signalClass=class'GameRules_OnCheckScore_Signal')
     serviceSignals(4)   = (signalClass=class'GameRules_OnOverridePickupQuery_Signal')
     serviceSignals(5)   = (signalClass=class'GameRules_OnNetDamage_Signal')
-    serviceSignals(6)   = (signalClass=class'Broadcast_OnBroadcastCheck_Signal')
-    serviceSignals(7)   = (signalClass=class'Broadcast_OnHandleLocalized_Signal')
-    serviceSignals(8)   = (signalClass=class'Broadcast_OnHandleLocalizedFor_Signal')
-    serviceSignals(9)   = (signalClass=class'Broadcast_OnHandleText_Signal')
-    serviceSignals(10)  = (signalClass=class'Broadcast_OnHandleTextFor_Signal')
-    serviceSignals(11)  = (signalClass=class'Mutator_OnCheckReplacement_Signal')
-    serviceSignals(12)  = (signalClass=class'Mutator_OnMutate_Signal')
-    serviceSignals(13)  = (signalClass=class'Mutator_OnModifyLogin_Signal')
+    serviceSignals(6)   = (signalClass=class'GameRules_OnPreventDeath_Signal')
+    serviceSignals(7)   = (signalClass=class'GameRules_OnScoreKill_Signal')
+    serviceSignals(8)   = (signalClass=class'Broadcast_OnBroadcastCheck_Signal')
+    serviceSignals(9)   = (signalClass=class'Broadcast_OnHandleLocalized_Signal')
+    serviceSignals(10)  = (signalClass=class'Broadcast_OnHandleLocalizedFor_Signal')
+    serviceSignals(11)  = (signalClass=class'Broadcast_OnHandleText_Signal')
+    serviceSignals(12)  = (signalClass=class'Broadcast_OnHandleTextFor_Signal')
+    serviceSignals(13)  = (signalClass=class'Mutator_OnCheckReplacement_Signal')
+    serviceSignals(14)  = (signalClass=class'Mutator_OnMutate_Signal')
+    serviceSignals(15)  = (signalClass=class'Mutator_OnModifyLogin_Signal')
 }
