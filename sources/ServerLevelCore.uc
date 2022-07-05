@@ -22,7 +22,7 @@ protected function Constructor()
 {
     super.Constructor();
     //  TODO: this is hack, needs to be redone later
-    KF1_HealthComponent(_.kf.health).PresudoConstructor();
+    KF1_HealthComponent(_.kf.health).PseudoConstructor();
 }
 
 public static function LevelCore CreateLevelCore(Actor source)

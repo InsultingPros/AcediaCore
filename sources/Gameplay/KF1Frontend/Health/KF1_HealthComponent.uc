@@ -21,13 +21,38 @@ class KF1_HealthComponent extends AHealthComponent
     dependson(ConnectionService)
     config(AcediaSystem);
 
-//  TODO: document here and in config
+/**
+ *      Unfortunately, thanks to the TWI's code, there's no way to catch events
+ *  of when certain kinds of damage are dealt: from welder, bloat's bile and
+ *  siren's scream. At least not without something drastic, like replacing game
+ *  type class.
+ *      As a workaround, Acedia can optionally replace bloat and siren damage
+ *  type to at least catch damage dealt by zeds (as being dealt welder damage is
+ *  pretty rare and insignificant). This change has several unfortunate
+ *  side-effects:
+ *      1. Potentially breaking mods that are looking for `DamTypeVomit` and
+ *          `SirenScreamDamage` damage types specifically. Fixing this issue
+ *          would require these mods to either also try and catch Acedia's
+ *          replacements `AcediaCore.Dummy_DamTypeVomit` and
+ *          `AcediaCore.Dummy_SirenScreamDamage` or to catch any child classes
+ *          of `DamTypeVomit` and `SirenScreamDamage` (as Acedia's replacements
+ *          are also their child classes).
+ *      2. Breaking some achievements that rely on
+ *          `KFSteamStatsAndAchievements`'s `KilledEnemyWithBloatAcid()` method
+ *          being called. This is mostly dealt with by Acedia calling it
+ *          manually. However it relies on killed pawn to have
+ *          `lastDamagedByType` set to `DamTypeVomit`, which sometimes might not
+ *          be the case. Achievements should still be obtainable.
+ *      3. A lot of siren's visual damage effects code does direct checks for
+ *          `SirenScreamDamage` class. These can also break, stopping working as
+ *          intended.
+ */
 var private const config bool replaceBloatAndSirenDamageTypes;
 
 var private LoggerAPI.Definition infoReplacingDamageTypes, errNoServerLevelCore;
 var private LoggerAPI.Definition infoRestoringReplacingDamageTypes;
 
-public function PresudoConstructor()
+public function PseudoConstructor()
 {
     local LevelCore core;
     _.unreal.gameRules.OnNetDamage(self).connect = OnNetDamageHandler;
@@ -39,6 +64,7 @@ public function PresudoConstructor()
     if (core != none)
     {
         ReplaceDamageTypes(core);
+        //  Fixes achievements
         _.unreal.gameRules.OnScoreKill(self).connect = UpdateBileAchievement;
         core.OnShutdown(self).connect = RestoreDamageTypes;
     }
@@ -50,6 +76,7 @@ public function PresudoConstructor()
 protected function Finalizer()
 {
     _.unreal.gameRules.OnNetDamage(self).Disconnect();
+    _.unreal.gameRules.OnScoreKill(self).Disconnect();
     if (replaceBloatAndSirenDamageTypes) {
         RestoreDamageTypes();
     }
@@ -73,6 +100,7 @@ private final function ReplaceDamageTypes(LevelCore core)
         class'Dummy_SirenScreamDamage';
     class'ZombieSiren_CIRCUS'.default.screamDamageType =
         class'Dummy_SirenScreamDamage';
+    //  In case Acedia has started mid-game
     foreach core.AllActors(class'KFBloatVomit', nextVomit) {
         nextVomit.myDamageType = class'Dummy_DamTypeVomit';
     }
@@ -83,6 +111,8 @@ private final function ReplaceDamageTypes(LevelCore core)
 
 private final function RestoreDamageTypes()
 {
+    //  No need to restore damage type values for all the preexisting `Actor`s,
+    //  since Acedia is not meant to be shutdown mid-game
     _.logger.Auto(infoRestoringReplacingDamageTypes);
     class'KFBloatVomit'.default.myDamageType = class'DamTypeVomit';
     class'ZombieSirenBase'.default.screamDamageType = class'SirenScreamDamage';
