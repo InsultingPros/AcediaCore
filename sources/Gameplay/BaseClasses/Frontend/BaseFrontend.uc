@@ -1,7 +1,7 @@
 /**
  *      Base class for all frontends. Does not define anything meaningful, which
  *  also means it does not put any limitations on it's implementation.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -24,10 +24,16 @@
 var private config class<ATemplatesComponent>   templatesClass;
 var public ATemplatesComponent                  templates;
 
+var private config class<AWorldComponent>       worldClass;
+var public AWorldComponent                      world;
+
 protected function Constructor()
 {
     if (templatesClass != none) {
         templates = ATemplatesComponent(_.memory.Allocate(templatesClass));
+    }
+    if (worldClass != none) {
+        world = AWorldComponent(_.memory.Allocate(worldClass));
     }
 }
 
@@ -39,5 +45,6 @@ protected function Finalizer()
 
 defaultproperties
 {
-    templatesClass = none
+    templatesClass  = none
+    worldClass      = none
 }
