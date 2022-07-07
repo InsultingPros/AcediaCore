@@ -1078,7 +1078,7 @@ defaultproperties
     TextSubHeader=(R=147,G=112,B=219,A=255)
     TextSubtle=(R=128,G=128,B=128,A=255)
     TextEmphasis=(R=0,G=128,B=255,A=255)
-    TextPositive=(R=0,G=128,B=0,A=255)
+    TextPositive=(R=60,G=220,B=20,A=255)
     TextNeutral=(R=255,G=255,B=0,A=255)
     TextNegative=(R=220,G=20,B=60,A=255)
     TextOk=(R=0,G=255,B=0,A=255)
