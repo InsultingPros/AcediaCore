@@ -75,9 +75,10 @@ protected static function TESTS()
 
 protected static function Test_DynamicArray()
 {
-    local int           i;
-    local Iter          iter;
-    local DynamicArray  array;
+    local int                   i;
+    local CollectionIterator    iter;
+    local DynamicArray          array;
+
     array = DynamicArray(__().memory.Allocate(class'DynamicArray'));
     iter = array.Iterate();
     Context("Testing iterator for `DynamicArray`");
@@ -105,9 +106,9 @@ protected static function Test_DynamicArray()
 
 protected static function Test_AssociativeArray()
 {
-    local int               i;
-    local Iter              iter;
-    local AssociativeArray  array;
+    local int                   i;
+    local CollectionIterator    iter;
+    local AssociativeArray      array;
     array = AssociativeArray(__().memory.Allocate(class'AssociativeArray'));
     iter = array.Iterate();
     Context("Testing iterator for `AssociativeArray`");

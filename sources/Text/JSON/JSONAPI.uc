@@ -1226,11 +1226,11 @@ public final function MutableText PrintArrayList(ArrayList toPrint)
  */
 public final function MutableText PrintObject(AssociativeArray toPrint)
 {
-    local bool          printedKeyValuePair;
-    local Iter          iter;
-    local Text          nextKey;
-    local AcediaObject  nextValue;
-    local MutableText   result, printedKey, printedValue;
+    local bool                  printedKeyValuePair;
+    local CollectionIterator    iter;
+    local Text                  nextKey;
+    local AcediaObject          nextValue;
+    local MutableText           result, printedKey, printedValue;
     if (toPrint == none) return none;
 
     result = T(default.TOPEN_BRACE).MutableCopy();
@@ -1285,11 +1285,11 @@ public final function MutableText PrintObject(AssociativeArray toPrint)
  */
 public final function MutableText PrintHashTable(HashTable toPrint)
 {
-    local bool          printedKeyValuePair;
-    local Iter          iter;
-    local Text          nextKey;
-    local AcediaObject  nextValue;
-    local MutableText   result, printedKey, printedValue;
+    local bool                  printedKeyValuePair;
+    local CollectionIterator    iter;
+    local Text                  nextKey;
+    local AcediaObject          nextValue;
+    local MutableText           result, printedKey, printedValue;
 
     if (toPrint == none) {
         return none;
@@ -1650,12 +1650,12 @@ private final function MutableText PrettyPrintObjectWithIndent(
     AssociativeArray    toPrint,
     MutableText         accumulatedIndent)
 {
-    local bool          printedKeyValuePair;
-    local Iter          iter;
-    local Text          nextKey;
-    local AcediaObject  nextValue;
-    local MutableText   extendedIndent;
-    local MutableText   result;
+    local bool                  printedKeyValuePair;
+    local CollectionIterator    iter;
+    local Text                  nextKey;
+    local AcediaObject          nextValue;
+    local MutableText           extendedIndent;
+    local MutableText           result;
     if (toPrint == none) {
         return none;
     }
@@ -1693,12 +1693,12 @@ private final function MutableText PrettyPrintHashTableWithIndent(
     HashTable   toPrint,
     MutableText accumulatedIndent)
 {
-    local bool          printedKeyValuePair;
-    local Iter          iter;
-    local Text          nextKey;
-    local AcediaObject  nextValue;
-    local MutableText   extendedIndent;
-    local MutableText   result;
+    local bool                  printedKeyValuePair;
+    local CollectionIterator    iter;
+    local Text                  nextKey;
+    local AcediaObject          nextValue;
+    local MutableText           extendedIndent;
+    local MutableText           result;
     if (toPrint == none) {
         return none;
     }

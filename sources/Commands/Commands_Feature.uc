@@ -265,12 +265,12 @@ public final function RegisterCommand(class<Command> commandClass)
  */
 public final function RemoveCommand(class<Command> commandClass)
 {
-    local int           i;
-    local Iter          iter;
-    local Command       nextCommand;
-    local Text          nextCommandName;
-    local array<Text>   commandGroup;          
-    local array<Text>   keysToRemove;
+    local int                   i;
+    local CollectionIterator    iter;
+    local Command               nextCommand;
+    local Text                  nextCommandName;
+    local array<Text>           commandGroup;          
+    local array<Text>           keysToRemove;
 
     if (commandClass == none)       return;
     if (registeredCommands == none) return;

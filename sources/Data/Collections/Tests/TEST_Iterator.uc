@@ -41,9 +41,9 @@ protected static function ResetFlags()
 }
 
 protected static function DoTestIterator(
-    string  issueSubjectAllocation,
-    string  issueSubjectAmount,
-    Iter    iter)
+    string              issueSubjectAllocation,
+    string              issueSubjectAmount,
+    CollectionIterator  iter)
 {
     local int           i;
     local int           seenCount;
@@ -92,9 +92,9 @@ protected static function TESTS()
 
 protected static function Test_ArrayList()
 {
-    local int       i;
-    local Iter      iter;
-    local ArrayList array;
+    local int                   i;
+    local CollectionIterator    iter;
+    local ArrayList             array;
 
     array = ArrayList(__().memory.Allocate(class'ArrayList'));
     iter = array.Iterate();
@@ -126,9 +126,9 @@ protected static function Test_ArrayList()
 
 protected static function Test_HashTable()
 {
-    local int       i;
-    local Iter      iter;
-    local HashTable array;
+    local int                   i;
+    local CollectionIterator    iter;
+    local HashTable             array;
 
     array = HashTable(__().memory.Allocate(class'HashTable'));
     iter = array.Iterate();
@@ -166,10 +166,10 @@ protected static function Test_IterationAndNone()
 
 protected static function SubTest_ArrayListIterationAndNone()
 {
-    local bool      sawNone;
-    local int       counter;
-    local Iter      iter;
-    local ArrayList list;
+    local bool                  sawNone;
+    local int                   counter;
+    local CollectionIterator    iter;
+    local ArrayList             list;
 
     list = __().collections.EmptyArrayList();
     list.AddItem(__().box.int(1));
@@ -192,7 +192,8 @@ protected static function SubTest_ArrayListIterationAndNone()
         @ "`LeaveOnlyNotNone()` call.");
     sawNone = false;
     counter = 0;
-    iter = list.Iterate().LeaveOnlyNotNone();
+    iter = list.Iterate();
+    iter.LeaveOnlyNotNone();
     while (!iter.HasFinished())
     {
         sawNone = sawNone || (iter.Get() == none);
@@ -205,10 +206,10 @@ protected static function SubTest_ArrayListIterationAndNone()
 
 protected static function SubTest_HashTableIterationAndNone()
 {
-    local bool      sawNone;
-    local int       counter;
-    local Iter      iter;
-    local HashTable table;
+    local bool                  sawNone;
+    local int                   counter;
+    local CollectionIterator    iter;
+    local HashTable             table;
 
     table = __().collections.EmptyHashTable();
     table.SetItem(__().box.float(1.0), __().box.int(1));
@@ -231,7 +232,8 @@ protected static function SubTest_HashTableIterationAndNone()
         @ "`LeaveOnlyNotNone()` call.");
     sawNone = false;
     counter = 0;
-    iter = table.Iterate().LeaveOnlyNotNone();
+    iter = table.Iterate();
+    iter.LeaveOnlyNotNone();
     while (!iter.HasFinished())
     {
         sawNone = sawNone || (iter.Get() == none);

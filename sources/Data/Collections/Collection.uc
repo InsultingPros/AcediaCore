@@ -22,7 +22,7 @@
 class Collection extends AcediaObject
     abstract;
 
-var protected class<Iter> iteratorClass;
+var protected class<CollectionIterator> iteratorClass;
 
 /**
  *  Method that must be overloaded for `GetItemByPointer()` to properly work.
@@ -46,10 +46,11 @@ protected function AcediaObject GetByText(BaseText key);
  *  @return New initialized `Iterator` that will iterate over all items in
  *      a given collection. Guaranteed to be not `none`.
  */
-public final function Iter Iterate()
+public final function CollectionIterator Iterate()
 {
-    local Iter newIterator;
-    newIterator = Iter(_.memory.Allocate(iteratorClass));
+    local CollectionIterator newIterator;
+
+    newIterator = CollectionIterator(_.memory.Allocate(iteratorClass));
     if (!newIterator.Initialize(self))
     {
         //  This should not ever happen.

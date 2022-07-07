@@ -922,11 +922,11 @@ private final function FromArrayList(ArrayList source)
 //  Does not do any validation check.
 private final function FromHashTable(HashTable source)
 {
-    local int           i, originalStorageLength;
-    local Iter          iter;
-    local string        nextKey;
-    local bool          isNewKey;
-    local AcediaObject  nextObject;
+    local int                   i, originalStorageLength;
+    local CollectionIterator    iter;
+    local string                nextKey;
+    local bool                  isNewKey;
+    local AcediaObject          nextObject;
     originalStorageLength = storage.length;
     for (iter = source.Iterate(); !iter.HasFinished(); iter.Next())
     {
