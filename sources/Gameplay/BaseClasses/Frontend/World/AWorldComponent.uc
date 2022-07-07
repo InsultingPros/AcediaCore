@@ -71,6 +71,25 @@ public function TracingIterator TracePlayerSight(EPlayer player);
  */
 public function TracingIterator TraceSight(EPawn pawn);
 
+//  TODO: Add `CanSpawnExplain()` method
+/**
+ *  Spawns a new `EPlaceable` based on the given `template` at a given location
+ *  `location`, facing it into the given direction `direction`.
+ *
+ *  @param  template    Describes entity (supporting `EPlaceable` interface) to
+ *      spawn into the world.
+ *  @param  location    At what location to spawn that entity.
+ *  @param  direction   In what direction spawned entity must face.
+ *  @return `EPlaceable` interface for the spawned entity. `none` if spawning it
+ *      has failed. If method returns interface to a non-existent entity, it
+ *      means that entity has successfully spawned, but then something handled
+ *      its spawning and destroyed it.
+ */
+public function EPlaceable Spawn(
+    BaseText            template,
+    optional Vector     location,
+    optional Rotator    direction);
+
 defaultproperties
 {
 }

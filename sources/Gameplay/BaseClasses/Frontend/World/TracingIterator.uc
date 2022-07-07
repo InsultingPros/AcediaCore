@@ -36,17 +36,7 @@ public function AcediaObject Get() { return none; }
  *      currently at. Origin vector (with all coordinates set to `0.0`) if
  *      iteration has already finished.
  */
-public function Vector GetHitLocation()
-{
-    if (!initialized) {
-        return Vect(0.0f, 0.0f, 0.0f);
-    }
-    TryTracing();
-    if (HasFinished()) {
-        return Vect(0.0f, 0.0f, 0.0f);
-    }
-    return hitLocations[currentIndex];
-}
+public function Vector GetHitLocation();
 
 /**
  *  Returns hit normal for the `EPlaceable` that `TracingIterator` is
@@ -56,17 +46,7 @@ public function Vector GetHitLocation()
  *      currently at. Origin vector (with all coordinates set to `0.0`) if
  *      iteration has already finished.
  */
-public function Vector GetHitNormal()
-{
-    if (!initialized) {
-        return Vect(0.0f, 0.0f, 0.0f);
-    }
-    TryTracing();
-    if (HasFinished()) {
-        return Vect(0.0f, 0.0f, 0.0f);
-    }
-    return hitNormals[currentIndex];
-}
+public function Vector GetHitNormal();
 
 /**
  *  Returns `EPlaceable` caller `TracingIterator` is currently at.
@@ -77,11 +57,7 @@ public function Vector GetHitNormal()
  *
  *  @return `EPlaceable` caller `TracingIterator` is currently at.
  */
-public function EPlaceable GetPlaceable()
-{
-    //  We only create `EPlaceable` child classes in this class
-    return EPlaceable(Get());
-}
+public function EPlaceable GetPlaceable();
 
 /**
  *  Returns `EPlaceable` caller `TracingIterator` is currently at as `EPawn`,

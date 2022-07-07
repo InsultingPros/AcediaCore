@@ -84,6 +84,32 @@ public function TracingIterator TraceSight(EPawn pawn)
     return TraceBetween(start, end);
 }
 
+public function EPlaceable Spawn(
+    BaseText            template,
+    optional Vector     location,
+    optional Rotator    direction)
+{
+    local Actor             result;
+    local Pawn              resultPawn;
+    local class<Actor>      actorClass;
+    local ServerLevelCore   core;
+
+    actorClass = class<Actor>(_.memory.LoadClass(template));
+    if (actorClass == none) {
+        return none;
+    }
+    core = ServerLevelCore(class'ServerLevelCore'.static.GetInstance());
+    result = core.Spawn(actorClass,,, location, direction);
+    if (result == none) {
+        return none;
+    }
+    resultPawn = Pawn(result);
+    if (resultPawn != none) {
+        return class'EKFPawn'.static.Wrap(resultPawn);
+    }
+    return class'EKFUnknownPlaceable'.static.Wrap(resultPawn);
+}
+
 defaultproperties
 {
     tracingDistance = 10000
