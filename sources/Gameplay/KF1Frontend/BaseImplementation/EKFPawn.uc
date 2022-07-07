@@ -30,7 +30,7 @@ protected function Finalizer()
 }
 
 /**
- *  Creates new `EKFPawn` that refers to the `pawnInstance` weapon.
+ *  Creates new `EKFPawn` that refers to the `pawnInstance` pawn.
  *
  *  @param  pawnInstance    Native pawn class that new `EKFPawn` will represent.
  *  @return New `EKFPawn` that represents given `pawnInstance`.

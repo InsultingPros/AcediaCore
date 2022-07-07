@@ -21,6 +21,56 @@
 class AWorldComponent extends AcediaObject
     abstract;
 
+/**
+ *  Traces world for entities starting from `start` point and continuing into
+ *  the direction `direction` for a "far distance". What is considered
+ *  a "far distance" depends on the implementation (can potentially be infinite
+ *  distance).
+ *
+ *  @param  start       Point from which to start tracing.
+ *  @param  direction   Direction alongside which to trace.
+ *  @return `TracingIterator` that will iterate among `EPlaceable` interfaces
+ *      for traced entities. Iteration is done in order from the entity closest
+ *      to `start` point.
+ */
+public function TracingIterator Trace(Vector start, Rotator direction);
+
+/**
+ *  Traces world for entities starting from `start` point and until `end` point.
+ *
+ *  @param  start   Point from which to start tracing.
+ *  @param  end     Point at which to stop tracing.
+ *  @return `TracingIterator` that will iterate among `EPlaceable` interfaces
+ *      for traced entities. Iteration is done in order from the entity closest
+ *      to `start` point.
+ */
+public function TracingIterator TraceBetween(Vector start, Vector end);
+
+/**
+ *  Traces world for entities starting from the `player`'s camera position and
+ *  along the direction of his sight.
+ *
+ *  This method works for both players with and without pawns. For player with
+ *  a pawn it produce identical results to `TraceSight()` method.
+ *
+ *  @param  player  Player alongside whos sight method is supposed to trace.
+ *  @return `TracingIterator` that will iterate among `EPlaceable` interfaces
+ *      for traced entities. Iteration is done in order from the entity closest
+ *      to `player`'s camera location.
+ */
+public function TracingIterator TracePlayerSight(EPlayer player);
+
+/**
+ *  Traces world for entities starting from the `pawn`'s camera position and
+ *  along the direction of his sight.
+ *
+ *  @param  pawn    Pawn alongside whos sight method is supposed to trace.
+ *  @return `TracingIterator` that will iterate among `EPlaceable` interfaces
+ *      for traced entities. Iteration is done in order from the entity closest
+ *      to `pawn`'s eyes location.
+ */
+public function TracingIterator TraceSight(EPawn pawn);
+
 defaultproperties
 {
 }
