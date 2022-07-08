@@ -35,6 +35,7 @@ var private bool                traced;
 
 //  Iterator filters
 var private bool onlyPawns;
+var private bool onlyVisible;
 
 protected function Finalizer()
 {
@@ -57,10 +58,21 @@ public final function Initialize(Vector start, Vector end)
     initialized = true;
 }
 
+public function Vector GetTracingStart()
+{
+    return startPosition;
+}
+
+public function Vector GetTracingEnd()
+{
+    return endPosition;
+}
+
 //  Does actual tracing, but only once per iterator's lifecycle.
 //  Assumes `initialized` is `true`.
 private final function TryTracing()
 {
+    local bool              isVisible;
     local Pawn              nextPawn;
     local Actor             nextActor;
     local class<Actor>      targetClass;
@@ -87,6 +99,14 @@ private final function TryTracing()
         endPosition,
         startPosition)
     {
+        if (onlyVisible)
+        {
+            isVisible = (!nextActor.bHidden || nextActor.bWorldGeometry);
+            isVisible = isVisible && (nextActor.drawType != DT_None);
+            if (!isVisible) {
+                continue;
+            }
+        }
         hitLocations[hitLocations.length]   = nextHitLocation;
         hitNormals[hitNormals.length]       = nextHitNormal;
         nextPawn = Pawn(nextActor);
@@ -173,6 +193,7 @@ public function EPawn GetPawn()
 
 public function bool HasFinished()
 {
+    TryTracing();
     return (currentIndex >= tracedActors.length);
 }
 
@@ -186,6 +207,14 @@ public function TracingIterator LeaveOnlyPawns()
 {
     if (initialized && !traced) {
         onlyPawns = true;
+    }
+    return self;
+}
+
+public function TracingIterator LeaveOnlyVisible()
+{
+    if (initialized && !traced) {
+        onlyVisible = true;
     }
     return self;
 }

@@ -21,6 +21,20 @@ class TracingIterator extends Iter
     abstract;
 
 /**
+ *  Returns position from which tracing is started.
+ *
+ *  @return Position from which stracing has started.
+ */
+public function Vector GetTracingStart();
+
+/**
+ *  Returns position at which tracing has ended.
+ *
+ *  @return Position at which tracing has ended.
+ */
+public function Vector GetTracingEnd();
+
+/**
  *  Returns only `EPlaceable` interfaces for traced entities.
  *
  *  Resulting `EPlaceable` can refer to now non-existing entities if they were
@@ -78,6 +92,14 @@ public function EPawn GetPawn();
  *  @return Reference to caller `TracingIterator` to allow for method chaining.
  */
 public function TracingIterator LeaveOnlyPawns();
+
+/**
+ *  Makes caller iterator skip any entities that are not visible in the game
+ *  world.
+ *
+ *  @return Reference to caller `TracingIterator` to allow for method chaining.
+ */
+public function TracingIterator LeaveOnlyVisible();
 
 defaultproperties
 {

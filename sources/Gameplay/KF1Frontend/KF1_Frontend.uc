@@ -34,6 +34,7 @@ public function EItemTemplateInfo GetItemTemplateInfo(BaseText templateName)
 defaultproperties
 {
     templatesClass  = class'KF1_TemplatesComponent'
+    worldClass      = class'KF1_WorldComponent'
     tradingClass    = class'KF1_TradingComponent'
     healthClass     = class'KF1_HealthComponent'
 }

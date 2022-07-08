@@ -17,8 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class KF1_WorldComponent extends AWorldComponent
-    abstract;
+class KF1_WorldComponent extends AWorldComponent;
 
 var private const float tracingDistance;
 
@@ -63,7 +62,7 @@ public function TracingIterator TracePlayerSight(EPlayer player)
     if (controller != none)
     {
         controller.PlayerCalcView(dummy, start, direction);
-        return Trace(start, direction);
+        return Trace(start, controller.rotation);
     }
     return none;
 }
@@ -80,7 +79,7 @@ public function TracingIterator TraceSight(EPawn pawn)
     if (nativePawn == none) return none;
 
     start = nativePawn.location + nativePawn.EyePosition();
-    end = start + tracingDistance * Vector(nativePawn.rotation);
+    end = start + tracingDistance * Vector(nativePawn.controller.rotation);
     return TraceBetween(start, end);
 }
 
