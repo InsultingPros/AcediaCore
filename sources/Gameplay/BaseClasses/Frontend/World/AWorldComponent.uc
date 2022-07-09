@@ -71,7 +71,6 @@ public function TracingIterator TracePlayerSight(EPlayer player);
  */
 public function TracingIterator TraceSight(EPawn pawn);
 
-//  TODO: Add `CanSpawnExplain()` method
 /**
  *  Spawns a new `EPlaceable` based on the given `template` at a given location
  *  `location`, facing it into the given direction `direction`.
