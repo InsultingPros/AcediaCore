@@ -87,17 +87,14 @@ var protected const array<string> stringConstants;
  */
 public final static function AcediaObjectPool _getPool()
 {
-    local MemoryService service;
     if (!default.usesObjectPool) {
         return none;
     }
-    if (default._objectPool == none) {
+    if (default._objectPool == none)
+    {
         default._objectPool = new class'AcediaObjectPool';
         default._objectPool.Initialize(default.class);
-        service = MemoryService(class'MemoryService'.static.Require());
-        if (service != none) {
-            service.RegisterNewPool(default._objectPool);
-        }
+        __().memory.RegisterNewPool(default._objectPool);
     }
     return default._objectPool;
 }

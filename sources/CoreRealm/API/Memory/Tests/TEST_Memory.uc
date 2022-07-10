@@ -1,7 +1,7 @@
 /**
  *  Set of tests related to `MemoryAPI` class and the chain of events related to
  *  creating/destroying Acedia's objects / actors.
- *      Copyright 2020 - 2021 Anton Tarasenko
+ *      Copyright 2020-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
