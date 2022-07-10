@@ -76,6 +76,7 @@ public final function Object Allocate(
     class<Object>   classToAllocate,
     optional bool   forceNewInstance)
 {
+    local LevelCore             core;
     local Object                allocatedObject;
     local AcediaObjectPool      relevantPool;
     local class<AcediaObject>   acediaObjectClassToAllocate;
@@ -104,9 +105,11 @@ public final function Object Allocate(
         actorClassToAllocate  = class<Actor>(classToAllocate);
         if (actorClassToAllocate != none)
         {
-            allocatedObject = class'ServerLevelCore'.static
-                .GetInstance()
-                .Spawn(actorClassToAllocate);
+            core = class'ServerLevelCore'.static.GetInstance();
+            if (core == none) {
+                core = class'ClientLevelCore'.static.GetInstance();
+            }
+            allocatedObject = core.Spawn(actorClassToAllocate);
         }
         else {
             allocatedObject = (new classToAllocate);
