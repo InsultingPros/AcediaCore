@@ -68,11 +68,19 @@ public function Vector GetTracingEnd()
     return endPosition;
 }
 
+private final function bool IsActorVisible(Actor actorToCheck)
+{
+    if (actorToCheck == none)                                   return false;
+    if (actorToCheck.bHidden && !actorToCheck.bWorldGeometry)   return false;
+    if (actorToCheck.drawType == DT_None)                       return false;
+
+    return true;
+}
+
 //  Does actual tracing, but only once per iterator's lifecycle.
 //  Assumes `initialized` is `true`.
 private final function TryTracing()
 {
-    local bool              isVisible;
     local Pawn              nextPawn;
     local Actor             nextActor;
     local class<Actor>      targetClass;
@@ -92,20 +100,15 @@ private final function TryTracing()
         targetClass = class'Actor';
     }
     core = ServerLevelCore(class'ServerLevelCore'.static.GetInstance());
-    foreach core.TraceActors(class'Actor',
+    foreach core.TraceActors(targetClass,
         nextActor,
         nextHitLocation,
         nextHitNormal,
         endPosition,
         startPosition)
     {
-        if (onlyVisible)
-        {
-            isVisible = (!nextActor.bHidden || nextActor.bWorldGeometry);
-            isVisible = isVisible && (nextActor.drawType != DT_None);
-            if (!isVisible) {
-                continue;
-            }
+        if (onlyVisible && !IsActorVisible(nextActor)) {
+            continue;
         }
         hitLocations[hitLocations.length]   = nextHitLocation;
         hitNormals[hitNormals.length]       = nextHitNormal;
