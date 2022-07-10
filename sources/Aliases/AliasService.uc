@@ -40,6 +40,7 @@ var public config const float saveInterval;
 var public config const class<AliasSource> weaponAliasesSource;
 var public config const class<AliasSource> colorAliasesSource;
 var public config const class<AliasSource> featureAliasesSource;
+var public config const class<AliasSource> entityAliasesSource;
 
 protected function OnLaunch()
 {
@@ -134,4 +135,5 @@ defaultproperties
     weaponAliasesSource     = class'WeaponAliasSource'
     colorAliasesSource      = class'ColorAliasSource'
     featureAliasesSource    = class'FeatureAliasSource'
+    entityAliasesSource     = class'EntityAliasSource'
 }
