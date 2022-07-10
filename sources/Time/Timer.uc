@@ -222,6 +222,8 @@ public final function float GetElapsedTime()
 
 private final function Tick(float delta, float dilationCoefficient)
 {
+    local int lifeVersion;
+
     if (onElapsedSignal == none || eventInterval <= 0.0)
     {
         StopMe();
@@ -234,10 +236,18 @@ private final function Tick(float delta, float dilationCoefficient)
         //  It is important to modify _before_ the signal call in case `Timer`
         //  is reset there and already has a zeroed `totalElapsedTime`
         totalElapsedTime -= eventInterval;
-        onElapsedSignal.Emit(self);
-        if (!isTimerAutoReset && IsAllocated())
-        {
+        //  Stop `Timer` before emitting a signal, to allow user to potentially
+        //  restart it
+        if (!isTimerAutoReset) {
             StopMe();
+        }
+        //      During signal emission caller `Timer` can get reallocated and
+        //  used to perform a completely different role.
+        //      In such a case we need to bail from this method as soom as
+        //  possible.
+        lifeVersion = GetLifeVersion();
+        onElapsedSignal.Emit(self);
+        if (!isTimerEnabled || lifeVersion != GetLifeVersion()) {
             return;
         }
     }
