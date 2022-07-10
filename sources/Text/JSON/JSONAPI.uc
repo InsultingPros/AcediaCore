@@ -1092,7 +1092,7 @@ public final function MutableText Print(AcediaObject toPrint)
     }
     if (    toPrint.class == class'Text'
         ||  toPrint.class == class'MutableText') {
-        return DisplayText(Text(toPrint));
+        return DisplayText(BaseText(toPrint));
     }
     if (toPrint.class == class'DynamicArray') {
         return PrintArray(DynamicArray(toPrint));
@@ -1530,7 +1530,7 @@ private final function MutableText PrettyPrintWithIndent(
     if (    toPrint.class == class'Text'
         ||  toPrint.class == class'MutableText')
     {
-        return DisplayText(Text(toPrint)).ChangeFormatting(jString);
+        return DisplayText(BaseText(toPrint)).ChangeFormatting(jString);
     }
     if (toPrint.class == class'DynamicArray')
     {
