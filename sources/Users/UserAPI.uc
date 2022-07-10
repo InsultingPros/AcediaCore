@@ -17,9 +17,10 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class UserAPI extends AcediaObject;
+class UserAPI extends AcediaObject
+    config(AcediaSystem);
 
-var private string userDataDBLink;
+var private config string userDataDBLink;
 
 /**
  *  Returns reference to the database of user records that Acedia was

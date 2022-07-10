@@ -70,6 +70,34 @@ public final function int GetKey()
 }
 
 /**
+ *  Reads user's persistent data saved inside group `groupName`, saving it into
+ *  a collection using mutable data types.
+ *  Only should be used if `_.users.PersistentStorageExists()` returns `true`.
+ *
+ *  @param  groupName   Name of the group these settings belong to.
+ *      This exists to help reduce name collisions between different mods.
+ *      Acedia stores all its settings under "Acedia" group. We suggest that you
+ *      pick at least one name to use for your own mods.
+ *      It should be unique enough to not get picked by others - "weapons" is
+ *      a bad name, while "CoolModMastah79" is actually a good pick.
+ *  @return Task object for reading specified persistent data from the database.
+ *      For more info see `Database.ReadData()` method.
+ *      Guaranteed to not be `none` iff
+ *      `_.users.PersistentStorageExists() == true`.
+ */
+public final function DBReadTask ReadGroupOfPersistentData(BaseText groupName)
+{
+    local DBReadTask task;
+    if (groupName == none)          return none;
+    if (!SetupDatabaseVariables())  return none;
+
+    persistentSettingsPointer.Push(groupName);
+    task = persistentDatabase.ReadData(persistentSettingsPointer, true);
+    _.memory.Free(persistentSettingsPointer.Pop());
+    return task;
+}
+
+/**
  *  Reads user's persistent data saved under name `dataName`, saving it into
  *  a collection using mutable data types.
  *  Only should be used if `_.users.PersistentStorageExists()` returns `true`.
@@ -127,13 +155,13 @@ public final function DBWriteTask WritePersistentData(
     BaseText        dataName,
     AcediaObject    data)
 {
-    local DBWriteTask       task;
-    local AssociativeArray  emptyObject;
+    local DBWriteTask   task;
+    local HashTable     emptyObject;
     if (groupName == none)          return none;
     if (dataName == none)           return none;
     if (!SetupDatabaseVariables())  return none;
 
-    emptyObject = _.collections.EmptyAssociativeArray();
+    emptyObject = _.collections.EmptyHashTable();
     persistentSettingsPointer.Push(groupName);
     persistentDatabase.IncrementData(persistentSettingsPointer, emptyObject);
     persistentSettingsPointer.Push(dataName);
@@ -150,9 +178,10 @@ public final function DBWriteTask WritePersistentData(
 //  and `false` otherwise.
 private function bool SetupDatabaseVariables()
 {
-    local Text              userDataLink;
-    local Text              userTextID;
-    local AssociativeArray  skeletonObject;
+    local Text      userDataLink;
+    local Text      userTextID;
+    local HashTable emptyObject, skeletonObject;
+
     if (    persistentDatabase != none && persistentSettingsPointer != none
         &&  persistentDatabase.IsAllocated())
     {
@@ -171,17 +200,18 @@ private function bool SetupDatabaseVariables()
     }
     persistentSettingsPointer = _.db.GetPointer(userDataLink);
     userTextID = id.GetSteamID64String();
-    skeletonObject = _.collections.EmptyAssociativeArray();
-    skeletonObject.SetItem( P("statistics"),
-                            _.collections.EmptyAssociativeArray(), true);
-    skeletonObject.SetItem( P("settings"),
-                            _.collections.EmptyAssociativeArray(), true);
+    skeletonObject = _.collections.EmptyHashTable();
+    skeletonObject.SetItem(P("statistics"), _.collections.EmptyHashTable());
+    skeletonObject.SetItem(P("settings"), _.collections.EmptyHashTable());
+    emptyObject = _.collections.EmptyHashTable();
+    persistentDatabase.IncrementData(persistentSettingsPointer, emptyObject);
     persistentSettingsPointer.Push(userTextID);
     persistentDatabase.IncrementData(persistentSettingsPointer, skeletonObject);
     persistentSettingsPointer.Push(P("settings"));
     _.memory.Free(userTextID);
     _.memory.Free(userDataLink);
     _.memory.Free(skeletonObject);
+    _.memory.Free(emptyObject);
     return true;
 }
 
