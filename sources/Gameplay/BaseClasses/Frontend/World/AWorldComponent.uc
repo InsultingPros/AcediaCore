@@ -89,6 +89,13 @@ public function EPlaceable Spawn(
     optional Vector     location,
     optional Rotator    direction);
 
+/**
+ *  Returns iterator for going through all entities in the game world.
+ *
+ *  @return `EntityIterator` that will iterate through world entities.
+ */
+public function EntityIterator Entities();
+
 defaultproperties
 {
 }
