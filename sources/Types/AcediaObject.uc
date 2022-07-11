@@ -23,8 +23,10 @@
 class AcediaObject extends Object
     abstract;
 
-//  Reference to Acedia's APIs for simple access.
-var protected Global _;
+//  References to Acedia's APIs for simple access.
+var protected Global        _;
+var protected ServerGlobal  _server;
+var protected ClientGlobal  _client;
 //  Object pool to store objects of a particular class
 var private AcediaObjectPool    _objectPool;
 //  Does this class even use object pool?
@@ -116,6 +118,8 @@ public final function _constructor()
     _lifeVersion += 1;
     _refCounter = 1;
     _ = class'Global'.static.GetInstance();
+    _server = class'ServerGlobal'.static.GetInstance();
+    _client = class'ClientGlobal'.static.GetInstance();
     if (!default._staticConstructorWasCalled)
     {
         CreateTextCache();
@@ -139,7 +143,9 @@ public final function _finalizer()
     _isAllocated = false;
     _refCounter = 0;
     Finalizer();
-    _ = none;
+    _       = none;
+    _server = none;
+    _client = none;
 }
 
 /**
@@ -481,6 +487,24 @@ public static final function Text F(string string)
 public static final function Global __()
 {
     return class'Global'.static.GetInstance();
+}
+
+/**
+ *  Static method accessor to server API namespace, necessary for Acedia's
+ *  implementation.
+ */
+public static final function ServerGlobal __server()
+{
+    return class'ServerGlobal'.static.GetInstance();
+}
+
+/**
+ *  Static method accessor to client API namespace, necessary for Acedia's
+ *  implementation.
+ */
+public static final function ClientGlobal __client()
+{
+    return class'ClientGlobal'.static.GetInstance();
 }
 
 /**

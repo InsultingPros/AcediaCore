@@ -1,8 +1,8 @@
 /**
  *  Class for an object that will provide an access to a Acedia's functionality
- *  by giving a reference to this object to all Acedia's objects and actors,
- *  emulating a global API namespace.
- *      Copyright 2020 - 2021 Anton Tarasenko
+ *  that is common for both clients and servers by giving a reference to this
+ *  object to all Acedia's objects and actors, emulating a global API namespace.
+ *      Copyright 2020-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -50,7 +50,7 @@ var public KFFrontend           kf;
 public final static function Global GetInstance()
 {
     if (default.myself == none) {
-        //  `Global` is special and exists outside main Acedia's
+        //  `...Global`s are special and exist outside main Acedia's
         //  object infrastructure, so we allocate it without using API methods.
         default.myself = new class'Global';
         default.myself.Initialize();
