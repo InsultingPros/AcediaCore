@@ -45,8 +45,6 @@ var public AvariceAPI           avarice;
 
 var public AcediaEnvironment    environment;
 
-var public KFFrontend           kf;
-
 public final static function Global GetInstance()
 {
     if (default.myself == none) {
@@ -80,38 +78,8 @@ protected function Initialize()
     json        = JSONAPI(memory.Allocate(class'JSONAPI'));
     db          = DBAPI(memory.Allocate(class'DBAPI'));
     avarice     = AvariceAPI(memory.Allocate(class'AvariceAPI'));
-    kf          = KFFrontend(memory.Allocate(class'KF1_Frontend'));
     environment = AcediaEnvironment(memory.Allocate(class'AcediaEnvironment'));
     class'InfoQueryHandler'.static.StaticConstructor();
-}
-
-public final function bool ConnectServerLevelCore()
-{
-    if (class'ServerLevelCore'.static.GetInstance() == none) {
-        return false;
-    }
-    class'UnrealService'.static.Require();
-    class'ConnectionService'.static.Require();
-    //  TODO: this is hack as fuck, needs to be redone
-    unreal.mutator.OnMutate(
-        ServiceAnchor(memory.Allocate(class'ServiceAnchor')))
-            .connect = EnableCommandsFeature;
-    return true;
-}
-
-public function DropGameplayAPI()
-{
-    memory.Free(kf);
-    kf = none;
-}
-
-private final function EnableCommandsFeature(
-    string              command,
-    PlayerController    sendingPlayer)
-{
-    if (command ~= "acediacommands") {
-        class'Commands_Feature'.static.EmergencyEnable();
-    }
 }
 
 public function DropCoreAPI()

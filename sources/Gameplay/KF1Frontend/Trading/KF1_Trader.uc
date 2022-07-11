@@ -205,7 +205,7 @@ protected function UpdateShopList()
     local KF1_Trader        nextTrader;
     local array<ShopVolume> shopVolumes;
     local array<ETrader>    availableTraders;
-    availableTraders = _.kf.trading.GetTraders();
+    availableTraders = _server.kf.trading.GetTraders();
     for (i = 0; i < availableTraders.length; i += 1)
     {
         nextTrader = KF1_Trader(availableTraders[i]);

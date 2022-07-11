@@ -21,9 +21,12 @@
  */
 class ServerGlobal extends Object;
 
+var protected bool initialized;
 //  `Global` is expected to behave like a singleton and will store it's
 //  main instance in this variable's default value.
 var protected ServerGlobal myself;
+
+var public KFFrontend kf;
 
 public final static function ServerGlobal GetInstance()
 {
@@ -38,6 +41,43 @@ public final static function ServerGlobal GetInstance()
 
 protected function Initialize()
 {
+    local Global _;
+
+    if (initialized) {
+        return;
+    }
+    _ = class'Global'.static.GetInstance();
+    kf = KFFrontend(_.memory.Allocate(class'KF1_Frontend'));
+    //  TODO: this is hack, needs to be redone later
+    KF1_HealthComponent(kf.health).PseudoConstructor();
+    initialized = true;
+}
+
+public final function bool ConnectServerLevelCore()
+{
+    local Global _;
+
+    if (class'ServerLevelCore'.static.GetInstance() == none) {
+        return false;
+    }
+    Initialize();
+    class'UnrealService'.static.Require();
+    class'ConnectionService'.static.Require();
+    //  TODO: this is hack as fuck, needs to be redone
+    _ = class'Global'.static.GetInstance();
+    _.unreal.mutator.OnMutate(
+        ServiceAnchor(_.memory.Allocate(class'ServiceAnchor')))
+            .connect = EnableCommandsFeature;
+    return true;
+}
+
+private final function EnableCommandsFeature(
+    string              command,
+    PlayerController    sendingPlayer)
+{
+    if (command ~= "acediacommands") {
+        class'Commands_Feature'.static.EmergencyEnable();
+    }
 }
 
 defaultproperties
