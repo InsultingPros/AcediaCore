@@ -263,21 +263,21 @@ public final function Object AllocateByReference_S(
     string          refToClassToAllocate,
     optional bool   forceNewInstance)
 {
-    return Allocate(LoadClassS(refToClassToAllocate), forceNewInstance);
+    return Allocate(LoadClass_S(refToClassToAllocate), forceNewInstance);
 }
 
 /**
  *  Releases one reference to a given `AcediaObject`, calling its finalizers in
  *  case all references were released.
  *
- *  Method will attempt to store `objectToDeallocate` in its object pool once
+ *  Method will attempt to store `objectToRelease` in its object pool once
  *  deallocated, unless it is forbidden by its class' settings.
  *
  *  @see `FreeMany()`
  *
- *  @param  objectToDeallocate  Object that to deallocate.
+ *  @param  objectToRelease Object, which reference method needs to release.
  */
-public final function Free(Object objectToDeallocate)
+public final function Free(Object objectToRelease)
 {
     //  TODO: this is an old code require while we still didn't get rid of
     //  services - replace it later, changing argument to `AcediaObject`
@@ -286,12 +286,12 @@ public final function Free(Object objectToDeallocate)
     local AcediaActor       objectAsAcediaActor;
     local AcediaObject      objectAsAcediaObject;
 
-    if (objectToDeallocate == none) {
+    if (objectToRelease == none) {
         return;
     }
     //  Call finalizers for Acedia's objects and actors
-    objectAsAcediaObject    = AcediaObject(objectToDeallocate);
-    objectAsAcediaActor     = AcediaActor(objectToDeallocate); 
+    objectAsAcediaObject    = AcediaObject(objectToRelease);
+    objectAsAcediaActor     = AcediaActor(objectToRelease); 
     if (objectAsAcediaObject != none)
     {
         if (!objectAsAcediaObject.IsAllocated()) {
@@ -320,7 +320,7 @@ public final function Free(Object objectToDeallocate)
         return;
     }
     //  Otherwise destroy actors and forget about objects
-    objectAsActor = Actor(objectToDeallocate);
+    objectAsActor = Actor(objectToRelease);
     if (objectAsActor != none) {
         objectAsActor.Destroy();
     }
@@ -328,24 +328,25 @@ public final function Free(Object objectToDeallocate)
 
 /**
  *  Releases one reference to each `AcediaObject` inside the given array
- *  `objectsToDelete`, calling finalizers for the ones that got all of their
+ *  `objectsToRelease`, calling finalizers for the ones that got all of their
  *  references released.
  *
- *  Method will attempt to store objects inside `objectsToDelete` in their
+ *  Method will attempt to store objects inside `objectsToRelease` in their
  *  object pools, unless it is forbidden by their class' settings.
  *
  *  @see `Free()`
  *
- *  @param  objectToDeallocate  Object that to deallocate.
+ *  @param  objectToRelease Array of objects, which reference method needs
+ *      to release.
  */
-public final function FreeMany(array<Object> objectsToDelete)
+public final function FreeMany(array<Object> objectsToRelease)
 {
     //  TODO: this is an old code require while we still didn't get rid of
     //  services - replace it later, changing argument to `AcediaObject`
     local int i;
 
-    for (i = 0; i < objectsToDelete.length; i += 1) {
-        Free(objectsToDelete[i]);
+    for (i = 0; i < objectsToRelease.length; i += 1) {
+        Free(objectsToRelease[i]);
     }
 }
 
