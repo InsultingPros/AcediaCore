@@ -1,6 +1,6 @@
 /**
- *  Class for an object that will provide an access to a Acedia's
- *  client-specific functionality by giving a reference to this object to all
+ *  Base class for objects that will provide an access to a Acedia's client- and
+ *  server-specific functionality by giving a reference to this object to all
  *  Acedia's objects and actors, emulating a global API namespace.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
@@ -19,31 +19,16 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ClientGlobal extends CoreGlobal;
+class CoreGlobal extends Object;
 
-var protected bool initialized;
-//  `Global` is expected to behave like a singleton and will store it's
-//  main instance in this variable's default value.
-var protected ClientGlobal myself;
-
-public final static function ClientGlobal GetInstance()
-{
-    if (default.myself == none)
-    {
-        //  `...Global`s are special and exist outside main Acedia's
-        //  object infrastructure, so we allocate it without using API methods.
-        default.myself = new class'ClientGlobal';
-    }
-    return default.myself;
-}
+var public SideEffectAPI sideEffects;
 
 protected function Initialize()
 {
-    if (initialized) {
-        return;
-    }
-    super.Initialize();
-    initialized = true;
+    local MemoryAPI api;
+
+    api = class'Global'.static.GetInstance().memory;
+    sideEffects = SideEffectAPI(api.Allocate(class'SideEffectAPI'));
 }
 
 defaultproperties

@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ServerGlobal extends Object;
+class ServerGlobal extends CoreGlobal;
 
 var protected bool initialized;
 //  `Global` is expected to behave like a singleton and will store it's
@@ -46,6 +46,7 @@ protected function Initialize()
     if (initialized) {
         return;
     }
+    super.Initialize();
     _ = class'Global'.static.GetInstance();
     kf = KFFrontend(_.memory.Allocate(class'KF1_Frontend'));
     //  TODO: this is hack, needs to be redone later
