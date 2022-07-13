@@ -103,7 +103,7 @@ public final function array<SideEffect> GetFromPackage(BaseText packageName)
  *      active side effect. Must not be `none`.
  *  @return `true` if new side effect was added and `false` otherwise.
  */
-public final function bool AddSideEffect(SideEffect newSideEffect)
+public final function bool Add(SideEffect newSideEffect)
 {
     local int i;
 
@@ -130,7 +130,7 @@ public final function bool AddSideEffect(SideEffect newSideEffect)
  *      and `false` otherise (even if there was no side effect of specified
  *      class to begin with).
  */
-public final function bool RemoveSideEffectClass(
+public final function bool RemoveClass(
     class<SideEffect> sideEffectClass)
 {
     local int i;

@@ -31,15 +31,7 @@ var private AcediaGameRules         gameRules;
 
 protected function OnLaunch()
 {
-    local BroadcastEventsObserver broadcastObserver;
     CreateSignals();
-    //  Create broadcast handler
-    broadcastObserver = BroadcastEventsObserver(_.unreal.broadcasts.Add(
-        class'BroadcastEventsObserver',
-        class'BroadcastEventsObserver'.default.usedInjectionLevel));
-    if (broadcastObserver != none) {
-        broadcastObserver.Initialize(self);
-    }
     //  Create game rules
     gameRules = AcediaGameRules(_.unreal.gameRules.Add(class'AcediaGameRules'));
     if (gameRules != none) {

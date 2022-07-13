@@ -19,6 +19,8 @@
  */
 class ChatAPI extends AcediaObject;
 
+var protected bool connectedToBroadcastAPI;
+
 var protected ChatAPI_OnMessage_Signal      onMessageSignal;
 var protected ChatAPI_OnMessageFor_Signal   onMessageForSignal;
 
@@ -28,8 +30,6 @@ protected function Constructor()
         _.memory.Allocate(class'ChatAPI_OnMessage_Signal'));
     onMessageForSignal = ChatAPI_OnMessageFor_Signal(
         _.memory.Allocate(class'ChatAPI_OnMessageFor_Signal'));
-    _.unreal.broadcasts.OnHandleText(self).connect = HandleText;
-    _.unreal.broadcasts.OnHandleTextFor(self).connect = HandleTextFor;
 }
 
 protected function Finalizer()
@@ -40,6 +40,17 @@ protected function Finalizer()
     onMessageForSignal  = none;
     _.unreal.broadcasts.OnHandleText(self).Disconnect();
     _.unreal.broadcasts.OnHandleTextFor(self).Disconnect();
+    connectedToBroadcastAPI = false;
+}
+
+private final function TryConnectingBroadcastSignals()
+{
+    if (connectedToBroadcastAPI) {
+        return;
+    }
+    connectedToBroadcastAPI = true;
+    _.unreal.broadcasts.OnHandleText(self).connect = HandleText;
+    _.unreal.broadcasts.OnHandleTextFor(self).connect = HandleTextFor;
 }
 
 /**
@@ -67,6 +78,7 @@ protected function Finalizer()
 public function ChatAPI_OnMessage_Slot OnMessage(
     AcediaObject receiver)
 {
+    TryConnectingBroadcastSignals();
     return ChatAPI_OnMessage_Slot(onMessageSignal.NewSlot(receiver));
 }
 
@@ -97,6 +109,7 @@ public function ChatAPI_OnMessage_Slot OnMessage(
 public function ChatAPI_OnMessageFor_Slot OnMessageFor(
     AcediaObject receiver)
 {
+    TryConnectingBroadcastSignals();
     return ChatAPI_OnMessageFor_Slot(onMessageForSignal.NewSlot(receiver));
 }
 

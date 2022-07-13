@@ -57,6 +57,8 @@ struct LocalizedMessage
     var Object                  relatedObject;
 };
 
+var private LoggerAPI.Definition infoInjectedBroadcastEventsObserver;
+
 /**
  *  Called before text message is sent to any player, during the check for
  *  whether it is at all allowed to be broadcasted. Corresponds to
@@ -87,7 +89,9 @@ public final function Broadcast_OnBroadcastCheck_Slot OnBroadcastCheck(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryInjectBroadcastHandler(service);
     signal = service.GetSignal(class'Broadcast_OnBroadcastCheck_Signal');
     return Broadcast_OnBroadcastCheck_Slot(signal.NewSlot(receiver));
 }
@@ -138,7 +142,9 @@ public final function Broadcast_OnHandleText_Slot OnHandleText(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryInjectBroadcastHandler(service);
     signal = service.GetSignal(class'Broadcast_OnHandleText_Signal');
     return Broadcast_OnHandleText_Slot(signal.NewSlot(receiver));
 }
@@ -176,7 +182,9 @@ public final function Broadcast_OnHandleTextFor_Slot OnHandleTextFor(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryInjectBroadcastHandler(service);
     signal = service.GetSignal(class'Broadcast_OnHandleTextFor_Signal');
     return Broadcast_OnHandleTextFor_Slot(signal.NewSlot(receiver));
 }
@@ -219,7 +227,9 @@ public final function Broadcast_OnHandleLocalized_Slot OnHandleLocalized(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryInjectBroadcastHandler(service);
     signal = service.GetSignal(class'Broadcast_OnHandleLocalized_Signal');
     return Broadcast_OnHandleLocalized_Slot(signal.NewSlot(receiver));
 }
@@ -254,9 +264,49 @@ public final function Broadcast_OnHandleLocalizedFor_Slot OnHandleLocalizedFor(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryInjectBroadcastHandler(service);
     signal = service.GetSignal(class'Broadcast_OnHandleLocalizedFor_Signal');
     return Broadcast_OnHandleLocalizedFor_Slot(signal.NewSlot(receiver));
+}
+
+private final function TryInjectBroadcastHandler(UnrealService service)
+{
+    local InjectionLevel            usedLevel;
+    local BroadcastSideEffect       sideEffect;
+    local BroadcastEventsObserver   broadcastObserver;
+
+    if (IsAdded(class'BroadcastEventsObserver')) {
+        return;
+    }
+    usedLevel = class'BroadcastEventsObserver'.default.usedInjectionLevel;
+    broadcastObserver = BroadcastEventsObserver(_.unreal.broadcasts.Add(
+        class'BroadcastEventsObserver', usedLevel));
+    if (broadcastObserver != none)
+    {
+        broadcastObserver.Initialize(service);
+        sideEffect =
+            BroadcastSideEffect(_.memory.Allocate(class'BroadcastSideEffect'));
+        sideEffect.Initialize(usedLevel);
+        _server.sideEffects.Add(sideEffect);
+        _.memory.Free(sideEffect);
+        _.logger
+            .Auto(infoInjectedBroadcastEventsObserver)
+            .Arg(InjectionLevelIntoText(usedLevel));
+    }
+}
+
+private final function Text InjectionLevelIntoText(
+    InjectionLevel injectionLevel)
+{
+    if (injectionLevel == BHIJ_Root) {
+        return P("BHIJ_Root");
+    }
+    if (injectionLevel == BHIJ_Registered) {
+        return P("BHIJ_Registered");
+    }
+    return P("BHIJ_None");
 }
 
 /**
@@ -397,4 +447,5 @@ public final function bool IsAdded(class<BroadcastHandler> BHClassToFind)
 
 defaultproperties
 {
+    infoInjectedBroadcastEventsObserver = (l=LOG_Info,m="Injected AcediaCore's `BroadcastEventsObserver` with level `%1`.")
 }

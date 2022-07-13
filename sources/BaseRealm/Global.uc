@@ -66,13 +66,13 @@ protected function Initialize()
     box         = BoxAPI(memory.Allocate(class'BoxAPI'));
     text        = TextAPI(memory.Allocate(class'TextAPI'));
     collections = CollectionsAPI(memory.Allocate(class'CollectionsAPI'));
+    logger      = LoggerAPI(memory.Allocate(class'LoggerAPI'));
+    color       = ColorAPI(memory.Allocate(class'ColorAPI'));
+    alias       = AliasesAPI(memory.Allocate(class'AliasesAPI'));
     unreal      = ServerUnrealAPI(memory.Allocate(class'ServerUnrealAPI'));
     time        = TimeAPI(memory.Allocate(class'TimeAPI'));
-    logger      = LoggerAPI(memory.Allocate(class'LoggerAPI'));
-    alias       = AliasesAPI(memory.Allocate(class'AliasesAPI'));
     console     = ConsoleAPI(memory.Allocate(class'ConsoleAPI'));
     chat        = ChatAPI(memory.Allocate(class'ChatAPI'));
-    color       = ColorAPI(memory.Allocate(class'ColorAPI'));
     users       = UserAPI(memory.Allocate(class'UserAPI'));
     players     = PlayersAPI(memory.Allocate(class'PlayersAPI'));
     json        = JSONAPI(memory.Allocate(class'JSONAPI'));
