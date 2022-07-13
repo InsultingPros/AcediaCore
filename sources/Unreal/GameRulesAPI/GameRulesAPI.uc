@@ -20,6 +20,8 @@
  */
 class GameRulesAPI extends AcediaObject;
 
+var private LoggerAPI.Definition infoAddedGameRules;
+
 /**
  *  Called when game decides on a player's spawn point. If a `NavigationPoint`
  *  is returned, signal propagation will be interrupted and returned value will
@@ -43,7 +45,9 @@ public final function GameRules_OnFindPlayerStart_Slot OnFindPlayerStart(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnFindPlayerStart_Signal');
     return GameRules_OnFindPlayerStart_Slot(signal.NewSlot(receiver));
 }
@@ -67,7 +71,9 @@ public final function GameRules_OnHandleRestartGame_Slot OnHandleRestartGame(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnHandleRestartGame_Signal');
     return GameRules_OnHandleRestartGame_Slot(signal.NewSlot(receiver));
 }
@@ -93,7 +99,9 @@ public final function GameRules_OnCheckEndGame_Slot OnCheckEndGame(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnCheckEndGame_Signal');
     return GameRules_OnCheckEndGame_Slot(signal.NewSlot(receiver));
 }
@@ -120,7 +128,9 @@ public final function GameRules_OnCheckScore_Slot OnCheckScore(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnCheckScore_Signal');
     return GameRules_OnCheckScore_Slot(signal.NewSlot(receiver));
 }
@@ -151,7 +161,9 @@ public final function GameRules_OnOverridePickupQuery_Slot
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnOverridePickupQuery_Signal');
     return GameRules_OnOverridePickupQuery_Slot(signal.NewSlot(receiver));
 }
@@ -192,7 +204,9 @@ public final function GameRules_OnNetDamage_Slot OnNetDamage(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnNetDamage_Signal');
     return GameRules_OnNetDamage_Slot(signal.NewSlot(receiver));
 }
@@ -224,7 +238,9 @@ public final function GameRules_OnPreventDeath_Slot OnPreventDeath(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnPreventDeath_Signal');
     return GameRules_OnPreventDeath_Slot(signal.NewSlot(receiver));
 }
@@ -244,9 +260,32 @@ public final function GameRules_OnScoreKill_Slot OnScoreKill(
 {
     local Signal        signal;
     local UnrealService service;
+
     service = UnrealService(class'UnrealService'.static.Require());
+    TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnScoreKill_Signal');
     return GameRules_OnScoreKill_Slot(signal.NewSlot(receiver));
+}
+
+private final function TryAddingGameRules(UnrealService service)
+{
+    local AcediaGameRules       gameRules;
+    local GameRulesSideEffect   sideEffect;
+
+    if (AreAdded(class'AcediaGameRules')) {
+        return;
+    }
+    gameRules = AcediaGameRules(Add(class'AcediaGameRules'));
+    if (gameRules != none)
+    {
+        gameRules.Initialize(service);
+        sideEffect =
+            GameRulesSideEffect(_.memory.Allocate(class'GameRulesSideEffect'));
+        sideEffect.Initialize();
+        _server.sideEffects.Add(sideEffect);
+        _.memory.Free(sideEffect);
+        _.logger.Auto(infoAddedGameRules);
+    }
 }
 
 /**
@@ -351,4 +390,5 @@ public final function bool AreAdded(
 
 defaultproperties
 {
+    infoAddedGameRules = (l=LOG_Info,m="Added AcediaCore's `AcediaGameRules`.")
 }

@@ -54,7 +54,7 @@ protected function Finalizer()
  *      as a result of the damage dealt.
  */
 /* SIGNAL */
-public final function Health_OnDamage_Slot OnDamage(AcediaObject receiver)
+public function Health_OnDamage_Slot OnDamage(AcediaObject receiver)
 {
     return Health_OnDamage_Slot(onDamageSignal.NewSlot(receiver));
 }

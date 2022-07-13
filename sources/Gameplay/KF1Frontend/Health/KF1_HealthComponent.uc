@@ -21,6 +21,8 @@ class KF1_HealthComponent extends AHealthComponent
     dependson(ConnectionService)
     config(AcediaSystem);
 
+var private bool connectedToGameRules;
+
 /**
  *      Unfortunately, thanks to the TWI's code, there's no way to catch events
  *  of when certain kinds of damage are dealt: from welder, bloat's bile and
@@ -58,7 +60,6 @@ public function PseudoConstructor()
 {
     local LevelCore core;
 
-    _.unreal.gameRules.OnNetDamage(self).connect = OnNetDamageHandler;
     if (!replaceBloatAndSirenDamageTypes) {
         return;
     }
@@ -67,8 +68,6 @@ public function PseudoConstructor()
     if (core != none)
     {
         ReplaceDamageTypes(core);
-        //  Fixes achievements
-        _.unreal.gameRules.OnScoreKill(self).connect = UpdateBileAchievement;
         core.OnShutdown(self).connect = RestoreDamageTypes;
     }
     else {
@@ -84,6 +83,24 @@ protected function Finalizer()
     if (replaceBloatAndSirenDamageTypes) {
         RestoreDamageTypes();
     }
+    connectedToGameRules = false;
+}
+
+public function Health_OnDamage_Slot OnDamage(AcediaObject receiver)
+{
+    TryConnectToGameRules();
+    return super.OnDamage(receiver);
+}
+
+private final function TryConnectToGameRules()
+{
+    if (connectedToGameRules) {
+        return;
+    }
+    connectedToGameRules = true;
+    _.unreal.gameRules.OnNetDamage(self).connect = OnNetDamageHandler;
+    //  Fixes achievements
+    _.unreal.gameRules.OnScoreKill(self).connect = UpdateBileAchievement;
 }
 
 private final function ReplaceDamageTypes(LevelCore core)

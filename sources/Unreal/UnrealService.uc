@@ -27,37 +27,11 @@ struct SignalRecord
 };
 var private array<SignalRecord>     serviceSignals;
 var private Unreal_OnTick_Signal    onTickSignal;
-var private AcediaGameRules         gameRules;
 
 protected function OnLaunch()
 {
-    CreateSignals();
-    //  Create game rules
-    gameRules = AcediaGameRules(_.unreal.gameRules.Add(class'AcediaGameRules'));
-    if (gameRules != none) {
-        gameRules.Initialize(self);
-    }
-}
-
-protected function OnShutdown()
-{
     local int i;
-    if (gameRules != none) {
-        gameRules.Cleanup();
-    }
-    _.unreal.broadcasts.Remove(class'BroadcastEventsObserver');
-    _.unreal.gameRules.Remove(class'AcediaGameRules');
-    for (i = 0; i < serviceSignals.length; i += 1) {
-        _.memory.Free(serviceSignals[i].instance);
-    }
-    _.memory.Free(onTickSignal);
-    serviceSignals.length = 0;
-    onTickSignal = none;
-}
 
-private final function CreateSignals()
-{
-    local int i;
     onTickSignal = Unreal_OnTick_Signal(
         _.memory.Allocate(class'Unreal_OnTick_Signal'));
     for (i = 0; i < serviceSignals.length; i += 1)
@@ -68,6 +42,20 @@ private final function CreateSignals()
         serviceSignals[i].instance =
             Signal(_.memory.Allocate(serviceSignals[i].signalClass));
     }
+}
+
+protected function OnShutdown()
+{
+    local int i;
+
+    _.unreal.broadcasts.Remove(class'BroadcastEventsObserver');
+    _.unreal.gameRules.Remove(class'AcediaGameRules');
+    for (i = 0; i < serviceSignals.length; i += 1) {
+        _.memory.Free(serviceSignals[i].instance);
+    }
+    _.memory.Free(onTickSignal);
+    serviceSignals.length = 0;
+    onTickSignal = none;
 }
 
 public final function Signal GetSignal(class<Signal> requiredClass)
