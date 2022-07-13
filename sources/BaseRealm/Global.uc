@@ -29,7 +29,7 @@ var public RefAPI               ref;
 var public BoxAPI               box;
 var public LoggerAPI            logger;
 var public CollectionsAPI       collections;
-var public UnrealAPI            unreal;
+var public ServerUnrealAPI      unreal;
 var public TimeAPI              time;
 var public AliasesAPI           alias;
 var public TextAPI              text;
@@ -66,7 +66,7 @@ protected function Initialize()
     box         = BoxAPI(memory.Allocate(class'BoxAPI'));
     text        = TextAPI(memory.Allocate(class'TextAPI'));
     collections = CollectionsAPI(memory.Allocate(class'CollectionsAPI'));
-    unreal      = UnrealAPI(memory.Allocate(class'UnrealAPI'));
+    unreal      = ServerUnrealAPI(memory.Allocate(class'ServerUnrealAPI'));
     time        = TimeAPI(memory.Allocate(class'TimeAPI'));
     logger      = LoggerAPI(memory.Allocate(class'LoggerAPI'));
     alias       = AliasesAPI(memory.Allocate(class'AliasesAPI'));

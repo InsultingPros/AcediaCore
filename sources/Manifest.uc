@@ -34,7 +34,7 @@ defaultproperties
     testCases(2)    = class'TEST_Boxes'
     testCases(3)    = class'TEST_Refs'
     testCases(4)    = class'TEST_SignalsSlots'
-    testCases(5)    = class'TEST_UnrealAPI'
+    testCases(5)    = class'TEST_ServerUnrealAPI'
     testCases(6)    = class'TEST_Aliases'
     testCases(7)    = class'TEST_ColorAPI'
     testCases(8)    = class'TEST_Text'

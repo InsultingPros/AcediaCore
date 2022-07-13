@@ -1,5 +1,5 @@
 /**
- *  Set of tests for `UnrealAPI` class.
+ *  Set of tests for `ServerUnrealAPI` class.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class TEST_UnrealAPI extends TestCase;
+class TEST_ServerUnrealAPI extends TestCase;
 
 protected static function int CountRulesAmount(class<gameRules> gameRulesClass)
 {
@@ -226,6 +226,6 @@ protected static function SubTest_InventoryChainFetchingMany(Inventory chain)
 
 defaultproperties
 {
-    caseName = "UnrealAPI"
+    caseName = "ServerUnrealAPI"
     caseGroup = "Unreal"
 }

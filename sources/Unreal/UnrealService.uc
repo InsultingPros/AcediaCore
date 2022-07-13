@@ -1,6 +1,6 @@
 /**
- *      Service for the needs of `UnrealAPI`. Mainly tasked with creating API's
- *  `Signal`s.
+ *      Service for the needs of `ServerUnrealAPI`. Mainly tasked with creating
+ *  API's `Signal`s.
  *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.

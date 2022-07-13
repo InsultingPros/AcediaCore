@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class UnrealAPI extends AcediaObject;
+class ServerUnrealAPI extends AcediaObject;
 
 var public MutatorAPI   mutator;
 var public GameRulesAPI gameRules;

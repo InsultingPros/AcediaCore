@@ -1,5 +1,5 @@
 /**
- *      Slot class implementation for `UnrealAPI`'s `OnTick` signal.
+ *      Slot class implementation for `ServerUnrealAPI`'s `OnTick` signal.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.

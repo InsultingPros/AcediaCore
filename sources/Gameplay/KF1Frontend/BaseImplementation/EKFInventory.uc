@@ -36,7 +36,7 @@ class EKFInventory extends EInventory
  *      *Weapons* are any inventory derived from `Weapon` inventory class,
  *  although some features (dual-wielding support and recognizing whether weapon
  *  can be dropped/removed). For recognizing dual-wielded weapons this class
- *  relies on `UnrealAPI.InventoryAPI` and its configuration.
+ *  relies on `ServerUnrealAPI.InventoryAPI` and its configuration.
  *
  *      Weapons are droppable/removable by default with the only exception of
  *  weapons derived from `KFWeapon` that have `bKFNeverThrow` set to `true`.
@@ -232,8 +232,9 @@ private function EItem TryAddUnknownItem(EKFUnknownItem newItem)
 }
 
 //  Searches `inventoryChain` for a weapon that:
-//      1. Has the same root as `inventoryClass` (see `UnrealAPI.InventoryAPI`
-//          for an explanation of what a "root" is);
+//      1. Has the same root as `inventoryClass`
+//          (see `ServerUnrealAPI.InventoryAPI` for an explanation of what a
+//          "root" is);
 //      2. Has specified dual wielding role.
 private function KFWeapon GetByRootWithDualRole(
     class<KFWeapon>                 inventoryClass,

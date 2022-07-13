@@ -1,6 +1,6 @@
 /**
- *      Mock `GameRules` class for testing `UnrealAPI` and it's methods for
- *  adding / removing `GameRules`.
+ *      Mock `GameRules` class for testing `ServerUnrealAPI` and it's methods
+ *  for adding / removing `GameRules`.
  *      Copyright 2021 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
