@@ -22,6 +22,7 @@ class KF1_HealthComponent extends AHealthComponent
     config(AcediaSystem);
 
 var private bool connectedToGameRules;
+var private bool replacedDamageTypes;
 
 /**
  *      Unfortunately, thanks to the TWI's code, there's no way to catch events
@@ -56,39 +57,26 @@ var private const int TDAMAGE, TORIGINAL_DAMAGE, THIT_LOCATION, TMOMENTUM;
 var private LoggerAPI.Definition infoReplacingDamageTypes, errNoServerLevelCore;
 var private LoggerAPI.Definition infoRestoringReplacingDamageTypes;
 
-public function PseudoConstructor()
-{
-    local LevelCore core;
-
-    if (!replaceBloatAndSirenDamageTypes) {
-        return;
-    }
-    _.logger.Auto(infoReplacingDamageTypes);
-    core = class'ServerLevelCore'.static.GetInstance();
-    if (core != none)
-    {
-        ReplaceDamageTypes(core);
-        core.OnShutdown(self).connect = RestoreDamageTypes;
-    }
-    else {
-        _.logger.Auto(errNoServerLevelCore);
-    }
-}
-
 protected function Finalizer()
 {
     super.Finalizer();
-    _.unreal.gameRules.OnNetDamage(self).Disconnect();
-    _.unreal.gameRules.OnScoreKill(self).Disconnect();
-    if (replaceBloatAndSirenDamageTypes) {
-        RestoreDamageTypes();
+    if (connectedToGameRules)
+    {
+        _.unreal.gameRules.OnNetDamage(self).Disconnect();
+        _.unreal.gameRules.OnScoreKill(self).Disconnect();
+        connectedToGameRules = false;
     }
-    connectedToGameRules = false;
+    if (replaceBloatAndSirenDamageTypes)
+    {
+        RestoreDamageTypes();
+        replacedDamageTypes = false;
+    }
 }
 
 public function Health_OnDamage_Slot OnDamage(AcediaObject receiver)
 {
     TryConnectToGameRules();
+    TryReplaceDamageTypes();
     return super.OnDamage(receiver);
 }
 
@@ -101,6 +89,26 @@ private final function TryConnectToGameRules()
     _.unreal.gameRules.OnNetDamage(self).connect = OnNetDamageHandler;
     //  Fixes achievements
     _.unreal.gameRules.OnScoreKill(self).connect = UpdateBileAchievement;
+}
+
+private final function TryReplaceDamageTypes()
+{
+    local LevelCore core;
+
+    if (!replaceBloatAndSirenDamageTypes)   return;
+    if (replacedDamageTypes)                return;
+
+    replacedDamageTypes = true;
+    _.logger.Auto(infoReplacingDamageTypes);
+    core = class'ServerLevelCore'.static.GetInstance();
+    if (core != none)
+    {
+        ReplaceDamageTypes(core);
+        core.OnShutdown(self).connect = RestoreDamageTypes;
+    }
+    else {
+        _.logger.Auto(errNoServerLevelCore);
+    }
 }
 
 private final function ReplaceDamageTypes(LevelCore core)
@@ -145,6 +153,7 @@ private final function RestoreDamageTypes()
     class'ZombieSiren_XMas'.default.screamDamageType = class'SirenScreamDamage';
     class'ZombieSiren_CIRCUS'.default.screamDamageType =
         class'SirenScreamDamage';
+    replacedDamageTypes = false;
 }
 
 private function int OnNetDamageHandler(
@@ -248,7 +257,7 @@ defaultproperties
     stringConstants(2) = "hitLocation"
     TMOMENTUM           = 3
     stringConstants(3) = "momentum"
-    infoReplacingDamageTypes            = (l=LOG_Info,m="Replacing bloat's and siren's damage types to dummy ones.")
+    infoReplacingDamageTypes            = (l=LOG_Info,m="Replacing bloat's and siren's damage types with dummy ones.")
     infoRestoringReplacingDamageTypes   = (l=LOG_Info,m="Restoring bloat and siren's damage types to their original values.")
     errNoServerLevelCore                = (l=LOG_Error,m="Server level core is missing. Either this isn't a server or Acedia was wrongly initialized. Bloat and siren damage type will not be replaced.")
 }

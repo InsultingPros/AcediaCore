@@ -49,8 +49,6 @@ protected function Initialize()
     super.Initialize();
     _ = class'Global'.static.GetInstance();
     kf = KFFrontend(_.memory.Allocate(class'KF1_Frontend'));
-    //  TODO: this is hack, needs to be redone later
-    KF1_HealthComponent(kf.health).PseudoConstructor();
     initialized = true;
 }
 
