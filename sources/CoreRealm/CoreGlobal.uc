@@ -21,16 +21,53 @@
  */
 class CoreGlobal extends Object;
 
-var public SideEffectAPI sideEffects;
+var protected bool                  initialized;
+var protected class<AcediaAdapter>  adapterClass;
 
+var public SideEffectAPIBase sideEffects;
+
+var private LoggerAPI.Definition fatNoAdapterClass;
+
+/**
+ *  This method must perform initialization of the caller `...Global` instance.
+ *
+ *  It must only be executed once (execution should be marked using
+ *  `initialized` flag).
+ */
 protected function Initialize()
 {
     local MemoryAPI api;
 
+    if (initialized) {
+        return;
+    }
+    initialized = true;
+    if (adapterClass == none)
+    {
+        class'Global'.static.GetInstance().logger
+            .Auto(fatNoAdapterClass)
+            .ArgClass(self.class);
+        return;
+    }
     api = class'Global'.static.GetInstance().memory;
-    sideEffects = SideEffectAPI(api.Allocate(class'SideEffectAPI'));
+    sideEffects =
+        SideEffectAPI(api.Allocate(adapterClass.default.sideEffectAPIClass));
 }
+
+/**
+ *  Changes adapter class for the caller `...Global` instance.
+ *
+ *  Must not do anything when caller `...Global` instance was already
+ *  initialized or when passed adapter class is `none`.
+ *
+ *  @param  newAdapter  New adapter class to use in the caller `...Global`
+ *      instance.
+ *  @return `true` if new adapter was set and `false` otherwise.
+ */
+public function bool SetAdapter(class<AcediaAdapter> newAdapter);
 
 defaultproperties
 {
+    adapterClass = class'AcediaAdapter'
+    fatNoAdapterClass = (l=LOG_Fatal,m="`none` specified as an adapter for `%1` level core class. This should not have happened. AcediaCore cannot properly function.")
 }

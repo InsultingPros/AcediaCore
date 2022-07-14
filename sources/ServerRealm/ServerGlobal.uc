@@ -21,7 +21,6 @@
  */
 class ServerGlobal extends CoreGlobal;
 
-var protected bool initialized;
 //  `Global` is expected to behave like a singleton and will store it's
 //  main instance in this variable's default value.
 var protected ServerGlobal myself;
