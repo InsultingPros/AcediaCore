@@ -486,10 +486,12 @@ private function HandleMutate(string command, PlayerController sendingPlayer)
     local Parser    parser;
     local EPlayer   sender;
 
-    //  Ignore just "help", since a lot of other mutators use it
-    if (command ~= "help") {
-        return;
-    }
+    //  A lot of other mutators use these commands
+    if (command ~= "help")      return;
+    if (command ~= "version")   return;
+    if (command ~= "status")    return;
+    if (command ~= "credits")   return;
+
     parser = _.text.ParseString(command);
     sender = _.players.FromController(sendingPlayer);
     HandleInput(parser, sender);
