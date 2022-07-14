@@ -49,7 +49,7 @@ class SideEffect extends AcediaObject
  *  this is not a side effect. Such mods are likely not going to have to specify
  *  any side effects whatsoever.
  *
- *  ## Implemention your own `SideEffect`s
+ *  ## Implementiong your own `SideEffect`s
  *
  *      Simply make a non-abstract child class based on `SideEffect`, create its
  *  instance filled with necessary data and register it in `SideEffectAPI` once

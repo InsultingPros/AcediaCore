@@ -38,6 +38,19 @@ class SideEffects extends AcediaObject
 var public const config bool allowAddingGameRules;
 
 /**
+ *      If allowed, AcediaCore can provide some additional information about
+ *  itself and other packages through "help" / "status" / "version" / "credits"
+ *  mutate commands, as well as allow to use "mutate acediacommands" to
+ *  emergency-enable `Commands` feature.
+ *      However that required access to "mutate" command events, which might not
+ *  always be desirable from `AcediaCore` library. This setting allows you to
+ *  disable such hooks.
+ *      NOTE: setting this to `false` will not prevent `Commands` feature from
+ *  hooking into mutate on its own.
+ */
+var public const config bool allowHookingIntoMutate;
+
+/**
  *      Unfortunately, thanks to the TWI's code, there's no way to catch events
  *  of when certain kinds of damage are dealt: from welder, bloat's bile and
  *  siren's scream. At least not without something drastic, like replacing game
@@ -87,6 +100,7 @@ var public const config BroadcastAPI.InjectionLevel broadcastHandlerInjectionLev
 defaultproperties
 {
     allowAddingGameRules            = true
+    allowHookingIntoMutate          = true
     allowReplacingDamageTypes       = true
     broadcastHandlerInjectionLevel  = BHIJ_Root
 }

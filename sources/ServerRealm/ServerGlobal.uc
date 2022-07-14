@@ -59,12 +59,14 @@ public final function bool ConnectServerLevelCore()
         return false;
     }
     Initialize();
-    class'UnrealService'.static.Require();
-    //  TODO: this is hack as fuck, needs to be redone
     _ = class'Global'.static.GetInstance();
-    _.unreal.mutator.OnMutate(
-        ServiceAnchor(_.memory.Allocate(class'ServiceAnchor')))
-            .connect = EnableCommandsFeature;
+    if (class'SideEffects'.default.allowHookingIntoMutate)
+    {
+        class'InfoQueryHandler'.static.StaticConstructor();
+        _.unreal.mutator.OnMutate(
+            ServiceAnchor(_.memory.Allocate(class'ServiceAnchor')))
+                .connect = EnableCommandsFeature;
+    }
     return true;
 }
 

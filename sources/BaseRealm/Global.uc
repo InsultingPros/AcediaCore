@@ -79,7 +79,6 @@ protected function Initialize()
     db          = DBAPI(memory.Allocate(class'DBAPI'));
     avarice     = AvariceAPI(memory.Allocate(class'AvariceAPI'));
     environment = AcediaEnvironment(memory.Allocate(class'AcediaEnvironment'));
-    class'InfoQueryHandler'.static.StaticConstructor();
 }
 
 public function DropCoreAPI()
