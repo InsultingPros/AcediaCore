@@ -49,7 +49,7 @@ class MemoryAPI extends AcediaObject;
  *  THEM after you've release them. Regardless of whether they were actually
  *  deallocated.
  *
- *  There's also a set of auxiliry methods for either loading `class`es from
+ *  There's also a set of auxiliary methods for either loading `class`es from
  *  their `BaseText`/`string`-given names or even directly creating objects of
  *  said classes.
  *
@@ -207,7 +207,7 @@ public final function Object Allocate(
 
 /**
  *  Creates a new `Object` of a given class using its `BaseText`
- *  respresentation.
+ *  representation.
  *
  *  For `AcediaObject`s calls constructors and tries (uses them only if they
  *  aren't forbidden for a given class) to make use of their classes' object
@@ -237,7 +237,7 @@ public final function Object AllocateByReference(
 
 /**
  *  Creates a new `Object` of a given class using its `string`
- *  respresentation.
+ *  representation.
  *
  *  For `AcediaObject`s calls constructors and tries (uses them only if they
  *  aren't forbidden for a given class) to make use of their classes' object
@@ -365,7 +365,7 @@ public final function FreeMany(array<Object> objectsToRelease)
  *      Pools won't be dropped regardless of this parameter if no `LevelCore` is
  *      found.
  *  @return `true` if garbage collection successfully happened and `false` if it
- *      failed. Garbage colelction can only fail if no `LevelCore` was yet
+ *      failed. Garbage collection can only fail if no `LevelCore` was yet
  *      setup.
  */
 public final function bool CollectGarbage(optional bool keepAcediaPools)
