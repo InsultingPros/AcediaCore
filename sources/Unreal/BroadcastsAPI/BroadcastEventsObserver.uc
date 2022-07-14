@@ -208,7 +208,7 @@ public final function Initialize(UnrealService service)
 {
     usedInjectionLevel =
         class'SideEffects'.default.broadcastHandlerInjectionLevel;
-    if (usedInjectionLevel != BHIJ_Root) {
+    if (usedInjectionLevel == BHIJ_Root) {
         Disable('Tick');
     }
     if (service == none) {
