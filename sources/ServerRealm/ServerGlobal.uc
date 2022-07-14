@@ -60,7 +60,6 @@ public final function bool ConnectServerLevelCore()
     }
     Initialize();
     class'UnrealService'.static.Require();
-    class'ConnectionService'.static.Require();
     //  TODO: this is hack as fuck, needs to be redone
     _ = class'Global'.static.GetInstance();
     _.unreal.mutator.OnMutate(
