@@ -97,9 +97,11 @@ protected function OnLaunch()
 {
     local Controller        nextController;
     local PlayerController  nextPlayerController;
-    _.unreal.mutator.OnModifyLogin(_self).connect       = RememberLoginOptions;
-    _.unreal.mutator.OnCheckReplacement(_self).connect  = TryAddingController;
-    _.unreal.mutator.OnCheckReplacement(_self).connect  =
+    _server.unreal.mutator.OnModifyLogin(_self).connect =
+        RememberLoginOptions;
+    _server.unreal.mutator.OnCheckReplacement(_self).connect =
+        TryAddingController;
+    _server.unreal.mutator.OnCheckReplacement(_self).connect =
         RecordPendingInformation;
     onConnectionEstablishedSignal =
         Connection_Signal(_.memory.Allocate(class'Connection_Signal'));
@@ -120,8 +122,8 @@ protected function OnLaunch()
 protected function OnShutdown()
 {
     default.activeConnections = activeConnections;
-    _.unreal.mutator.OnModifyLogin(_self).Disconnect();
-    _.unreal.mutator.OnCheckReplacement(_self).Disconnect();
+    _server.unreal.mutator.OnModifyLogin(_self).Disconnect();
+    _server.unreal.mutator.OnCheckReplacement(_self).Disconnect();
     _.memory.Free(onConnectionEstablishedSignal);
     _.memory.Free(onConnectionLostSignal);
     onConnectionEstablishedSignal = none;
@@ -277,7 +279,7 @@ public final function array<Connection> GetActiveConnections(
 private function RememberLoginOptions(out string portal, out string options)
 {
     lastNickNameFromModifyLogin =
-        _.unreal.GetGameType().ParseOption(options, "Name");
+        _server.unreal.GetGameType().ParseOption(options, "Name");
 }
 
 private function bool RecordPendingInformation(

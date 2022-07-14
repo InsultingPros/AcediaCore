@@ -48,7 +48,7 @@ public final static /*unreal*/ function EKFFlashlightAmmo Wrap(
     }
     newReference =
         EKFFlashlightAmmo(__().memory.Allocate(class'EKFFlashlightAmmo'));
-    newReference.pawnReference = __().unreal.ActorRef(kfHumanPawn);
+    newReference.pawnReference = __server().unreal.ActorRef(kfHumanPawn);
     return newReference;
 }
 

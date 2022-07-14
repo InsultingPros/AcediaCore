@@ -48,8 +48,8 @@ protected function OnShutdown()
 {
     local int i;
 
-    _.unreal.broadcasts.Remove(class'BroadcastEventsObserver');
-    _.unreal.gameRules.Remove(class'AcediaGameRules');
+    _server.unreal.broadcasts.Remove(class'BroadcastEventsObserver');
+    _server.unreal.gameRules.Remove(class'AcediaGameRules');
     for (i = 0; i < serviceSignals.length; i += 1) {
         _.memory.Free(serviceSignals[i].instance);
     }

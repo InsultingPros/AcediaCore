@@ -26,7 +26,7 @@ protected static function int CountRulesAmount(class<gameRules> gameRulesClass)
     if (gameRulesClass == none) {
         return 0;
     }
-    rulesIter = __().unreal.GetGameType().gameRulesModifiers;
+    rulesIter = __server().unreal.GetGameType().gameRulesModifiers;
     while (rulesIter != none)
     {
         if (rulesIter.class == gameRulesClass) {
@@ -48,11 +48,12 @@ protected static function Test_GameType()
 {
     Context("Testing methods for returning `GameType` class.");
     Issue("`GetGameType()` returns `none`.");
-    TEST_ExpectNotNone(__().unreal.GetGameType());
+    TEST_ExpectNotNone(__server().unreal.GetGameType());
     Issue("`GetKFGameType()` returns `none`.");
-    TEST_ExpectNotNone(__().unreal.GetKFGameType());
+    TEST_ExpectNotNone(__server().unreal.GetKFGameType());
     Issue("`GetGameType()` and `GetKFGameType()` return different values.");
-    TEST_ExpectTrue(__().unreal.GetGameType() == __().unreal.GetKFGameType());
+    TEST_ExpectTrue(    __server().unreal.GetGameType()
+                    ==  __server().unreal.GetKFGameType());
 }
 
 protected static function Test_GameRules()
@@ -65,30 +66,30 @@ protected static function Test_GameRules()
 protected static function SubTest_AddRemoveGameRules()
 {
     Issue("`gameRules.Add()` does not add game rules.");
-    __().unreal.gameRules.Add(class'MockGameRulesA');
+    __server().unreal.gameRules.Add(class'MockGameRulesA');
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesA') == 1);
 
-    __().unreal.gameRules.Add(class'MockGameRulesA');
+    __server().unreal.gameRules.Add(class'MockGameRulesA');
     Issue("Calling `gameRules.Add()` twice leads to rule duplication.");
     TEST_ExpectFalse(CountRulesAmount(class'MockGameRulesA') > 1);
     Issue("Calling `gameRules.Add()` leads to rule not being added.");
     TEST_ExpectFalse(CountRulesAmount(class'MockGameRulesA') == 0);
 
     Issue("Adding new rules with `gameRules.Add()` does not work properly.");
-    __().unreal.gameRules.Add(class'MockGameRulesB');
+    __server().unreal.gameRules.Add(class'MockGameRulesB');
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesA') == 1);
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesB') == 1);
 
     Issue("Adding/removing rules with `gameRules.Remove()` leads to" @
         "unexpected results.");
-    __().unreal.gameRules.Remove(class'MockGameRulesB');
+    __server().unreal.gameRules.Remove(class'MockGameRulesB');
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesA') == 1);
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesB') == 0);
-    __().unreal.gameRules.Add(class'MockGameRulesB');
-    __().unreal.gameRules.Remove(class'MockGameRulesA');
+    __server().unreal.gameRules.Add(class'MockGameRulesB');
+    __server().unreal.gameRules.Remove(class'MockGameRulesA');
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesA') == 0);
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesB') == 1);
-    __().unreal.gameRules.Remove(class'MockGameRulesB');
+    __server().unreal.gameRules.Remove(class'MockGameRulesB');
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesA') == 0);
     TEST_ExpectTrue(CountRulesAmount(class'MockGameRulesB') == 0);
 }
@@ -100,28 +101,35 @@ protected static function SubTest_CheckGameRules()
         @ "are currently added.";
     issueForNotAdded = "`gameRules.AreAdded()` returns `true` for rules that" @
         "are not currently added.";
-    __().unreal.gameRules.Remove(class'MockGameRulesA');
-    __().unreal.gameRules.Remove(class'MockGameRulesB');
+    __server().unreal.gameRules.Remove(class'MockGameRulesA');
+    __server().unreal.gameRules.Remove(class'MockGameRulesB');
     Issue(issueForNotAdded);
-    TEST_ExpectFalse(__().unreal.gameRules.AreAdded(class'MockGameRulesA'));
-    TEST_ExpectFalse(__().unreal.gameRules.AreAdded(class'MockGameRulesB'));
+    TEST_ExpectFalse(__server().unreal.gameRules
+        .AreAdded(class'MockGameRulesA'));
+    TEST_ExpectFalse(__server().unreal.gameRules
+        .AreAdded(class'MockGameRulesB'));
 
-    __().unreal.gameRules.Add(class'MockGameRulesB');
+    __server().unreal.gameRules.Add(class'MockGameRulesB');
     Issue(issueForNotAdded);
-    TEST_ExpectFalse(__().unreal.gameRules.AreAdded(class'MockGameRulesA'));
+    TEST_ExpectFalse(__server().unreal.gameRules
+        .AreAdded(class'MockGameRulesA'));
     Issue(issueForAdded);
-    TEST_ExpectTrue(__().unreal.gameRules.AreAdded(class'MockGameRulesB'));
+    TEST_ExpectTrue(__server().unreal.gameRules
+        .AreAdded(class'MockGameRulesB'));
 
-    __().unreal.gameRules.Add(class'MockGameRulesA');
+    __server().unreal.gameRules.Add(class'MockGameRulesA');
     Issue(issueForAdded);
-    TEST_ExpectTrue(__().unreal.gameRules.AreAdded(class'MockGameRulesA'));
-    TEST_ExpectTrue(__().unreal.gameRules.AreAdded(class'MockGameRulesB'));
+    TEST_ExpectTrue(__server().unreal.gameRules
+        .AreAdded(class'MockGameRulesA'));
+    TEST_ExpectTrue(__server().unreal.gameRules
+        .AreAdded(class'MockGameRulesB'));
 
-    __().unreal.gameRules.Remove(class'MockGameRulesB');
+    __server().unreal.gameRules.Remove(class'MockGameRulesB');
     Issue(issueForAdded);
-    TEST_ExpectTrue(__().unreal.gameRules.AreAdded(class'MockGameRulesA'));
+    TEST_ExpectTrue(__server().unreal.gameRules
+        .AreAdded(class'MockGameRulesA'));
     Issue(issueForNotAdded);
-    TEST_ExpectFalse(__().unreal.gameRules.AreAdded(class'MockGameRulesB'));
+    TEST_ExpectFalse(__server().unreal.gameRules.AreAdded(class'MockGameRulesB'));
 }
 
 protected static function Test_InventoryChainFetching()
@@ -156,35 +164,35 @@ protected static function SubTest_InventoryChainFetchingSingle(Inventory chain)
 {
     Issue("Does not find correct first entry inside the inventory chain.");
     TEST_ExpectTrue(
-            __().unreal.inventory.Get(class'MockInventoryA', chain)
+            __server().unreal.inventory.Get(class'MockInventoryA', chain)
         ==  chain.inventory.inventory);
     TEST_ExpectTrue(
-            __().unreal.inventory.Get(class'MockInventoryB', chain)
+            __server().unreal.inventory.Get(class'MockInventoryB', chain)
         ==  chain.inventory);
     TEST_ExpectTrue(
-            __().unreal.inventory.Get(class'MockInventoryAChild', chain)
+            __server().unreal.inventory.Get(class'MockInventoryAChild', chain)
         ==  chain);
 
     Issue("Incorrectly finds missing inventory entries.");
-    TEST_ExpectNone(__().unreal.inventory.Get(none, chain));
-    TEST_ExpectNone(__().unreal.inventory.Get(class'Winchester', chain));
+    TEST_ExpectNone(__server().unreal.inventory.Get(none, chain));
+    TEST_ExpectNone(__server().unreal.inventory.Get(class'Winchester', chain));
 
     Issue("Does not find correct first entry inside the inventory chain when" @
         "allowing for child classes.");
     TEST_ExpectTrue(
-            __().unreal.inventory.Get(class'MockInventoryA', chain, true)
+            __server().unreal.inventory.Get(class'MockInventoryA', chain, true)
         ==  chain);
     TEST_ExpectTrue(
-            __().unreal.inventory.Get(class'MockInventoryB', chain, true)
+            __server().unreal.inventory.Get(class'MockInventoryB', chain, true)
         ==  chain.inventory);
     TEST_ExpectTrue(
-        __().unreal.inventory.Get(class'MockInventoryAChild', chain, true)
+        __server().unreal.inventory.Get(class'MockInventoryAChild', chain, true)
         == chain);
 
     Issue("Incorrectly finds missing inventory entries when allowing for" @
         "child classes.");
-    TEST_ExpectNone(__().unreal.inventory.Get(none, chain, true));
-    TEST_ExpectNone(__().unreal.inventory.Get(  class'Winchester', chain,
+    TEST_ExpectNone(__server().unreal.inventory.Get(none, chain, true));
+    TEST_ExpectNone(__server().unreal.inventory.Get(  class'Winchester', chain,
                                                 true));
 }
 
@@ -192,7 +200,7 @@ protected static function SubTest_InventoryChainFetchingMany(Inventory chain)
 {
     local array<Inventory> result;
     Issue("Does not find correct entries inside the inventory chain.");
-    result = __().unreal.inventory.GetAll(class'MockInventoryB', chain);
+    result = __server().unreal.inventory.GetAll(class'MockInventoryB', chain);
     TEST_ExpectTrue(result.length == 2);
     TEST_ExpectTrue(result[0] == chain.inventory);
     TEST_ExpectTrue(result[1] == chain.inventory.inventory.inventory.inventory);
@@ -200,12 +208,12 @@ protected static function SubTest_InventoryChainFetchingMany(Inventory chain)
     Issue("Does not find correct entries inside the inventory chain when" @
         "allowing for child classes.");
     result =
-        __().unreal.inventory.GetAll(class'MockInventoryB', chain, true);
+        __server().unreal.inventory.GetAll(class'MockInventoryB', chain, true);
     TEST_ExpectTrue(result.length == 2);
     TEST_ExpectTrue(result[0] == chain.inventory);
     TEST_ExpectTrue(result[1] == chain.inventory.inventory.inventory.inventory);
     result =
-        __().unreal.inventory.GetAll(class'MockInventoryA', chain, true);
+        __server().unreal.inventory.GetAll(class'MockInventoryA', chain, true);
     TEST_ExpectTrue(result.length == 5);
     TEST_ExpectTrue(result[0] == chain);
     TEST_ExpectTrue(result[1] == chain.inventory.inventory);
@@ -218,9 +226,9 @@ protected static function SubTest_InventoryChainFetchingMany(Inventory chain)
         ==  chain.inventory.inventory.inventory.inventory.inventory.inventory);
     
     Issue("Does not return empty array for non-existing inventory class.");
-    result = __().unreal.inventory.GetAll(class'Winchester', chain);
+    result = __server().unreal.inventory.GetAll(class'Winchester', chain);
     TEST_ExpectTrue(result.length == 0);
-    result = __().unreal.inventory.GetAll(class'Winchester', chain, true);
+    result = __server().unreal.inventory.GetAll(class'Winchester', chain, true);
     TEST_ExpectTrue(result.length == 0);
 }
 

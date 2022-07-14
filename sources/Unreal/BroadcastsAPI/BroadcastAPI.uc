@@ -288,7 +288,7 @@ private final function TryInjectBroadcastHandler(UnrealService service)
     }
     triedToInjectBroadcasthandler = true;
     usedLevel = class'SideEffects'.default.broadcastHandlerInjectionLevel;
-    broadcastObserver = BroadcastEventsObserver(_.unreal.broadcasts.Add(
+    broadcastObserver = BroadcastEventsObserver(_server.unreal.broadcasts.Add(
         class'BroadcastEventsObserver', usedLevel));
     if (broadcastObserver != none)
     {
@@ -341,7 +341,7 @@ public final function BroadcastHandler Add(
     local LevelInfo         level;
     local BroadcastHandler  newBroadcastHandler;
     if (injectionLevel == BHIJ_None)            return none;
-    level = _.unreal.GetLevel();
+    level = _server.unreal.GetLevel();
     if (level == none || level.game == none)    return none;
     if (IsAdded(newBHClass))                    return none;
 
@@ -382,7 +382,7 @@ public final function bool Remove(class<BroadcastHandler> BHClassToRemove)
 {
     local LevelInfo         level;
     local BroadcastHandler  previousBH, currentBH;
-    level = _.unreal.GetLevel();
+    level = _server.unreal.GetLevel();
     if (level == none || level.game == none) {
         return false;
     }
@@ -440,7 +440,7 @@ public final function BroadcastHandler FindInstance(
     if (BHClassToFind == none) {
         return none;
     }
-    BHIter = _.unreal.GetGameType().broadcastHandler;
+    BHIter = _server.unreal.GetGameType().broadcastHandler;
     while (BHIter != none)
     {
         if (BHIter.class == BHClassToFind) {

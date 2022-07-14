@@ -47,7 +47,7 @@ public final static /*unreal*/ function EKFMedicAmmo Wrap(
     }
     newReference = EKFMedicAmmo(__().memory.Allocate(class'EKFMedicAmmo'));
     newReference.medicWeaponReference =
-        __().unreal.ActorRef(medicWeaponInstance);
+        __server().unreal.ActorRef(medicWeaponInstance);
     return newReference;
 }
 

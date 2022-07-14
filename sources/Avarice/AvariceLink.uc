@@ -132,7 +132,7 @@ public final function Initialize(BaseText name, BaseText host, int port)
     linkName = name.Copy();
     linkHost = host.Copy();
     linkPort = port;
-    tcpStream = _.unreal.ActorRef(none);
+    tcpStream = _server.unreal.ActorRef(none);
 }
 
 /**

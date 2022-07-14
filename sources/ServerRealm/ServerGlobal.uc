@@ -25,7 +25,9 @@ class ServerGlobal extends CoreGlobal;
 //  main instance in this variable's default value.
 var protected ServerGlobal myself;
 
-var public KFFrontend kf;
+var public KFFrontend       kf;
+var public ServerUnrealAPI  unreal;
+var public TimeAPI          time;
 
 public final static function ServerGlobal GetInstance()
 {
@@ -47,7 +49,9 @@ protected function Initialize()
     }
     super.Initialize();
     _ = class'Global'.static.GetInstance();
-    kf = KFFrontend(_.memory.Allocate(class'KF1_Frontend'));
+    unreal  = ServerUnrealAPI(_.memory.Allocate(class'ServerUnrealAPI'));
+    time    = TimeAPI(_.memory.Allocate(class'TimeAPI'));
+    kf      = KFFrontend(_.memory.Allocate(class'KF1_Frontend'));
     initialized = true;
 }
 
@@ -63,7 +67,7 @@ public final function bool ConnectServerLevelCore()
     if (class'SideEffects'.default.allowHookingIntoMutate)
     {
         class'InfoQueryHandler'.static.StaticConstructor();
-        _.unreal.mutator.OnMutate(
+        unreal.mutator.OnMutate(
             ServiceAnchor(_.memory.Allocate(class'ServiceAnchor')))
                 .connect = EnableCommandsFeature;
     }

@@ -47,7 +47,7 @@ public final static /*unreal*/ function EKFSyringeAmmo Wrap(
     }
     newReference = EKFSyringeAmmo(__().memory.Allocate(class'EKFSyringeAmmo'));
     newReference.syringeReference =
-        __().unreal.ActorRef(syringeInstance);
+        __server().unreal.ActorRef(syringeInstance);
     return newReference;
 }
 

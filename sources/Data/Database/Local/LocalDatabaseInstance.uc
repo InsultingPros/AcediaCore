@@ -88,7 +88,7 @@ var private int     lastTaskLifeVersion;
 
 protected function Constructor()
 {
-    _.unreal.OnTick(self).connect = CompleteAllTasks;
+    _server.unreal.OnTick(self).connect = CompleteAllTasks;
 }
 
 protected function Finalizer()
@@ -98,7 +98,7 @@ protected function Finalizer()
     CompleteAllTasks();
     WriteToDisk();
     rootRecord = none;
-    _.unreal.OnTick(self).Disconnect();
+    _server.unreal.OnTick(self).Disconnect();
     _.memory.Free(diskUpdateTimer);
     diskUpdateTimer = none;
     configEntry = none;
@@ -125,7 +125,7 @@ private final function LocalDatabaseInstance ScheduleDiskUpdate()
     }
     WriteToDisk();
     needsDiskUpdate = false;
-    diskUpdateTimer = _.time.StartTimer(
+    diskUpdateTimer = _server.time.StartTimer(
         class'LocalDBSettings'.default.writeToDiskDelay);
     diskUpdateTimer.OnElapsed(self).connect = DoDiskUpdate;
     return self;
@@ -153,7 +153,7 @@ private final function WriteToDisk()
         packageName = _.text.ToString(configEntry.GetPackageName());
     }
     if (packageName != "") {
-        _.unreal.GetGameType().SavePackage(packageName);
+        _server.unreal.GetGameType().SavePackage(packageName);
     }
 }
 

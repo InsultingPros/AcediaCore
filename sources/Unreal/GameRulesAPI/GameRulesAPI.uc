@@ -318,7 +318,7 @@ public final function GameRules Add(class<GameRules> newRulesClass)
         return none;
     }
     newGameRules = GameRules(_.memory.Allocate(newRulesClass));
-    _.unreal.GetGameType().AddGameModifier(newGameRules);
+    _server.unreal.GetGameType().AddGameModifier(newGameRules);
     return newGameRules;
 }
 
@@ -336,7 +336,7 @@ public final function bool Remove(class<GameRules> rulesClassToRemove)
     local GameRules rulesIter;
     local GameRules rulesToDestroy;
     if (rulesClassToRemove == none)         return false;
-    game = _.unreal.GetGameType();
+    game = _server.unreal.GetGameType();
     if (game.gameRulesModifiers == none)    return false;
 
     //  Check root rules
@@ -380,7 +380,7 @@ public final function GameRules FindInstance(
     if (rulesClassToFind == none) {
         return none;
     }
-    rulesIter = _.unreal.GetGameType().gameRulesModifiers;
+    rulesIter = _server.unreal.GetGameType().gameRulesModifiers;
     while (rulesIter != none)
     {
         if (rulesIter.class == rulesClassToFind) {

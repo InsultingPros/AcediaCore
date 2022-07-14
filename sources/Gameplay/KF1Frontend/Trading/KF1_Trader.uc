@@ -84,7 +84,7 @@ private static function Text GetShopVolumeName(ShopVolume newShopVolume)
             return namedShopVolumesCopy[i].name.Copy();
         }
     }
-    newRecord.reference = __().unreal.ActorRef(newShopVolume);
+    newRecord.reference = __server().unreal.ActorRef(newShopVolume);
     newRecord.name =
         __().text.FromString("trader" $ namedShopVolumesCopy.length);
     default.namedShopVolumes[default.namedShopVolumes.length] = newRecord;
@@ -114,11 +114,11 @@ public final /* unreal */ function bool Initialize(ShopVolume initShopVolume)
         return false;
     }
     if (    initShopVolume.bObjectiveModeOnly
-        &&  !__().unreal.GetKFGameType().bUsingObjectiveMode) {
+        &&  !__server().unreal.GetKFGameType().bUsingObjectiveMode) {
         return false;
     }
     myName          = GetShopVolumeName(initShopVolume);
-    myShopVolume    = _.unreal.ActorRef(initShopVolume);
+    myShopVolume    = _server.unreal.ActorRef(initShopVolume);
     return true;
 }
 
@@ -216,7 +216,7 @@ protected function UpdateShopList()
 
         shopVolumes[shopVolumes.length] = nextShopVolume;
     }
-    _.unreal.GetKFGameType().shopList = shopVolumes;
+    _server.unreal.GetKFGameType().shopList = shopVolumes;
 }
 
 public function bool IsAutoOpen()
@@ -279,7 +279,7 @@ public function bool IsSelected()
     if (vanillaShopVolume == none) {
         return false;
     }
-    kfGameRI = _.unreal.GetKFGameRI();
+    kfGameRI = _server.unreal.GetKFGameRI();
     if (kfGameRI != none) {
         return (kfGameRI.currentShop == vanillaShopVolume);
     }
@@ -294,7 +294,7 @@ public function ETrader Select()
     if (vanillaShopVolume == none) {
         return self;
     }
-    kfGameRI = _.unreal.GetKFGameRI();
+    kfGameRI = _server.unreal.GetKFGameRI();
     if (kfGameRI != none) {
         kfGameRI.currentShop = vanillaShopVolume;
     }

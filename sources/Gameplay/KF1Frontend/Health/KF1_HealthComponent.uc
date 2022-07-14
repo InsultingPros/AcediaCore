@@ -35,8 +35,8 @@ protected function Finalizer()
     super.Finalizer();
     if (connectedToGameRules)
     {
-        _.unreal.gameRules.OnNetDamage(self).Disconnect();
-        _.unreal.gameRules.OnScoreKill(self).Disconnect();
+        _server.unreal.gameRules.OnNetDamage(self).Disconnect();
+        _server.unreal.gameRules.OnScoreKill(self).Disconnect();
         connectedToGameRules = false;
     }
 }
@@ -54,9 +54,9 @@ private final function TryConnectToGameRules()
         return;
     }
     connectedToGameRules = true;
-    _.unreal.gameRules.OnNetDamage(self).connect = OnNetDamageHandler;
+    _server.unreal.gameRules.OnNetDamage(self).connect = OnNetDamageHandler;
     //  Fixes achievements
-    _.unreal.gameRules.OnScoreKill(self).connect = UpdateBileAchievement;
+    _server.unreal.gameRules.OnScoreKill(self).connect = UpdateBileAchievement;
 }
 
 private final function TryReplaceDamageTypes()

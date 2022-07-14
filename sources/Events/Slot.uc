@@ -8,7 +8,7 @@
  *  (`Slot` wraps over a single delegate, allowing us to store them in array),
  *  but, unlike them, makes it possible to add several handlers for any event in
  *  a convenient to use way, e.g.:
- *  `_.unreal.OnTick(self).connect = myTickHandler`
+ *  `_server.unreal.OnTick(self).connect = myTickHandler`
  *      To create your own `Slot` you need to:
  *      1. Make a non-abstract child class of `Signal`;
  *      2. Use one of the templates presented in this file below.

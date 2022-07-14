@@ -209,7 +209,7 @@ private function KillRefInventory(NativeActorRef itemRef)
         nativeReference.Destroy();
     }
     if (destroyedClass != none) {
-        _.unreal.GetKFGameType().WeaponDestroyed(destroyedClass);
+        _server.unreal.GetKFGameType().WeaponDestroyed(destroyedClass);
     }
 }   
 
@@ -244,7 +244,7 @@ private function KFWeapon GetByRootWithDualRole(
     local InventoryAPI          api;
     local class<KFWeapon>       nextWeaponClass;
     local class<KFWeaponPickup> itemRoot, nextRoot;
-    api = _.unreal.inventory;
+    api = _server.unreal.inventory;
     itemRoot = api.GetRootPickupClass(inventoryClass);
     while (inventoryChain != none)
     {
@@ -285,7 +285,7 @@ public function EItem Add(EItem newItem, optional bool forceAddition)
         //  Dead entity - nothing to add
         return none;
     }
-    dualClass = _.unreal.inventory.GetDualClass(nativeWeapon.class);
+    dualClass = _server.unreal.inventory.GetDualClass(nativeWeapon.class);
     //  The only possible complication here are dual weapons - `newItem` might
     //  cause addition of completely different weapon.
     if (dualClass != none)
@@ -294,7 +294,7 @@ public function EItem Add(EItem newItem, optional bool forceAddition)
                                                 pawn.inventory, DWR_Single);
         if (conflictWeapon != none)
         {
-            nativeWeapon = KFWeapon(_.unreal.inventory
+            nativeWeapon = KFWeapon(_server.unreal.inventory
                 .MergeWeapons(pawn, dualClass, nativeWeapon, conflictWeapon));
         }
         if (nativeWeapon != none) {
@@ -339,7 +339,7 @@ public function EItem AddTemplate(
         return none;
     }
     //  Handle dual pistols merging
-    dualClass = _.unreal.inventory.GetDualClass(newWeaponClass);
+    dualClass = _server.unreal.inventory.GetDualClass(newWeaponClass);
     if (dualClass != none)
     {
         collidingWeapon = GetByRootWithDualRole(newWeaponClass,
@@ -349,7 +349,7 @@ public function EItem AddTemplate(
         }
     }
     //  Add regular weapons
-    newWeapon = KFWeapon(_.unreal.inventory
+    newWeapon = KFWeapon(_server.unreal.inventory
         .MergeWeapons(GetOwnerPawn(), newWeaponClass, collidingWeapon));
     if (newWeapon != none) {
         return class'EKFWeapon'.static.Wrap(newWeapon);
@@ -464,13 +464,13 @@ private function Text CanAddWeaponClassExplain(
     //  Start with checking conflicting weapons, since in case of conflicting
     //  dual weapons we might need to update `additionalWeight` variable.
     conflictingWeapon =
-        _.unreal.inventory.GetByRoot(kfWeaponClass, kfPawn.inventory);
+        _server.unreal.inventory.GetByRoot(kfWeaponClass, kfPawn.inventory);
     if (conflictingWeapon != none)
     {
         //  `GetByRoot()` is a simple check that thinks handcannon is in
         //  a conflict with another handcannon, so we need to handle
         //  dual wieldable weapons differently
-        dualWeildingRole = _.unreal.inventory.GetDualWieldingRole(
+        dualWeildingRole = _server.unreal.inventory.GetDualWieldingRole(
             class<KFWeapon>(conflictingWeapon.class));
         if (dualWeildingRole != DWR_None)
         {
@@ -478,7 +478,7 @@ private function Text CanAddWeaponClassExplain(
                 return ReportConflictingItem(conflictingWeapon);
             }
             //  Update additional weight
-            dualVersion = _.unreal.inventory.GetDualClass(kfWeaponClass);
+            dualVersion = _server.unreal.inventory.GetDualClass(kfWeaponClass);
             if (dualVersion != none)
             {
                 additionalWeight =
@@ -512,7 +512,7 @@ private function bool HasDualWieldingConflict(
         return false;
     }
     addingSingle = false;
-    dualClass = _.unreal.inventory.GetDualClass(kfWeaponClass);
+    dualClass = _server.unreal.inventory.GetDualClass(kfWeaponClass);
     if (dualClass == none)
     {
         dualClass       = kfWeaponClass;
@@ -526,14 +526,14 @@ private function bool HasDualWieldingConflict(
     //  2. If we do have a dual version, but we are forcing this addition and
     //      are adding single when there is no other single pistol yet
     if (    addingSingle && forceAddition
-        &&  _.unreal.inventory.Get(kfWeaponClass, pawn.inventory) == none)
+        &&  _server.unreal.inventory.Get(kfWeaponClass, pawn.inventory) == none)
     {
         return false;
     }
     //  3. If we do have a dual version, but we are forcing this addition and
     //      are adding a different skin
     if (    forceAddition
-        &&  _.unreal.inventory.Get(dualClass, pawn.inventory) == none)
+        &&  _server.unreal.inventory.Get(dualClass, pawn.inventory) == none)
     {
         return false;
     }
@@ -591,7 +591,7 @@ public function bool Remove(
     if (!forceRemoval && kfWeapon != none && kfWeapon.bKFNeverThrow) {
         return false;
     }
-    if (!_.unreal.inventory.Contains(kfWeapon, pawn.inventory)) {
+    if (!_server.unreal.inventory.Contains(kfWeapon, pawn.inventory)) {
         return false;
     }
     //      This code is an overkill for removing a single item and is not
@@ -601,8 +601,8 @@ public function bool Remove(
     //      Only optimize this if this method will become
     //  a bottleneck somewhere.
     removalList = _.collections.EmptyDynamicArray();
-    removalList.AddItem(_.unreal.ActorRef(nativeInstance), true);
-    pawnRef = _.unreal.ActorRef(pawn);
+    removalList.AddItem(_server.unreal.ActorRef(nativeInstance), true);
+    pawnRef = _server.unreal.ActorRef(pawn);
     result = RemoveInventoryArray(  pawnRef, removalList,
                                     keepItem, forceRemoval, true);
     _.memory.Free(removalList);
@@ -634,7 +634,7 @@ public function bool RemoveTemplate(
     pawn = GetOwnerPawn();
     if (pawn == none)                               return false;
 
-    pawnRef     = _.unreal.ActorRef(pawn);
+    pawnRef     = _server.unreal.ActorRef(pawn);
     removalList = _.collections.EmptyDynamicArray();
     //  All removal works the same - form a "kill list", then remove
     //  all `Inventory` at once with `RemoveInventoryArray`
@@ -645,7 +645,7 @@ public function bool RemoveTemplate(
         removalList,
         keepItem,
         forceRemoval,
-        _.unreal.inventory.GetDualWieldingRole(weaponClass) ==  DWR_Dual);
+        _server.unreal.inventory.GetDualWieldingRole(weaponClass) ==  DWR_Dual);
     _.memory.Free(removalList);
     _.memory.Free(pawnRef);
     return result;
@@ -672,7 +672,7 @@ private function AddClassForRemoval(
     if (nextInventory == none)  return;
 
     dualClass =
-        _.unreal.inventory.GetDualClass(class<KFWeapon>(inventoryClass));
+        _server.unreal.inventory.GetDualClass(class<KFWeapon>(inventoryClass));
     while (nextInventory != none)
     {
         //  We want to "remove" dual handcannons if removal of single handcannon
@@ -686,7 +686,7 @@ private function AddClassForRemoval(
         }
         if (canRemoveInventory)
         {
-            removalArray.AddItem(_.unreal.ActorRef(nextInventory), true);
+            removalArray.AddItem(_server.unreal.ActorRef(nextInventory), true);
             if (!removeAll) {
                 break;
             }
@@ -723,12 +723,15 @@ public function bool RemoveAll(
             && (forceRemoval || !kfWeapon.bKFNeverThrow);
         canRemoveItem = canRemoveItem
             || (includeHidden && Ammunition(nextInventory) == none);
-        if (canRemoveItem) {
-            inventoryToRemove.AddItem(_.unreal.ActorRef(nextInventory), true);
+        if (canRemoveItem)
+        {
+            inventoryToRemove.AddItem(
+                _server.unreal.ActorRef(nextInventory),
+                true);
         }
         nextInventory = nextInventory.inventory;
     }
-    pawnRef = _.unreal.ActorRef(pawn);
+    pawnRef = _server.unreal.ActorRef(pawn);
     result = RemoveInventoryArray(  pawnRef, inventoryToRemove,
                                     keepItems, forceRemoval, true);
     _.memory.Free(inventoryToRemove);
@@ -757,7 +760,7 @@ private function bool RemoveInventoryArray(
     ownerPawn = Pawn(ownerPawnRef.Get());
     if (ownerPawn == none)      return false;
 
-    equippedWeapon = _.unreal.ActorRef(ownerPawn.weapon);
+    equippedWeapon = _server.unreal.ActorRef(ownerPawn.weapon);
     for(i = 0; i < itemsToRemove.GetLength(); i += 1)
     {
         //  `itemsToRemove` is guaranteed to contain valid `ActorRef`s
@@ -822,7 +825,8 @@ private function AppendSingleClass(
     if (kfWeaponInstance == none) {
         return;
     }
-    singleClass = _.unreal.inventory.GetSingleClass(kfWeaponInstance.class);
+    singleClass =
+        _server.unreal.inventory.GetSingleClass(kfWeaponInstance.class);
     if (singleClass != none) {
         singleClasses[singleClasses.length] = singleClass;
     }
@@ -857,7 +861,7 @@ private function bool HandleInventoryRemoval(
     {
         if (KFWeapon(inventory) != none)
         {
-            singleClass = _.unreal.inventory
+            singleClass = _server.unreal.inventory
                 .GetSingleClass(class<KFWeapon>(inventory.class));
         }
         if (singleClass != none && singleClass.default.bKFNeverThrow) {
@@ -914,7 +918,8 @@ private function DestroyWeaponSingle(
     if (kfWeaponToDestroy == none) {
         return;
     }
-    singleClass = _.unreal.inventory.GetSingleClass(kfWeaponToDestroy.class);
+    singleClass =
+        _server.unreal.inventory.GetSingleClass(kfWeaponToDestroy.class);
     if (singleClass != none)
     {
         totalAmmoPrimary    = kfWeaponToDestroy.AmmoAmount(0);
@@ -924,7 +929,7 @@ private function DestroyWeaponSingle(
     KillRefInventory(inventoryToDestroy);
     if (singleClass != none)
     {
-        _.unreal.inventory
+        _server.unreal.inventory
             .AddWeaponWithAmmo( Pawn(ownerPawnRef.Get()), singleClass,
                                 totalAmmoPrimary / 2, totalAmmoSecondary / 2,
                                 magazineAmmo / 2, true);  

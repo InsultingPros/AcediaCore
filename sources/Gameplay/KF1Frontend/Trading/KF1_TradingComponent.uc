@@ -42,11 +42,11 @@ protected function Constructor()
     local KF1_Trader    nextTrader;
     local ShopVolume    nextShopVolume;
     super.Constructor();
-    _.unreal.OnTick(self).connect = Tick;
+    _server.unreal.OnTick(self).connect = Tick;
     //  Build `registeredTraders` cache to avoid looking through
     //  all actors each time
-    level   = __().unreal.GetLevel();
-    kfGame  = __().unreal.GetKFGameType();
+    level   = __server().unreal.GetLevel();
+    kfGame  = __server().unreal.GetKFGameType();
     foreach level.AllActors(class'ShopVolume', nextShopVolume)
     {
         if (nextShopVolume == none) {
@@ -70,7 +70,7 @@ protected function Constructor()
 protected function Finalizer()
 {
     super.Finalizer();
-    _.unreal.OnTick(self).Disconnect();
+    _server.unreal.OnTick(self).Disconnect();
     _.memory.Free(lastSelectedTrader);
     _.memory.FreeMany(registeredTraders);
     lastSelectedTrader = none;
@@ -110,7 +110,7 @@ public function ETrader GetTrader(BaseText traderName)
 public function bool IsTradingActive()
 {
     local KFGameType kfGame;
-    kfGame = _.unreal.GetKFGameType();
+    kfGame = _server.unreal.GetKFGameType();
     return kfGame.IsInState('MatchInProgress') && !kfGame.bWaveInProgress;
 }
 
@@ -129,8 +129,8 @@ public function SetTradingStatus(bool makeActive)
         SetCountDown(0);
         return;
     }
-    kfGame      = _.unreal.GetKFGameType();
-    kfGameRI    = _.unreal.GetKFGameRI();
+    kfGame      = _server.unreal.GetKFGameType();
+    kfGameRI    = _server.unreal.GetKFGameRI();
     foreach kfGame.DynamicActors(class'KFMonster', nextZed)
     {
         if (nextZed == none)        continue;
@@ -163,7 +163,7 @@ public function SelectTrader(ETrader newSelection)
     }
     else
     {
-        kfGameRI = _.unreal.GetKFGameRI();
+        kfGameRI = _server.unreal.GetKFGameRI();
         if (kfGameRI != none) {
             kfGameRI.currentShop = none;
         }
@@ -190,13 +190,13 @@ public function SelectTrader(ETrader newSelection)
 
 public function int GetTradingInterval()
 {
-    return _.unreal.GetKFGameType().timeBetweenWaves;
+    return _server.unreal.GetKFGameType().timeBetweenWaves;
 }
 
 public function SetTradingInterval(int newTradingInterval)
 {
     if (newTradingInterval > 0) {
-        _.unreal.GetKFGameType().timeBetweenWaves = Max(newTradingInterval, 1);
+        _server.unreal.GetKFGameType().timeBetweenWaves = Max(newTradingInterval, 1);
     }
 }
 
@@ -205,7 +205,7 @@ public function int GetCountDown()
     if (!IsTradingActive()) {
         return 0;
     }
-    return _.unreal.GetKFGameType().waveCountDown;
+    return _server.unreal.GetKFGameType().waveCountDown;
 }
 
 public function SetCountDown(int newCountDownValue)
@@ -214,9 +214,9 @@ public function SetCountDown(int newCountDownValue)
     if (!IsTradingActive()) {
         return;
     }
-    kfGame = _.unreal.GetKFGameType();
+    kfGame = _server.unreal.GetKFGameType();
     if (kfGame.waveCountDown >= 5 && newCountDownValue < 5) {
-        _.unreal.GetKFGameRI().waveNumber = kfGame.waveNum;
+        _server.unreal.GetKFGameRI().waveNumber = kfGame.waveNum;
     }
     kfGame.waveCountDown = Max(newCountDownValue, 1);
     pausedCountDownValue = newCountDownValue;
@@ -237,7 +237,8 @@ public function SetCountDownPause(bool doPause)
         if (IsTradingActive()) {
             //  `+1` makes client counter stop closer to the moment
             //  `SetCountDownPause()` was called
-            pausedCountDownValue = _.unreal.GetKFGameType().waveCountDown + 1;
+            pausedCountDownValue =
+                _server.unreal.GetKFGameType().waveCountDown + 1;
         }
         else {
             //  If trading time isn't active, then we do not yet know how long
@@ -286,10 +287,10 @@ protected function Tick(float delta, float timeScaleCoefficient)
     if (isActiveNow && tradingCountDownPaused)
     {
         if (pausedCountDownValue >= 0) {
-            _.unreal.GetKFGameType().waveCountDown = pausedCountDownValue;
+            _server.unreal.GetKFGameType().waveCountDown = pausedCountDownValue;
         }
         else {
-            pausedCountDownValue = _.unreal.GetKFGameType().waveCountDown;
+            pausedCountDownValue = _server.unreal.GetKFGameType().waveCountDown;
         }
     }
 }
@@ -299,7 +300,7 @@ protected function CheckNativeTraderSwap()
 {
     local ETrader newSelectedTrader;
     if (    lastSelectedTrader == none
-        &&  _.unreal.GetKFGameRI().currentShop == none) {
+        &&  _server.unreal.GetKFGameRI().currentShop == none) {
         return;
     }
     if (lastSelectedTrader != none && lastSelectedTrader.IsSelected()) {

@@ -46,7 +46,7 @@ public final static /*unreal*/ function EKFUnknownPlaceable Wrap(
     }
     newReference = EKFUnknownPlaceable(
         __().memory.Allocate(class'EKFUnknownPlaceable'));
-    newReference.actorReference = __().unreal.ActorRef(actorInstance);
+    newReference.actorReference = __server().unreal.ActorRef(actorInstance);
     return newReference;
 }
 

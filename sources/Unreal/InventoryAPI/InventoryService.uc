@@ -37,7 +37,7 @@ public function Weapon AddWeaponWithAmmo(
     if (newWeapon == none)  return none;
     //  It is possible that `newWeapon` can get destroyed somewhere here,
     //  so add two more checks
-    _.unreal.GetKFGameType().WeaponSpawned(newWeapon);
+    _server.unreal.GetKFGameType().WeaponSpawned(newWeapon);
     if (newWeapon == none)  return none;
     newWeapon.GiveTo(pawn);
     if (newWeapon == none)  return none;

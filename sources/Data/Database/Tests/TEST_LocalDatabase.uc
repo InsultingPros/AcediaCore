@@ -99,7 +99,7 @@ protected static function int CountRecordsInPackage(string package)
     local int       counter;
     local DBRecord  nextRecord;
     local GameInfo  game;
-    game = __().unreal.GetGameType();
+    game = __server().unreal.GetGameType();
     foreach game.AllDataObjects(class'DBRecord', nextRecord, package) {
         counter += 1;
     }

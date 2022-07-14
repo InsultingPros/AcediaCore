@@ -47,7 +47,8 @@ public final static /*unreal*/ function EKFUnknownItem Wrap(
     if (inventoryInstance.class == class'KFMod.FlashlightAmmo') return none;
 
     newReference = EKFUnknownItem(__().memory.Allocate(class'EKFUnknownItem'));
-    newReference.inventoryReference = __().unreal.ActorRef(inventoryInstance);
+    newReference.inventoryReference =
+        __server().unreal.ActorRef(inventoryInstance);
     return newReference;
 }
 

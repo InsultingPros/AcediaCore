@@ -52,7 +52,7 @@ public static function StaticConstructor()
         __().memory.Allocate(class'InfoQueryHandler_OnQuery_Signal'));
     //  We cannot make an instance of an abstract `InfoQueryHandler` class,
     //  use created `ConsoleWriter` to connect
-    __().unreal.mutator.OnMutate(default.anchor).connect = HandleMutate;
+    __server().unreal.mutator.OnMutate(default.anchor).connect = HandleMutate;
 }
 
 /**

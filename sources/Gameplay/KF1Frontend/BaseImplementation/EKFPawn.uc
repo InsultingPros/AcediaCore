@@ -43,7 +43,7 @@ public final static /*unreal*/ function EKFPawn Wrap(Pawn pawnInstance)
         return none;
     }
     newReference = EKFPawn(__().memory.Allocate(class'EKFPawn'));
-    newReference.pawnReference = __().unreal.ActorRef(pawnInstance);
+    newReference.pawnReference = __server().unreal.ActorRef(pawnInstance);
     return newReference;
 }
 

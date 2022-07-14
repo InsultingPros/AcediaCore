@@ -38,8 +38,8 @@ protected function Finalizer()
     _.memory.Free(onMessageForSignal);
     onMessageSignal     = none;
     onMessageForSignal  = none;
-    _.unreal.broadcasts.OnHandleText(self).Disconnect();
-    _.unreal.broadcasts.OnHandleTextFor(self).Disconnect();
+    _server.unreal.broadcasts.OnHandleText(self).Disconnect();
+    _server.unreal.broadcasts.OnHandleTextFor(self).Disconnect();
     connectedToBroadcastAPI = false;
 }
 
@@ -49,8 +49,8 @@ private final function TryConnectingBroadcastSignals()
         return;
     }
     connectedToBroadcastAPI = true;
-    _.unreal.broadcasts.OnHandleText(self).connect = HandleText;
-    _.unreal.broadcasts.OnHandleTextFor(self).connect = HandleTextFor;
+    _server.unreal.broadcasts.OnHandleText(self).connect = HandleText;
+    _server.unreal.broadcasts.OnHandleTextFor(self).connect = HandleTextFor;
 }
 
 /**

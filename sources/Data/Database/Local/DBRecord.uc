@@ -258,6 +258,11 @@ public static final function Global __()
     return class'Global'.static.GetInstance();
 }
 
+public static final function ServerGlobal __server()
+{
+    return class'ServerGlobal'.static.GetInstance();
+}
+
 /**
  *  Method for creating a new `DBRecord` in a package named `dbPackageName`,
  *  picking an appropriate and unique name for it.
@@ -293,7 +298,7 @@ private final static function DBRecord NewRecordFor(string dbPackageName)
         if (recordCandidate != none) {
             continue;
         }
-        recordCandidate = __().unreal.GetGameType()
+        recordCandidate = __server().unreal.GetGameType()
             .CreateDataObject(class'DBRecord', nextName, dbPackageName);
         recordCandidate.package = dbPackageName;
         return recordCandidate;
@@ -319,7 +324,7 @@ private final static function DBRecord LoadRecordFor(
     string name,
     string package)
 {
-    return __().unreal.GetGameType()
+    return __server().unreal.GetGameType()
         .LoadDataObject(class'DBRecord', name, package);
 }
 
@@ -678,7 +683,7 @@ private final function SetItem(
             if (oldRecord != none) {
                 oldRecord.EmptySelf();
             }
-            __().unreal.GetGameType()
+            __server().unreal.GetGameType()
                 .DeleteDataObject(class'DBRecord', oldItem.s, package);
         }
     }
@@ -712,7 +717,7 @@ private final function RemoveItem(int index)
         if (oldRecord != none) {
             oldRecord.EmptySelf();
         }
-        __().unreal.GetGameType()
+        __server().unreal.GetGameType()
             .DeleteDataObject(class'DBRecord', oldItem.s, package);
     }
     storage.Remove(index, 1);
@@ -861,7 +866,7 @@ public final function EmptySelf()
         return;
     }
     lockEraseSelf = true;
-    game = __().unreal.GetGameType();
+    game = __server().unreal.GetGameType();
     for (i = 0; i < storage.length; i += 1)
     {
         if (storage[i].t != DBAT_Reference) continue;

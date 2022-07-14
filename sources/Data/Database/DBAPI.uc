@@ -262,7 +262,7 @@ private function EraseAllPackageData(BaseText packageToErase)
     if (packageName == "") {
         return;
     }
-    game = _.unreal.GetGameType();
+    game = _server.unreal.GetGameType();
     game.DeletePackage(packageName);
     //  Delete any leftover objects. This has to be done *after*
     //  `DeletePackage()` call, otherwise removed garbage can reappear.

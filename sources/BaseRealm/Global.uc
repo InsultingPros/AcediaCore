@@ -25,23 +25,21 @@ class Global extends Object;
 //  main instance in this variable's default value.
 var protected Global myself;
 
-var public RefAPI               ref;
-var public BoxAPI               box;
-var public LoggerAPI            logger;
-var public CollectionsAPI       collections;
-var public ServerUnrealAPI      unreal;
-var public TimeAPI              time;
-var public AliasesAPI           alias;
-var public TextAPI              text;
-var public MemoryAPI            memory;
-var public ConsoleAPI           console;
-var public ChatAPI              chat;
-var public ColorAPI             color;
-var public UserAPI              users;
-var public PlayersAPI           players;
-var public JSONAPI              json;
-var public DBAPI                db;
-var public AvariceAPI           avarice;
+var public RefAPI           ref;
+var public BoxAPI           box;
+var public LoggerAPI        logger;
+var public CollectionsAPI   collections;
+var public AliasesAPI       alias;
+var public TextAPI          text;
+var public MemoryAPI        memory;
+var public ConsoleAPI       console;
+var public ChatAPI          chat;
+var public ColorAPI         color;
+var public UserAPI          users;
+var public PlayersAPI       players;
+var public JSONAPI          json;
+var public DBAPI            db;
+var public AvariceAPI       avarice;
 
 var public AcediaEnvironment    environment;
 
@@ -69,8 +67,6 @@ protected function Initialize()
     logger      = LoggerAPI(memory.Allocate(class'LoggerAPI'));
     color       = ColorAPI(memory.Allocate(class'ColorAPI'));
     alias       = AliasesAPI(memory.Allocate(class'AliasesAPI'));
-    unreal      = ServerUnrealAPI(memory.Allocate(class'ServerUnrealAPI'));
-    time        = TimeAPI(memory.Allocate(class'TimeAPI'));
     console     = ConsoleAPI(memory.Allocate(class'ConsoleAPI'));
     chat        = ChatAPI(memory.Allocate(class'ChatAPI'));
     users       = UserAPI(memory.Allocate(class'UserAPI'));
@@ -88,9 +84,6 @@ public function DropCoreAPI()
     box         = none;
     text        = none;
     collections = none;
-    unreal.DropAPI();
-    unreal      = none;
-    time        = none;
     logger      = none;
     alias       = none;
     console     = none;

@@ -57,7 +57,7 @@ protected function Constructor()
 protected function Finalizer()
 {
     _.memory.Free(onElapsedSignal);
-    StopMe();   //  Disconnects from listening to `_.unreal.OnTick()`
+    StopMe();   //  Disconnects from listening to `_server.unreal.OnTick()`
 }
 
 /**
@@ -189,7 +189,7 @@ public final function Timer Start()
         return self;
     }
     if (!isTimerEnabled) {
-        _.unreal.OnTick(self).connect = Tick;
+        _server.unreal.OnTick(self).connect = Tick;
     }
     isTimerEnabled = true;
     totalElapsedTime = 0.0;
@@ -203,7 +203,7 @@ public final function Timer Start()
  */
 public final function Timer StopMe()
 {
-    _.unreal.OnTick(self).Disconnect();
+    _server.unreal.OnTick(self).Disconnect();
     isTimerEnabled = false;
     clearEventQueue = true;
     return self;

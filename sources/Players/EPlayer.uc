@@ -99,7 +99,7 @@ public final /* unreal */ function bool Initialize(
         idHash = none;
     }
     signalsReferences   = playerSignals;
-    controller          = _.unreal.ActorRef(initController);
+    controller          = _server.unreal.ActorRef(initController);
     return true;
 }
 

@@ -70,7 +70,7 @@ protected function OnDisabled()
         _.chat.OnMessage(self).Disconnect();
     }
     if (useMutateInput) {
-        _.unreal.mutator.OnMutate(self).Disconnect();
+        _server.unreal.mutator.OnMutate(self).Disconnect();
     }
     useChatInput    = false;
     useMutateInput  = false;
@@ -110,10 +110,10 @@ protected function SwapConfig(FeatureConfig config)
     {
         useMutateInput = newConfig.useMutateInput;
         if (newConfig.useMutateInput) {
-            _.unreal.mutator.OnMutate(self).connect = HandleMutate;
+            _server.unreal.mutator.OnMutate(self).connect = HandleMutate;
         }
         else {
-            _.unreal.mutator.OnMutate(self).Disconnect();
+            _server.unreal.mutator.OnMutate(self).Disconnect();
         }
     }
 }
@@ -143,7 +143,7 @@ public final static function EmergencyEnable()
     {
         default.emergencyEnabledMutate = true;
         feature.emergencyEnabledMutate = true;
-        __().unreal.mutator.OnMutate(feature).connect = HandleMutate;
+        __server().unreal.mutator.OnMutate(feature).connect = HandleMutate;
     }
 }
 

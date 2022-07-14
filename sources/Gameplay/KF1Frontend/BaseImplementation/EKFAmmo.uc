@@ -48,7 +48,8 @@ public final static /*unreal*/ function EKFAmmo Wrap(
     if (ammunitionInstance.class == class'KFMod.FlashlightAmmo')    return none;
 
     newReference = EKFAmmo(__().memory.Allocate(class'EKFAmmo'));
-    newReference.ammunitionReference = __().unreal.ActorRef(ammunitionInstance);
+    newReference.ammunitionReference =
+        __server().unreal.ActorRef(ammunitionInstance);
     return newReference;
 }
 
@@ -193,11 +194,12 @@ private function KFWeapon GetOwnerWeapon()
     {
         nextWeapon = KFWeapon(nextInventory);
         nextInventory = nextInventory.inventory;
-        if (_.unreal.inventory.GetAmmoClass(nextWeapon, 0) == ammunition.class)
+        if (    _server.unreal.inventory.GetAmmoClass(nextWeapon, 0)
+            ==  ammunition.class)
         {
             return nextWeapon;
         }
-        else if (   _.unreal.inventory.GetAmmoClass(nextWeapon, 1)
+        else if (   _server.unreal.inventory.GetAmmoClass(nextWeapon, 1)
                 ==  ammunition.class) {
             return nextWeapon;
         }
@@ -309,10 +311,12 @@ private function int GetLoadedAmmo()
     //      We can also quit as soon as we have found a single weapon that
     //  uses our ammo, since one weapon per ammo type is how Killing Floor
     //  does things.
-    if (_.unreal.inventory.GetAmmoClass(ownerWeapon, 0) == ammunition.class) {
+    if (    _server.unreal.inventory.GetAmmoClass(ownerWeapon, 0)
+        ==  ammunition.class)
+    {
         return ownerWeapon.magAmmoRemaining;
     }
-    else if (   _.unreal.inventory.GetAmmoClass(ownerWeapon, 1)
+    else if (   _server.unreal.inventory.GetAmmoClass(ownerWeapon, 1)
             ==  ammunition.class)
     {
         return 1; // M4 203

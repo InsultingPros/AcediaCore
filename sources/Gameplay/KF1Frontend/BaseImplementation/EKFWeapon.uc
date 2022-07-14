@@ -45,7 +45,7 @@ public final static /*unreal*/ function EKFWeapon Wrap(KFWeapon weaponInstance)
         return none;
     }
     newReference = EKFWeapon(__().memory.Allocate(class'EKFWeapon'));
-    newReference.weaponReference = __().unreal.ActorRef(weaponInstance);
+    newReference.weaponReference = __server().unreal.ActorRef(weaponInstance);
     return newReference;
 }
 
@@ -216,8 +216,8 @@ public function array<EAmmo> GetAvailableAmmo()
     if (kfWeapon == none)           return result;
     if (kfWeapon.owner == none)     return result;
 
-    ammoClass1 = _.unreal.inventory.GetAmmoClass(kfWeapon, 0);
-    ammoClass2 = _.unreal.inventory.GetAmmoClass(kfWeapon, 1);
+    ammoClass1 = _server.unreal.inventory.GetAmmoClass(kfWeapon, 0);
+    ammoClass2 = _server.unreal.inventory.GetAmmoClass(kfWeapon, 1);
     nextInventory = kfWeapon.owner.inventory;
     while (nextInventory != none)
     {

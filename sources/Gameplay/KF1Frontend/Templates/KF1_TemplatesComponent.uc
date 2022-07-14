@@ -88,7 +88,7 @@ private function BuildKFWeaponLists()
     local LevelInfo     level;
     local KFLevelRules  kfLevelRules;
     if (listsAreReady)          return;
-    level = _.unreal.GetLevel();
+    level = _server.unreal.GetLevel();
     if (level == none)          return;
     foreach level.DynamicActors(class'KFMod.KFLevelRules', kfLevelRules) break;
     if (kfLevelRules == none)   return;
