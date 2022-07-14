@@ -99,8 +99,7 @@ var private array<AcediaObjectPool> registeredPools;
  *  @param  classReference  Text representation of the class to return.
  *  @return Loaded class, corresponding to its name from `classReference`.
  */
-public final function class<Object> LoadClass(
-    BaseText classReference)
+public function class<Object> LoadClass(BaseText classReference)
 {
     if (classReference == none) {
         return none;
@@ -119,7 +118,7 @@ public final function class<Object> LoadClass(
  *  @param  classReference  `string` representation of the class to return.
  *  @return Loaded class, corresponding to its name from `classReference`.
  */
-public final function class<Object> LoadClass_S(string classReference)
+public function class<Object> LoadClass_S(string classReference)
 {
     return class<Object>(DynamicLoadObject(classReference, class'Class', true));
 }
@@ -146,7 +145,7 @@ public final function class<Object> LoadClass_S(string classReference)
  *      2. `classToAllocate` is abstract;
  *      3. `classToAllocate` is derived from `Actor`.
  */
-public final function Object Allocate(
+public function Object Allocate(
     class<Object>   classToAllocate,
     optional bool   forceNewInstance)
 {
@@ -228,7 +227,7 @@ public final function Object Allocate(
  *      2. `classToAllocate` is abstract;
  *      3. `classToAllocate` is derived from `Actor`.
  */
-public final function Object AllocateByReference(
+public function Object AllocateByReference(
     BaseText        refToClassToAllocate,
     optional bool   forceNewInstance)
 {
@@ -259,7 +258,7 @@ public final function Object AllocateByReference(
  *      2. `classToAllocate` is abstract;
  *      3. `classToAllocate` is derived from `Actor`.
  */
-public final function Object AllocateByReference_S(
+public function Object AllocateByReference_S(
     string          refToClassToAllocate,
     optional bool   forceNewInstance)
 {
@@ -277,7 +276,7 @@ public final function Object AllocateByReference_S(
  *
  *  @param  objectToRelease Object, which reference method needs to release.
  */
-public final function Free(Object objectToRelease)
+public function Free(Object objectToRelease)
 {
     //  TODO: this is an old code require while we still didn't get rid of
     //  services - replace it later, changing argument to `AcediaObject`
@@ -339,7 +338,7 @@ public final function Free(Object objectToRelease)
  *  @param  objectToRelease Array of objects, which reference method needs
  *      to release.
  */
-public final function FreeMany(array<Object> objectsToRelease)
+public function FreeMany(array<Object> objectsToRelease)
 {
     //  TODO: this is an old code require while we still didn't get rid of
     //  services - replace it later, changing argument to `AcediaObject`
@@ -368,7 +367,7 @@ public final function FreeMany(array<Object> objectsToRelease)
  *      failed. Garbage collection can only fail if no `LevelCore` was yet
  *      setup.
  */
-public final function bool CollectGarbage(optional bool keepAcediaPools)
+public function bool CollectGarbage(optional bool keepAcediaPools)
 {
     local LevelCore core;
 
@@ -397,7 +396,7 @@ public final function bool CollectGarbage(optional bool keepAcediaPools)
  *  @return `true` if `newPool` was registered,
  *      `false` if `newPool == none` or was already registered.
  */
-public final function bool RegisterNewPool(AcediaObjectPool newPool)
+public function bool RegisterNewPool(AcediaObjectPool newPool)
 {
     local int i;
 
@@ -416,8 +415,11 @@ public final function bool RegisterNewPool(AcediaObjectPool newPool)
     return true;
 }
 
-//  Forgets about all stored object references in registered object pools
-private final function DropPools()
+/**
+ *  Forgets about all stored (deallocated) object references in registered
+ *  object pools.
+ */
+protected function DropPools()
 {
     local int i;
     registeredPools = default.registeredPools;
