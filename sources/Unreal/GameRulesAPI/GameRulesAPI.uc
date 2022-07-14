@@ -20,7 +20,13 @@
  */
 class GameRulesAPI extends AcediaObject;
 
+//  Tracks if we have already tried to add our own `BroadcastHandler` to avoid
+//  wasting resources/spamming errors in the log about our inability to do so
+var private bool triedToInjectGameRules;
+
 var private LoggerAPI.Definition infoAddedGameRules;
+var private LoggerAPI.Definition errGameRulesForbidden;
+var private LoggerAPI.Definition errGameRulesUnknown;
 
 /**
  *  Called when game decides on a player's spawn point. If a `NavigationPoint`
@@ -272,7 +278,13 @@ private final function TryAddingGameRules(UnrealService service)
     local AcediaGameRules       gameRules;
     local GameRulesSideEffect   sideEffect;
 
-    if (AreAdded(class'AcediaGameRules')) {
+    if (triedToInjectGameRules) {
+        return;
+    }
+    triedToInjectGameRules = true;
+    if (!class'SideEffects'.default.allowAddingGameRules)
+    {
+        _.logger.Auto(errGameRulesForbidden);
         return;
     }
     gameRules = AcediaGameRules(Add(class'AcediaGameRules'));
@@ -285,6 +297,9 @@ private final function TryAddingGameRules(UnrealService service)
         _server.sideEffects.Add(sideEffect);
         _.memory.Free(sideEffect);
         _.logger.Auto(infoAddedGameRules);
+    }
+    else {
+        _.logger.Auto(errGameRulesUnknown);
     }
 }
 
@@ -390,5 +405,7 @@ public final function bool AreAdded(
 
 defaultproperties
 {
-    infoAddedGameRules = (l=LOG_Info,m="Added AcediaCore's `AcediaGameRules`.")
+    infoAddedGameRules      = (l=LOG_Info,m="Added AcediaCore's `AcediaGameRules`.")
+    errGameRulesForbidden   = (l=LOG_Error,m="Adding AcediaCore's `AcediaGameRules` is required, but forbidden by AcediaCore's settings: in file \"AcediaSystem.ini\", section [AcediaCore.SideEffects], variable `allowAddingGameRules`.")
+    errGameRulesUnknown     = (l=LOG_Error,m="Adding AcediaCore's `AcediaGameRules` failed to be injected with level for unknown reason.")
 }

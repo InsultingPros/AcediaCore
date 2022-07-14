@@ -22,40 +22,13 @@ class KF1_HealthComponent extends AHealthComponent
     config(AcediaSystem);
 
 var private bool connectedToGameRules;
-var private bool replacedDamageTypes;
-
-/**
- *      Unfortunately, thanks to the TWI's code, there's no way to catch events
- *  of when certain kinds of damage are dealt: from welder, bloat's bile and
- *  siren's scream. At least not without something drastic, like replacing game
- *  type class.
- *      As a workaround, Acedia can optionally replace bloat and siren damage
- *  type to at least catch damage dealt by zeds (as being dealt welder damage is
- *  pretty rare and insignificant). This change has several unfortunate
- *  side-effects:
- *      1. Potentially breaking mods that are looking for `DamTypeVomit` and
- *          `SirenScreamDamage` damage types specifically. Fixing this issue
- *          would require these mods to either also try and catch Acedia's
- *          replacements `AcediaCore.Dummy_DamTypeVomit` and
- *          `AcediaCore.Dummy_SirenScreamDamage` or to catch any child classes
- *          of `DamTypeVomit` and `SirenScreamDamage` (as Acedia's replacements
- *          are also their child classes).
- *      2. Breaking some achievements that rely on
- *          `KFSteamStatsAndAchievements`'s `KilledEnemyWithBloatAcid()` method
- *          being called. This is mostly dealt with by Acedia calling it
- *          manually. However it relies on killed pawn to have
- *          `lastDamagedByType` set to `DamTypeVomit`, which sometimes might not
- *          be the case. Achievements should still be obtainable.
- *      3. A lot of siren's visual damage effects code does direct checks for
- *          `SirenScreamDamage` class. These can also break, stopping working as
- *          intended.
- */
-var private const config bool replaceBloatAndSirenDamageTypes;
+var private bool triedToReplaceDamageTypes;
 
 var private const int TDAMAGE, TORIGINAL_DAMAGE, THIT_LOCATION, TMOMENTUM;
 
 var private LoggerAPI.Definition infoReplacingDamageTypes, errNoServerLevelCore;
 var private LoggerAPI.Definition infoRestoringReplacingDamageTypes;
+var private LoggerAPI.Definition warnReplacingDamageTypesForbidden;
 
 protected function Finalizer()
 {
@@ -65,11 +38,6 @@ protected function Finalizer()
         _.unreal.gameRules.OnNetDamage(self).Disconnect();
         _.unreal.gameRules.OnScoreKill(self).Disconnect();
         connectedToGameRules = false;
-    }
-    if (replaceBloatAndSirenDamageTypes)
-    {
-        RestoreDamageTypes();
-        replacedDamageTypes = false;
     }
 }
 
@@ -95,10 +63,15 @@ private final function TryReplaceDamageTypes()
 {
     local LevelCore core;
 
-    if (!replaceBloatAndSirenDamageTypes)   return;
-    if (replacedDamageTypes)                return;
-
-    replacedDamageTypes = true;
+    if (triedToReplaceDamageTypes) {
+        return;
+    }
+    triedToReplaceDamageTypes = true;
+    if (!class'SideEffects'.default.allowReplacingDamageTypes)
+    {
+        _.logger.Auto(warnReplacingDamageTypesForbidden);
+        return;
+    }
     _.logger.Auto(infoReplacingDamageTypes);
     core = class'ServerLevelCore'.static.GetInstance();
     if (core != none)
@@ -153,7 +126,6 @@ private final function RestoreDamageTypes()
     class'ZombieSiren_XMas'.default.screamDamageType = class'SirenScreamDamage';
     class'ZombieSiren_CIRCUS'.default.screamDamageType =
         class'SirenScreamDamage';
-    replacedDamageTypes = false;
 }
 
 private function int OnNetDamageHandler(
@@ -248,7 +220,6 @@ private function UpdateBileAchievement(Controller killer, Controller killed)
 
 defaultproperties
 {
-    replaceBloatAndSirenDamageTypes = true
     TDAMAGE             = 0
     stringConstants(0) = "damage"
     TORIGINAL_DAMAGE    = 1
@@ -257,7 +228,8 @@ defaultproperties
     stringConstants(2) = "hitLocation"
     TMOMENTUM           = 3
     stringConstants(3) = "momentum"
-    infoReplacingDamageTypes            = (l=LOG_Info,m="Replacing bloat's and siren's damage types with dummy ones.")
-    infoRestoringReplacingDamageTypes   = (l=LOG_Info,m="Restoring bloat and siren's damage types to their original values.")
+    infoReplacingDamageTypes            = (l=LOG_Info,m="Replaced bloat's and siren's damage types with dummy ones.")
+    infoRestoringReplacingDamageTypes   = (l=LOG_Info,m="Restored bloat and siren's damage types to their original values.")
     errNoServerLevelCore                = (l=LOG_Error,m="Server level core is missing. Either this isn't a server or Acedia was wrongly initialized. Bloat and siren damage type will not be replaced.")
+    warnReplacingDamageTypesForbidden   = (l=LOG_Warning,m="`OnDamage()` signal is used, but might not work properly because bloat and siren damage type replacement is forbidden by AcediaCore's settings: in file \"AcediaSystem.ini\", section [AcediaCore.SideEffects], variable `allowReplacingDamageTypes`.")
 }

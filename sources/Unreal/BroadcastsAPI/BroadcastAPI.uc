@@ -20,6 +20,10 @@
  */
 class BroadcastAPI extends AcediaObject;
 
+//  Tracks if we have already tried to add our own `BroadcastHandler` to avoid
+//  wasting resources/spamming errors in the log about our inability to do so
+var private bool triedToInjectBroadcastHandler;
+
 /**
  *  Defines ways to add a new `BroadcastHandler` into the `GameInfo`'s
  *  `BroadcastHandler` linked list.
@@ -58,6 +62,8 @@ struct LocalizedMessage
 };
 
 var private LoggerAPI.Definition infoInjectedBroadcastEventsObserver;
+var private LoggerAPI.Definition errBroadcasthandlerForbidden;
+var private LoggerAPI.Definition errBroadcasthandlerUnknown;
 
 /**
  *  Called before text message is sent to any player, during the check for
@@ -277,10 +283,11 @@ private final function TryInjectBroadcastHandler(UnrealService service)
     local BroadcastSideEffect       sideEffect;
     local BroadcastEventsObserver   broadcastObserver;
 
-    if (IsAdded(class'BroadcastEventsObserver')) {
+    if (triedToInjectBroadcasthandler) {
         return;
     }
-    usedLevel = class'BroadcastEventsObserver'.default.usedInjectionLevel;
+    triedToInjectBroadcasthandler = true;
+    usedLevel = class'SideEffects'.default.broadcastHandlerInjectionLevel;
     broadcastObserver = BroadcastEventsObserver(_.unreal.broadcasts.Add(
         class'BroadcastEventsObserver', usedLevel));
     if (broadcastObserver != none)
@@ -293,6 +300,17 @@ private final function TryInjectBroadcastHandler(UnrealService service)
         _.memory.Free(sideEffect);
         _.logger
             .Auto(infoInjectedBroadcastEventsObserver)
+            .Arg(InjectionLevelIntoText(usedLevel));
+        return;
+    }
+    //  We are here if we have failed
+    if (usedLevel == BHIJ_None) {
+        _.logger.Auto(errBroadcastHandlerForbidden);
+    }
+    else
+    {
+        _.logger
+            .Auto(errBroadcastHandlerUnknown)
             .Arg(InjectionLevelIntoText(usedLevel));
     }
 }
@@ -448,4 +466,6 @@ public final function bool IsAdded(class<BroadcastHandler> BHClassToFind)
 defaultproperties
 {
     infoInjectedBroadcastEventsObserver = (l=LOG_Info,m="Injected AcediaCore's `BroadcastEventsObserver` with level `%1`.")
+    errBroadcastHandlerForbidden        = (l=LOG_Error,m="Injected AcediaCore's `BroadcastEventsObserver` is required, but forbidden by AcediaCore's settings: in file \"AcediaSystem.ini\", section [AcediaCore.SideEffects], variable `broadcastHandlerInjectionLevel`.")
+    errBroadcastHandlerUnknown          = (l=LOG_Error,m="Injected AcediaCore's `BroadcastEventsObserver` failed to be injected with level `%1` for unknown reason.")
 }

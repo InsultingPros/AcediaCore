@@ -30,7 +30,7 @@ class BroadcastEventsObserver extends Engine.BroadcastHandler
 //      To alleviate this issue Acedia allows server admins to control how it's
 //  `BroadcastHandler` is injected. Do note however that anything other than
 //  `BHIJ_Root` can lead to issues with Acedia's features.
-var public config const BroadcastAPI.InjectionLevel usedInjectionLevel;
+var private BroadcastAPI.InjectionLevel usedInjectionLevel;
 
 /**
  *      To understand how what our broadcast handler does, let us first explain
@@ -206,6 +206,8 @@ var private Broadcast_OnHandleTextFor_Signal        onHandleTextFor;
 
 public final function Initialize(UnrealService service)
 {
+    usedInjectionLevel =
+        class'SideEffects'.default.broadcastHandlerInjectionLevel;
     if (usedInjectionLevel != BHIJ_Root) {
         Disable('Tick');
     }
@@ -475,9 +477,7 @@ event Tick(float delta)
     ResetTracking();
 }
 
-//  senders, out for handletext
 defaultproperties
 {
-    blockAllowsBroadcast    = false
-    usedInjectionLevel      = BHIJ_Root
+    blockAllowsBroadcast = false
 }
