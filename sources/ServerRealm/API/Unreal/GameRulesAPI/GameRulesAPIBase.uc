@@ -18,7 +18,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class GameRulesAPIBase extends AcediaObject;
+class GameRulesAPIBase extends AcediaObject
+    abstract;
 
 /**
  *  Called when game decides on a player's spawn point. If a `NavigationPoint`

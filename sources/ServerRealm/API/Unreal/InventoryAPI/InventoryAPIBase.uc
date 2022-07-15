@@ -20,7 +20,8 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class InventoryAPIBase extends AcediaObject
-    config(AcediaSystem);
+    config(AcediaSystem)
+    abstract;
 
 /**
  *  Describes a single-dual weapons class pair.

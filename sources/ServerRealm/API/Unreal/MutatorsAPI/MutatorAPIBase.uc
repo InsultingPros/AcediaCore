@@ -18,7 +18,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class MutatorAPIBase extends AcediaObject;
+class MutatorAPIBase extends AcediaObject
+    abstract;
 
 /**
  *      Called whenever mutators (Acedia's mutator) is asked to check whether
