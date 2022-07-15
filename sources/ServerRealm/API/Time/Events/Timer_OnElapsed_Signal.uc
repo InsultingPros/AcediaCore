@@ -19,7 +19,7 @@
  */
 class Timer_OnElapsed_Signal extends Signal;
 
-public final function Emit(Timer source)
+public function Emit(Timer source)
 {
     local Slot nextSlot;
     StartIterating();

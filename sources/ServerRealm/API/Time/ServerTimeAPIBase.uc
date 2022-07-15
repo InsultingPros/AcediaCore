@@ -1,6 +1,6 @@
 /**
  *  API that provides time-related methods.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -17,7 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class TimeAPI extends AcediaObject;
+class ServerTimeAPIBase extends AcediaObject
+    abstract;
 
 /**
  *  Creates new `Timer`. Does not start it.
@@ -30,14 +31,9 @@ class TimeAPI extends AcediaObject;
  *  @return `Timer`, configured to emit `OnElapsed()` every `interval` seconds.
  *      Not started. Guaranteed to be not `none`.
  */
-public final function Timer NewTimer(
+public function Timer NewTimer(
     optional float  interval,
-    optional bool   autoReset)
-{
-    return Timer(_.memory.Allocate(class'Timer'))
-        .SetInterval(interval)
-        .SetAutoReset(autoReset);
-}
+    optional bool   autoReset);
 
 /**
  *  Creates and starts new `Timer`.
@@ -50,13 +46,7 @@ public final function Timer NewTimer(
  *  @return `Timer`, configured to emit `OnElapsed()` every `interval` seconds.
  *      Guaranteed to be not `none`.
  */
-public final function Timer StartTimer(float interval, optional bool autoReset)
-{
-    return Timer(_.memory.Allocate(class'Timer'))
-        .SetInterval(interval)
-        .SetAutoReset(autoReset)
-        .Start();
-}
+public function Timer StartTimer(float interval, optional bool autoReset);
 
 /**
  *  Creates new `RealTimer`. Does not start it.
@@ -69,15 +59,9 @@ public final function Timer StartTimer(float interval, optional bool autoReset)
  *  @return `RealTimer`, configured to emit `OnElapsed()` every `interval`
  *      seconds. Not started. Guaranteed to be not `none`.
  */
-public final function RealTimer NewRealTimer(
+public function RealTimer NewRealTimer(
     optional float  interval,
-    optional bool   autoReset)
-{
-    local RealTimer newTimer;
-    newTimer = RealTimer(_.memory.Allocate(class'RealTimer'));
-    newTimer.SetInterval(interval).SetAutoReset(autoReset);
-    return newTimer;
-}
+    optional bool   autoReset);
 
 /**
  *  Creates and starts new `RealTimer`.
@@ -91,17 +75,9 @@ public final function RealTimer NewRealTimer(
  *  @return `RealTimer`, configured to emit `OnElapsed()` every `interval`
  *      seconds. Guaranteed to be not `none`.
  */
-public final function RealTimer StartRealTimer(
+public function RealTimer StartRealTimer(
     float           interval,
-    optional bool   autoReset)
-{
-    local RealTimer newTimer;
-    newTimer = RealTimer(_.memory.Allocate(class'RealTimer'));
-    newTimer.SetInterval(interval)
-        .SetAutoReset(autoReset)
-        .Start();
-    return newTimer;
-}
+    optional bool   autoReset);
 
 defaultproperties
 {

@@ -25,9 +25,9 @@ class ServerGlobal extends CoreGlobal;
 //  main instance in this variable's default value.
 var protected ServerGlobal myself;
 
-var public KFFrontend       kf;
-var public ServerUnrealAPI  unreal;
-var public TimeAPI          time;
+var public KFFrontend           kf;
+var public ServerUnrealAPIBase  unreal;
+var public ServerTimeAPIBase    time;
 
 var private LoggerAPI.Definition fatBadAdapterClass;
 
@@ -67,7 +67,8 @@ protected function Initialize()
     unreal  = ServerUnrealAPI(
         _.memory.Allocate(serverAdapterClass.default.serverUnrealAPIClass));
     unreal.Initialize(serverAdapterClass);
-    time    = TimeAPI(_.memory.Allocate(class'TimeAPI'));
+    time    = ServerTimeAPI(
+        _.memory.Allocate(serverAdapterClass.default.serverTimeAPIClass));
     kf      = KFFrontend(_.memory.Allocate(class'KF1_Frontend'));
 }
 
