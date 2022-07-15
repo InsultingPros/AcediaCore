@@ -1,7 +1,6 @@
 /**
- *  Base class for objects that will provide an access to a Acedia's client- and
- *  server-specific functionality by giving a reference to this object to all
- *  Acedia's objects and actors, emulating a global API namespace.
+ *  Base class for describing what API Acedia should load into its client- and
+ *  server- `...Global`s objects.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -22,9 +21,23 @@
 class AcediaAdapter extends AcediaObject
     abstract;
 
-var public const class<SideEffectAPIBase>  sideEffectAPIClass;
+/**
+ *  # `AcediaAdapter`
+ *
+ *      Acedia provides a set of APIs through `...Global`s objects
+ *  `_` (for everything), `_server` (for servers) and `_client` (for clients).
+ *  The functionality in common API set `_` is hardcoded, but Acedia allows
+ *  users to provide their own implementation of `_server`'s and/or `_client`'s
+ *  functionality to extend them, offer compatibility with other mods, etc..
+ *  This replacement is done through `AcediaAdapter` classes that serve as
+ *  a collection of API classes to be used in `_server` or `_client`.
+ *  All one needs to do to use a different set of server/client APIs is to
+ *  specify desired `AcediaAdapter` before loading server/client core.
+ */
+
+var public const class<SideEffectAPIBase> sideEffectAPIClass;
 
 defaultproperties
 {
-    SideEffectAPIClass = class'SideEffectAPI'
+    sideEffectAPIClass = class'SideEffectAPI'
 }

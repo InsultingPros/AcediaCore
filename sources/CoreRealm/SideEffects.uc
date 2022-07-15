@@ -20,7 +20,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class SideEffects extends AcediaObject
-    dependson(BroadcastAPI)
+    dependson(BroadcastAPIBase)
     abstract
     config(AcediaSystem);
 
@@ -95,7 +95,7 @@ var public const config bool allowReplacingDamageTypes;
  *  Acedia and if you do not have a reason to forbid that (for example, for mod
  *  compatibility reasons), you should set this value at `BHIJ_Root`.
  */
-var public const config BroadcastAPI.InjectionLevel broadcastHandlerInjectionLevel;
+var public const config BroadcastAPIBase.InjectionLevel broadcastHandlerInjectionLevel;
 
 defaultproperties
 {

@@ -36,7 +36,7 @@ class SideEffect extends AcediaObject
  *      What needs to be considered a side effect is loosely defined and they
  *  are simply a tool to inform others that something they might not have
  *  expected has happened, that can possibly break other (their) mods.
- *      AcediaCore, for example, tried to leave a minimal footpring, avoiding
+ *      AcediaCore, for example, tried to leave a minimal footprint, avoiding
  *  making any changes to the game classes unless requested, but it still has to
  *  do some changes (adding `GameRules`, replacing damage types for some zeds,
  *  etc.) and `SideEffect`s can be used to document these changes. They can be
@@ -49,7 +49,7 @@ class SideEffect extends AcediaObject
  *  this is not a side effect. Such mods are likely not going to have to specify
  *  any side effects whatsoever.
  *
- *  ## Implementiong your own `SideEffect`s
+ *  ## Implementing your own `SideEffect`s
  *
  *      Simply make a non-abstract child class based on `SideEffect`, create its
  *  instance filled with necessary data and register it in `SideEffectAPI` once
@@ -74,7 +74,7 @@ var protected Text sideEffectStatus;
  *  be able to tell what this `SideEffect` is generally about from the glance at
  *  this name.
  *
- *  Guideline is for this value to not exceed `80` cahracters, but this is not
+ *  Guideline is for this value to not exceed `80` characters, but this is not
  *  enforced.
  *
  *  Must not be `none`.

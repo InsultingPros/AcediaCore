@@ -29,6 +29,8 @@ var public KFFrontend       kf;
 var public ServerUnrealAPI  unreal;
 var public TimeAPI          time;
 
+var private LoggerAPI.Definition fatBadAdapterClass;
+
 public final static function ServerGlobal GetInstance()
 {
     if (default.myself == none)
@@ -42,17 +44,31 @@ public final static function ServerGlobal GetInstance()
 
 protected function Initialize()
 {
-    local Global _;
+    local Global                        _;
+    local class<ServerAcediaAdapter>    serverAdapterClass;
 
     if (initialized) {
         return;
     }
     super.Initialize();
+    initialized = true;
+    serverAdapterClass = class<ServerAcediaAdapter>(adapterClass);
+    if (adapterClass != none && serverAdapterClass == none)
+    {
+        class'Global'.static.GetInstance().logger
+            .Auto(fatBadAdapterClass)
+            .ArgClass(self.class);
+        return;
+    }
+    if (serverAdapterClass == none) {
+        return;
+    }
     _ = class'Global'.static.GetInstance();
-    unreal  = ServerUnrealAPI(_.memory.Allocate(class'ServerUnrealAPI'));
+    unreal  = ServerUnrealAPI(
+        _.memory.Allocate(serverAdapterClass.default.serverUnrealAPIClass));
+    unreal.Initialize(serverAdapterClass);
     time    = TimeAPI(_.memory.Allocate(class'TimeAPI'));
     kf      = KFFrontend(_.memory.Allocate(class'KF1_Frontend'));
-    initialized = true;
 }
 
 public final function bool ConnectServerLevelCore()
@@ -63,9 +79,9 @@ public final function bool ConnectServerLevelCore()
         return false;
     }
     Initialize();
-    _ = class'Global'.static.GetInstance();
     if (class'SideEffects'.default.allowHookingIntoMutate)
     {
+        _ = class'Global'.static.GetInstance();
         class'InfoQueryHandler'.static.StaticConstructor();
         unreal.mutator.OnMutate(
             ServiceAnchor(_.memory.Allocate(class'ServiceAnchor')))
@@ -85,4 +101,6 @@ private final function EnableCommandsFeature(
 
 defaultproperties
 {
+    adapterClass = class'ServerAcediaAdapter'
+    fatBadAdapterClass = (l=LOG_Fatal,m="non-`ServerAcediaAdapter` class was specified as an adapter for `%1` level core class. This should not have happened. AcediaCore cannot properly function.")
 }
