@@ -28,8 +28,8 @@ protected function BuildData(CommandDataBuilder builder)
 
 protected function Executed(Command.CallData result, EPlayer callerPlayer)
 {
-    local Parser            parser;
-    local AssociativeArray  root;
+    local Parser    parser;
+    local HashTable root;
     /*local int i;
     local WeaponLocker lol;
     local array<WeaponLocker> aaa;
@@ -63,7 +63,7 @@ protected function Executed(Command.CallData result, EPlayer callerPlayer)
         }
     }*/
     parser = _.text.ParseString("{\"innerObject\":{\"my_bool\":true,\"array\":[\"Engine.Actor\",false,null,{\"something \\\"here\\\"\":\"yes\",\"maybe\":0.003},56.6],\"one more\":{\"nope\":324532,\"whatever\":false,\"o rly?\":\"ya rly\"},\"my_int\":-9823452},\"some_var\":-7.32,\"another_var\":\"aye!\"}");
-    root = _.json.ParseObjectWith(parser);
+    root = _.json.ParseHashTableWith(parser);
     callerPlayer.BorrowConsole().WriteLine(_.json.PrettyPrint(root));
 }
 

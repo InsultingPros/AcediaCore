@@ -29,11 +29,11 @@ var protected class<CollectionIterator> iteratorClass;
  *
  *      This method must return an item that `key` refers to with it's
  *  textual content (not as an object itself).
- *      For example, `DynamicArray` parses it into unsigned number, while
- *  `AssociativeArray` uses it as a key directly.
+ *      For example, `ArrayList` parses it into unsigned number, while
+ *  `HashTable` uses it as a key directly.
  *
  *      There is no requirement that all stored values must be reachable by
- *  this method (i.e. `AssociativeArray` only lets you access values with
+ *  this method (i.e. `HashTable` only lets you access values with
  *  `Text` keys).
  */
 protected function AcediaObject GetByText(BaseText key);
@@ -64,28 +64,18 @@ public final function CollectionIterator Iterate()
 /**
  *  Completely clears caller `Collections` of all stored entries,
  *  deallocating any stored managed values.
- *
- *  @param  deallocateKeys  Setting this to `true` will force this method to
- *      also deallocate all keys from the caller `Collection`, if it uses them.
- *      If this parameter is set to `true`, then `Empty()` call will also be
- *      made recursively for all stored `Collection`, also causing them to
- *      deallocate their keys.
- *      For Acedia keys are only used by `AssociativeArray`.
- *      Since we do not record whether `Collection` manages keys like it
- *      does values - all keys will be deallocated, so use this parameter with
- *      caution.
  */
-public function Empty(optional bool deallocateKeys) {}
+public function Empty() {}
 
 /**
  *  Returns stored `AcediaObject` from the caller storage
  *  (or from it's sub-storages) via given `JSONPointer` path.
  *
  *      Acedia provides two collections:
- *      1. `DynamicArray` is treated as a JSON array in the context of
+ *      1. `ArrayList` is treated as a JSON array in the context of
  *          JSON pointers and passed variable names are treated as a `Text`
  *          representation of it's integer indices;
- *      2. `AssociativeArray` is treated as a JSON object in the context of
+ *      2. `HashTable` is treated as a JSON object in the context of
  *          JSON pointers and passed variable names are treated as it's
  *          `Text` keys (to refer to an element with an empty key, use "/",
  *          since "" is treated as a JSON pointer and refers to
@@ -95,8 +85,7 @@ public function Empty(optional bool deallocateKeys) {}
  *  appropriately defining `GetByText()` protected method.
  *
  *      There is no requirement that all stored values must be reachable by
- *  this method (i.e. `AssociativeArray` only lets you access values with
- *  `Text` keys).
+ *  this method (i.e. `HashTable` only lets you access values with `Text` keys).
  *
  *  @param  jsonPointer Path, given by a JSON pointer.
  *  @return An item `jsonPointerAsText` is referring to (according to the above
@@ -106,16 +95,23 @@ public final function AcediaObject GetItemByJSON(JSONPointer jsonPointer)
 {
     local int           segmentIndex;
     local Text          nextSegment;
-    local AcediaObject  result;
-    local Collection    nextCollection;
+    local AcediaObject  result, nextObject;
+    local Collection    prevCollection, nextCollection;
     if (jsonPointer == none)            return none;
     if (jsonPointer.GetLength() < 1)    return self;
 
     nextCollection = self;
+    nextCollection.NewRef();
     while (segmentIndex < jsonPointer.GetLength() - 1)
     {
         nextSegment = jsonPointer.GetComponent(segmentIndex);
-        nextCollection = Collection(nextCollection.GetByText(nextSegment));
+        prevCollection = nextCollection;
+        nextObject = nextCollection.GetByText(nextSegment);
+        nextCollection = Collection(nextObject);
+        _.memory.Free(prevCollection);
+        if (nextCollection == none) {
+            _.memory.Free(nextObject);
+        }
         _.memory.Free(nextSegment);
         if (nextCollection == none) {
             break;
@@ -147,10 +143,10 @@ public final function AcediaObject GetItemByJSON(JSONPointer jsonPointer)
  *  collection itself).
  *
  *      Acedia provides two collections:
- *      1. `DynamicArray` is treated as a JSON array in the context of
+ *      1. `ArrayList` is treated as a JSON array in the context of
  *          JSON pointers and passed variable names are treated as a `Text`
  *          representation of it's integer indices;
- *      2. `AssociativeArray` is treated as a JSON object in the context of
+ *      2. `HashTable` is treated as a JSON object in the context of
  *          JSON pointers and passed variable names are treated as it's
  *          `Text` keys (to refer to an element with an empty key, use "/",
  *          since "" is treated as a JSON pointer and refers to
@@ -160,7 +156,7 @@ public final function AcediaObject GetItemByJSON(JSONPointer jsonPointer)
  *  appropriately defining `GetByText()` protected method.
  *
  *      There is no requirement that all stored values must be reachable by
- *  this method (i.e. `AssociativeArray` only lets you access values with
+ *  this method (i.e. `HashTable` only lets you access values with
  *  `Text` keys).
  *
  *  @param  jsonPointer Path, given by a JSON pointer.
@@ -200,22 +196,26 @@ public final function bool GetBoolBy(
     BaseText        jsonPointerAsText,
     optional bool   defaultValue)
 {
-    local AcediaObject  result;
+    local bool          result;
+    local AcediaObject  resultObject;
     local BoolBox       asBox;
     local BoolRef       asRef;
-    result = GetItemBy(jsonPointerAsText);
-    if (result == none) {
+
+    resultObject = GetItemBy(jsonPointerAsText);
+    if (resultObject == none) {
         return defaultValue;
     }
-    asBox = BoolBox(result);
+    result = defaultValue;
+    asBox = BoolBox(resultObject);
     if (asBox != none) {
-        return asBox.Get();
+        result = asBox.Get();
     }
-    asRef = BoolRef(result);
+    asRef = BoolRef(resultObject);
     if (asRef != none) {
-        return asRef.Get();
+        result = asRef.Get();
     }
-    return defaultValue;
+    _.memory.Free(resultObject);
+    return result;
 }
 
 /**
@@ -238,22 +238,26 @@ public final function byte GetByteBy(
     BaseText        jsonPointerAsText,
     optional byte   defaultValue)
 {
-    local AcediaObject  result;
+    local byte          result;
+    local AcediaObject  resultObject;
     local ByteBox       asBox;
     local ByteRef       asRef;
-    result = GetItemBy(jsonPointerAsText);
-    if (result == none) {
+
+    resultObject = GetItemBy(jsonPointerAsText);
+    if (resultObject == none) {
         return defaultValue;
     }
-    asBox = ByteBox(result);
+    result = defaultValue;
+    asBox = ByteBox(resultObject);
     if (asBox != none) {
-        return asBox.Get();
+        result = asBox.Get();
     }
-    asRef = ByteRef(result);
+    asRef = ByteRef(resultObject);
     if (asRef != none) {
-        return asRef.Get();
+        result = asRef.Get();
     }
-    return defaultValue;
+    _.memory.Free(resultObject);
+    return result;
 }
 
 /**
@@ -276,22 +280,26 @@ public final function int GetIntBy(
     BaseText        jsonPointerAsText,
     optional int    defaultValue)
 {
-    local AcediaObject  result;
+    local int           result;
+    local AcediaObject  resultObject;
     local IntBox        asBox;
     local IntRef        asRef;
-    result = GetItemBy(jsonPointerAsText);
-    if (result == none) {
+
+    resultObject = GetItemBy(jsonPointerAsText);
+    if (resultObject == none) {
         return defaultValue;
     }
-    asBox = IntBox(result);
+    result = defaultValue;
+    asBox = IntBox(resultObject);
     if (asBox != none) {
-        return asBox.Get();
+        result = asBox.Get();
     }
-    asRef = IntRef(result);
+    asRef = IntRef(resultObject);
     if (asRef != none) {
-        return asRef.Get();
+        result = asRef.Get();
     }
-    return defaultValue;
+    _.memory.Free(resultObject);
+    return result;
 }
 
 /**
@@ -314,22 +322,26 @@ public final function float GetFloatBy(
     BaseText        jsonPointerAsText,
     optional float  defaultValue)
 {
-    local AcediaObject  result;
+    local float         result;
+    local AcediaObject  resultObject;
     local FloatBox      asBox;
     local FloatRef      asRef;
-    result = GetItemBy(jsonPointerAsText);
-    if (result == none) {
+
+    resultObject = GetItemBy(jsonPointerAsText);
+    if (resultObject == none) {
         return defaultValue;
     }
-    asBox = FloatBox(result);
+    result = defaultValue;
+    asBox = FloatBox(resultObject);
     if (asBox != none) {
-        return asBox.Get();
+        result = asBox.Get();
     }
-    asRef = FloatRef(result);
+    asRef = FloatRef(resultObject);
     if (asRef != none) {
-        return asRef.Get();
+        result = asRef.Get();
     }
-    return defaultValue;
+    _.memory.Free(resultObject);
+    return result;
 }
 
 /**
@@ -352,22 +364,26 @@ public final function Vector GetVectorBy(
     BaseText        jsonPointerAsText,
     optional Vector defaultValue)
 {
-    local AcediaObject  result;
+    local Vector        result;
+    local AcediaObject  resultObject;
     local VectorBox     asBox;
     local VectorRef     asRef;
-    result = GetItemBy(jsonPointerAsText);
-    if (result == none) {
+
+    resultObject = GetItemBy(jsonPointerAsText);
+    if (resultObject == none) {
         return defaultValue;
     }
-    asBox = VectorBox(result);
+    result = defaultValue;
+    asBox = VectorBox(resultObject);
     if (asBox != none) {
-        return asBox.Get();
+        result = asBox.Get();
     }
-    asRef = VectorRef(result);
+    asRef = VectorRef(resultObject);
     if (asRef != none) {
-        return asRef.Get();
+        result = asRef.Get();
     }
-    return defaultValue;
+    _.memory.Free(resultObject);
+    return result;
 }
 
 /**
@@ -392,14 +408,16 @@ public final function string GetStringBy(
 {
     local AcediaObject  result;
     local Basetext      asText;
+
     result = GetItemBy(jsonPointerAsText);
     if (result == none) {
         return defaultValue;
     }
     asText = BaseText(result);
     if (asText != none) {
-        return asText.ToString();
+        return _.text.ToString(asText);
     }
+    _.memory.Free(result);
     return defaultValue;
 }
 
@@ -425,14 +443,16 @@ public final function string GetFormattedStringBy(
 {
     local AcediaObject  result;
     local Basetext      asText;
+
     result = GetItemBy(jsonPointerAsText);
     if (result == none) {
         return defaultValue;
     }
     asText = BaseText(result);
     if (asText != none) {
-        return asText.ToFormattedString();
+        return _.text.ToFormattedString(asText);
     }
+    _.memory.Free(result);
     return defaultValue;
 }
 
@@ -451,46 +471,16 @@ public final function string GetFormattedStringBy(
  */
 public final function Text GetTextBy(BaseText jsonPointerAsText)
 {
-    return Text(GetItemBy(jsonPointerAsText));
-}
+    local Text          asText;
+    local AcediaObject  result;
 
-/**
- *  Returns an `AssociativeArray` value stored (in the caller `Collection` or
- *  one of it's sub-collections) pointed by
- *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
- *  See `GetItemBy()` for more information.
- *
- *  Referred value must be stored as `AssociativeArray`
- *  (or one of it's sub-classes) for this method to work.
- *
- *  @param  jsonPointerAsText   Description of a path to the
- *      `AssociativeArray` value.
- *  @return `AssociativeArray` value, stored at `jsonPointerAsText` or
- *      `none` if it is missing or has a different type.
- */
-public final function AssociativeArray GetAssociativeArrayBy(
-    BaseText jsonPointerAsText)
-{
-    return AssociativeArray(GetItemBy(jsonPointerAsText));
-}
-
-/**
- *  Returns an `DynamicArray` value stored (in the caller `Collection` or
- *  one of it's sub-collections) pointed by
- *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
- *  See `GetItemBy()` for more information.
- *
- *  Referred value must be stored as `DynamicArray`
- *  (or one of it's sub-classes) for this method to work.
- *
- *  @param  jsonPointerAsText   Description of a path to the
- *      `DynamicArray` value.
- *  @return `DynamicArray` value, stored at `jsonPointerAsText` or
- *      `none` if it is missing or has a different type.
- */
-public final function DynamicArray GetDynamicArrayBy(BaseText jsonPointerAsText)
-{
-    return DynamicArray(GetItemBy(jsonPointerAsText));
+    result = GetItemBy(jsonPointerAsText);
+    asText = Text(result);
+    if (asText != none) {
+        return asText;
+    }
+    _.memory.Free(result);
+    return none;
 }
 
 /**
@@ -509,7 +499,16 @@ public final function DynamicArray GetDynamicArrayBy(BaseText jsonPointerAsText)
 public final function HashTable GetHashTableBy(
     BaseText jsonPointerAsText)
 {
-    return HashTable(GetItemBy(jsonPointerAsText));
+    local HashTable     asHashTable;
+    local AcediaObject  result;
+
+    result = GetItemBy(jsonPointerAsText);
+    asHashTable = HashTable(result);
+    if (asHashTable != none) {
+        return asHashTable;
+    }
+    _.memory.Free(result);
+    return none;
 }
 
 /**
@@ -527,7 +526,16 @@ public final function HashTable GetHashTableBy(
  */
 public final function ArrayList GetArrayListBy(BaseText jsonPointerAsText)
 {
-    return ArrayList(GetItemBy(jsonPointerAsText));
+    local ArrayList     asArrayList;
+    local AcediaObject  result;
+
+    result = GetItemBy(jsonPointerAsText);
+    asArrayList = ArrayList(result);
+    if (asArrayList != none) {
+        return asArrayList;
+    }
+    _.memory.Free(result);
+    return none;
 }
 
 /**
@@ -549,22 +557,26 @@ public final function bool GetBoolByJSON(
     JSONPointer     jsonPointer,
     optional bool   defaultValue)
 {
-    local AcediaObject  result;
+    local bool          result;
+    local AcediaObject  resultObject;
     local BoolBox       asBox;
     local BoolRef       asRef;
-    result = GetItemByJSON(jsonPointer);
-    if (result == none) {
+
+    resultObject = GetItemByJSON(jsonPointer);
+    if (resultObject == none) {
         return defaultValue;
     }
-    asBox = BoolBox(result);
+    result = defaultValue;
+    asBox = BoolBox(resultObject);
     if (asBox != none) {
-        return asBox.Get();
+        result = asBox.Get();
     }
-    asRef = BoolRef(result);
+    asRef = BoolRef(resultObject);
     if (asRef != none) {
-        return asRef.Get();
+        result = asRef.Get();
     }
-    return defaultValue;
+    _.memory.Free(resultObject);
+    return result;
 }
 
 /**
@@ -586,22 +598,26 @@ public final function byte GetByteByJSON(
     JSONPointer     jsonPointer,
     optional byte   defaultValue)
 {
-    local AcediaObject  result;
+    local byte          result;
+    local AcediaObject  resultObject;
     local ByteBox       asBox;
     local ByteRef       asRef;
-    result = GetItemByJSON(jsonPointer);
-    if (result == none) {
+
+    resultObject = GetItemByJSON(jsonPointer);
+    if (resultObject == none) {
         return defaultValue;
     }
-    asBox = ByteBox(result);
+    result = defaultValue;
+    asBox = ByteBox(resultObject);
     if (asBox != none) {
-        return asBox.Get();
+        result = asBox.Get();
     }
-    asRef = ByteRef(result);
+    asRef = ByteRef(resultObject);
     if (asRef != none) {
-        return asRef.Get();
+        result = asRef.Get();
     }
-    return defaultValue;
+    _.memory.Free(resultObject);
+    return result;
 }
 
 /**
@@ -623,22 +639,26 @@ public final function int GetIntByJSON(
     JSONPointer     jsonPointer,
     optional int    defaultValue)
 {
-    local AcediaObject  result;
+    local int           result;
+    local AcediaObject  resultObject;
     local IntBox        asBox;
     local IntRef        asRef;
-    result = GetItemByJSON(jsonPointer);
-    if (result == none) {
+
+    resultObject = GetItemByJSON(jsonPointer);
+    if (resultObject == none) {
         return defaultValue;
     }
-    asBox = IntBox(result);
+    result = defaultValue;
+    asBox = IntBox(resultObject);
     if (asBox != none) {
-        return asBox.Get();
+        result = asBox.Get();
     }
-    asRef = IntRef(result);
+    asRef = IntRef(resultObject);
     if (asRef != none) {
-        return asRef.Get();
+        result = asRef.Get();
     }
-    return defaultValue;
+    _.memory.Free(resultObject);
+    return result;
 }
 
 /**
@@ -660,22 +680,26 @@ public final function float GetFloatByJSON(
     JSONPointer     jsonPointer,
     optional float  defaultValue)
 {
-    local AcediaObject  result;
+    local float         result;
+    local AcediaObject  resultObject;
     local FloatBox      asBox;
     local FloatRef      asRef;
-    result = GetItemByJSON(jsonPointer);
-    if (result == none) {
+
+    resultObject = GetItemByJSON(jsonPointer);
+    if (resultObject == none) {
         return defaultValue;
     }
-    asBox = FloatBox(result);
+    result = defaultValue;
+    asBox = FloatBox(resultObject);
     if (asBox != none) {
-        return asBox.Get();
+        result = asBox.Get();
     }
-    asRef = FloatRef(result);
+    asRef = FloatRef(resultObject);
     if (asRef != none) {
-        return asRef.Get();
+        result = asRef.Get();
     }
-    return defaultValue;
+    _.memory.Free(resultObject);
+    return result;
 }
 
 /**
@@ -697,22 +721,26 @@ public final function Vector GetVectorByJSON(
     JSONPointer     jsonPointer,
     optional Vector defaultValue)
 {
-    local AcediaObject  result;
+    local Vector        result;
+    local AcediaObject  resultObject;
     local VectorBox     asBox;
     local VectorRef     asRef;
-    result = GetItemByJSON(jsonPointer);
-    if (result == none) {
+
+    resultObject = GetItemByJSON(jsonPointer);
+    if (resultObject == none) {
         return defaultValue;
     }
-    asBox = VectorBox(result);
+    result = defaultValue;
+    asBox = VectorBox(resultObject);
     if (asBox != none) {
-        return asBox.Get();
+        result = asBox.Get();
     }
-    asRef = VectorRef(result);
+    asRef = VectorRef(resultObject);
     if (asRef != none) {
-        return asRef.Get();
+        result = asRef.Get();
     }
-    return defaultValue;
+    _.memory.Free(resultObject);
+    return result;
 }
 
 /**
@@ -736,14 +764,16 @@ public final function string GetStringByJSON(
 {
     local AcediaObject  result;
     local BaseText      asText;
+
     result = GetItemByJSON(jsonPointer);
     if (result == none) {
         return defaultValue;
     }
     asText = BaseText(result);
     if (asText != none) {
-        return asText.ToString();
+        return _.text.ToString(asText);
     }
+    _.memory.Free(result);
     return defaultValue;
 }
 
@@ -768,14 +798,16 @@ public final function string GetFormattedStringByJSON(
 {
     local AcediaObject  result;
     local BaseText      asText;
+
     result = GetItemByJSON(jsonPointer);
     if (result == none) {
         return defaultValue;
     }
     asText = BaseText(result);
     if (asText != none) {
-        return asText.ToFormattedString();
+        return _.text.ToFormattedString(asText);
     }
+    _.memory.Free(result);
     return defaultValue;
 }
 
@@ -793,43 +825,16 @@ public final function string GetFormattedStringByJSON(
  */
 public final function Text GetTextByJSON(JSONPointer jsonPointer)
 {
-    return Text(GetItemByJSON(jsonPointer));
-}
+    local AcediaObject  result;
+    local Text          asText;
 
-/**
- *  Returns an `AssociativeArray` value stored (in the caller `Collection` or
- *  one of it's sub-collections) pointed by JSON pointer.
- *  See `GetItemByJSON()` for more information.
- *
- *  Referred value must be stored as `AssociativeArray`
- *  (or one of it's sub-classes) for this method to work.
- *
- *  @param  jsonPointer JSON path to the `AssociativeArray` value.
- *  @return `AssociativeArray` value, stored at `jsonPointerAsText` or
- *      `none` if it is missing or has a different type.
- */
-public final function AssociativeArray GetAssociativeArrayByJSON(
-    JSONPointer jsonPointer)
-{
-    return AssociativeArray(GetItemByJSON(jsonPointer));
-}
-
-/**
- *  Returns an `DynamicArray` value stored (in the caller `Collection` or
- *  one of it's sub-collections) pointed by JSON pointer.
- *  See `GetItemByJSON()` for more information.
- *
- *  Referred value must be stored as `DynamicArray`
- *  (or one of it's sub-classes) for this method to work.
- *
- *  @param  jsonPointer JSON path to the `DynamicArray` value.
- *  @return `DynamicArray` value, stored at `jsonPointerAsText` or
- *      `none` if it is missing or has a different type.
- */
-public final function DynamicArray GetDynamicArrayByJSON(
-    JSONPointer jsonPointer)
-{
-    return DynamicArray(GetItemByJSON(jsonPointer));
+    result = GetItemByJSON(jsonPointer);
+    asText = Text(result);
+    if (asText != none) {
+        return asText;
+    }
+    _.memory.Free(result);
+    return none;
 }
 
 /**
@@ -847,7 +852,16 @@ public final function DynamicArray GetDynamicArrayByJSON(
 public final function HashTable GetHashTableByJSON(
     JSONPointer jsonPointer)
 {
-    return HashTable(GetItemByJSON(jsonPointer));
+    local AcediaObject  result;
+    local HashTable     asHashTable;
+
+    result = GetItemByJSON(jsonPointer);
+    asHashTable = HashTable(result);
+    if (asHashTable != none) {
+        return asHashTable;
+    }
+    _.memory.Free(result);
+    return none;
 }
 
 /**
@@ -865,7 +879,16 @@ public final function HashTable GetHashTableByJSON(
 public final function ArrayList GetArrayListByJSON(
     JSONPointer jsonPointer)
 {
-    return ArrayList(GetItemByJSON(jsonPointer));
+    local AcediaObject  result;
+    local ArrayList     asArrayList;
+
+    result = GetItemByJSON(jsonPointer);
+    asArrayList = ArrayList(result);
+    if (asArrayList != none) {
+        return asArrayList;
+    }
+    _.memory.Free(result);
+    return none;
 }
 
 defaultproperties

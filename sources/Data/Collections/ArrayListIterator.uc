@@ -47,7 +47,7 @@ public function Iter LeaveOnlyNotNone()
     return self;
 }
 
-public function Iter Next(optional bool deprecated)
+public function Iter Next()
 {
     local int collectionLength;
 

@@ -95,7 +95,7 @@ protected final function ArrayList FreeItem(int index)
     return self;
 }
 
-public function Empty(optional bool deprecated)
+public function Empty()
 {
     SetLength(0);
 }
@@ -1097,54 +1097,6 @@ public final function MutableText GetMutableText(int index)
     local MutableText result;
 
     result = MutableText(BorrowItem(index));
-    if (result != none) {
-        result.NewRef();
-    }
-    return result;
-}
-
-/**
- *  Returns `AssociativeArray` item at `index`. If index is invalid or
- *  stores a non-`AssociativeArray` value, returns `none`.
- *
- *  Referred value must be stored as `AssociativeArray`
- *  (or one of it's sub-classes) for this method to work.
- *
- *  @param  index   Index of an `AssociativeArray` item that `ArrayList`
- *      has to return.
- *  @return `AssociativeArray` value at `index` in the caller `ArrayList`.
- *      `none` if passed `index` is invalid or non-`AssociativeArray` value
- *      is stored there.
- */
-public final function AssociativeArray GetAssociativeArray(int index)
-{
-    local AssociativeArray result;
-
-    result = AssociativeArray(BorrowItem(index));
-    if (result != none) {
-        result.NewRef();
-    }
-    return result;
-}
-
-/**
- *  Returns `DynamicArray` item at `index`. If index is invalid or
- *  stores a non-`DynamicArray` value, returns `none`.
- *
- *  Referred value must be stored as `Text` (or one of it's sub-classes,
- *  such as `MutableText`) for this method to work.
- *
- *  @param  index   Index of a `DynamicArray` item that caller `ArrayList`
- *      has to return.
- *  @return `DynamicArray` value at `index` in the caller `ArrayList`.
- *      `none` if passed `index` is invalid or non-`ArrayList` value
- *      is stored there.
- */
-public final function DynamicArray GetDynamicArray(int index)
-{
-    local DynamicArray result;
-
-    result = DynamicArray(BorrowItem(index));
     if (result != none) {
         result.NewRef();
     }

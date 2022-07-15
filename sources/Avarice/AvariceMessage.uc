@@ -35,7 +35,7 @@ var public Text         type;
 //  Value of the "p" field
 var public AcediaObject parameters;
 
-var private AssociativeArray messageTemplate;
+var private HashTable messageTemplate;
 
 var private const int TS, TT, TP;
 
@@ -44,7 +44,7 @@ public static function StaticConstructor()
     if (StaticConstructorGuard()) return;
     super.StaticConstructor();
 
-    default.messageTemplate = __().collections.EmptyAssociativeArray();
+    default.messageTemplate = __().collections.EmptyHashTable();
     ResetTemplate(default.messageTemplate);
 }
 
@@ -58,7 +58,7 @@ protected function Finalizer()
     parameters = none;
 }
 
-private static final function ResetTemplate(AssociativeArray template)
+private static final function ResetTemplate(HashTable template)
 {
     if (template == none) {
         return;
@@ -70,8 +70,8 @@ private static final function ResetTemplate(AssociativeArray template)
 
 public final function MutableText ToText()
 {
-    local MutableText       result;
-    local AssociativeArray  template;
+    local MutableText   result;
+    local HashTable     template;
     if (type == none)       return none;
     if (service == none)    return none;
 

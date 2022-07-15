@@ -243,6 +243,8 @@ protected static function Test_LoadingPrepared()
     SubTest_LoadingPreparedGetSizeNegative(db);
     SubTest_LoadingPreparedGetKeysSuccess(db);
     SubTest_LoadingPreparedGetKeysFail(db);
+    __().memory.Free(db);
+    __().memory.Free(db);
 }
 
 protected static function SubTest_LoadingPreparedSuccessRoot(
@@ -491,6 +493,8 @@ protected static function Test_Writing()
 
     Issue("`DeleteLocal()` does not return `true` after deleting existing"
         @ "local database.");
+    __().memory.Free(db);   //  For `NewLocal()` call
+    __().memory.Free(db);   //  For `LoadLocal()` call
     TEST_ExpectTrue(__().db.DeleteLocal(P("TEST_DB")));
 
     Issue("Newly created database is reported to still exist after deletion.");
@@ -516,6 +520,7 @@ protected static function Test_Recreate()
     SubTest_WritingArrayIndicies(db);
     __().db.DeleteLocal(P("TEST_DB"));
     Issue("Newly created database is reported to still exist after deletion.");
+    __().memory.Free(db);
     TEST_ExpectFalse(__().db.ExistsLocal(P("TEST_DB")));
     TEST_ExpectFalse(db.IsAllocated());
 }
@@ -540,14 +545,14 @@ protected static function HashTable GetJSONSubTemplateObject()
 {
     local Parser parser;
     parser = __().text.ParseString("{\"A\":\"simpleValue\",\"B\":11.12}");
-    return HashTable(__().json.ParseWith(parser,, true));
+    return HashTable(__().json.ParseWith(parser));
 }
 
 protected static function ArrayList GetJSONSubTemplateArray()
 {
     local Parser parser;
     parser = __().text.ParseString("[true, null, \"huh\"]");
-    return ArrayList(__().json.ParseWith(parser,, true));
+    return ArrayList(__().json.ParseWith(parser));
 }
 
 /*

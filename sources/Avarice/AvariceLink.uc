@@ -68,7 +68,7 @@ var private SimpleSignal onDeathSignal;
 //      We want to have a separate signal for each message "service", since most
 //  users of `AvariceLink` would only care about one particular service.
 //      To achieve that we use this array as a "service name" <-> "signal" map.
-var private AssociativeArray serviceSignalMap;
+var private HashTable serviceSignalMap;
 
 var private const int TSERVICE_PREFIX, TTYPE_PREFIX;
 var private const int TPARAMS_PREFIX, TMESSAGE_SUFFIX;
@@ -80,7 +80,7 @@ protected function Constructor()
     onConnectedSignal = SimpleSignal(_.memory.Allocate(class'SimpleSignal'));
     onDisconnectedSignal = SimpleSignal(_.memory.Allocate(class'SimpleSignal'));
     onDeathSignal = SimpleSignal(_.memory.Allocate(class'SimpleSignal'));
-    serviceSignalMap = _.collections.EmptyAssociativeArray();
+    serviceSignalMap = _.collections.EmptyHashTable();
 }
 
 protected function Finalizer()
@@ -219,6 +219,7 @@ private final function Avarice_OnMessage_Signal GetServiceSignal(
         result = Avarice_OnMessage_Signal(
             _.memory.Allocate(class'Avarice_OnMessage_Signal'));
         serviceSignalMap.SetItem(service, result);
+        _.memory.Free(result);
     }
     else {
         service.FreeSelf();

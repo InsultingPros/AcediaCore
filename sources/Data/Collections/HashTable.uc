@@ -453,7 +453,7 @@ public final function HashTable RemoveItem(AcediaObject key)
     return self;
 }
 
-public function Empty(optional bool deprecated)
+public function Empty()
 {
     local int           i, j;
     local array<Entry>  nextEntries;
@@ -1149,54 +1149,6 @@ public final function Text GetText(AcediaObject key)
     local Text result;
 
     result = Text(BorrowItem(key));
-    if (result != none) {
-        result.NewRef();
-    }
-    return result;
-}
-
-/**
- *  Returns `AssociativeArray` item stored at key `key`. If key is invalid or
- *  stores a non-`AssociativeArray` value, returns `none`.
- *
- *  Referred value must be stored as `AssociativeArray`
- *  (or one of it's sub-classes) for this method to work.
- *
- *  @param  key Key of an `AssociativeArray` item that caller `HashTable`
- *      has to return.
- *  @return `AssociativeArray` value recorded with `key` in the caller
- *      `HashTable`. `none` if passed `key` is invalid or
- *      non-`AssociativeArray` value is stored with it.
- */
-public final function AssociativeArray GetAssociativeArray(AcediaObject key)
-{
-    local AssociativeArray result;
-
-    result = AssociativeArray(BorrowItem(key));
-    if (result != none) {
-        result.NewRef();
-    }
-    return result;
-}
-
-/**
- *  Returns `DynamicArray` item stored at key `key`. If key is invalid or
- *  stores a non-`DynamicArray` value, returns `none`.
- *
- *  Referred value must be stored as `DynamicArray`
- *  (or one of it's sub-classes) for this method to work.
- *
- *  @param  key Key of a `DynamicArray` item that caller `HashTable`
- *      has to return.
- *  @return `DynamicArray` value recorded with `key` in the caller
- *      `HashTable`. `none` if passed `key` is invalid or
- *      non-`DynamicArray` value is stored with it.
- */
-public final function DynamicArray GetDynamicArray(AcediaObject key)
-{
-    local DynamicArray result;
-
-    result = DynamicArray(BorrowItem(key));
     if (result != none) {
         result.NewRef();
     }

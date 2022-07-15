@@ -33,7 +33,7 @@ class Logger extends AcediaObject
     abstract;
 
 //  Named loggers are stored here to avoid recreating them
-var protected AssociativeArray loadedLoggers;
+var protected HashTable loadedLoggers;
 
 //  Should `Logger` display prefix indicating it's a log message from Acedia?
 var protected config bool acediaStamp;
@@ -68,7 +68,7 @@ public final static function Logger GetLogger(BaseText loggerName)
         return none;
     }
     if (default.loadedLoggers == none) {
-        default.loadedLoggers = __().collections.EmptyAssociativeArray();
+        default.loadedLoggers = __().collections.EmptyHashTable();
     }
     loggerKey = loggerName.LowerCopy();
     loggerInstance = Logger(default.loadedLoggers.GetItem(loggerKey));

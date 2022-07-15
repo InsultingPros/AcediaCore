@@ -91,11 +91,11 @@ public final function JSONPointer Pointer(optional BaseText pointerAsText)
  *
  *  Compatible objects are `none` and any object that has one of the following
  *  classes: `BoolBox`, `BoolRef`, `ByteBox`, `ByteRef`, `IntBox`, `IntRef`,
- *  `FloatBox`, `FloatRef`, `Text`, `MutableText`, `DynamicArray`,
- *  `AssociativeArray`.
+ *  `FloatBox`, `FloatRef`, `Text`, `MutableText`, `ArrayList`,
+ *  `HashTable`.
  *
- *  This method does not check whether objects stored inside `DynamicArray`,
- *  `AssociativeArray` are compatible. If they are not, they will normally be
+ *  This method does not check whether objects stored inside `ArrayList`,
+ *  `HashTable` are compatible. If they are not, they will normally be
  *  defaulted to JSON null upon any conversion.
  */
 public function bool IsCompatible(AcediaObject data)
@@ -110,9 +110,7 @@ public function bool IsCompatible(AcediaObject data)
         ||  dataClass == class'IntBox'      || dataClass == class'IntRef'
         ||  dataClass == class'FloatBox'    || dataClass == class'FloatRef'
         ||  dataClass == class'Text'        || dataClass == class'MutableText'
-        ||  dataClass == class'ArrayList'   || dataClass == class'HashTable'
-        ||  dataClass == class'DynamicArray'
-        ||  dataClass == class'AssociativeArray';
+        ||  dataClass == class'ArrayList'   || dataClass == class'HashTable';
 }
 
 /**
@@ -618,75 +616,6 @@ public final function BaseText ParseString(
  *      parsing has failed.
  *  @param parseAsMutable   `true` if you want this method to parse array's
  *      items as mutable values and `false` otherwise (as immutable ones).
- *  @return Parsed JSON array as `DynamicArray` if parsing was successful and
- *      `none` otherwise. To check for parsing success check the state of
- *      the `parser`.
- */
-public final function DynamicArray ParseArrayWith(
-    Parser          parser,
-    optional bool   parseAsMutable)
-{
-    local bool                  parsingSucceeded;
-    local Parser.ParserState    confirmedState;
-    local AcediaObject          nextValue;
-    local array<AcediaObject>   parsedValues;
-    if (parser == none) return none;
-
-    confirmedState =
-        parser.Skip().Match(T(default.TOPEN_BRACKET)).GetCurrentState();
-    while (parser.Ok() && !parser.HasFinished())
-    {
-        confirmedState = parser.Skip().GetCurrentState();
-        //  Check for JSON array ending and ONLY THEN declare parsing
-        //  is successful, not encountering '}' implies bad JSON format.
-        if (parser.Match(T(default.TCLOSE_BRACKET)).Ok()) {
-            parsingSucceeded = true;
-            break;
-        }
-        parser.RestoreState(confirmedState);
-        //  Look for comma after each element
-        if (parsedValues.length > 0)
-        {
-            if (!parser.Match(T(default.TCOMMA)).Skip().Ok()) {
-                break;
-            }
-            confirmedState = parser.GetCurrentState();
-        }
-        //  Parse next value
-        nextValue = ParseWith(parser, parseAsMutable);
-        parsedValues[parsedValues.length] = nextValue;
-        if (!parser.Ok()) {
-            break;
-        }
-    }
-    if (parsingSucceeded) {
-        return _.collections.NewDynamicArray(parsedValues, true);
-    }
-    _.memory.FreeMany(parsedValues);
-    parser.Fail();
-    return none;
-}
-
-/**
- *  Uses given parser to parse a JSON array.
- *
- *  This method will parse JSON values that are contained in parsed JSON array
- *  according to description given for `ParseWith()` method.
- *
- *  It does not matter what content follows parsed value in the `parser`,
- *  method will be successful as long as it manages to parse correct
- *  JSON array (from the current `parser`'s position).
- *
- *  To check whether parsing have failed, simply check if `parser` is in
- *  a failed state after the method call.
- *
- *  @param  parser          Parser that method would use to parse JSON array
- *      from it's current position. It's confirmed state will not be changed.
- *      If parsing was successful it will point at the next available character.
- *      Parser will be in a failed state after this method iff
- *      parsing has failed.
- *  @param parseAsMutable   `true` if you want this method to parse array's
- *      items as mutable values and `false` otherwise (as immutable ones).
  *  @return Parsed JSON array as `ArrayList` if parsing was successful and
  *      `none` otherwise. To check for parsing success check the state of
  *      the `parser`.
@@ -725,7 +654,7 @@ public final function ArrayList ParseArrayListWith(
             confirmedState = parser.GetCurrentState();
         }
         //  Parse next value
-        nextValue = ParseWith(parser, parseAsMutable, true);
+        nextValue = ParseWith(parser, parseAsMutable);
         parsedValues[parsedValues.length] = nextValue;
         if (!parser.Ok()) {
             break;
@@ -739,79 +668,6 @@ public final function ArrayList ParseArrayListWith(
     }
     _.memory.FreeMany(parsedValues);
     return result;
-}
-
-/**
- *  Uses given parser to parse a JSON object.
- *
- *  This method will parse JSON values that are contained in parsed JSON object
- *  according to description given for `ParseWith()` method.
- *
- *  It does not matter what content follows parsed value in the `parser`,
- *  method will be successful as long as it manages to parse correct
- *  JSON object (from the current `parser`'s position).
- *
- *  To check whether parsing have failed, simply check if `parser` is in
- *  a failed state after the method call.
- *
- *  @param  parser          Parser that method would use to parse JSON object
- *      from it's current position. It's confirmed state will not be changed.
- *      If parsing was successful it will point at the next available character.
- *      Parser will be in a failed state after this method iff
- *      parsing has failed.
- *  @param parseAsMutable   `true` if you want this method to parse object's
- *      items as mutable values and `false` otherwise (as immutable ones).
- *  @return Parsed JSON object as `AssociativeArray` if parsing was successful
- *      and `none` otherwise. To check for parsing success check the state of
- *      the `parser`.
- */
-public function AssociativeArray ParseObjectWith(
-    Parser          parser,
-    optional bool   parseAsMutable)
-{
-    local bool                          parsingSucceeded;
-    local Parser.ParserState            confirmedState;
-    local array<AssociativeArray.Entry> parsedEntries;
-    if (parser == none) return none;
-
-    //  Ensure that parser starts pointing at what looks like a JSON object
-    confirmedState =
-        parser.Skip().Match(T(default.TOPEN_BRACE)).GetCurrentState();
-    if (!parser.Ok()) {
-        return none;
-    }
-    while (parser.Ok() && !parser.HasFinished())
-    {
-        confirmedState = parser.Skip().GetCurrentState();
-        //  Check for JSON object ending and ONLY THEN declare parsing
-        //  is successful, not encountering '}' implies bad JSON format.
-        if (parser.Match(T(default.TCLOSE_BRACE)).Ok())
-        {
-            parsingSucceeded = true;
-            break;
-        }
-        parser.RestoreState(confirmedState);
-        //  Look for comma after each key-value pair
-        if (parsedEntries.length > 0)
-        {
-            if (!parser.Match(T(default.TCOMMA)).Skip().Ok()) {
-                break;
-            }
-            confirmedState = parser.GetCurrentState();
-        }
-        //  Parse property
-        parsedEntries[parsedEntries.length] =
-            ParseProperty(parser, parseAsMutable);
-        if (!parser.Ok()) {
-            break;
-        }
-    }
-    if (parsingSucceeded) {
-        return _.collections.NewAssociativeArray(parsedEntries, true);
-    }
-    FreeEntries(parsedEntries);
-    parser.Fail();
-    return none;
 }
 
 /**
@@ -892,20 +748,7 @@ public function HashTable ParseHashTableWith(
     return result;
 }
 
-//  Parses a JSON key-value pair (there must not be any leading spaces).
-private function AssociativeArray.Entry ParseProperty(
-    Parser  parser,
-    bool    parseAsMutable)
-{
-    local MutableText               nextKey;
-    local AssociativeArray.Entry    entry;
-    parser.MStringLiteral(nextKey).Skip().Match(T(default.TCOLON)).Skip();
-    entry.key = nextKey.Copy();
-    nextKey.FreeSelf();
-    entry.value = ParseWith(parser, parseAsMutable);
-    return entry;
-}
-
+//  TODO: ParseProperty
 //  Parses a JSON key-value pair (there must not be any leading spaces).
 private function HashTable.Entry ParseHashTableProperty(
     Parser  parser,
@@ -915,21 +758,11 @@ private function HashTable.Entry ParseHashTableProperty(
     local HashTable.Entry   entry;
     parser.MStringLiteral(nextKey).Skip().Match(T(default.TCOLON)).Skip();
     entry.key = nextKey.IntoText();
-    entry.value = ParseWith(parser, parseAsMutable, true);
+    entry.value = ParseWith(parser, parseAsMutable);
     return entry;
 }
 
-//  Auxiliary method for deallocating unneeded objects in entry pairs.
-private function FreeEntries(array<AssociativeArray.Entry> entries)
-{
-    local int i;
-    for (i = 0; i < entries.length; i += 1)
-    {
-        _.memory.Free(entries[i].key);
-        _.memory.Free(entries[i].value);
-    }
-}
-
+//  TODO: FreeEntries
 //  Auxiliary method for deallocating unneeded objects in entry pairs.
 private function FreeHashTableEntries(array<HashTable.Entry> entries)
 {
@@ -955,9 +788,9 @@ private function FreeHashTableEntries(array<HashTable.Entry> entries)
  *          `parseAsMutable` parameter (boxes are immutable, refs are mutable);
  *      3. String values will be parsed as `Text`/`MutableText`, based on
  *          `parseAsMutable` parameter;
- *      4. Array values will be parsed as a `DynamicArray`, it's items parsed
+ *      4. Array values will be parsed as a `ArrayList`s, their items parsed
  *          according to these rules (`parseAsMutable` parameter is propagated).
- *      5. Object values will be parsed as a `AssociativeArray`, it's items
+ *      5. Object values will be parsed as a `HashTable`s, their items
  *          parsed according to these rules (`parseAsMutable` parameter is
  *          propagated) and recorded under the keys parsed into `Text`.
  *
@@ -983,8 +816,7 @@ private function FreeHashTableEntries(array<HashTable.Entry> entries)
  */
 public final function AcediaObject ParseWith(
     Parser          parser,
-    optional bool   parseAsMutable,
-    optional bool   parseAsNew)
+    optional bool   parseAsMutable)
 {
     local AcediaObject          result;
     local Parser.ParserState    initState;
@@ -1008,35 +840,17 @@ public final function AcediaObject ParseWith(
     if (parser.Ok()) {
         return result;
     }
-    if (parseAsNew)
-    {
-        result = ParseArrayListWith(
-            parser.RestoreState(initState),
-            parseAsMutable);
-        if (parser.Ok()) {
-            return result;
-        }
-        result = ParseHashTableWith(
-            parser.RestoreState(initState),
-            parseAsMutable);
-        if (parser.Ok()) {
-            return result;
-        }
+    result = ParseArrayListWith(
+        parser.RestoreState(initState),
+        parseAsMutable);
+    if (parser.Ok()) {
+        return result;
     }
-    else
-    {
-        result = ParseArrayWith(
-            parser.RestoreState(initState),
-            parseAsMutable);
-        if (parser.Ok()) {
-            return result;
-        }
-        result = ParseObjectWith(
-            parser.RestoreState(initState),
-            parseAsMutable);
-        if (parser.Ok()) {
-            return result;
-        }
+    result = ParseHashTableWith(
+        parser.RestoreState(initState),
+        parseAsMutable);
+    if (parser.Ok()) {
+        return result;
     }
     return none;
 }
@@ -1054,10 +868,10 @@ public final function AcediaObject ParseWith(
  *      3. Integer (`IntBox`/`IntRef`) and float (`FloatBox`/`FloatRef`) types
  *          are printed into JSON number value;
  *      4. `Text` and `MutableText` are printed into JSON string value;
- *      5. `DynamicArray` is printed into JSON array with `Print()` method
+ *      5. `ArrayList` is printed into JSON array with `Print()` method
  *          applied to each of it's items. If some of them have not printable
  *          types - "none" will be used as a fallback.
- *      6. `AssociativeArray` is printed into JSON object with `Print()` method
+ *      6. `HashTable` is printed into JSON object with `Print()` method
  *          applied to each of it's items. Only items with `Text` keys are
  *          printed, the rest is omitted. If some of them have not printable
  *          types - "none" will be used as a fallback.
@@ -1094,64 +908,13 @@ public final function MutableText Print(AcediaObject toPrint)
         ||  toPrint.class == class'MutableText') {
         return DisplayText(BaseText(toPrint));
     }
-    if (toPrint.class == class'DynamicArray') {
-        return PrintArray(DynamicArray(toPrint));
-    }
     if (toPrint.class == class'ArrayList') {
         return PrintArrayList(ArrayList(toPrint));
-    }
-    if (toPrint.class == class'AssociativeArray') {
-        return PrintObject(AssociativeArray(toPrint));
     }
     if (toPrint.class == class'HashTable') {
         return PrintHashTable(HashTable(toPrint));
     }
     return none;
-}
-
-/**
- *  "Prints" given `DynamicArray` value, saving it as a JSON array in
- *  `MutableText`.
- *
- *  "Prints" given `DynamicArray` in a minimal way, for a human-readable output
- *  use `PrettyPrintArray()` method.
- *
- *      It's items must either be equal to `none` or have one of the following
- *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
- *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
- *      Otherwise items will be printed as "null" values.
- *      Also see `Print()` method.
- *
- *  @param  toPrint Array to "print" into `MutableText`.
- *  @return Text version of given `toPrint`, if it has one of the printable
- *      classes. Otherwise returns `none`.
- *      Note that `none` is considered printable and will produce "null".
- */
-public final function MutableText PrintArray(DynamicArray toPrint)
-{
-    local int           i, length;
-    local MutableText   result, printedItem;
-    if (toPrint == none) return none;
-
-    length = toPrint.GetLength();
-    result = T(default.TOPEN_BRACKET).MutableCopy();
-    for (i = 0; i < length; i += 1)
-    {
-        if (i > 0) {
-            result.Append(T(default.TCOMMA));
-        }
-        printedItem = Print(toPrint.GetItem(i));
-        if (printedItem != none)
-        {
-            result.Append(printedItem);
-            printedItem.FreeSelf();
-        }
-        else {
-            result.Append(T(default.TNULL));
-        }
-    }
-    result.Append(T(default.TCLOSE_BRACKET));
-    return result;
 }
 
 /**
@@ -1163,7 +926,7 @@ public final function MutableText PrintArray(DynamicArray toPrint)
  *
  *      It's items must either be equal to `none` or have one of the following
  *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
- *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
+ *  `Text`, `MutableText`, `ArrayList`, `HashTable`.
  *      Otherwise items will be printed as "null" values.
  *      Also see `Print()` method.
  *
@@ -1205,65 +968,6 @@ public final function MutableText PrintArrayList(ArrayList toPrint)
 }
 
 /**
- *  "Prints" given `AssociativeArray` value, saving it as a JSON object in
- *  `MutableText`.
- *
- *      "Prints" given `AssociativeArray` in a minimal way, for
- *  a human-readable output use `PrettyPrintObject()` method.
- *
- *      Only prints items recorded with `Text` key, the rest is omitted.
- *
- *      It's items must either be equal to `none` or have one of the following
- *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
- *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
- *      Otherwise items will be printed as "null" values.
- *      Also see `Print()` method.
- *
- *  @param  toPrint Array to "print" into `MutableText`.
- *  @return Text version of given `toPrint`, if it has one of the printable
- *      classes. Otherwise returns `none`.
- *      Note that `none` is considered printable and will produce "null".
- */
-public final function MutableText PrintObject(AssociativeArray toPrint)
-{
-    local bool                  printedKeyValuePair;
-    local CollectionIterator    iter;
-    local Text                  nextKey;
-    local AcediaObject          nextValue;
-    local MutableText           result, printedKey, printedValue;
-    if (toPrint == none) return none;
-
-    result = T(default.TOPEN_BRACE).MutableCopy();
-    iter = toPrint.Iterate();
-    for (iter = toPrint.Iterate(); !iter.HasFinished(); iter.Next())
-    {
-        if (printedKeyValuePair) {
-            result.Append(T(default.TCOMMA));
-        }
-        nextKey     = Text(iter.GetKey());
-        nextValue   = iter.Get();
-        if (nextKey == none)                continue;
-        if (nextKey.class != class'Text')   continue;
-        printedKey      = DisplayText(nextKey);
-        printedValue    = Print(nextValue);
-        result.Append(printedKey).Append(T(default.TCOLON));
-        printedKey.FreeSelf();
-        if (printedValue != none)
-        {
-            result.Append(printedValue);
-            printedValue.FreeSelf();
-        }
-        else {
-            result.Append(T(default.TNULL));
-        }
-        printedKeyValuePair = true;
-    }
-    iter.FreeSelf();
-    result.Append(T(default.TCLOSE_BRACE));
-    return result;
-}
-
-/**
  *  "Prints" given `HashTable` value, saving it as a JSON object in
  *  `MutableText`.
  *
@@ -1274,7 +978,7 @@ public final function MutableText PrintObject(AssociativeArray toPrint)
  *
  *      It's items must either be equal to `none` or have one of the following
  *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
- *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
+ *  `Text`, `MutableText`, `ArrayList`, `HashTable`.
  *      Otherwise items will be printed as "null" values.
  *      Also see `Print()` method.
  *
@@ -1343,10 +1047,10 @@ public final function MutableText PrintHashTable(HashTable toPrint)
  *      3. Integer (`IntBox`/`IntRef`) and float (`FloatBox`/`FloatRef`) types
  *          are printed into JSON number value;
  *      4. `Text` and `MutableText` are printed into JSON string value;
- *      5. `DynamicArray` is printed into JSON array with `Print()` method
+ *      5. `ArrayList` is printed into JSON array with `Print()` method
  *          applied to each of it's items. If some of them have not printable
  *          types - "none" will be used as a fallback.
- *      6. `AssociativeArray` is printed into JSON object with `Print()` method
+ *      6. `HashTable` is printed into JSON object with `Print()` method
  *          applied to each of it's items. Only items with `Text` keys are
  *          printed, the rest is omitted. If some of them have not printable
  *          types - "none" will be used as a fallback.
@@ -1368,35 +1072,6 @@ public final function MutableText PrettyPrint(AcediaObject toPrint)
 }
 
 /**
- *  "Prints" given `DynamicArray` value, saving it as a JSON array in
- *  `MutableText`.
- *
- *  "Prints" given `DynamicArray` in human-readable way, for minimal output
- *  use `PrintArray()` method.
- *
- *      It's items must either be equal to `none` or have one of the following
- *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
- *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
- *      Otherwise items will be printed as "null" values.
- *      Also see `Print()` method.
- *
- *  @param  toPrint Array to "print" into `MutableText`.
- *  @return Text version of given `toPrint`, if it has one of the printable
- *      classes. Otherwise returns `none`.
- *      Note that `none` is considered printable and will produce "null".
- */
-public final function MutableText PrettyPrintArray(DynamicArray toPrint)
-{
-    local MutableText result;
-    local MutableText accumulatedIndent;
-    InitFormatting();
-    accumulatedIndent = _.text.Empty();
-    result = PrettyPrintArrayWithIndent(toPrint, accumulatedIndent);
-    accumulatedIndent.FreeSelf();
-    return result;
-}
-
-/**
  *  "Prints" given `ArrayList` value, saving it as a JSON array in
  *  `MutableText`.
  *
@@ -1405,7 +1080,7 @@ public final function MutableText PrettyPrintArray(DynamicArray toPrint)
  *
  *      It's items must either be equal to `none` or have one of the following
  *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
- *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
+ *  `Text`, `MutableText`, `ArrayList`, `HashTable`.
  *      Otherwise items will be printed as "null" values.
  *      Also see `Print()` method.
  *
@@ -1427,37 +1102,6 @@ public final function MutableText PrettyPrintArrayList(ArrayList toPrint)
 }
 
 /**
- *  "Prints" given `AssociativeArray` value, saving it as a JSON object in
- *  `MutableText`.
- *
- *      "Prints" given `AssociativeArray` in a human readable way, for
- *  a minimal output use `PrintObject()` method.
- *
- *      Only prints items recorded with `Text` key, the rest is omitted.
- *
- *      It's items must either be equal to `none` or have one of the following
- *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
- *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
- *      Otherwise items will be printed as "null" values.
- *      Also see `Print()` method.
- *
- *  @param  toPrint Array to "print" into `MutableText`.
- *  @return Text version of given `toPrint`, if it has one of the printable
- *      classes. Otherwise returns `none`.
- *      Note that `none` is considered printable and will produce "null".
- */
-public final function MutableText PrettyPrintObject(AssociativeArray toPrint)
-{
-    local MutableText result;
-    local MutableText accumulatedIndent;
-    InitFormatting();
-    accumulatedIndent = _.text.Empty();
-    result = PrettyPrintObjectWithIndent(toPrint, accumulatedIndent);
-    accumulatedIndent.FreeSelf();
-    return result;
-}
-
-/**
  *  "Prints" given `HashTable` value, saving it as a JSON object in
  *  `MutableText`.
  *
@@ -1468,7 +1112,7 @@ public final function MutableText PrettyPrintObject(AssociativeArray toPrint)
  *
  *      It's items must either be equal to `none` or have one of the following
  *  classes: `BoolBox`, `BoolRef`, `IntBox`, `IntRef`, `FloatBox`, `FloatRef`,
- *  `Text`, `MutableText`, `DynamicArray`, `AssociativeArray`.
+ *  `Text`, `MutableText`, `ArrayList`, `HashTable`.
  *      Otherwise items will be printed as "null" values.
  *      Also see `Print()` method.
  *
@@ -1532,67 +1176,16 @@ private final function MutableText PrettyPrintWithIndent(
     {
         return DisplayText(BaseText(toPrint)).ChangeFormatting(jString);
     }
-    if (toPrint.class == class'DynamicArray')
-    {
-        return PrettyPrintArrayWithIndent(  DynamicArray(toPrint),
-                                            accumulatedIndent);
-    }
     if (toPrint.class == class'ArrayList')
     {
         return PrettyPrintArrayListWithIndent(  ArrayList(toPrint),
                                                 accumulatedIndent);
-    }
-    if (toPrint.class == class'AssociativeArray') {
-        return PrettyPrintObjectWithIndent( AssociativeArray(toPrint),
-                                            accumulatedIndent);
     }
     if (toPrint.class == class'HashTable') {
         return PrettyPrintHashTableWithIndent(  HashTable(toPrint),
                                                 accumulatedIndent);
     }
     return none;
-}
-
-//      Does the actual job for `PrettyPrintArray()` method.
-//      Separated to hide `accumulatedIndent` parameter that is necessary for
-//  pretty printing.
-//      Assumes `InitFormatting()` was made and json formatting variables are
-//  initialized.
-private final function MutableText PrettyPrintArrayWithIndent(
-    DynamicArray    toPrint,
-    MutableText     accumulatedIndent)
-{
-    local int           i, length;
-    local MutableText   extendedIndent;
-    local MutableText   result, printedItem;
-    if (toPrint == none) {
-        return none;
-    }
-    length = toPrint.GetLength();
-    extendedIndent = accumulatedIndent.MutableCopy().Append(T(TJSON_INDENT));
-    result = T(default.TOPEN_BRACKET).MutableCopy()
-        .ChangeFormatting(jArrayBraces);
-    for (i = 0; i < length; i += 1)
-    {
-        if (i > 0) {
-            result.Append(T(default.TCOMMA), jComma);
-        }
-        printedItem = PrettyPrintWithIndent(toPrint.GetItem(i), extendedIndent);
-        if (printedItem != none)
-        {
-            result.AppendLineBreak().Append(extendedIndent).Append(printedItem);
-            printedItem.FreeSelf();
-        }
-        else {
-            result.Append(T(default.TNULL), jNull);
-        }
-    }
-    if (i > 0) {
-        result.AppendLineBreak().Append(accumulatedIndent);
-    }
-    result.Append(T(default.TCLOSE_BRACKET), jArrayBraces);
-    extendedIndent.FreeSelf();
-    return result;
 }
 
 //      Does the actual job for `PrettyPrintArray()` method.
@@ -1637,49 +1230,6 @@ private final function MutableText PrettyPrintArrayListWithIndent(
         result.AppendLineBreak().Append(accumulatedIndent);
     }
     result.Append(T(default.TCLOSE_BRACKET), jArrayBraces);
-    extendedIndent.FreeSelf();
-    return result;
-}
-
-//      Does the actual job for `PrettyPrintObject()` method.
-//      Separated to hide `accumulatedIndent` parameter that is necessary for
-//  pretty printing.
-//      Assumes `InitFormatting()` was made and json formatting variables are
-//  initialized.
-private final function MutableText PrettyPrintObjectWithIndent(
-    AssociativeArray    toPrint,
-    MutableText         accumulatedIndent)
-{
-    local bool                  printedKeyValuePair;
-    local CollectionIterator    iter;
-    local Text                  nextKey;
-    local AcediaObject          nextValue;
-    local MutableText           extendedIndent;
-    local MutableText           result;
-    if (toPrint == none) {
-        return none;
-    }
-    extendedIndent = accumulatedIndent.MutableCopy().Append(T(TJSON_INDENT));
-    result = T(default.TOPEN_BRACE).MutableCopy()
-        .ChangeFormatting(jObjectBraces);
-    iter = toPrint.Iterate();
-    for (iter = toPrint.Iterate(); !iter.HasFinished(); iter.Next())
-    {
-        if (printedKeyValuePair) {
-            result.Append(T(default.TCOMMA), jComma);
-        }
-        nextKey     = Text(iter.GetKey());
-        nextValue   = iter.Get();
-        if (nextKey == none)                continue;
-        if (nextKey.class != class'Text')   continue;
-        PrettyPrintKeyValue(result, nextKey, nextValue, extendedIndent);
-        printedKeyValuePair = true;
-    }
-    if (printedKeyValuePair) {
-        result.AppendLineBreak().Append(accumulatedIndent);
-    }
-    iter.FreeSelf();
-    result.Append(T(default.TCLOSE_BRACE), jObjectBraces);
     extendedIndent.FreeSelf();
     return result;
 }

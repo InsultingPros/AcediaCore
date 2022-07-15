@@ -579,7 +579,7 @@ public function bool Remove(
     local NativeActorRef    pawnRef;
     local Inventory         nativeInstance;
     local KFWeapon          kfWeapon;
-    local DynamicArray      removalList;
+    local ArrayList         removalList;
     if (EAmmo(itemToRemove) != none)    return false;
     nativeInstance = GetItemNativeInstance(itemToRemove);
     if (nativeInstance == none)         return false;
@@ -600,8 +600,8 @@ public function bool Remove(
     //  guaranteed.
     //      Only optimize this if this method will become
     //  a bottleneck somewhere.
-    removalList = _.collections.EmptyDynamicArray();
-    removalList.AddItem(_server.unreal.ActorRef(nativeInstance), true);
+    removalList = _.collections.EmptyArrayList();
+    removalList.AddItem(_server.unreal.ActorRef(nativeInstance));
     pawnRef = _server.unreal.ActorRef(pawn);
     result = RemoveInventoryArray(  pawnRef, removalList,
                                     keepItem, forceRemoval, true);
@@ -623,7 +623,7 @@ public function bool RemoveTemplate(
     local bool              result;
     local Pawn              pawn;
     local NativeActorRef    pawnRef;
-    local DynamicArray      removalList;
+    local ArrayList         removalList;
     local class<Inventory>  inventoryClass;
     local class<KFWeapon>   weaponClass;
     if (template == none)                           return false;
@@ -635,7 +635,7 @@ public function bool RemoveTemplate(
     if (pawn == none)                               return false;
 
     pawnRef     = _server.unreal.ActorRef(pawn);
-    removalList = _.collections.EmptyDynamicArray();
+    removalList = _.collections.EmptyArrayList();
     //  All removal works the same - form a "kill list", then remove
     //  all `Inventory` at once with `RemoveInventoryArray`
     AddClassForRemoval(removalList, inventoryClass, forceRemoval, removeAll);
@@ -654,7 +654,7 @@ public function bool RemoveTemplate(
 //      Searches `EKFInventory`'s owner's inventory chain for items of class
 //  `inventoryClass` and adds them to the `removalArray` (for later removal).
 private function AddClassForRemoval(
-    DynamicArray        removalArray,
+    ArrayList           removalArray,
     class<Inventory>    inventoryClass,
     optional bool       forceRemoval,
     optional bool       removeAll)
@@ -686,7 +686,7 @@ private function AddClassForRemoval(
         }
         if (canRemoveInventory)
         {
-            removalArray.AddItem(_server.unreal.ActorRef(nextInventory), true);
+            removalArray.AddItem(_server.unreal.ActorRef(nextInventory));
             if (!removeAll) {
                 break;
             }
@@ -709,12 +709,12 @@ public function bool RemoveAll(
     local NativeActorRef    pawnRef;
     local KFWeapon          kfWeapon;
     local Inventory         nextInventory;
-    local DynamicArray      inventoryToRemove;
+    local ArrayList         inventoryToRemove;
     pawn = GetOwnerPawn();
     if (pawn == none) {
         return false;
     }
-    inventoryToRemove = _.collections.EmptyDynamicArray();
+    inventoryToRemove = _.collections.EmptyArrayList();
     nextInventory = pawn.inventory;
     while (nextInventory != none)
     {
@@ -723,11 +723,8 @@ public function bool RemoveAll(
             && (forceRemoval || !kfWeapon.bKFNeverThrow);
         canRemoveItem = canRemoveItem
             || (includeHidden && Ammunition(nextInventory) == none);
-        if (canRemoveItem)
-        {
-            inventoryToRemove.AddItem(
-                _server.unreal.ActorRef(nextInventory),
-                true);
+        if (canRemoveItem) {
+            inventoryToRemove.AddItem(_server.unreal.ActorRef(nextInventory));
         }
         nextInventory = nextInventory.inventory;
     }
@@ -745,7 +742,7 @@ public function bool RemoveAll(
 //  dropped/removed.
 private function bool RemoveInventoryArray(
     NativeActorRef  ownerPawnRef,
-    DynamicArray    itemsToRemove,
+    ArrayList       itemsToRemove,
     bool            keepItems,
     bool            forceRemoval,
     bool            completeRemoval)

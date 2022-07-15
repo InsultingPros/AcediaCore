@@ -525,17 +525,17 @@ protected static function SubTest_ParseSimpleValueSuccess()
     api = __().json;
     Issue("`ParseWith()` fails to parse correct JSON values.");
     parser = __().text.ParseString("false, 98.2, 42, \"hmmm\", null");
-    TEST_ExpectFalse(BoolBox(api.ParseWith(parser,, true)).Get());
+    TEST_ExpectFalse(BoolBox(api.ParseWith(parser)).Get());
     parser.MatchS(",").Skip();
-    TEST_ExpectTrue(FloatBox(api.ParseWith(parser,, true)).Get() == 98.2);
+    TEST_ExpectTrue(FloatBox(api.ParseWith(parser)).Get() == 98.2);
     parser.MatchS(",").Skip();
-    TEST_ExpectTrue(IntRef(api.ParseWith(parser, true, true)).Get() == 42);
+    TEST_ExpectTrue(IntRef(api.ParseWith(parser, true)).Get() == 42);
     parser.MatchS(",").Skip();
     TEST_ExpectTrue(
-            MutableText(api.ParseWith(parser, true, true)).ToString()
+            MutableText(api.ParseWith(parser, true)).ToString()
         ==  "hmmm");
     parser.MatchS(",").Skip();
-    TEST_ExpectNone(api.ParseWith(parser,, true));
+    TEST_ExpectNone(api.ParseWith(parser));
     TEST_ExpectTrue(parser.Ok());
 }
 protected static function SubTest_ParseSimpleValueFailure()
@@ -546,13 +546,13 @@ protected static function SubTest_ParseSimpleValueFailure()
     Issue("`ParseWith()` does not correctly handle parsing invalid"
         @ "JSON values.");
     parser = __().text.ParseString("tru");
-    TEST_ExpectNone(api.ParseWith(parser,, true));
+    TEST_ExpectNone(api.ParseWith(parser));
     TEST_ExpectFalse(parser.Ok());
     parser = __().text.ParseString("");
-    TEST_ExpectNone(api.ParseWith(parser,, true));
+    TEST_ExpectNone(api.ParseWith(parser));
     TEST_ExpectFalse(parser.Ok());
     parser = __().text.ParseString("NUL");
-    TEST_ExpectNone(api.ParseWith(parser,, true));
+    TEST_ExpectNone(api.ParseWith(parser));
     TEST_ExpectFalse(parser.Ok());
 }
 
@@ -624,7 +624,7 @@ protected static function SubTest_ParseComplex()
     local HashTable root, mainObj, subObj, inner;
     Issue("`ParseHashTableWith()` cannot handle complex values.");
     parser = __().text.ParseString(default.complexJSONObject);
-    root = HashTable(__().json.ParseWith(parser,, true));
+    root = HashTable(__().json.ParseWith(parser));
     TEST_ExpectTrue(root.GetLength() == 3);
     TEST_ExpectTrue(FloatBox(root.GetItem(P("some_var"))).Get() == -7.32);
     TEST_ExpectTrue(    Text(root.GetItem(P("another_var"))).ToString()

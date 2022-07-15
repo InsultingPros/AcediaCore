@@ -101,7 +101,7 @@ private final function TryIterating()
     iterated = true;
 }
 
-public function Iter Next(optional bool skipNone)
+public function Iter Next()
 {
     if (!initialized) {
         return self;

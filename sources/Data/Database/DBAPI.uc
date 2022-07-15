@@ -25,7 +25,7 @@ var private const class<Database> localDBClass;
 //      Store all already loaded databases to make sure we do not create two
 //  different `LocalDatabaseInstance` that are trying to make changes
 //  separately.
-var private AssociativeArray loadedLocalDatabases;
+var private HashTable loadedLocalDatabases;
 
 var private LoggerAPI.Definition infoLocalDatabaseCreated;
 var private LoggerAPI.Definition infoLocalDatabaseDeleted;
@@ -34,7 +34,7 @@ var private LoggerAPI.Definition infoLocalDatabaseLoaded;
 private final function CreateLocalDBMapIfMissing()
 {
     if (loadedLocalDatabases == none) {
-        loadedLocalDatabases = __().collections.EmptyAssociativeArray();
+        loadedLocalDatabases = __().collections.EmptyHashTable();
     }
 }
 
@@ -126,6 +126,7 @@ public final function LocalDatabaseInstance NewLocal(BaseText databaseName)
 {
     local DBRecord              rootRecord;
     local Text                  rootRecordName;
+    local Text                  databaseNameCopy;
     local LocalDatabase         newConfig;
     local LocalDatabaseInstance newLocalDBInstance;
 
@@ -138,13 +139,14 @@ public final function LocalDatabaseInstance NewLocal(BaseText databaseName)
     if (loadedLocalDatabases.HasKey(databaseName))  return none;
 
     newLocalDBInstance = LocalDatabaseInstance(_.memory.Allocate(localDBClass));
-    loadedLocalDatabases.SetItem(databaseName.Copy(), newLocalDBInstance);
+    databaseNameCopy = databaseName.Copy();
+    loadedLocalDatabases.SetItem(databaseNameCopy, newLocalDBInstance);
     rootRecord = class'DBRecord'.static.NewRecord(databaseName);
     rootRecordName = _.text.FromString(string(rootRecord.name));
     newConfig.SetRootName(rootRecordName);
     newConfig.Save();
     newLocalDBInstance.Initialize(newConfig, rootRecord);
-    _.logger.Auto(infoLocalDatabaseCreated).Arg(databaseName.Copy());
+    _.logger.Auto(infoLocalDatabaseCreated).Arg(databaseNameCopy);
     _.memory.Free(rootRecordName);
     return newLocalDBInstance;
 }
@@ -201,6 +203,7 @@ public final function LocalDatabaseInstance LoadLocal(BaseText databaseName)
     newLocalDBInstance.Initialize(newConfig, rootRecord);
     _.logger.Auto(infoLocalDatabaseLoaded).Arg(databaseName.Copy());
     _.memory.Free(rootRecordName);
+    _.memory.Free(newLocalDBInstance);
     return newLocalDBInstance;
 }
 
@@ -212,9 +215,16 @@ public final function LocalDatabaseInstance LoadLocal(BaseText databaseName)
  */
 public final function bool ExistsLocal(BaseText databaseName)
 {
-    return LoadLocal(databaseName) != none;
+    local bool                  result;
+    local LocalDatabaseInstance instance;
+
+    instance = LoadLocal(databaseName);
+    result = (instance != none);
+    _.memory.Free(instance);
+    return result;
 }
 
+//  TODO: deleted database must be marked as disposed + change tests too
 /**
  *  Deletes local database with name `databaseName`.
  *
@@ -224,17 +234,19 @@ public final function bool ExistsLocal(BaseText databaseName)
  */
 public final function bool DeleteLocal(BaseText databaseName)
 {
-    local LocalDatabase             localDatabaseConfig;
-    local LocalDatabaseInstance     localDatabase;
-    local AssociativeArray.Entry    dbEntry;
+    local LocalDatabase         localDatabaseConfig;
+    local LocalDatabaseInstance localDatabase;
+    local HashTable.Entry       dbEntry;
     if (databaseName == none) {
         return false;
     }
     CreateLocalDBMapIfMissing();
     //  To delete database we first need to load it
     localDatabase = LoadLocal(databaseName);
-    if (localDatabase != none) {
+    if (localDatabase != none)
+    {
         localDatabaseConfig = localDatabase.GetConfig();
+        _.memory.Free(localDatabase);
     }
     dbEntry = loadedLocalDatabases.TakeEntry(databaseName);
     //  Delete `LocalDatabaseInstance` before erasing the package,

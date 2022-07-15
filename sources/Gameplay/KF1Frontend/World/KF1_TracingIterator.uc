@@ -126,7 +126,7 @@ private final function TryTracing()
     traced = true;
 }
 
-public function Iter Next(optional bool skipNone)
+public function Iter Next()
 {
     if (!initialized) {
         return self;

@@ -25,14 +25,9 @@ class Iter extends AcediaObject
  *      Makes iterator pick next item.
  *  Use `HasFinished()` to check whether you have iterated all of them.
  *
- *  @param  skipNone    @deprecated
- *      Set this to `true` if you want to skip all stored
- *      values that are equal to `none`. By default does not skip them.
- *      Since order of iterating through items is not guaranteed, at each
- *      `Next()` call an arbitrary set of items can be skipped.
  *  @return Reference to caller `Iterator` to allow for method chaining.
  */
-public function Iter Next(optional bool skipNone);
+public function Iter Next();
 
 /**
  *  Returns current value pointed to by an iterator.

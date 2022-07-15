@@ -23,7 +23,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class AliasSource extends Singleton
-    dependson(AssociativeArray)
+    dependson(HashTable)
     config(AcediaAliases);
 
 //      (Sub-)class of `Aliases` objects that this `AliasSource` uses to store
@@ -50,7 +50,7 @@ var private config array<AliasValuePair> record;
 //      It contains same records as `record` array + aliases from
 //  `loadedAliasObjects` objects when there are no duplicate aliases.
 //  Otherwise only stores first loaded alias.
-var private AssociativeArray aliasHash;
+var private HashTable aliasHash;
 
 var private LoggerAPI.Definition errIncorrectAliasPair, warnDuplicateAlias;
 
@@ -63,7 +63,7 @@ protected function OnCreated()
     }
     //  Load and hash
     loadedAliasObjects = aliasesClass.static.LoadAllObjects();
-    aliasHash = _.collections.EmptyAssociativeArray();
+    aliasHash = _.collections.EmptyHashTable();
     HashValidAliasesFromRecord();
     HashValidAliasesFromPerObjectConfig();
 }
@@ -125,8 +125,8 @@ private final function HashValidAliasesFromPerObjectConfig()
 //  in a case-insensitive way.
 private final function InsertAlias(BaseText alias, BaseText value)
 {
-    local Text                      aliasLowerCaseCopy;
-    local AssociativeArray.Entry    hashEntry;
+    local Text              aliasLowerCaseCopy;
+    local HashTable.Entry   hashEntry;
     if (alias == none)  return;
     if (value == none)  return;
     aliasLowerCaseCopy = alias.LowerCopy();
@@ -136,7 +136,8 @@ private final function InsertAlias(BaseText alias, BaseText value)
     }
     _.memory.Free(hashEntry.key);
     _.memory.Free(hashEntry.value);
-    aliasHash.SetItem(aliasLowerCaseCopy, value.Copy(), true);
+    aliasHash.SetItem(aliasLowerCaseCopy, value);
+    aliasLowerCaseCopy.FreeSelf();
 }
 
 /**
@@ -191,7 +192,7 @@ public function Text Resolve(BaseText alias, optional bool copyOnFailure)
     result = Text(aliasHash.GetItem(lowerCaseAlias));
     lowerCaseAlias.FreeSelf();
     if (result != none) {
-        return result.Copy();
+        return result;
     }
     if (copyOnFailure) {
         return alias.Copy();
@@ -254,6 +255,8 @@ public final function bool AddAlias(
         record[record.length] = newPair;
     }
     aliasHash.SetItem(lowerCaseAlias, aliasValue);
+    _.memory.Free(lowerCaseAlias);
+    _.memory.Free(aliasValue);
     AliasService(class'AliasService'.static.Require()).PendingSaveSource(self);
     return true;
 }
@@ -275,10 +278,10 @@ public final function bool AddAlias(
  */
 public final function RemoveAlias(BaseText aliasToRemove)
 {
-    local int                       i;
-    local bool                      isMatchingRecord;
-    local bool                      removedAliasFromRecord;
-    local AssociativeArray.Entry    hashEntry;
+    local int               i;
+    local bool              isMatchingRecord;
+    local bool              removedAliasFromRecord;
+    local HashTable.Entry   hashEntry;
     if (aliasToRemove == none) {
         return;
     }

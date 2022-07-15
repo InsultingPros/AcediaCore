@@ -335,19 +335,19 @@ private final function AvariceMessage MessageFromText(BaseText message)
 {
     local Parser            parser;
     local AvariceMessage    result;
-    local AssociativeArray  parsedMessage;
+    local HashTable         parsedMessage;
     local AcediaObject      item;
     if (message == none) {
         return none;
     }
     parser = _.text.Parse(message);
-    parsedMessage = _.json.ParseObjectWith(parser);
+    parsedMessage = _.json.ParseHashTableWith(parser);
     parser.FreeSelf();
     if (parsedMessage == none) {
         return none;
     }
     result = AvariceMessage(_.memory.Allocate(class'AvariceMessage'));
-    item = parsedMessage.TakeItem(keyS, true);
+    item = parsedMessage.TakeItem(keyS);
     if (item == none || item.class != class'Text')
     {
         _.memory.Free(item);
@@ -356,7 +356,7 @@ private final function AvariceMessage MessageFromText(BaseText message)
         return none;
     }
     result.service = Text(item);
-    item = parsedMessage.TakeItem(keyT, true);
+    item = parsedMessage.TakeItem(keyT);
     if (item == none || item.class != class'Text')
     {
         _.memory.Free(item);
@@ -365,7 +365,7 @@ private final function AvariceMessage MessageFromText(BaseText message)
         return none;
     }
     result.type = Text(item);
-    result.parameters = parsedMessage.TakeItem(keyP, true);
+    result.parameters = parsedMessage.TakeItem(keyP);
     _.memory.Free(parsedMessage);
     return result;
 }
