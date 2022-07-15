@@ -309,7 +309,7 @@ defaultproperties
     TACEDIA_RUNNING                         = 8
     stringConstants(8)  = "AcediaCore is running"
     TACEDIA_VERSION                         = 9
-    stringConstants(9)  = "AcediaCore version 0.1.dev6 - this is a development version, bugs and issues are expected"
+    stringConstants(9)  = "AcediaCore version 0.1.dev8 - this is a development version, bugs and issues are expected"
     TACEDIA_CREDITS                         = 10
     stringConstants(10) = "AcediaCore was developed by dkanus, 2019 - 2022"
     TACEDIA_ACKNOWLEDGMENT                  = 11
