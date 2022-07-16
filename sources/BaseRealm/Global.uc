@@ -59,6 +59,7 @@ protected function Initialize()
     //  Special case that we cannot spawn with memory API since it obviously
     //  does not exist yet!
     memory      = new class'MemoryAPI';
+    memory._constructor();
     //  `TextAPI` and `CollectionsAPI` need to be loaded before `LoggerAPI`
     ref         = RefAPI(memory.Allocate(class'RefAPI'));
     box         = BoxAPI(memory.Allocate(class'BoxAPI'));

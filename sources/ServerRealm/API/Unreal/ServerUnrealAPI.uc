@@ -21,6 +21,22 @@ class ServerUnrealAPI extends ServerUnrealAPIBase;
 
 var private LoggerAPI.Definition fatalNoStalker;
 
+protected function Constructor()
+{
+    _.environment.OnShutDownSystem(self).connect = HandleShutdown;
+}
+
+protected function HandleShutdown()
+{
+    local UnrealService service;
+
+    service = UnrealService(class'UnrealService'.static.GetInstance());
+    //  This has to clean up anything we've added
+    if (service != none) {
+        service.Destroy();
+    }
+}
+
 /* SIGNAL */
 public function Unreal_OnTick_Slot OnTick(
     AcediaObject receiver)

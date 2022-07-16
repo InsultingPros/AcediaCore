@@ -44,6 +44,8 @@ class AcediaEnvironment extends AcediaObject;
  *  considered enabled at the same time.
  */
 
+var private bool acediaShutDown;
+
 var private array< class<_manifest> > availablePackages;
 var private array< class<_manifest> > loadedPackages;
 
@@ -58,8 +60,61 @@ var private LoggerAPI.Definition errNotRegistered, errFeatureAlreadyEnabled;
 var private LoggerAPI.Definition warnFeatureAlreadyEnabled;
 var private LoggerAPI.Definition errFeatureClassAlreadyEnabled;
 
+var private SimpleSignal                        onShutdownSignal;
+var private SimpleSignal                        onShutdownSystemSignal;
 var private Environment_FeatureEnabled_Signal   onFeatureEnabledSignal;
 var private Environment_FeatureDisabled_Signal  onFeatureDisabledSignal;
+
+protected function Constructor()
+{
+    //  Always register our core package
+    RegisterPackage_S("AcediaCore");
+    onShutdownSignal = SimpleSignal(
+        _.memory.Allocate(class'SimpleSignal'));
+    onShutdownSystemSignal = SimpleSignal(
+        _.memory.Allocate(class'SimpleSignal'));
+    onFeatureEnabledSignal = Environment_FeatureEnabled_Signal(
+        _.memory.Allocate(class'Environment_FeatureEnabled_Signal'));
+    onFeatureDisabledSignal = Environment_FeatureDisabled_Signal(
+        _.memory.Allocate(class'Environment_FeatureDisabled_Signal'));
+}
+
+protected function Finalizer()
+{
+    _.memory.Free(onShutdownSignal);
+    _.memory.Free(onShutdownSystemSignal);
+    _.memory.Free(onFeatureEnabledSignal);
+    _.memory.Free(onFeatureDisabledSignal);
+}
+
+/**
+ *  Signal that will be emitted before Acedia shuts down.
+ *  At this point all APIs should still exist and function.
+ *
+ *  [Signature]
+ *  void <slot>()
+ */
+/* SIGNAL */
+public final function SimpleSlot OnShutDown(AcediaObject receiver)
+{
+    return SimpleSlot(onShutdownSignal.NewSlot(receiver));
+}
+
+/**
+ *  Signal that will be emitted during Acedia shut down. System API use it to
+ *  clean up after themselves, so one shouldn't rely on them.
+ *
+ *  There is no reason to use this signal unless you're reimplementing one of
+ *  the APIs. Otherwise you probably want to use `OnShutDown()` signal instead.
+ *
+ *  [Signature]
+ *  void <slot>()
+ */
+/* SIGNAL */
+public final function SimpleSlot OnShutDownSystem(AcediaObject receiver)
+{
+    return SimpleSlot(onShutdownSystemSignal.NewSlot(receiver));
+}
 
 /**
  *  Signal that will be emitted when new `Feature` is enabled.
@@ -96,20 +151,27 @@ public final function Environment_FeatureDisabled_Slot OnFeatureDisabled(
         onFeatureEnabledSignal.NewSlot(receiver));
 }
 
-protected function Constructor()
+/**
+ *  Shuts AcediaCore down, performing all the necessary cleaning up.
+ */
+public final function Shutdown()
 {
-    //  Always register our core package
-    RegisterPackage_S("AcediaCore");
-    onFeatureEnabledSignal = Environment_FeatureEnabled_Signal(
-        _.memory.Allocate(class'Environment_FeatureEnabled_Signal'));
-    onFeatureDisabledSignal = Environment_FeatureDisabled_Signal(
-        _.memory.Allocate(class'Environment_FeatureDisabled_Signal'));
-}
-
-protected function Finalizer()
-{
-    _.memory.Free(onFeatureEnabledSignal);
-    _.memory.Free(onFeatureDisabledSignal);
+    local LevelCore core;
+    if (acediaShutDown) {
+        return;
+    }
+    DisableAllFeatures();
+    onShutdownSignal.Emit();
+    onShutdownSystemSignal.Emit();
+    core = class'ServerLevelCore'.static.GetInstance();
+    if (core != none) {
+        core.Destroy();
+    }
+    core = class'ClientLevelCore'.static.GetInstance();
+    if (core != none) {
+        core.Destroy();
+    }
+    acediaShutDown = true;
 }
 
 /**
