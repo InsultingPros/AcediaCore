@@ -1,8 +1,7 @@
 /**
  *      Interface for a *Pawn* - base class for any entity that can be
  *  controlled by player or AI. To avoid purity for the sake of itself, in
- *  Acedia it will also be bundled with such typical components as health,
- *  collision, etc.
+ *  Acedia it will also be bundled with typical components like health.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.

@@ -57,9 +57,10 @@ public function EInterface Copy()
 
 public function bool Supports(class<EInterface> newInterfaceClass)
 {
-    if (newInterfaceClass == none)              return false;
-    if (newInterfaceClass == class'EPlaceable') return true;
-    if (newInterfaceClass == class'EKFPawn')    return true;
+    if (newInterfaceClass == none)                  return false;
+    if (newInterfaceClass == class'EPlaceable')     return true;
+    if (newInterfaceClass == class'EKFPlaceable')   return true;
+    if (newInterfaceClass == class'EKFPawn')        return true;
 
     return false;
 }
@@ -70,6 +71,7 @@ public function EInterface As(class<EInterface> newInterfaceClass)
         return none;
     }
     if (    newInterfaceClass == class'EPlaceable'
+        ||  newInterfaceClass == class'EKFPlaceable'
         ||  newInterfaceClass == class'EKFPawn')
     {
         return Copy();
@@ -115,6 +117,72 @@ public function Vector GetLocation()
         return pawnInstance.location;
     }
     return Vect(0.0, 0.0, 0.0);
+}
+
+
+public function Rotator GetRotation()
+{
+    local Pawn pawnInstance;
+
+    pawnInstance = GetNativeInstance();
+    if (pawnInstance != none) {
+        return pawnInstance.rotation;
+    }
+    return Rot(0.0, 0.0, 0.0);
+}
+
+public function bool IsStatic()
+{
+    local Pawn pawnInstance;
+
+    pawnInstance = GetNativeInstance();
+    if (pawnInstance != none) {
+        return pawnInstance.bStatic;
+    }
+    return false;
+}
+
+public function bool IsColliding()
+{
+    local Pawn pawnInstance;
+
+    pawnInstance = GetNativeInstance();
+    if (pawnInstance != none) {
+        return pawnInstance.bCollideActors;
+    }
+    return false;
+}
+
+public function bool IsBlocking()
+{
+    local Pawn pawnInstance;
+
+    pawnInstance = GetNativeInstance();
+    if (pawnInstance != none) {
+        return pawnInstance.bBlockActors;
+    }
+    return false;
+}
+
+public function SetBlocking(bool newBlocking)
+{
+    local Pawn pawnInstance;
+
+    pawnInstance = GetNativeInstance();
+    if (pawnInstance != none) {
+        pawnInstance.bBlockActors = newBlocking;
+    }
+}
+
+public function bool IsVisible()
+{
+    local Pawn pawnInstance;
+
+    pawnInstance = GetNativeInstance();
+    if (pawnInstance != none) {
+        return (!pawnInstance.bHidden && pawnInstance.drawType != DT_None);
+    }
+    return false;
 }
 
 public function EPlayer GetPlayer()
