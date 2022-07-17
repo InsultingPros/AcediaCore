@@ -60,12 +60,28 @@ public function EPawn GetPawn();
 public function EntityIterator LeaveOnlyPawns();
 
 /**
- *  Makes caller iterator skip any entities that are not visible in the game
- *  world.
+ *  Makes caller iterator skip any entities that support `EPawn` interface
+ *  during iteration.
+ *
+ *  @return Reference to caller `EntityIterator` to allow for method chaining.
+ */
+public function EntityIterator LeaveOnlyNonPawns();
+
+/**
+ *  Makes caller iterator skip any entities that are placeable (support
+ *  `EPlaceable` interface) in the game.
  *
  *  @return Reference to caller `EntityIterator` to allow for method chaining.
  */
 public function EntityIterator LeaveOnlyPlaceables();
+
+/**
+ *  Makes caller iterator skip any entities that are not placeable (don't
+ *  support `EPlaceable` interface) into the game world.
+ *
+ *  @return Reference to caller `EntityIterator` to allow for method chaining.
+ */
+public function EntityIterator LeaveOnlyNonPlaceables();
 
 /**
  *  Makes caller iterator skip any entities that are not visible in the game
@@ -74,6 +90,83 @@ public function EntityIterator LeaveOnlyPlaceables();
  *  @return Reference to caller `EntityIterator` to allow for method chaining.
  */
 public function EntityIterator LeaveOnlyVisible();
+
+/**
+ *  Makes caller iterator skip any entities that are visible in the game
+ *  world.
+ *
+ *  @return Reference to caller `EntityIterator` to allow for method chaining.
+ */
+public function EntityIterator LeaveOnlyInvisible();
+
+/**
+ *  Makes caller iterator skip any entities that are able to collide with other
+ *  entities in the game world.
+ *
+ *  @return Reference to caller `EntityIterator` to allow for method chaining.
+ */
+public function EntityIterator LeaveOnlyColliding();
+
+/**
+ *  Makes caller iterator skip any entities that are unable to collide with
+ *  other entities in the game world.
+ *
+ *  @return Reference to caller `EntityIterator` to allow for method chaining.
+ */
+public function EntityIterator LeaveOnlyNonColliding();
+
+/**
+ *  Makes caller iterator skip any non-static entities that do not change over
+ *  time, leaving only dynamic ones.
+ *
+ *  @return Reference to caller `EntityIterator` to allow for method chaining.
+ */
+public function EntityIterator LeaveOnlyStatic();
+
+/**
+ *  Makes caller iterator skip any static entities that do not change over time.
+ *
+ *  @return Reference to caller `EntityIterator` to allow for method chaining.
+ */
+public function EntityIterator LeaveOnlyDynamic();
+
+/**
+ *  Leaves only placeable entities that are located no further than `radius`
+ *  distance from `placeable`.
+ *
+ *  @see `LeaveOnlyNearbyToLocation()`
+ *
+ *  @param  placeable   Interface to entity that iterated entities must be
+ *      close to.
+ *  @param  radius      Maximum distance that entities are allowed to be away
+ *      from `location`.
+ *  @return Reference to caller `EntityIterator` to allow for method chaining.
+ */
+public function EntityIterator LeaveOnlyNearby(
+    EPlaceable  placeable,
+    float       radius);
+
+/**
+ *  Leaves only placeable entities that are located no further than `radius`
+ *  distance from `location`.
+ *
+ *  @see `LeaveOnlyNearby()`
+ *
+ *  @param  location    Location to which entities must be close to.
+ *  @param  radius      Maximum distance that entities are allowed to be away
+ *      from `location`.
+ *  @return Reference to caller `EntityIterator` to allow for method chaining.
+ */
+public function EntityIterator LeaveOnlyNearbyToLocation(
+    Vector  location,
+    float   radius);
+
+/**
+ *  Leaves only placeable entities that are touching `placeable`.
+ *
+ *  `placeable` must have collisions enabled for any entity to touch it.
+ */
+public function EntityIterator LeaveOnlyTouching(EPlaceable placeable);
 
 defaultproperties
 {

@@ -35,7 +35,7 @@ public function TracingIterator TraceBetween(Vector start, Vector end)
 
     newIterator = KF1_TracingIterator(
         _.memory.Allocate(class'KF1_TracingIterator'));
-    newIterator.Initialize(start, end);
+    newIterator.InitializeTracing(start, end);
     return newIterator;
 }
 

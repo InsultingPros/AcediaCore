@@ -22,6 +22,21 @@ class Iter extends AcediaObject
     abstract;
 
 /**
+ *  Iterators can filter objects they're iterating on by a presence or lack of
+ *  a certain property, recording this choice requires 3 values, so `bool`
+ *  isn't enough and we need to use this `enum` instead.
+ */
+enum IterFilter
+{
+    //  We don't use relevant property for filtering
+    ITF_Nothing,
+    //  Iterated objects must have that property
+    ITF_Have,
+    //  Iterated objects must not have that property
+    ITF_NotHave
+};
+
+/**
  *      Makes iterator pick next item.
  *  Use `HasFinished()` to check whether you have iterated all of them.
  *

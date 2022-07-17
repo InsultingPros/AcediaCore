@@ -17,13 +17,13 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class TracingIterator extends Iter
+class TracingIterator extends EntityIterator
     abstract;
 
 /**
  *  Returns position from which tracing is started.
  *
- *  @return Position from which stracing has started.
+ *  @return Position from which tracing has started.
  */
 public function Vector GetTracingStart();
 
@@ -33,14 +33,6 @@ public function Vector GetTracingStart();
  *  @return Position at which tracing has ended.
  */
 public function Vector GetTracingEnd();
-
-/**
- *  Returns only `EPlaceable` interfaces for traced entities.
- *
- *  Resulting `EPlaceable` can refer to now non-existing entities if they were
- *  destroyed after the start of iteration.
- */
-public function AcediaObject Get() { return none; }
 
 /**
  *  Returns hit location for the `EPlaceable` that `TracingIterator` is
@@ -61,45 +53,6 @@ public function Vector GetHitLocation();
  *      iteration has already finished.
  */
 public function Vector GetHitNormal();
-
-/**
- *  Returns `EPlaceable` caller `TracingIterator` is currently at.
- *  Guaranteed to be not `none` as long as iteration hasn't finished.
- *
- *  Resulting `EPlaceable` can refer to now non-existing entities if they were
- *  destroyed after the start of iteration.
- *
- *  @return `EPlaceable` caller `TracingIterator` is currently at.
- */
-public function EPlaceable GetPlaceable();
-
-/**
- *  Returns `EPlaceable` caller `TracingIterator` is currently at as `EPawn`,
- *  assuming that its entity support that interface.
- *
- *  Resulting `EPawn` can refer to now non-existing entities if they were
- *  destroyed after the start of iteration.
- *
- *  @return `EPawn` interface for `EPlaceable` that `Get()` would have returned.
- *      If `EPawn` is not supported by that `EPlaceable` - returns `none`.
- */
-public function EPawn GetPawn();
-
-/**
- *  Makes caller iterator skip any entities that do not support `EPawn`
- *  interface during iteration.
- *
- *  @return Reference to caller `TracingIterator` to allow for method chaining.
- */
-public function TracingIterator LeaveOnlyPawns();
-
-/**
- *  Makes caller iterator skip any entities that are not visible in the game
- *  world.
- *
- *  @return Reference to caller `TracingIterator` to allow for method chaining.
- */
-public function TracingIterator LeaveOnlyVisible();
 
 defaultproperties
 {

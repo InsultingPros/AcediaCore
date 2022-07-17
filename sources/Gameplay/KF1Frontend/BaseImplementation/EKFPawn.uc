@@ -59,7 +59,6 @@ public function bool Supports(class<EInterface> newInterfaceClass)
 {
     if (newInterfaceClass == none)                  return false;
     if (newInterfaceClass == class'EPlaceable')     return true;
-    if (newInterfaceClass == class'EKFPlaceable')   return true;
     if (newInterfaceClass == class'EKFPawn')        return true;
 
     return false;
@@ -71,7 +70,6 @@ public function EInterface As(class<EInterface> newInterfaceClass)
         return none;
     }
     if (    newInterfaceClass == class'EPlaceable'
-        ||  newInterfaceClass == class'EKFPlaceable'
         ||  newInterfaceClass == class'EKFPawn')
     {
         return Copy();

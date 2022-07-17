@@ -30,9 +30,9 @@ protected function Finalizer()
 }
 
 /**
- *  Creates new `EKFUnknownPlaceable` that refers to the `actorInstance` actor.
+ *  Creates new `EKFUnknownPlaceable` that refers to the `actorInstance` pawn.
  *
- *  @param  actorInstance   Native `Actor` class that new `EKFUnknownPlaceable`
+ *  @param  actorInstance    Native actor class that new `EKFUnknownPlaceable`
  *      will represent.
  *  @return New `EKFUnknownPlaceable` that represents given `actorInstance`.
  */
@@ -44,23 +44,10 @@ public final static /*unreal*/ function EKFUnknownPlaceable Wrap(
     if (actorInstance == none) {
         return none;
     }
-    newReference = EKFUnknownPlaceable(
-        __().memory.Allocate(class'EKFUnknownPlaceable'));
+    newReference =
+        EKFUnknownPlaceable(__().memory.Allocate(class'EKFUnknownPlaceable'));
     newReference.actorReference = __server().unreal.ActorRef(actorInstance);
     return newReference;
-}
-
-/**
- *  Returns `Actor` instance represented by the caller `EKFUnknownPlaceable`.
- *
- *  @return `Actor` instance represented by the caller `EKFUnknownPlaceable`.
- */
-public final /*unreal*/ function Actor GetNativeInstance()
-{
-    if (actorReference != none) {
-        return actorReference.Get();
-    }
-    return none;
 }
 
 public function EInterface Copy()
@@ -73,15 +60,20 @@ public function EInterface Copy()
 
 public function bool Supports(class<EInterface> newInterfaceClass)
 {
-    if (newInterfaceClass == none)                          return false;
-    if (newInterfaceClass == class'EPlaceable')             return true;
-    if (newInterfaceClass == class'EKFUnknownPlaceable')    return true;
+    if (newInterfaceClass == none)                  return false;
+    if (newInterfaceClass == class'EPlaceable')     return true;
+    if (newInterfaceClass == class'EKFUnknownPlaceable')   return true;
 
+    if (newInterfaceClass == class'EKFPawn') {
+        return (Pawn(GetNativeInstance()) != none);
+    }
     return false;
 }
 
 public function EInterface As(class<EInterface> newInterfaceClass)
 {
+    local Pawn pawnInstance;
+
     if (!IsExistent()) {
         return none;
     }
@@ -89,6 +81,14 @@ public function EInterface As(class<EInterface> newInterfaceClass)
         ||  newInterfaceClass == class'EKFUnknownPlaceable')
     {
         return Copy();
+    }
+    if (    newInterfaceClass == class'EPawn'
+        ||  newInterfaceClass == class'EKFPawn')
+    {
+        pawnInstance = Pawn(GetNativeInstance());
+        if (pawnInstance != none) {
+            return class'EKFPawn'.static.Wrap(pawnInstance);
+        }
     }
     return none;
 }
@@ -100,13 +100,26 @@ public function bool IsExistent()
 
 public function bool SameAs(EInterface other)
 {
-    local EKFUnknownPlaceable otherUnknown;
+    local EKFUnknownPlaceable otherPlaceable;
 
-    otherUnknown = EKFUnknownPlaceable(other);
-    if (otherUnknown == none) {
+    otherPlaceable = EKFUnknownPlaceable(other);
+    if (otherPlaceable == none) {
         return false;
     }
-    return (GetNativeInstance() == otherUnknown.GetNativeInstance());
+    return (GetNativeInstance() == otherPlaceable.GetNativeInstance());
+}
+
+/**
+ *  Returns `Pawn` instance represented by the caller `EKFUnknownPlaceable`.
+ *
+ *  @return `Pawn` instance represented by the caller `EKFUnknownPlaceable`.
+ */
+public final /*unreal*/ function Actor GetNativeInstance()
+{
+    if (actorReference != none) {
+        return actorReference.Get();
+    }
+    return none;
 }
 
 public function Vector GetLocation()
@@ -118,6 +131,71 @@ public function Vector GetLocation()
         return actorInstance.location;
     }
     return Vect(0.0, 0.0, 0.0);
+}
+
+public function Rotator GetRotation()
+{
+    local Actor actorInstance;
+
+    actorInstance = GetNativeInstance();
+    if (actorInstance != none) {
+        return actorInstance.rotation;
+    }
+    return Rot(0.0, 0.0, 0.0);
+}
+
+public function bool IsStatic()
+{
+    local Actor actorInstance;
+
+    actorInstance = GetNativeInstance();
+    if (actorInstance != none) {
+        return actorInstance.bStatic;
+    }
+    return false;
+}
+
+public function bool IsColliding()
+{
+    local Actor actorInstance;
+
+    actorInstance = GetNativeInstance();
+    if (actorInstance != none) {
+        return actorInstance.bCollideActors;
+    }
+    return false;
+}
+
+public function bool IsBlocking()
+{
+    local Actor actorInstance;
+
+    actorInstance = GetNativeInstance();
+    if (actorInstance != none) {
+        return actorInstance.bBlockActors;
+    }
+    return false;
+}
+
+public function SetBlocking(bool newBlocking)
+{
+    local Actor actorInstance;
+
+    actorInstance = GetNativeInstance();
+    if (actorInstance != none) {
+        actorInstance.bBlockActors = newBlocking;
+    }
+}
+
+public function bool IsVisible()
+{
+    local Actor actorInstance;
+
+    actorInstance = GetNativeInstance();
+    if (actorInstance != none) {
+        return (!actorInstance.bHidden && actorInstance.drawType != DT_None);
+    }
+    return false;
 }
 
 defaultproperties
