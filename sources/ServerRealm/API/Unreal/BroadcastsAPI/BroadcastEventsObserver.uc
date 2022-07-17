@@ -204,7 +204,7 @@ var private Broadcast_OnHandleLocalizedFor_Signal   onHandleLocalizedFor;
 var private Broadcast_OnHandleText_Signal           onHandleText;
 var private Broadcast_OnHandleTextFor_Signal        onHandleTextFor;
 
-public final function Initialize(UnrealService service)
+public final function Initialize(ServerUnrealService service)
 {
     usedInjectionLevel =
         class'SideEffects'.default.broadcastHandlerInjectionLevel;

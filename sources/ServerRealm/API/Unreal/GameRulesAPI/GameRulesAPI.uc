@@ -31,10 +31,10 @@ var private LoggerAPI.Definition errGameRulesUnknown;
 public function GameRules_OnFindPlayerStart_Slot OnFindPlayerStart(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnFindPlayerStart_Signal');
     return GameRules_OnFindPlayerStart_Slot(signal.NewSlot(receiver));
@@ -44,10 +44,10 @@ public function GameRules_OnFindPlayerStart_Slot OnFindPlayerStart(
 public function GameRules_OnHandleRestartGame_Slot OnHandleRestartGame(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnHandleRestartGame_Signal');
     return GameRules_OnHandleRestartGame_Slot(signal.NewSlot(receiver));
@@ -57,10 +57,10 @@ public function GameRules_OnHandleRestartGame_Slot OnHandleRestartGame(
 public function GameRules_OnCheckEndGame_Slot OnCheckEndGame(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnCheckEndGame_Signal');
     return GameRules_OnCheckEndGame_Slot(signal.NewSlot(receiver));
@@ -70,10 +70,10 @@ public function GameRules_OnCheckEndGame_Slot OnCheckEndGame(
 public function GameRules_OnCheckScore_Slot OnCheckScore(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnCheckScore_Signal');
     return GameRules_OnCheckScore_Slot(signal.NewSlot(receiver));
@@ -83,10 +83,10 @@ public function GameRules_OnCheckScore_Slot OnCheckScore(
 public function GameRules_OnOverridePickupQuery_Slot
     OnOverridePickupQuery(AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnOverridePickupQuery_Signal');
     return GameRules_OnOverridePickupQuery_Slot(signal.NewSlot(receiver));
@@ -95,10 +95,10 @@ public function GameRules_OnOverridePickupQuery_Slot
 /* SIGNAL */
 public function GameRules_OnNetDamage_Slot OnNetDamage(AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnNetDamage_Signal');
     return GameRules_OnNetDamage_Slot(signal.NewSlot(receiver));
@@ -108,10 +108,10 @@ public function GameRules_OnNetDamage_Slot OnNetDamage(AcediaObject receiver)
 public function GameRules_OnPreventDeath_Slot OnPreventDeath(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnPreventDeath_Signal');
     return GameRules_OnPreventDeath_Slot(signal.NewSlot(receiver));
@@ -121,10 +121,10 @@ public function GameRules_OnPreventDeath_Slot OnPreventDeath(
 public function GameRules_OnScoreKill_Slot OnScoreKill(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryAddingGameRules(service);
     signal = service.GetSignal(class'GameRules_OnScoreKill_Signal');
     return GameRules_OnScoreKill_Slot(signal.NewSlot(receiver));
@@ -134,10 +134,10 @@ public function GameRules_OnScoreKill_Slot OnScoreKill(
  *  Method that attempts to inject Acedia's `AcediaGameRules`, while
  *  respecting settings inside `class'SideEffects'`.
  *
- *  @param  service Reference to `UnrealService` to exchange signal and slots
- *      classes with.
+ *  @param  service Reference to `ServerUnrealService` to exchange signal and
+ *      slots classes with.
  */
-protected function TryAddingGameRules(UnrealService service)
+protected function TryAddingGameRules(ServerUnrealService service)
 {
     local AcediaGameRules       gameRules;
     local GameRulesSideEffect   sideEffect;

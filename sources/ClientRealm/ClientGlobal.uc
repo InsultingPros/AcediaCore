@@ -25,6 +25,10 @@ class ClientGlobal extends CoreGlobal;
 //  main instance in this variable's default value.
 var protected ClientGlobal myself;
 
+var public ClientUnrealAPIBase unreal;
+
+var private LoggerAPI.Definition fatBadAdapterClass;
+
 public final static function ClientGlobal GetInstance()
 {
     if (default.myself == none)
@@ -38,13 +42,41 @@ public final static function ClientGlobal GetInstance()
 
 protected function Initialize()
 {
+    local Global                        _;
+    local class<ClientAcediaAdapter>    clientAdapterClass;
+
     if (initialized) {
         return;
     }
     super.Initialize();
     initialized = true;
+    clientAdapterClass = class<ClientAcediaAdapter>(adapterClass);
+    if (adapterClass != none && clientAdapterClass == none)
+    {
+        class'Global'.static.GetInstance().logger
+            .Auto(fatBadAdapterClass)
+            .ArgClass(self.class);
+        return;
+    }
+    if (clientAdapterClass == none) {
+        return;
+    }
+    _ = class'Global'.static.GetInstance();
+    unreal  = ClientUnrealAPIBase(
+        _.memory.Allocate(clientAdapterClass.default.clientUnrealAPIClass));
+}
+
+public final function bool ConnectClientLevelCore()
+{
+    if (class'ClientLevelCore'.static.GetInstance() == none) {
+        return false;
+    }
+    Initialize();
+    return true;
 }
 
 defaultproperties
 {
+    adapterClass = class'ClientAcediaAdapter'
+    fatBadAdapterClass = (l=LOG_Fatal,m="non-`ClientAcediaAdapter` class was specified as an adapter for `%1` level core class. This should not have happened. AcediaCore cannot properly function.")
 }

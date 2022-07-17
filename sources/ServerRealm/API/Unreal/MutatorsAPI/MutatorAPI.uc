@@ -23,10 +23,10 @@ class MutatorAPI extends MutatorAPIBase;
 public function Mutator_OnCheckReplacement_Slot OnCheckReplacement(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     signal = service.GetSignal(class'Mutator_OnCheckReplacement_Signal');
     return Mutator_OnCheckReplacement_Slot(signal.NewSlot(receiver));
 }
@@ -35,10 +35,10 @@ public function Mutator_OnCheckReplacement_Slot OnCheckReplacement(
 public function Mutator_OnMutate_Slot OnMutate(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     signal = service.GetSignal(class'Mutator_OnMutate_Signal');
     return Mutator_OnMutate_Slot(signal.NewSlot(receiver));
 }
@@ -47,10 +47,10 @@ public function Mutator_OnMutate_Slot OnMutate(
 public function Mutator_OnModifyLogin_Slot OnModifyLogin(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     signal = service.GetSignal(class'Mutator_OnModifyLogin_Signal');
     return Mutator_OnModifyLogin_Slot(signal.NewSlot(receiver));
 }

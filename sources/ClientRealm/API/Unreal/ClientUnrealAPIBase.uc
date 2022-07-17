@@ -1,4 +1,6 @@
 /**
+ *      Low-level API that provides set of utility methods for working with
+ *  unreal script classes on the clients.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -16,15 +18,17 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ClientLevelCore extends LevelCore;
+class ClientUnrealAPIBase extends UnrealAPIBase
+    abstract;
 
-public static function LevelCore CreateLevelCore(Actor source)
-{
-    if (source == none)                             return none;
-    if (source.level.netMode == NM_DedicatedServer) return none;
-
-    return super.CreateLevelCore(source);
-}
+/**
+ *  Returns current local player's `Controller`. Useful because `level`
+ *  is not accessible inside objects.
+ *
+ *  @return `PlayerController` instance for the local player. `none` iff run on
+ *      dedicated servers.
+ */
+public function PlayerController GetLocalPlayer();
 
 defaultproperties
 {

@@ -78,7 +78,7 @@ public final function SimpleSlot OnShutdown(AcediaObject receiver)
     return SimpleSlot(onShutdownSignal.NewSlot(receiver));
 }
 
-public static function LevelCore CreateLevelCore(Actor source)
+public simulated static function LevelCore CreateLevelCore(Actor source)
 {
     if (GetInstance() != none)  return none;
     if (source == none)         return none;
@@ -87,6 +87,35 @@ public static function LevelCore CreateLevelCore(Actor source)
     default.activeInstance = source.Spawn(default.class);
     default.blockSpawning = true;
     return default.activeInstance;
+}
+
+/**
+ *  Creates new `Actor` in the level as the caller `LevelCore`.
+ *
+ *  For `AcediaActor`s calls their constructors.
+ *
+ *  @param  classToAllocate     Class of the `Object` that this method will
+ *      create. Must not be subclass of `Actor`.
+ *  @return Newly created object.
+ *      Will only be `none` if `classToAllocate` is `none` or `classToAllocate`
+ *      is abstract.
+ */
+public final function Actor Allocate(class<Actor> classToAllocate)
+{
+    local Actor                 allocatedActor;
+    local class<AcediaActor>    acediaClassToAllocate;
+
+    if (classToAllocate == none) {
+        return none;
+    }
+    acediaClassToAllocate = class<AcediaActor>(classToAllocate);
+    allocatedActor = Spawn(classToAllocate);
+    //  Call constructor here, just in case, to make sure constructor is called
+    //  as soon as possible
+    if (acediaClassToAllocate != none) {
+        AcediaActor(allocatedActor)._constructor();
+    }
+    return allocatedActor;
 }
 
 public final static function LevelCore GetInstance()

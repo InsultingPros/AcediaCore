@@ -29,7 +29,7 @@ var private GameRules_OnNetDamage_Signal            onNetDamage;
 var private GameRules_OnPreventDeath_Signal         onPreventDeath;
 var private GameRules_OnScoreKill_Signal            onScoreKill;
 
-public final function Initialize(UnrealService service)
+public final function Initialize(ServerUnrealService service)
 {
     if (service == none) {
         return;

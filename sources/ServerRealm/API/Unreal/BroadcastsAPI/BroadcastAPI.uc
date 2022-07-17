@@ -31,10 +31,10 @@ var private LoggerAPI.Definition errBroadcasthandlerUnknown;
 public function Broadcast_OnBroadcastCheck_Slot OnBroadcastCheck(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryInjectBroadcastHandler(service);
     signal = service.GetSignal(class'Broadcast_OnBroadcastCheck_Signal');
     return Broadcast_OnBroadcastCheck_Slot(signal.NewSlot(receiver));
@@ -44,10 +44,10 @@ public function Broadcast_OnBroadcastCheck_Slot OnBroadcastCheck(
 public function Broadcast_OnHandleText_Slot OnHandleText(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryInjectBroadcastHandler(service);
     signal = service.GetSignal(class'Broadcast_OnHandleText_Signal');
     return Broadcast_OnHandleText_Slot(signal.NewSlot(receiver));
@@ -57,10 +57,10 @@ public function Broadcast_OnHandleText_Slot OnHandleText(
 public function Broadcast_OnHandleTextFor_Slot OnHandleTextFor(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryInjectBroadcastHandler(service);
     signal = service.GetSignal(class'Broadcast_OnHandleTextFor_Signal');
     return Broadcast_OnHandleTextFor_Slot(signal.NewSlot(receiver));
@@ -70,10 +70,10 @@ public function Broadcast_OnHandleTextFor_Slot OnHandleTextFor(
 public function Broadcast_OnHandleLocalized_Slot OnHandleLocalized(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryInjectBroadcastHandler(service);
     signal = service.GetSignal(class'Broadcast_OnHandleLocalized_Signal');
     return Broadcast_OnHandleLocalized_Slot(signal.NewSlot(receiver));
@@ -83,10 +83,10 @@ public function Broadcast_OnHandleLocalized_Slot OnHandleLocalized(
 public function Broadcast_OnHandleLocalizedFor_Slot OnHandleLocalizedFor(
     AcediaObject receiver)
 {
-    local Signal        signal;
-    local UnrealService service;
+    local Signal                signal;
+    local ServerUnrealService   service;
 
-    service = UnrealService(class'UnrealService'.static.Require());
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
     TryInjectBroadcastHandler(service);
     signal = service.GetSignal(class'Broadcast_OnHandleLocalizedFor_Signal');
     return Broadcast_OnHandleLocalizedFor_Slot(signal.NewSlot(receiver));
@@ -96,10 +96,10 @@ public function Broadcast_OnHandleLocalizedFor_Slot OnHandleLocalizedFor(
  *  Method that attempts to inject Acedia's `BroadcastEventObserver`, while
  *  respecting settings inside `class'SideEffects'`.
  *
- *  @param  service Reference to `UnrealService` to exchange signal and slots
- *      classes with.
+ *  @param  service Reference to `ServerUnrealService` to exchange signal and
+ *      slots classes with.
  */
-protected final function TryInjectBroadcastHandler(UnrealService service)
+protected final function TryInjectBroadcastHandler(ServerUnrealService service)
 {
     local InjectionLevel            usedLevel;
     local BroadcastSideEffect       sideEffect;
