@@ -3,7 +3,7 @@
  *  that allows for only one instance of it to exist.
  *      To make sure your child class properly works, either don't overload
  *  'PreBeginPlay' or make sure to call it's parent's version.
- *      Copyright 2019 - 2021 Anton Tarasenko
+ *      Copyright 2019-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -32,14 +32,16 @@ var public Singleton activeInstance;
 //      Only a default value is ever used.
 var protected bool blockSpawning;
 
-protected static function StaticFinalizer()
+protected simulated static function StaticFinalizer()
 {
     default.activeInstance = none;
 }
 
-public final static function Singleton GetInstance(optional bool spawnIfMissing)
+public simulated final static function Singleton GetInstance(
+    optional bool spawnIfMissing)
 {
     local bool instanceExists;
+
     instanceExists =    default.activeInstance != none
                     &&  !default.activeInstance.bPendingDelete;
     if (instanceExists) {
@@ -51,13 +53,13 @@ public final static function Singleton GetInstance(optional bool spawnIfMissing)
     return none;
 }
 
-public final static function bool IsSingletonCreationBlocked()
+public simulated final static function bool IsSingletonCreationBlocked()
 {
     return default.blockSpawning;
 }
 
-protected function OnCreated(){}
-protected function OnDestroyed(){}
+protected simulated function OnCreated(){}
+protected simulated function OnDestroyed(){}
 
 //  Make sure only one instance of 'Singleton' exists at any point in time.
 //      Instead of overloading this function we suggest you overload a special
@@ -73,7 +75,7 @@ protected function OnDestroyed(){}
 //  |   if (bDeleteMe)
 //  |       return;
 //  |___________________________________________________________________________
-event PreBeginPlay()
+public simulated function PreBeginPlay()
 {
     if (default.blockSpawning || GetInstance() != none) {
         Destroy();
@@ -90,7 +92,7 @@ event PreBeginPlay()
 //  instance is destroyed.
 //      If you absolutely must overload this function in any child class -
 //  first call this version of the method.
-event Destroyed()
+public simulated function Destroyed()
 {
     if (self == default.activeInstance)
     {

@@ -55,7 +55,7 @@ var private HashTable aliasHash;
 var private LoggerAPI.Definition errIncorrectAliasPair, warnDuplicateAlias;
 
 //  Load and hash all the data `AliasSource` creation.
-protected function OnCreated()
+protected simulated function OnCreated()
 {
     if (!AssertAliasesClassIsOwnedByThisSource()) {
         Destroy();
@@ -68,7 +68,7 @@ protected function OnCreated()
     HashValidAliasesFromPerObjectConfig();
 }
 
-protected function OnDestroyed()
+protected simulated function OnDestroyed()
 {
     loadedAliasObjects.length = 0;
     _.memory.Free(aliasHash);
@@ -77,7 +77,7 @@ protected function OnDestroyed()
 
 //  Ensures that our `Aliases` class is properly linked with this
 //  source's class. Logs failure otherwise.
-private final function bool AssertAliasesClassIsOwnedByThisSource()
+private simulated final function bool AssertAliasesClassIsOwnedByThisSource()
 {
     if (aliasesClass == none)                       return true;
     if (aliasesClass.default.sourceClass == class)  return true;
@@ -87,7 +87,7 @@ private final function bool AssertAliasesClassIsOwnedByThisSource()
 }
 
 //  Load hashes from `AliasSource`'s config (`record` array)
-private final function HashValidAliasesFromRecord()
+private simulated final function HashValidAliasesFromRecord()
 {
     local int   i;
     local Text  aliasAsText, valueAsText;
@@ -102,7 +102,7 @@ private final function HashValidAliasesFromRecord()
 }
 
 //  Load hashes from `Aliases` objects' config
-private final function HashValidAliasesFromPerObjectConfig()
+private simulated final function HashValidAliasesFromPerObjectConfig()
 {
     local int           i, j;
     local Text          nextValue;
@@ -123,7 +123,7 @@ private final function HashValidAliasesFromPerObjectConfig()
 //  they already exist.
 //      Takes care of lower case conversion to store aliases in `aliasHash`
 //  in a case-insensitive way.
-private final function InsertAlias(BaseText alias, BaseText value)
+private simulated final function InsertAlias(BaseText alias, BaseText value)
 {
     local Text              aliasLowerCaseCopy;
     local HashTable.Entry   hashEntry;
@@ -146,7 +146,7 @@ private final function InsertAlias(BaseText alias, BaseText value)
  *  @param  alias   Alias to check, case-insensitive.
  *  @return `true` if present, `false` otherwise.
  */
-public function bool HasAlias(BaseText alias)
+public simulated function bool HasAlias(BaseText alias)
 {
     local bool  result;
     local Text  lowerCaseAlias;
@@ -175,7 +175,9 @@ public function bool HasAlias(BaseText alias)
  *      and `copyOnFailure == true` means method will return `alias.Copy()`.
  *      If `alias == none` method always returns `none`.
  */
-public function Text Resolve(BaseText alias, optional bool copyOnFailure)
+public simulated function Text Resolve(
+    BaseText        alias,
+    optional bool   copyOnFailure)
 {
     local Text result;
     local Text lowerCaseAlias;
@@ -230,7 +232,7 @@ public function Text Resolve(BaseText alias, optional bool copyOnFailure)
  *      this flag will be ignores.
  *  @return `true` if alias was added and `false` otherwise (alias was invalid).
  */
-public final function bool AddAlias(
+public simulated final function bool AddAlias(
     Text            aliasToAdd,
     Text            aliasValue,
     optional bool   saveInObject)
@@ -276,7 +278,7 @@ public final function bool AddAlias(
  *
  *  @param  aliasToRemove   Alias that you want to remove from caller source.
  */
-public final function RemoveAlias(BaseText aliasToRemove)
+public simulated final function RemoveAlias(BaseText aliasToRemove)
 {
     local int               i;
     local bool              isMatchingRecord;
@@ -311,7 +313,7 @@ public final function RemoveAlias(BaseText aliasToRemove)
     }
 }
 
-private final function LogDuplicateAliasWarning(
+private simulated final function LogDuplicateAliasWarning(
     BaseText alias,
     BaseText existingValue)
 {
@@ -324,7 +326,8 @@ private final function LogDuplicateAliasWarning(
 //      Tries to find a loaded `Aliases` config object that stores aliases for
 //  the given value. If such object does not exists - creates a new one.
 //      Assumes `value != none`.
-private final function Aliases GetAliasesObjectWithValue(BaseText value)
+private simulated final function Aliases GetAliasesObjectWithValue(
+    BaseText value)
 {
     local int       i;
     local Text      nextValue;

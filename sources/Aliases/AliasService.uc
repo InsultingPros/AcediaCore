@@ -42,7 +42,7 @@ var public config const class<AliasSource> colorAliasesSource;
 var public config const class<AliasSource> featureAliasesSource;
 var public config const class<AliasSource> entityAliasesSource;
 
-protected function OnLaunch()
+protected simulated function OnLaunch()
 {
     local float actualInterval;
     actualInterval = saveInterval;
@@ -53,12 +53,12 @@ protected function OnLaunch()
     SetTimer(actualInterval, true);
 }
 
-protected function OnShutdown()
+protected simulated function OnShutdown()
 {
     SaveAllPendingObjects();
 }
 
-public final function PendingSaveSource(AliasSource sourceToSave)
+public simulated final function PendingSaveSource(AliasSource sourceToSave)
 {
     local int i;
     if (sourceToSave == none) return;
@@ -70,7 +70,7 @@ public final function PendingSaveSource(AliasSource sourceToSave)
     sourcesPendingToSave[sourcesPendingToSave.length] = sourceToSave;
 }
 
-public final function PendingSaveObject(Aliases objectToSave)
+public simulated final function PendingSaveObject(Aliases objectToSave)
 {
     local int i;
     if (objectToSave == none) return;
@@ -89,7 +89,7 @@ public final function PendingSaveObject(Aliases objectToSave)
  *
  *  Does not reset the timer until next saving.
  */
-private final function DoSaveNextPendingObject()
+private simulated final function DoSaveNextPendingObject()
 {
     if (sourcesPendingToSave.length > 0)
     {
@@ -110,7 +110,7 @@ private final function DoSaveNextPendingObject()
  *  Forces saving of all objects (both `AliasSource`s or `Aliases`s) in queue
  *  to their config files.
  */
-private final function SaveAllPendingObjects()
+private simulated final function SaveAllPendingObjects()
 {
     local int i;
     for (i = 0; i < sourcesPendingToSave.length; i += 1) {
@@ -124,7 +124,7 @@ private final function SaveAllPendingObjects()
     aliasesPendingToSave.length = 0;
 }
 
-event Timer()
+public simulated function Timer()
 {
     DoSaveNextPendingObject();
 }

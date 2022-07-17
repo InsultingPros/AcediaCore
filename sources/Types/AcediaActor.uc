@@ -70,7 +70,7 @@ var protected const array<string> stringConstants;
  *
  *  AVOID MANUALLY CALLING IT, UNLESS YOU ARE REIMPLEMENTING `MemoryAPI`.
  */
-public function _constructor()
+public simulated function _constructor()
 {
     if (_isAllocated) return;
     _isAllocated = true;
@@ -96,7 +96,7 @@ public function _constructor()
  *
  *  AVOID MANUALLY CALLING IT, UNLESS YOU ARE REIMPLEMENTING `MemoryAPI`.
  */
-public function _finalizer()
+public simulated function _finalizer()
 {
     if (!_isAllocated) return;
     _isAllocated = false;
@@ -115,7 +115,7 @@ public function _finalizer()
  *  @return `true` if static constructor should not be called
  *      and `false` if it should.
  */
-protected final static function bool StaticConstructorGuard()
+protected simulated final static function bool StaticConstructorGuard()
 {
     if (!default._staticConstructorWasCalled)
     {
@@ -132,7 +132,7 @@ protected final static function bool StaticConstructorGuard()
  *
  *  AVOID MANUALLY CALLING IT, UNLESS YOU ARE REIMPLEMENTING `MemoryAPI`.
  */
-protected function Constructor(){}
+protected simulated function Constructor(){}
 
 /**
  *  This method is called before actor is destroyed or deallocated by
@@ -140,7 +140,7 @@ protected function Constructor(){}
  *
  *  AVOID MANUALLY CALLING IT, UNLESS YOU ARE REIMPLEMENTING `MemoryAPI`.
  */
-protected function Finalizer(){}
+protected simulated function Finalizer(){}
 
 /**
  *  When using proper methods for creating objects (`MemoryAPI`),
@@ -153,7 +153,7 @@ protected function Finalizer(){}
  *  `if (StaticConstructorGuard()) return;`
  *  otherwise behavior of constructors should be considered undefined.
  */
-public static function StaticConstructor()
+public simulated static function StaticConstructor()
 {
     StaticConstructorGuard();
 }
@@ -162,7 +162,7 @@ public static function StaticConstructor()
  *  This method is guaranteed to be called during Acedia's shutdown if
  *  `StaticConstructor()` was called on the caller class.
  */
-protected static function StaticFinalizer(){}
+protected simulated static function StaticFinalizer(){}
 
 //      By default this method will only create `TextCache` instance if it
 //  is needed, which is detected by checking whether `stringConstantsCopy` array
@@ -171,7 +171,8 @@ protected static function StaticFinalizer(){}
 //  `P()`, `C()` or `F()` methods that also use `TextCache`.
 //  To force creating `TextCache` for them - set `forceCreation` parameter to
 //  `true`.
-private final static function CreateTextCache(optional bool forceCreation)
+private simulated final static function CreateTextCache(
+    optional bool forceCreation)
 {
     local int           i;
     local array<string> stringConstantsCopy;
@@ -196,7 +197,7 @@ private final static function CreateTextCache(optional bool forceCreation)
  *
  *  AVOID MANUALLY CALLING IT.
  */
-public final function _deref()
+public simulated final function _deref()
 {
     if (!_isAllocated) {
         return;
@@ -211,7 +212,7 @@ public final function _deref()
  *
  *  AVOID MANUALLY CALLING IT.
  */
-public final function int _getRefCount()
+public simulated final function int _getRefCount()
 {
     if (!_isAllocated) {
         return 0;
@@ -227,7 +228,7 @@ public final function int _getRefCount()
  *
  *  @return Caller actor, to allow for easier use.
  */
-public final function AcediaActor NewRef()
+public simulated final function AcediaActor NewRef()
 {
     if (!_isAllocated) {
         return none;
@@ -245,7 +246,7 @@ public final function AcediaActor NewRef()
  *  @return `true` if actor is allocated and ready to use, `false` otherwise
  *      (`Destroy()` was called for it directly or through deallocation method).
  */
-public final function bool IsAllocated()
+public simulated final function bool IsAllocated()
 {
     return _isAllocated;
 }
@@ -254,7 +255,7 @@ public final function bool IsAllocated()
  *  Deallocates caller `AcediaActor`, calling its finalizer and then
  *  destroying it.
  */
-public final function FreeSelf()
+public simulated final function FreeSelf()
 {
     if (IsAllocated()) {
         _.memory.Free(self);
@@ -278,7 +279,7 @@ public final function FreeSelf()
  *  @return `true` if `other` is considered equal to the caller object,
  *      `false` otherwise.
  */
-public function bool IsEqual(Object other)
+public simulated function bool IsEqual(Object other)
 {
     return (self == other);
 }
@@ -295,7 +296,7 @@ public function bool IsEqual(Object other)
  *
  *  @return Hash code for the caller object.
  */
-protected function int CalculateHashCode()
+protected simulated function int CalculateHashCode()
 {
     return Rand(MaxInt);
 }
@@ -310,7 +311,7 @@ protected function int CalculateHashCode()
  *
  *  @return Hash code for the caller object.
  */
-public final function int GetHashCode()
+public simulated final function int GetHashCode()
 {
     if (_hashCodeWasCached) {
         return _cachedHashCode;
@@ -337,7 +338,7 @@ public final function int GetHashCode()
  *      otherwise guaranteed to be not `none`.
  *      Returned value should not be deallocated.
  */
-public static final function Text T(int index)
+public simulated static final function Text T(int index)
 {
     //  Here cache should already be created, but make extra sure
     CreateTextCache(true);
@@ -358,7 +359,7 @@ public static final function Text T(int index)
  *      Guaranteed to be allocated, not `none`.
  *      Returned value should not be deallocated.
  */
-public static final function Text P(string string)
+public simulated static final function Text P(string string)
 {
     CreateTextCache(true);
     return default._textCache.GetPlainText(string);
@@ -379,7 +380,7 @@ public static final function Text P(string string)
  *      Guaranteed to be allocated, not `none`.
  *      Returned value should not be deallocated.
  */
-public static final function Text C(string string)
+public simulated static final function Text C(string string)
 {
     CreateTextCache(true);
     return default._textCache.GetColoredText(string);
@@ -400,7 +401,7 @@ public static final function Text C(string string)
  *      Guaranteed to be allocated, not `none`.
  *      Returned value should not be deallocated.
  */
-public static final function Text F(string string)
+public simulated static final function Text F(string string)
 {
     CreateTextCache(true);
     return default._textCache.GetFormattedText(string);
@@ -410,7 +411,7 @@ public static final function Text F(string string)
  *  Static method accessor to API namespace, necessary for Acedia's
  *  implementation.
  */
-public static final function Global __()
+public simulated static final function Global __()
 {
     return class'Global'.static.GetInstance();
 }
@@ -419,7 +420,7 @@ public static final function Global __()
  *  Static method accessor to server API namespace, necessary for Acedia's
  *  implementation.
  */
-public static final function ServerGlobal __server()
+public simulated static final function ServerGlobal __server()
 {
     return class'ServerGlobal'.static.GetInstance();
 }
@@ -428,7 +429,7 @@ public static final function ServerGlobal __server()
  *  Static method accessor to client API namespace, necessary for Acedia's
  *  implementation.
  */
-public static final function ClientGlobal __client()
+public simulated static final function ClientGlobal __client()
 {
     return class'ClientGlobal'.static.GetInstance();
 }
@@ -437,7 +438,7 @@ public static final function ClientGlobal __client()
  *  If you are overloading this event - you have to first call
  *  `super.PreBeginPlay()`, otherwise Acedia might not function properly.
  */
-event PreBeginPlay()
+public simulated function PreBeginPlay()
 {
     super.PreBeginPlay();
     //  Calling this early here makes sure `Actor`s that catch `PreBeginPlay()`
@@ -450,7 +451,7 @@ event PreBeginPlay()
  *  If you are overloading this event - you have to call `super.Destroyed()`,
  *  otherwise Acedia might not function properly.
  */
-event Destroyed()
+public simulated function Destroyed()
 {
     super.Destroyed();
     _finalizer();
@@ -462,7 +463,7 @@ event Destroyed()
  *
  *  AVOID MANUALLY CALLING IT.
  */
-public static function _cleanup()
+public simulated static function _cleanup()
 {
     if (default._staticConstructorWasCalled) {
         StaticFinalizer();

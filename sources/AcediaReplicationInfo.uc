@@ -1,6 +1,6 @@
 /**
  *  Facilitates some core replicated functions between client and server.
- *      Copyright 2019 Anton Tarasenko
+ *      Copyright 2019-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class AcediaReplicationInfo extends ReplicationInfo;
+class AcediaReplicationInfo extends AcediaActor;
 
 var public PlayerController linkOwner;
 
@@ -29,4 +29,12 @@ replication
 
 defaultproperties
 {
+    remoteRole                      = ROLE_SimulatedProxy
+    netUpdateFrequency              = 10
+    bAlwaysRelevant                 = true
+    bStatic                         = false
+    bNoDelete                       = false
+    bHidden                         = true
+    bOnlyDirtyReplication           = true
+    bSkipActorPropertyReplication   = true
 }

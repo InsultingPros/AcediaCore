@@ -1,7 +1,7 @@
 /**
  *  Parent class for all services used in Acedia.
  *  Currently simply makes itself server-only.
- *      Copyright 2020 - 2021 Anton Tarasenko
+ *      Copyright 2020 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -28,9 +28,10 @@ var protected ServiceAnchor _self;
 var private LoggerAPI.Definition errNoService;
 
 //  Enables feature of given class.
-public static final function Service Require()
+public simulated static final function Service Require()
 {
     local Service newInstance;
+
     if (IsRunning()) {
         return Service(GetInstance());
     }
@@ -44,22 +45,22 @@ public static final function Service Require()
 }
 
 //  Whether service is currently running is determined by
-public static final function bool IsRunning()
+public simulated static final function bool IsRunning()
 {
     return (GetInstance() != none);
 }
 
-protected function OnLaunch(){}
-protected function OnShutdown(){}
+protected simulated function OnLaunch(){}
+protected simulated function OnShutdown(){}
 
-protected function OnCreated()
+protected simulated function OnCreated()
 {
     default.blockSpawning = true;
     _self = ServiceAnchor(_.memory.Allocate(class'ServiceAnchor'));
     OnLaunch();
 }
 
-protected function OnDestroyed()
+protected simulated function OnDestroyed()
 {
     OnShutdown();
     _.memory.Free(_self);

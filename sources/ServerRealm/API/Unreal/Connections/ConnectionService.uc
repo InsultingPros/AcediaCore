@@ -2,7 +2,7 @@
  *      This service tracks current connections to the server
  *  as well as their basic information,
  *  like IP or steam ID of connecting player.
- *      Copyright 2019 Anton Tarasenko
+ *      Copyright 2019-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
