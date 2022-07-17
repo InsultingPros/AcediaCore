@@ -21,6 +21,23 @@
 class ClientUnrealAPIBase extends UnrealAPIBase
     abstract;
 
+var protected bool initialized;
+
+var public InteractionAPIBase interaction;
+
+public function Initialize(class<ClientAcediaAdapter> adapterClass)
+{
+    if (initialized) {
+        return;
+    }
+    initialized = true;
+    if (adapterClass == none) {
+        return;
+    }
+    interaction = InteractionAPIBase(_.memory.Allocate(
+        adapterClass.default.clientInteractionAPIClass));
+}
+
 /**
  *  Returns current local player's `Controller`. Useful because `level`
  *  is not accessible inside objects.

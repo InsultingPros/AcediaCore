@@ -1,7 +1,6 @@
 /**
- *  Base class for objects that will provide an access to a Acedia's client- and
- *  server-specific functionality by giving a reference to this object to all
- *  Acedia's objects and actors, emulating a global API namespace.
+ *      Signal class implementation for `InteractionAPI`'s `OnPreRender` and
+ *  `OnPostRender` signals.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -19,14 +18,24 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ClientAcediaAdapter extends AcediaAdapter
-    abstract;
+class Interaction_OnRender_Signal extends Signal;
 
-var public const class<ClientUnrealAPIBase> clientUnrealAPIClass;
-var public const class<InteractionAPIBase>  clientInteractionAPIClass;
+public function bool Emit(Canvas canvas)
+{
+    local Slot nextSlot;
+
+    StartIterating();
+    nextSlot = GetNextSlot();
+    while (nextSlot != none)
+    {
+        Interaction_OnRender_Slot(nextSlot).connect(canvas);
+        nextSlot = GetNextSlot();
+    }
+    CleanEmptySlots();
+    return true;
+}
 
 defaultproperties
 {
-    clientUnrealAPIClass        = class'ClientUnrealAPI'
-    clientInteractionAPIClass   = class'InteractionAPI'
+    relatedSlotClass = class'Interaction_OnRender_Slot'
 }

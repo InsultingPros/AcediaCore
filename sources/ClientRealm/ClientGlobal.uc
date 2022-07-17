@@ -27,7 +27,7 @@ var protected ClientGlobal myself;
 
 var public ClientUnrealAPIBase unreal;
 
-var private LoggerAPI.Definition fatBadAdapterClass;
+var private LoggerAPI.Definition fatBadAdapterClass, errNoInteraction;
 
 public final static function ClientGlobal GetInstance()
 {
@@ -43,6 +43,8 @@ public final static function ClientGlobal GetInstance()
 protected function Initialize()
 {
     local Global                        _;
+    local PlayerController              localPlayer;
+    local AcediaInteraction             newInteraction;
     local class<ClientAcediaAdapter>    clientAdapterClass;
 
     if (initialized) {
@@ -61,9 +63,25 @@ protected function Initialize()
     if (clientAdapterClass == none) {
         return;
     }
+    //  Create APIs
     _ = class'Global'.static.GetInstance();
     unreal  = ClientUnrealAPIBase(
         _.memory.Allocate(clientAdapterClass.default.clientUnrealAPIClass));
+    unreal.Initialize(clientAdapterClass);
+    //  Create `AcediaInteraction`
+    localPlayer = unreal.GetLocalPlayer();
+    if (localPlayer != none)
+    {
+        newInteraction = AcediaInteraction(unreal
+            .interaction
+            .AddInteraction_S("AcediaCore.AcediaInteraction"));
+        if (newInteraction != none) {
+            newInteraction.InitializeInteraction();
+        }
+        else {
+            _.logger.Auto(errNoInteraction);
+        }
+    }
 }
 
 public final function bool ConnectClientLevelCore()
@@ -78,5 +96,6 @@ public final function bool ConnectClientLevelCore()
 defaultproperties
 {
     adapterClass = class'ClientAcediaAdapter'
-    fatBadAdapterClass = (l=LOG_Fatal,m="non-`ClientAcediaAdapter` class was specified as an adapter for `%1` level core class. This should not have happened. AcediaCore cannot properly function.")
+    fatBadAdapterClass  = (l=LOG_Fatal,m="Non-`ClientAcediaAdapter` class was specified as an adapter for `%1` level core class. This should not have happened. AcediaCore cannot properly function.")
+    errNoInteraction    = (l=LOG_Error,m="Failed to create interaction \"AcediaCore.AcediaInteraction\". AcediaCore won't support most of its client-side functionality.")
 }
