@@ -241,7 +241,7 @@ private function KFWeapon GetByRootWithDualRole(
     Inventory                       inventoryChain,
     InventoryAPI.DualWieldingRole   requiredRole)
 {
-    local InventoryAPI          api;
+    local InventoryAPIBase  api;
     local class<KFWeapon>       nextWeaponClass;
     local class<KFWeaponPickup> itemRoot, nextRoot;
     api = _server.unreal.inventory;

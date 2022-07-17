@@ -64,7 +64,7 @@ protected function Initialize()
         return;
     }
     _ = class'Global'.static.GetInstance();
-    unreal  = ServerUnrealAPI(
+    unreal  = ServerUnrealAPIBase(
         _.memory.Allocate(serverAdapterClass.default.serverUnrealAPIClass));
     unreal.Initialize(serverAdapterClass);
     time    = ServerTimeAPI(

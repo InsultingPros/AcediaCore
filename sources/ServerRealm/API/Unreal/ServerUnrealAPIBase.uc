@@ -23,10 +23,10 @@ class ServerUnrealAPIBase extends UnrealAPIBase
 
 var protected bool initialized;
 
-var public MutatorAPI   mutator;
-var public GameRulesAPI gameRules;
-var public BroadcastAPI broadcasts;
-var public InventoryAPI inventory;
+var public MutatorAPIBase   mutator;
+var public GameRulesAPIBase gameRules;
+var public BroadcastAPIBase broadcasts;
+var public InventoryAPIBase inventory;
 
 public function Initialize(class<ServerAcediaAdapter> adapterClass)
 {
@@ -37,13 +37,13 @@ public function Initialize(class<ServerAcediaAdapter> adapterClass)
     if (adapterClass == none) {
         return;
     }
-    mutator     = MutatorAPI(_.memory.Allocate(
+    mutator     = MutatorAPIBase(_.memory.Allocate(
         adapterClass.default.serverMutatorAPIClass));
-    gameRules   = GameRulesAPI(_.memory.Allocate(
+    gameRules   = GameRulesAPIBase(_.memory.Allocate(
         adapterClass.default.serverGameRulesAPIClass));
-    broadcasts  = BroadcastAPI(_.memory.Allocate(
+    broadcasts  = BroadcastAPIBase(_.memory.Allocate(
         adapterClass.default.serverBroadcastAPIClass));
-    inventory   = InventoryAPI(_.memory.Allocate(
+    inventory   = InventoryAPIBase(_.memory.Allocate(
         adapterClass.default.serverInventoryAPIClass));
 }
 
