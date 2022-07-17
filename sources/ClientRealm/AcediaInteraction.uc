@@ -19,16 +19,32 @@
  */
 class AcediaInteraction extends Interaction;
 
-#exec OBJ LOAD FILE=KillingFloorHUD.utx
-#exec OBJ LOAD FILE=KillingFloor2HUD.utx
-
 var private Global          _;
 var private ClientGlobal    _client;
 var private AcediaInteraction myself;
-var Texture shield;
 
+var private Unreal_OnTick_Signal        onTickSignal;
 var private Interaction_OnRender_Signal onPreRenderSignal;
 var private Interaction_OnRender_Signal onPostRenderSignal;
+
+/**
+ *  Signal that will be emitted every tick.
+ *
+ *  [Signature]
+ *  void <slot>(float delta, float dilationCoefficient)
+ *
+ *  @param  delta               In-game time in seconds that has passed since
+ *      the last tick. To obtain real time passed from the last tick divide
+ *      `delta` by `dilationCoefficient`.
+ *  @param  dilationCoefficient How fast is in-game time flow compared to
+ *      the real world's one? `2` means twice as fast and
+ *      `0.5` means twice as slow.
+ */
+/* SIGNAL */
+public function Unreal_OnTick_Slot OnTick(AcediaObject receiver)
+{
+    return Unreal_OnTick_Slot(onTickSignal.NewSlot(receiver));
+}
 
 /**
  *  Called before rendering, when `Interaction`s receive their `PreRender()`
@@ -71,6 +87,8 @@ public final function InitializeInteraction()
     default.myself = self;
     _       = class'Global'.static.GetInstance();
     _client = class'ClientGlobal'.static.GetInstance();
+    onTickSignal = Unreal_OnTick_Signal(
+        _.memory.Allocate(class'Unreal_OnTick_Signal'));
     onPreRenderSignal = Interaction_OnRender_Signal(
         _.memory.Allocate(class'Interaction_OnRender_Signal'));
     onPostRenderSignal = Interaction_OnRender_Signal(
@@ -79,6 +97,12 @@ public final function InitializeInteraction()
 
 event NotifyLevelChange()
 {
+    _.memory.Free(onTickSignal);
+    _.memory.Free(onPreRenderSignal);
+    _.memory.Free(onPostRenderSignal);
+    onTickSignal        = none;
+    onPreRenderSignal   = none;
+    onPostRenderSignal  = none;
     _.environment.ShutDown();
     default.myself  = none;
     _               = none;
@@ -105,16 +129,24 @@ public function PreRender(Canvas canvas)
 
 public function PostRender(Canvas canvas)
 {
-    Log("dsfsdfs");
-    canvas.SetPos(500, 500);
-    canvas.DrawTile(shield, 16, 16, 0, 0, shield.MaterialUSize(), shield.MaterialVSize());
     if (onPostRenderSignal != none) {
         onPostRenderSignal.Emit(canvas);
     }
 }
 
+public function Tick(float delta)
+{
+    local float dilationCoefficient;
+
+    if (onTickSignal != none)
+    {
+        dilationCoefficient = _client.unreal.GetLevel().timeDilation / 1.1;
+        onTickSignal.Emit(delta, dilationCoefficient);
+    }
+}
+
 defaultproperties
 {
-    shield = Texture'KillingFloorHUD.HUD.Hud_Shield'
-    bVisible = true
+    bVisible        = true
+    bRequiresTick   = true
 }

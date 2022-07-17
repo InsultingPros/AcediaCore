@@ -21,33 +21,17 @@ class ClientUnrealAPI extends ClientUnrealAPIBase;
 
 var private LoggerAPI.Definition fatalNoStalker;
 
-protected function Constructor()
-{
-    _.environment.OnShutDownSystem(self).connect = HandleShutdown;
-}
-
-protected function HandleShutdown()
-{
-    local ServerUnrealService service;
-
-    service = ServerUnrealService(
-        class'ServerUnrealService'.static.GetInstance());
-    //  This has to clean up anything we've added
-    if (service != none) {
-        service.Destroy();
-    }
-}
-
 /* SIGNAL */
-public function Unreal_OnTick_Slot OnTick(
-    AcediaObject receiver)
+public function Unreal_OnTick_Slot OnTick(AcediaObject receiver)
 {
-    local Signal                signal;
-    local ServerUnrealService   service;
+    local AcediaInteraction acediaInteraction;
 
-    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
-    signal = service.GetSignal(class'Unreal_OnTick_Signal');
-    return Unreal_OnTick_Slot(signal.NewSlot(receiver));
+    //  Simple redirect to `AcediaInteraction`
+    acediaInteraction = class'AcediaInteraction'.static.GetInstance();
+    if (acediaInteraction != none) {
+        return acediaInteraction.OnTick(receiver);
+    }
+    return none;
 }
 
 /* SIGNAL */
