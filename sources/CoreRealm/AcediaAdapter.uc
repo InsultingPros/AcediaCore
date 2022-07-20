@@ -35,7 +35,8 @@ class AcediaAdapter extends AcediaObject
  *  specify desired `AcediaAdapter` before loading server/client core.
  */
 
-var public const class<SideEffectAPI> sideEffectAPIClass;
+var public const class<SideEffectAPI>   sideEffectAPIClass;
+var public const class<TimeAPI>         timeAPIClass;
 
 defaultproperties
 {

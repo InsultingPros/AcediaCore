@@ -68,6 +68,7 @@ protected function Initialize()
     unreal  = ClientUnrealAPI(
         _.memory.Allocate(clientAdapterClass.default.clientUnrealAPIClass));
     unreal.Initialize(clientAdapterClass);
+    time.Initialize(unreal);
     //  Create `AcediaInteraction`
     localPlayer = unreal.GetLocalPlayer();
     if (localPlayer != none)

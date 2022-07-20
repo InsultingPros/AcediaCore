@@ -27,7 +27,6 @@ var protected ServerGlobal myself;
 
 var public KFFrontend       kf;
 var public ServerUnrealAPI  unreal;
-var public ServerTimeAPI    time;
 
 var private LoggerAPI.Definition fatBadAdapterClass;
 
@@ -64,12 +63,11 @@ protected function Initialize()
         return;
     }
     _ = class'Global'.static.GetInstance();
-    unreal  = ServerUnrealAPI(
+    unreal = ServerUnrealAPI(
         _.memory.Allocate(serverAdapterClass.default.serverUnrealAPIClass));
     unreal.Initialize(serverAdapterClass);
-    time    = ServerTimeAPI(
-        _.memory.Allocate(serverAdapterClass.default.serverTimeAPIClass));
-    kf      = KFFrontend(_.memory.Allocate(class'KF1_Frontend'));
+    time.Initialize(unreal);
+    kf = KFFrontend(_.memory.Allocate(class'KF1_Frontend'));
 }
 
 public final function bool ConnectServerLevelCore()

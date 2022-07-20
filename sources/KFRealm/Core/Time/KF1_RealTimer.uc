@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class RealTimer extends Timer;
+class KF1_RealTimer extends KF1_Timer;
 
 protected function float HandleTimeDilation(
     float timeDelta,

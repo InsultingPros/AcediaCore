@@ -1,5 +1,5 @@
 /**
- *  Acedia's default `ServerTimeAPI` API implementation
+ *  Acedia's default `TimeAPI` API implementation
  *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,45 +17,45 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class KF1_ServerTimeAPI extends ServerTimeAPI;
+class KF1_TimeAPI extends TimeAPI;
 
 public function Timer NewTimer(
     optional float  interval,
     optional bool   autoReset)
 {
-    return Timer(_.memory.Allocate(class'Timer'))
+    return KF1_Timer(_.memory.Allocate(class'KF1_Timer'))
+        .Initialize(api)
         .SetInterval(interval)
         .SetAutoReset(autoReset);
 }
 
 public function Timer StartTimer(float interval, optional bool autoReset)
 {
-    return Timer(_.memory.Allocate(class'Timer'))
+    return KF1_Timer(_.memory.Allocate(class'KF1_Timer'))
+        .Initialize(api)
         .SetInterval(interval)
         .SetAutoReset(autoReset)
         .Start();
 }
 
-public function RealTimer NewRealTimer(
+public function Timer NewRealTimer(
     optional float  interval,
     optional bool   autoReset)
 {
-    local RealTimer newTimer;
-    newTimer = RealTimer(_.memory.Allocate(class'RealTimer'));
-    newTimer.SetInterval(interval).SetAutoReset(autoReset);
-    return newTimer;
+    return KF1_Timer(_.memory.Allocate(class'KF1_RealTimer'))
+        .Initialize(api)
+        .SetInterval(interval).SetAutoReset(autoReset);
 }
 
-public function RealTimer StartRealTimer(
+public function Timer StartRealTimer(
     float           interval,
     optional bool   autoReset)
 {
-    local RealTimer newTimer;
-    newTimer = RealTimer(_.memory.Allocate(class'RealTimer'));
-    newTimer.SetInterval(interval)
+    return KF1_Timer(_.memory.Allocate(class'KF1_RealTimer'))
+        .Initialize(api)
+        .SetInterval(interval)
         .SetAutoReset(autoReset)
         .Start();
-    return newTimer;
 }
 
 defaultproperties

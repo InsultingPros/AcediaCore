@@ -24,7 +24,8 @@ class CoreGlobal extends Object;
 var protected bool                  initialized;
 var protected class<AcediaAdapter>  adapterClass;
 
-var public SideEffectAPI sideEffects;
+var public SideEffectAPI    sideEffects;
+var public TimeAPI          time;
 
 var private LoggerAPI.Definition fatNoAdapterClass;
 
@@ -52,6 +53,7 @@ protected function Initialize()
     api = class'Global'.static.GetInstance().memory;
     sideEffects =
         SideEffectAPI(api.Allocate(adapterClass.default.sideEffectAPIClass));
+    time = TimeAPI(api.Allocate(adapterClass.default.timeAPIClass));
 }
 
 /**

@@ -27,6 +27,7 @@ var public const class<InteractionAPI>  clientInteractionAPIClass;
 
 defaultproperties
 {
+    timeAPIClass                = class'KF1_TimeAPI'
     clientUnrealAPIClass        = class'KF1_ClientUnrealAPI'
     clientInteractionAPIClass   = class'KF1_InteractionAPI'
 }

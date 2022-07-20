@@ -28,23 +28,24 @@ var public GameRulesAPI gameRules;
 var public BroadcastAPI broadcasts;
 var public InventoryAPI inventory;
 
-public function Initialize(class<ServerAcediaAdapter> adapterClass)
+public function Initialize(class<AcediaAdapter> adapterClass)
 {
-    if (initialized) {
-        return;
-    }
+    local class<ServerAcediaAdapter> asServerAdapter;
+
+    if (initialized)                return;
+    asServerAdapter = class<ServerAcediaAdapter>(adapterClass);
+    if (asServerAdapter == none)    return;
+
+    super.Initialize(adapterClass);
     initialized = true;
-    if (adapterClass == none) {
-        return;
-    }
     mutator     = MutatorAPI(_.memory.Allocate(
-        adapterClass.default.serverMutatorAPIClass));
+        asServerAdapter.default.serverMutatorAPIClass));
     gameRules   = GameRulesAPI(_.memory.Allocate(
-        adapterClass.default.serverGameRulesAPIClass));
+        asServerAdapter.default.serverGameRulesAPIClass));
     broadcasts  = BroadcastAPI(_.memory.Allocate(
-        adapterClass.default.serverBroadcastAPIClass));
+        asServerAdapter.default.serverBroadcastAPIClass));
     inventory   = InventoryAPI  (_.memory.Allocate(
-        adapterClass.default.serverInventoryAPIClass));
+        asServerAdapter.default.serverInventoryAPIClass));
 }
 
 defaultproperties

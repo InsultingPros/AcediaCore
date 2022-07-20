@@ -21,6 +21,8 @@
 class UnrealAPI extends AcediaObject
     abstract;
 
+public function Initialize(class<AcediaAdapter> adapterClass);
+
 /**
  *  Signal that will be emitted every tick.
  *

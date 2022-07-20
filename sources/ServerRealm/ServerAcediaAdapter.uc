@@ -22,7 +22,6 @@
 class ServerAcediaAdapter extends AcediaAdapter
     abstract;
 
-var public const class<ServerTimeAPI>   serverTimeAPIClass;
 var public const class<ServerUnrealAPI> serverUnrealAPIClass;
 var public const class<BroadcastAPI>    serverBroadcastAPIClass;
 var public const class<GameRulesAPI>    serverGameRulesAPIClass;
@@ -31,7 +30,7 @@ var public const class<MutatorAPI>      serverMutatorAPIClass;
 
 defaultproperties
 {
-    serverTimeAPIClass      = class'KF1_ServerTimeAPI'
+    timeAPIClass            = class'KF1_TimeAPI'
     serverUnrealAPIClass    = class'KF1_ServerUnrealAPI'
     serverBroadcastAPIClass = class'KF1_BroadcastAPI'
     serverGameRulesAPIClass = class'KF1_GameRulesAPI'

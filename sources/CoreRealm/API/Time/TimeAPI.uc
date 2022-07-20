@@ -17,8 +17,27 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ServerTimeAPI extends AcediaObject
+class TimeAPI extends AcediaObject
     abstract;
+
+//      API to use to initialize `Timer`s, should be chosen depending on where
+//  `Timer`s are created.
+var protected UnrealAPI api;
+
+/**
+ *  Initializes caller `TimeAPI` with given `UnrealAPI` instance that will
+ *  be used to create all `Timer`s.
+ *
+ *  This is necessary, because we don't know where `TimeAPI` will be used:
+ *  on server or on client.
+ */
+public function Initialize(UnrealAPI newAPI)
+{
+    if (api != none) {
+        return;
+    }
+    api = newAPI;
+}
 
 /**
  *  Creates new `Timer`. Does not start it.
@@ -49,33 +68,34 @@ public function Timer NewTimer(
 public function Timer StartTimer(float interval, optional bool autoReset);
 
 /**
- *  Creates new `RealTimer`. Does not start it.
+ *  Creates new `Timer` that measures real time, not in-game one.
+ *  Does not start it.
  *
- *  @param  interval    Returned `RealTimer` will be configured to emit
+ *  @param  interval    Returned `Timer` will be configured to emit
  *      `OnElapsed()` signals every `interval` seconds.
- *  @param  autoReset   `true` will configure caller `RealTimer` to repeatedly
+ *  @param  autoReset   `true` will configure caller `Timer` to repeatedly
  *      emit `OnElapsed()` every `interval` seconds, `false` (default value)
- *      will make returned `RealTimer` emit that signal only once.
- *  @return `RealTimer`, configured to emit `OnElapsed()` every `interval`
+ *      will make returned `Timer` emit that signal only once.
+ *  @return `Timer`, configured to emit `OnElapsed()` every `interval`
  *      seconds. Not started. Guaranteed to be not `none`.
  */
-public function RealTimer NewRealTimer(
+public function Timer NewRealTimer(
     optional float  interval,
     optional bool   autoReset);
 
 /**
- *  Creates and starts new `RealTimer`.
+ *  Creates and starts new `Timer` that measures real time, not in-game one.
  *
- *  @param  interval    Returned `RealTimer` will be configured to emit
+ *  @param  interval    Returned `Timer` will be configured to emit
  *      `OnElapsed()` signals every `interval` seconds.
- *  @param  autoReset   Setting this to `true` will configure caller `RealTimer`
+ *  @param  autoReset   Setting this to `true` will configure caller `Timer`
  *      to repeatedly emit `OnElapsed()` signal every `interval` seconds,
- *      `false` (default value) will make returned `RealTimer` emit that signal
+ *      `false` (default value) will make returned `Timer` emit that signal
  *      only once.
- *  @return `RealTimer`, configured to emit `OnElapsed()` every `interval`
+ *  @return `Timer`, configured to emit `OnElapsed()` every `interval`
  *      seconds. Guaranteed to be not `none`.
  */
-public function RealTimer StartRealTimer(
+public function Timer StartRealTimer(
     float           interval,
     optional bool   autoReset);
 

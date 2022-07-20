@@ -25,17 +25,18 @@ var protected bool initialized;
 
 var public InteractionAPI interaction;
 
-public function Initialize(class<ClientAcediaAdapter> adapterClass)
+public function Initialize(class<AcediaAdapter> adapterClass)
 {
-    if (initialized) {
-        return;
-    }
+    local class<ClientAcediaAdapter> asClientAdapter;
+
+    if (initialized)                return;
+    asClientAdapter = class<ClientAcediaAdapter>(adapterClass);
+    if (asClientAdapter == none)    return;
+
+    super.Initialize(adapterClass);
     initialized = true;
-    if (adapterClass == none) {
-        return;
-    }
     interaction = InteractionAPI(_.memory.Allocate(
-        adapterClass.default.clientInteractionAPIClass));
+        asClientAdapter.default.clientInteractionAPIClass));
 }
 
 /**

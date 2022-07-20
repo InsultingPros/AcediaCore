@@ -1,7 +1,7 @@
 /**
  *      Timer class that generates a signal after a set interval, with an option
  *  to generate recurring signals.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -18,7 +18,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class Timer extends AcediaObject;
+class Timer extends AcediaObject
+    abstract;
 
 /**
  *      Because the `Timer` depends on the `Tick()` event, it has the same
@@ -31,35 +32,6 @@ class Timer extends AcediaObject;
  *  the same exact time.
  */
 
-//  Is timer currently tracking time until the next event?
-var private bool    isTimerEnabled;
-//  Should timer automatically reset after the next event to
-//  also generate recurring signals?
-var private bool    isTimerAutoReset;
-//  Currently elapsed time since this timer has started waiting for the
-//  next event
-var private float   totalElapsedTime;
-//  Time interval between timer's start and generating the signal
-var private float   eventInterval;
-//  This flag tells `Timer` to stop trying to emit messages that accumulated
-//  between two `Tick()` updates. Used in case `Timer` was disables or
-//  stopped during one of them.
-var private bool    clearEventQueue;
-
-var private Timer_OnElapsed_Signal onElapsedSignal;
-
-protected function Constructor()
-{
-    onElapsedSignal = Timer_OnElapsed_Signal(
-        _.memory.Allocate(class'Timer_OnElapsed_Signal'));
-}
-
-protected function Finalizer()
-{
-    _.memory.Free(onElapsedSignal);
-    StopMe();   //  Disconnects from listening to `_server.unreal.OnTick()`
-}
-
 /**
  *  Signal that will be emitted every time timer's interval is elapsed.
  *
@@ -69,10 +41,7 @@ protected function Finalizer()
  *  @param  source  `Timer` that emitted the signal.
  */
 /* SIGNAL */
-public final function Timer_OnElapsed_Slot OnElapsed(AcediaObject receiver)
-{
-    return Timer_OnElapsed_Slot(onElapsedSignal.NewSlot(receiver));
-}
+public function Timer_OnElapsed_Slot OnElapsed(AcediaObject receiver);
 
 /**
  *  This method is called every tick while the caller `Timer` is running and
@@ -92,10 +61,7 @@ public final function Timer_OnElapsed_Slot OnElapsed(AcediaObject receiver)
  */
 protected function float HandleTimeDilation(
     float timeDelta,
-    float dilationCoefficient)
-{
-    return timeDelta;
-}
+    float dilationCoefficient);
 
 /**
  *  Returns current interval between `OnElapsed()` signals for the
@@ -104,10 +70,7 @@ protected function float HandleTimeDilation(
  *  @return How many seconds separate two `OnElapsed()` signals
  *      (or starting a timer and next `OnElapsed()` event).
  */
-public final function float GetInterval()
-{
-    return eventInterval;
-}
+public function float GetInterval();
 
 /**
  *  Sets current interval between `OnElapsed()` signals for the
@@ -121,19 +84,7 @@ public final function float GetInterval()
  *      Setting a value `<= 0` disables the timer.
  *  @return Caller `Timer` to allow for method chaining.
  */
-public final function Timer SetInterval(float newInterval)
-{
-    eventInterval = newInterval;
-    if (eventInterval <= 0)
-    {
-        StopMe();
-        return self;
-    }
-    if (isTimerEnabled) {
-        Start();
-    }
-    return self;
-}
+public function Timer SetInterval(float newInterval);
 
 /**
  *  Checks whether the timer is currently enabled (emitting signals with
@@ -141,10 +92,7 @@ public final function Timer SetInterval(float newInterval)
  *
  *  @return `true` if caller `Timer` is enabled and `false` otherwise.
  */
-public final function bool IsEnabled()
-{
-    return isTimerEnabled;
-}
+public function bool IsEnabled();
 
 /**
  *  Checks whether this `Timer` would automatically reset after the emitted
@@ -153,10 +101,7 @@ public final function bool IsEnabled()
  *  @return `true` if `Timer` will emit `OnElapse()` signal each time
  *      the interval elapses and `false` otherwise.
  */
-public final function bool IsAutoReset(float newInterval)
-{
-    return isTimerAutoReset;
-}
+public function bool IsAutoReset(float newInterval);
 
 /**
  *  Sets whether this `Timer` would automatically reset after the emitted
@@ -166,11 +111,7 @@ public final function bool IsAutoReset(float newInterval)
  *      each time the interval elapses and `false` otherwise.
  *  @return Caller `Timer` to allow for method chaining.
  */
-public final function Timer SetAutoReset(bool doAutoReset)
-{
-    isTimerAutoReset = doAutoReset;
-    return self;
-}
+public function Timer SetAutoReset(bool doAutoReset);
 
 /**
  *  Starts emitting `OneElapsed()` signal.
@@ -183,31 +124,14 @@ public final function Timer SetAutoReset(bool doAutoReset)
  *
  *  @return Caller `Timer` to allow for method chaining.
  */
-public final function Timer Start()
-{
-    if (eventInterval <= 0) {
-        return self;
-    }
-    if (!isTimerEnabled) {
-        _server.unreal.OnTick(self).connect = Tick;
-    }
-    isTimerEnabled = true;
-    totalElapsedTime = 0.0;
-    return self;
-}
+public function Timer Start();
 
 /**
  *  Stops emitting `OneElapsed()` signal.
  *
  *  @return Caller `Timer` to allow for method chaining.
  */
-public final function Timer StopMe()
-{
-    _server.unreal.OnTick(self).Disconnect();
-    isTimerEnabled = false;
-    clearEventQueue = true;
-    return self;
-}
+public function Timer StopMe();
 
 /**
  *  Returns currently elapsed time since caller `Timer` has started waiting for
@@ -215,43 +139,9 @@ public final function Timer StopMe()
  *
  *  @return Elapsed time since caller `Timer` has started.
  */
-public final function float GetElapsedTime()
-{
-    return totalElapsedTime;
-}
+public function float GetElapsedTime();
 
-private final function Tick(float delta, float dilationCoefficient)
-{
-    local int lifeVersion;
-
-    if (onElapsedSignal == none || eventInterval <= 0.0)
-    {
-        StopMe();
-        return;
-    }
-    totalElapsedTime += HandleTimeDilation(delta, dilationCoefficient);
-    clearEventQueue = false;
-    while (totalElapsedTime > eventInterval && !clearEventQueue)
-    {
-        //  It is important to modify _before_ the signal call in case `Timer`
-        //  is reset there and already has a zeroed `totalElapsedTime`
-        totalElapsedTime -= eventInterval;
-        //  Stop `Timer` before emitting a signal, to allow user to potentially
-        //  restart it
-        if (!isTimerAutoReset) {
-            StopMe();
-        }
-        //      During signal emission caller `Timer` can get reallocated and
-        //  used to perform a completely different role.
-        //      In such a case we need to bail from this method as soom as
-        //  possible.
-        lifeVersion = GetLifeVersion();
-        onElapsedSignal.Emit(self);
-        if (!isTimerEnabled || lifeVersion != GetLifeVersion()) {
-            return;
-        }
-    }
-}
+private function Tick(float delta, float dilationCoefficient);
 
 defaultproperties
 {
