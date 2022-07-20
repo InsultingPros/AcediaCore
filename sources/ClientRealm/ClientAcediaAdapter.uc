@@ -22,11 +22,11 @@
 class ClientAcediaAdapter extends AcediaAdapter
     abstract;
 
-var public const class<ClientUnrealAPIBase> clientUnrealAPIClass;
-var public const class<InteractionAPIBase>  clientInteractionAPIClass;
+var public const class<ClientUnrealAPI> clientUnrealAPIClass;
+var public const class<InteractionAPI>  clientInteractionAPIClass;
 
 defaultproperties
 {
-    clientUnrealAPIClass        = class'ClientUnrealAPI'
-    clientInteractionAPIClass   = class'InteractionAPI'
+    clientUnrealAPIClass        = class'KF1_ClientUnrealAPI'
+    clientInteractionAPIClass   = class'KF1_InteractionAPI'
 }

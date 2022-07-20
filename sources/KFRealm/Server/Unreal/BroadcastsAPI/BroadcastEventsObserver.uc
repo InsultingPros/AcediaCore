@@ -22,7 +22,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class BroadcastEventsObserver extends Engine.BroadcastHandler
-    dependson(BroadcastAPIBase)
+    dependson(BroadcastAPI)
     config(AcediaSystem);
 
 //      Forcing Acedia's own `BroadcastHandler` is rather invasive and might be
@@ -30,7 +30,7 @@ class BroadcastEventsObserver extends Engine.BroadcastHandler
 //      To alleviate this issue Acedia allows server admins to control how it's
 //  `BroadcastHandler` is injected. Do note however that anything other than
 //  `BHIJ_Root` can lead to issues with Acedia's features.
-var private BroadcastAPIBase.InjectionLevel usedInjectionLevel;
+var private BroadcastAPI.InjectionLevel usedInjectionLevel;
 
 /**
  *      To understand how what our broadcast handler does, let us first explain

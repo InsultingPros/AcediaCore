@@ -1,5 +1,5 @@
 /**
- *  Acedia's default implementation for `InventoryAPIBase`.
+ *  Acedia's default implementation for `InventoryAPI`.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class InventoryAPI extends InventoryAPIBase
+class KF1_InventoryAPI extends InventoryAPI
     config(AcediaSystem);
 
 public function array<DualiesPair> GetDualiesPairs()

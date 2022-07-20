@@ -1,5 +1,5 @@
 /**
- *  Acedia's default `ServerTimeAPIBase` API implementation
+ *  Acedia's default `ServerTimeAPI` API implementation
  *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ServerTimeAPI extends ServerTimeAPIBase;
+class KF1_ServerTimeAPI extends ServerTimeAPI;
 
 public function Timer NewTimer(
     optional float  interval,

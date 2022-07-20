@@ -25,7 +25,7 @@ class ClientGlobal extends CoreGlobal;
 //  main instance in this variable's default value.
 var protected ClientGlobal myself;
 
-var public ClientUnrealAPIBase unreal;
+var public ClientUnrealAPI unreal;
 
 var private LoggerAPI.Definition fatBadAdapterClass, errNoInteraction;
 
@@ -65,7 +65,7 @@ protected function Initialize()
     }
     //  Create APIs
     _ = class'Global'.static.GetInstance();
-    unreal  = ClientUnrealAPIBase(
+    unreal  = ClientUnrealAPI(
         _.memory.Allocate(clientAdapterClass.default.clientUnrealAPIClass));
     unreal.Initialize(clientAdapterClass);
     //  Create `AcediaInteraction`

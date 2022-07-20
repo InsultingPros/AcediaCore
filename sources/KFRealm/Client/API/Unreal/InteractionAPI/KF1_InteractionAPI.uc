@@ -1,5 +1,5 @@
 /**
- *  Default Acedia implementation for `InteractionAPIBase`.
+ *  Default Acedia implementation for `InteractionAPI`.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class InteractionAPI extends InteractionAPIBase;
+class KF1_InteractionAPI extends InteractionAPI;
 
 /* SIGNAL */
 public function Interaction_OnRender_Slot OnPreRender(AcediaObject receiver)

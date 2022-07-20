@@ -24,7 +24,7 @@ class CoreGlobal extends Object;
 var protected bool                  initialized;
 var protected class<AcediaAdapter>  adapterClass;
 
-var public SideEffectAPIBase sideEffects;
+var public SideEffectAPI sideEffects;
 
 var private LoggerAPI.Definition fatNoAdapterClass;
 

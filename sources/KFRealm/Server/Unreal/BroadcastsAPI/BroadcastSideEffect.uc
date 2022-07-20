@@ -23,10 +23,9 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class BroadcastSideEffect extends SideEffect
-    dependson(BroadcastAPIBase);
+    dependson(BroadcastAPI);
 
-public final function Initialize(
-    BroadcastAPIBase.InjectionLevel usedInjectionLevel)
+public final function Initialize(BroadcastAPI.InjectionLevel usedInjectionLevel)
 {
     sideEffectName =
         _.text.FromString("AcediaCore's `BroadcastHandler` injected");

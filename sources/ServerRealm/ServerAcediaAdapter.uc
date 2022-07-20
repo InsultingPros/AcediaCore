@@ -22,19 +22,19 @@
 class ServerAcediaAdapter extends AcediaAdapter
     abstract;
 
-var public const class<ServerTimeAPIBase>   serverTimeAPIClass;
-var public const class<ServerUnrealAPIBase> serverUnrealAPIClass;
-var public const class<BroadcastAPIBase>    serverBroadcastAPIClass;
-var public const class<GameRulesAPIBase>    serverGameRulesAPIClass;
-var public const class<InventoryAPIBase>    serverInventoryAPIClass;
-var public const class<MutatorAPIBase>      serverMutatorAPIClass;
+var public const class<ServerTimeAPI>   serverTimeAPIClass;
+var public const class<ServerUnrealAPI> serverUnrealAPIClass;
+var public const class<BroadcastAPI>    serverBroadcastAPIClass;
+var public const class<GameRulesAPI>    serverGameRulesAPIClass;
+var public const class<InventoryAPI>    serverInventoryAPIClass;
+var public const class<MutatorAPI>      serverMutatorAPIClass;
 
 defaultproperties
 {
-    serverTimeAPIClass      = class'ServerTimeAPI'
-    serverUnrealAPIClass    = class'ServerUnrealAPI'
-    serverBroadcastAPIClass = class'BroadcastAPI'
-    serverGameRulesAPIClass = class'GameRulesAPI'
-    serverInventoryAPIClass = class'InventoryAPI'
-    serverMutatorAPIClass   = class'MutatorAPI'
+    serverTimeAPIClass      = class'KF1_ServerTimeAPI'
+    serverUnrealAPIClass    = class'KF1_ServerUnrealAPI'
+    serverBroadcastAPIClass = class'KF1_BroadcastAPI'
+    serverGameRulesAPIClass = class'KF1_GameRulesAPI'
+    serverInventoryAPIClass = class'KF1_InventoryAPI'
+    serverMutatorAPIClass   = class'KF1_MutatorAPI'
 }

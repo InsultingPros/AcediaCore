@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class InteractionAPIBase extends AcediaObject;
+class InteractionAPI extends AcediaObject;
 
 /**
  *  Called before rendering, when `Interaction`s receive their `PreRender()`

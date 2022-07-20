@@ -1,5 +1,5 @@
 /**
- *  Acedia's default implementation for `MutatorAPIBase` API.
+ *  Acedia's default implementation for `MutatorAPI` API.
  *      Copyright 2021 - 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class MutatorAPI extends MutatorAPIBase;
+class KF1_MutatorAPI extends MutatorAPI;
 
 /* SIGNAL */
 public function Mutator_OnCheckReplacement_Slot OnCheckReplacement(

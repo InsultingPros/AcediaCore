@@ -1,6 +1,6 @@
 /**
- *      Standard implementation for simple API for managing a list of
- *  `SideEffect` info objects: can add, remove, return all and by package.
+ *      Base class for simple API for managing a list of `SideEffect` info
+ *  objects: can add, remove, return all and by package.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -18,97 +18,58 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class SideEffectAPI extends SideEffectAPIBase;
+class SideEffectAPI extends AcediaObject
+    abstract;
 
-var private array<SideEffect> activeSideEffects;
+/**
+ *  Returns all so far registered `SideEffect`s.
+ *
+ *  @return Array of all registered `SideEffect`s.
+ */
+public function array<SideEffect> GetAll();
 
-public function array<SideEffect> GetAll()
-{
-    local int i;
+/**
+ *  Returns active `SideEffect` instance of the specified class
+ *  `sideEffectClass`.
+ *
+ *  @param  sideEffectClass Class of side effect to return active instance of.
+ *  @return Active `SideEffect` instance of the specified class
+ *      `sideEffectClass`.
+ *      `none` if either `sideEffectClass` is `none` or side effect of such
+ *      class is not currently active.
+ */
+public function SideEffect GetClass(class<SideEffect> sideEffectClass);
 
-    for (i = 0; i < activeSideEffects.length; i += 1) {
-        activeSideEffects[i].NewRef();
-    }
-    return activeSideEffects;
-}
+/**
+ *  Returns all so far registered `SideEffect`s from a package `packageName`
+ *  (case insensitive).
+ *
+ *  @param  packageName Name of the package, in `SideEffect`s from which we are
+ *      interested. Must be not `none`.
+ *  @return Array of all registered `SideEffect`s from a package `packageName`.
+ *      If `none`, returns an empty array.
+ */
+public function array<SideEffect> GetFromPackage(BaseText packageName);
 
-public function SideEffect GetClass(class<SideEffect> sideEffectClass)
-{
-    local int i;
+/**
+ *  Registers a new `SideEffect` object as active.
+ *
+ *  @param  newSideEffect   Instance of some `SideEffect` class to register as
+ *      active side effect. Must not be `none`.
+ *  @return `true` if new side effect was added and `false` otherwise.
+ */
+public function bool Add(SideEffect newSideEffect);
 
-    if (sideEffectClass == none) {
-        return none;
-    }
-    for (i = 0; i < activeSideEffects.length; i += 1)
-    {
-        if (activeSideEffects[i].class == sideEffectClass)
-        {
-            activeSideEffects[i].NewRef();
-            return activeSideEffects[i];
-        }
-    }
-    return none;
-}
-
-public function array<SideEffect> GetFromPackage(BaseText packageName)
-{
-    local int               i;
-    local Text              nextPackage;
-    local array<SideEffect> result;
-
-    if (packageName == none) {
-        return result;
-    }
-    for (i = 0; i < activeSideEffects.length; i += 1)
-    {
-        nextPackage = activeSideEffects[i].GetPackage();
-        if (nextPackage.Compare(packageName, SCASE_INSENSITIVE))
-        {
-            activeSideEffects[i].NewRef();
-            result[result.length] = activeSideEffects[i];
-        }
-        _.memory.Free(nextPackage);
-    }
-    return result;
-}
-
-public function bool Add(SideEffect newSideEffect)
-{
-    local int i;
-
-    if (newSideEffect == none) {
-        return false;
-    }
-    for (i = 0; i < activeSideEffects.length; i += 1)
-    {
-        if (activeSideEffects[i].class == newSideEffect.class) {
-            return false;
-        }
-    }
-    newSideEffect.NewRef();
-    activeSideEffects[activeSideEffects.length] = newSideEffect;
-    return true;
-}
-
-public function bool RemoveClass(
-    class<SideEffect> sideEffectClass)
-{
-    local int i;
-
-    if (sideEffectClass == none) {
-        return false;
-    }
-    for (i = 0; i < activeSideEffects.length; i += 1)
-    {
-        if (activeSideEffects[i].class == sideEffectClass)
-        {
-            _.memory.Free(activeSideEffects[i]);
-            activeSideEffects.Remove(i, 1);
-            return true;
-        }
-    }
-    return false;
-}
+/**
+ *  Removes `SideEffect` of the specified sub-class from the list of active
+ *  side effects.
+ *
+ *  @param  sideEffectClass Class of the side effect to remove.
+ *  @return `true` if some side effect was removed as a result of this operation
+ *      and `false` otherwise (even if there was no side effect of specified
+ *      class to begin with).
+ */
+public function bool RemoveClass(class<SideEffect> sideEffectClass);
 
 defaultproperties
 {

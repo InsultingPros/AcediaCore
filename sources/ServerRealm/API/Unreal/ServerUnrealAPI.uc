@@ -1,6 +1,6 @@
 /**
  *      Low-level API that provides set of utility methods for working with
- *  unreal script classes on the clients.
+ *  unreal script classes.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -18,14 +18,17 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ClientUnrealAPIBase extends UnrealAPIBase
+class ServerUnrealAPI extends UnrealAPI
     abstract;
 
 var protected bool initialized;
 
-var public InteractionAPIBase interaction;
+var public MutatorAPI   mutator;
+var public GameRulesAPI gameRules;
+var public BroadcastAPI broadcasts;
+var public InventoryAPI inventory;
 
-public function Initialize(class<ClientAcediaAdapter> adapterClass)
+public function Initialize(class<ServerAcediaAdapter> adapterClass)
 {
     if (initialized) {
         return;
@@ -34,18 +37,15 @@ public function Initialize(class<ClientAcediaAdapter> adapterClass)
     if (adapterClass == none) {
         return;
     }
-    interaction = InteractionAPIBase(_.memory.Allocate(
-        adapterClass.default.clientInteractionAPIClass));
+    mutator     = MutatorAPI(_.memory.Allocate(
+        adapterClass.default.serverMutatorAPIClass));
+    gameRules   = GameRulesAPI(_.memory.Allocate(
+        adapterClass.default.serverGameRulesAPIClass));
+    broadcasts  = BroadcastAPI(_.memory.Allocate(
+        adapterClass.default.serverBroadcastAPIClass));
+    inventory   = InventoryAPI  (_.memory.Allocate(
+        adapterClass.default.serverInventoryAPIClass));
 }
-
-/**
- *  Returns current local player's `Controller`. Useful because `level`
- *  is not accessible inside objects.
- *
- *  @return `PlayerController` instance for the local player. `none` iff run on
- *      dedicated servers.
- */
-public function PlayerController GetLocalPlayer();
 
 defaultproperties
 {

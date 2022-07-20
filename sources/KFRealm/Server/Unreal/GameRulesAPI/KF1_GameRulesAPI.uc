@@ -1,5 +1,5 @@
 /**
- *  Acedia's default implementation for `GameRulesAPIBase` API.
+ *  Acedia's default implementation for `GameRulesAPI` API.
  *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class GameRulesAPI extends GameRulesAPIBase;
+class KF1_GameRulesAPI extends GameRulesAPI;
 
 //  Tracks if we have already tried to add our own `BroadcastHandler` to avoid
 //  wasting resources/spamming errors in the log about our inability to do so

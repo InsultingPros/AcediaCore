@@ -1,5 +1,5 @@
 /**
- *  Acedia's default implementation for `ClientUnrealAPIBase`.
+ *  Acedia's default implementation for `ServerUnrealAPI`.
  *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -17,21 +17,37 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ClientUnrealAPI extends ClientUnrealAPIBase;
+class KF1_ServerUnrealAPI extends ServerUnrealAPI;
 
 var private LoggerAPI.Definition fatalNoStalker;
 
-/* SIGNAL */
-public function Unreal_OnTick_Slot OnTick(AcediaObject receiver)
+protected function Constructor()
 {
-    local AcediaInteraction acediaInteraction;
+    _.environment.OnShutDownSystem(self).connect = HandleShutdown;
+}
 
-    //  Simple redirect to `AcediaInteraction`
-    acediaInteraction = class'AcediaInteraction'.static.GetInstance();
-    if (acediaInteraction != none) {
-        return acediaInteraction.OnTick(receiver);
+protected function HandleShutdown()
+{
+    local ServerUnrealService service;
+
+    service =
+        ServerUnrealService(class'ServerUnrealService'.static.GetInstance());
+    //  This has to clean up anything we've added
+    if (service != none) {
+        service.Destroy();
     }
-    return none;
+}
+
+/* SIGNAL */
+public function Unreal_OnTick_Slot OnTick(
+    AcediaObject receiver)
+{
+    local Signal                signal;
+    local ServerUnrealService   service;
+
+    service = ServerUnrealService(class'ServerUnrealService'.static.Require());
+    signal = service.GetSignal(class'Unreal_OnTick_Signal');
+    return Unreal_OnTick_Slot(signal.NewSlot(receiver));
 }
 
 /* SIGNAL */
@@ -46,7 +62,7 @@ public function SimpleSlot OnDestructionFor(
 
     //  Failing to spawn this actor without any collision flags is considered
     //  completely unexpected and grounds for fatal failure on Acedia' part
-    stalker = ActorStalker(class'ClientLevelCore'.static
+    stalker = ActorStalker(class'ServerLevelCore'.static
         .GetInstance()
         .Allocate(class'ActorStalker'));
     if (stalker == none)
@@ -62,12 +78,12 @@ public function SimpleSlot OnDestructionFor(
 
 public function LevelInfo GetLevel()
 {
-    return class'ClientLevelCore'.static.GetInstance().level;
+    return class'ServerLevelCore'.static.GetInstance().level;
 }
 
 public function GameReplicationInfo GetGameRI()
 {
-    return class'ClientLevelCore'.static.GetInstance().level.GRI;
+    return class'ServerLevelCore'.static.GetInstance().level.GRI;
 }
 
 public function KFGameReplicationInfo GetKFGameRI()
@@ -77,7 +93,7 @@ public function KFGameReplicationInfo GetKFGameRI()
 
 public function GameInfo GetGameType()
 {
-    return class'ClientLevelCore'.static.GetInstance().level.game;
+    return class'ServerLevelCore'.static.GetInstance().level.game;
 }
 
 public function KFGameType GetKFGameType()
@@ -90,7 +106,7 @@ public function Actor FindActorInstance(class<Actor> classToFind)
     local Actor     result;
     local LevelCore core;
 
-    core = class'ClientLevelCore'.static.GetInstance();
+    core = class'ServerLevelCore'.static.GetInstance();
     foreach core.AllActors(classToFind, result)
     {
         if (result != none) {
@@ -98,12 +114,6 @@ public function Actor FindActorInstance(class<Actor> classToFind)
         }
     }
     return result;
-}
-
-public function PlayerController GetLocalPlayer()
-{
-    return class'ClientLevelCore'.static.GetInstance().level
-        .GetLocalPlayerController();
 }
 
 public function NativeActorRef ActorRef(optional Actor value)
