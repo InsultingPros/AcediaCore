@@ -275,7 +275,7 @@ private function EraseAllPackageData(BaseText packageToErase)
     local DBRecord          nextRecord;
     local array<DBRecord>   allRecords;
 
-    packageName = _.text.ToString(packageToErase);
+    packageName = _.text.IntoString(packageToErase);
     if (packageName == "") {
         return;
     }

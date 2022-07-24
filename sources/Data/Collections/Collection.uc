@@ -415,7 +415,7 @@ public final function string GetStringBy(
     }
     asText = BaseText(result);
     if (asText != none) {
-        return _.text.ToString(asText);
+        return _.text.IntoString(asText);
     }
     _.memory.Free(result);
     return defaultValue;
@@ -771,7 +771,7 @@ public final function string GetStringByJSON(
     }
     asText = BaseText(result);
     if (asText != none) {
-        return _.text.ToString(asText);
+        return _.text.IntoString(asText);
     }
     _.memory.Free(result);
     return defaultValue;

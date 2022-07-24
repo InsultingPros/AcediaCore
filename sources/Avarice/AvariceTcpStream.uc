@@ -103,7 +103,7 @@ public final function StartUp(AvariceLink link, float reconnectTime)
     encoder = Utf8Encoder(_.memory.Allocate(class'Utf8Encoder'));
     avariceReader =
         AvariceStreamReader(_.memory.Allocate(class'AvariceStreamReader'));
-    linkHost = _.text.ToString(link.GetHost());
+    linkHost = _.text.IntoString(link.GetHost());
     linkPort = link.GetPort();
     reconnectInterval = reconnectTime;
     TryConnecting();

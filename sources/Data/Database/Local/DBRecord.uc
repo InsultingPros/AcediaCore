@@ -228,7 +228,7 @@ private final function DBRecordPointer ConvertPointerPath(
     }
     else
     {
-        nextComponent = __().text.ToString(pointer.GetComponent(startIndex));
+        nextComponent = __().text.IntoString(pointer.GetComponent(startIndex));
         index = FindItem(nextComponent);
     }
     if (index < 0) {
@@ -428,7 +428,7 @@ public final function bool SaveObject(
         return false;
     }
     directContainer = pointer.record;
-    itemKey = __().text.ToString(jsonPointer.Pop(true));
+    itemKey = __().text.IntoString(jsonPointer.Pop(true));
     if (directContainer.isJSONArray)
     {
         index = jsonPointer.PopNumeric(true);
@@ -472,7 +472,7 @@ public final function bool RemoveObject(JSONPointer jsonPointer)
     }
     else
     {
-        itemKey = __().text.ToString(jsonPointer.Pop(true));
+        itemKey = __().text.IntoString(jsonPointer.Pop(true));
         itemIndex = directContainer.FindItem(itemKey);
     }
     if (itemIndex >= 0)
@@ -630,7 +630,7 @@ public final function Database.DBQueryResult IncrementObject(
         return DBR_InvalidPointer;
     }
     directContainer = pointer.record;
-    itemKey = __().text.ToString(jsonPointer.Pop(true));
+    itemKey = __().text.IntoString(jsonPointer.Pop(true));
     if (directContainer.isJSONArray)
     {
         index = jsonPointer.PopNumeric(true);
@@ -938,7 +938,7 @@ private final function FromHashTable(HashTable source)
         if (iter.GetKey() == none) {
             continue;
         }
-        nextKey = __().text.ToString(BaseText(iter.GetKey()));
+        nextKey = __().text.IntoString(BaseText(iter.GetKey()));
         isNewKey = true;
         for (i = 0; i < originalStorageLength; i += 1)
         {

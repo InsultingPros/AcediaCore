@@ -1400,7 +1400,7 @@ public final function string ToFormattedString(
     optional int startIndex,
     optional int maxLength)
 {
-    return _.text.ToString(ToFormattedTextM(startIndex, maxLength));
+    return _.text.IntoString(ToFormattedTextM(startIndex, maxLength));
 }
 
 /**

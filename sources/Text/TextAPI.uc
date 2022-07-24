@@ -314,7 +314,7 @@ public final function bool IsEmpty(BaseText text)
  *  @return `string` representation of passed `BaseText` as a plain string.
  *      Empty `string`, if `toConvert == none`.
  */
-public final function string ToString(/*take*/ BaseText toConvert)
+public final function string IntoString(/*take*/ BaseText toConvert)
 {
     local string result;
     if (toConvert != none) {

@@ -127,7 +127,7 @@ public final function WriteToDisk()
     }
     pendingDiskUpdate = false;
     if (configEntry != none) {
-        packageName = _.text.ToString(configEntry.GetPackageName());
+        packageName = _.text.IntoString(configEntry.GetPackageName());
     }
     if (packageName != "") {
         _server.unreal.GetGameType().SavePackage(packageName);

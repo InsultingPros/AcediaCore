@@ -886,7 +886,7 @@ private final function Text BorrowTextArg(BaseText Label)
  */
 public final function string Collect_S()
 {
-    return _.text.ToString(CollectM());
+    return _.text.IntoString(CollectM());
 }
 
 /**
