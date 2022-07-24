@@ -31,6 +31,7 @@ public static function LevelCore CreateLevelCore(Actor source)
     if (newCore != none) {
         __server().ConnectServerLevelCore();
     }
+    __().scheduler.UpdateTickConnection();
     return newCore;
 }
 

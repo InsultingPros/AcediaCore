@@ -1,4 +1,6 @@
 /**
+ *      Slot-like object that represents a request for a writing disk access,
+ *  capable of being scheduled on the `SchedulerAPI`.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -16,21 +18,10 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ClientLevelCore extends LevelCore;
+class SchedulerDiskRequest extends AcediaObject;
 
-public simulated static function LevelCore CreateLevelCore(Actor source)
+delegate connect()
 {
-    local LevelCore newCore;
-
-    if (source == none)                             return none;
-    if (source.level.netMode == NM_DedicatedServer) return none;
-
-    newCore = super.CreateLevelCore(source);
-    if (newCore != none) {
-        __client().ConnectClientLevelCore();
-    }
-    __().scheduler.UpdateTickConnection();
-    return newCore;
 }
 
 defaultproperties

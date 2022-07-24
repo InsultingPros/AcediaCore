@@ -1,4 +1,6 @@
 /**
+ *      Simple object that represents a job, capable of being scheduled on the
+ *  `SchedulerAPI`. Use `IsCompleted()` to mark job as completed.
  *      Copyright 2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -16,21 +18,25 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class ClientLevelCore extends LevelCore;
+class MockJob extends SchedulerJob;
 
-public simulated static function LevelCore CreateLevelCore(Actor source)
+var public string   mark;
+var public int      unitsLeft;
+
+//  We use `default` value only
+var public string callStack;
+
+public function bool IsCompleted()
 {
-    local LevelCore newCore;
+    return (unitsLeft <= 0);
+}
 
-    if (source == none)                             return none;
-    if (source.level.netMode == NM_DedicatedServer) return none;
-
-    newCore = super.CreateLevelCore(source);
-    if (newCore != none) {
-        __client().ConnectClientLevelCore();
+public function DoWork(int allottedWorkUnits)
+{
+    unitsLeft -= allottedWorkUnits;
+    if (IsCompleted()) {
+        default.callStack = default.callStack $ mark;
     }
-    __().scheduler.UpdateTickConnection();
-    return newCore;
 }
 
 defaultproperties

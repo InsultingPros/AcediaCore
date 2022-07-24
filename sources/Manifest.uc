@@ -1,6 +1,6 @@
 /**
  *      Manifest is meant to describe contents of the Acedia's package.
- *      Copyright 2020 - 2022 Anton Tarasenko
+ *      Copyright 2020-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -53,9 +53,10 @@ defaultproperties
     testCases(21)   = class'TEST_Command'
     testCases(22)   = class'TEST_CommandDataBuilder'
     testCases(23)   = class'TEST_LogMessage'
-    testCases(24)   = class'TEST_DatabaseCommon'
-    testCases(25)   = class'TEST_LocalDatabase'
-    testCases(26)   = class'TEST_AcediaConfig'
-    testCases(27)   = class'TEST_UTF8EncoderDecoder'
-    testCases(28)   = class'TEST_AvariceStreamReader'
+    testCases(24)   = class'TEST_SchedulerAPI'
+    testCases(25)   = class'TEST_DatabaseCommon'
+    testCases(26)   = class'TEST_LocalDatabase'
+    testCases(27)   = class'TEST_AcediaConfig'
+    testCases(28)   = class'TEST_UTF8EncoderDecoder'
+    testCases(29)   = class'TEST_AvariceStreamReader'
 }

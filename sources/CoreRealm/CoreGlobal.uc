@@ -57,6 +57,21 @@ protected function Initialize()
 }
 
 /**
+ *  Checks is caller `CoreGlobal` is available to be used.
+ *
+ *  Server and client `CoreGlobal` instances are always created, so that they
+ *  can be added to `AcediaObject`s and `AcediaActor`s at any time, even before
+ *  they were initialized (whether they ever will be or not). This method
+ *  allows one to check whether they were already initialized and can be used.
+ *
+ *  @return `true` if caller `CoreGlobal` can be used and `false` otherwise.
+ */
+public function bool IsAvailable()
+{
+    return initialized;
+}
+
+/**
  *  Changes adapter class for the caller `...Global` instance.
  *
  *  Must not do anything when caller `...Global` instance was already

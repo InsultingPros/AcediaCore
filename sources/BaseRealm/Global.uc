@@ -39,6 +39,7 @@ var public UserAPI          users;
 var public PlayersAPI       players;
 var public JSONAPI          json;
 var public DBAPI            db;
+var public SchedulerAPI     scheduler;
 var public AvariceAPI       avarice;
 
 var public AcediaEnvironment    environment;
@@ -74,6 +75,7 @@ protected function Initialize()
     players     = PlayersAPI(memory.Allocate(class'PlayersAPI'));
     json        = JSONAPI(memory.Allocate(class'JSONAPI'));
     db          = DBAPI(memory.Allocate(class'DBAPI'));
+    scheduler   = SchedulerAPI(memory.Allocate(class'SchedulerAPI'));
     avarice     = AvariceAPI(memory.Allocate(class'AvariceAPI'));
     environment = AcediaEnvironment(memory.Allocate(class'AcediaEnvironment'));
 }
@@ -94,6 +96,7 @@ public function DropCoreAPI()
     players     = none;
     json        = none;
     db          = none;
+    scheduler   = none;
     avarice     = none;
     default.myself = none;
 }

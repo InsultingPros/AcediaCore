@@ -1,7 +1,7 @@
 /**
  *  API that provides methods for creating/destroying and managing available
  *  databases.
- *      Copyright 2021 Anton Tarasenko
+ *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -57,6 +57,7 @@ public final function Database Load(BaseText databaseLink)
     local Database      result;
     local Text          immutableDatabaseName;
     local MutableText   databaseName;
+
     if (databaseLink == none) {
         return none;
     }
@@ -99,6 +100,7 @@ public final function JSONPointer GetPointer(BaseText databaseLink)
     local int           slashIndex;
     local Text          textPointer;
     local JSONPointer   result;
+
     if (databaseLink == none) {
         return none;
     }
@@ -167,6 +169,7 @@ public final function LocalDatabaseInstance LoadLocal(BaseText databaseName)
     local Text                  rootRecordName;
     local LocalDatabase         newConfig;
     local LocalDatabaseInstance newLocalDBInstance;
+
     if (databaseName == none) {
         return none;
     }
@@ -224,7 +227,6 @@ public final function bool ExistsLocal(BaseText databaseName)
     return result;
 }
 
-//  TODO: deleted database must be marked as disposed + change tests too
 /**
  *  Deletes local database with name `databaseName`.
  *
@@ -237,6 +239,7 @@ public final function bool DeleteLocal(BaseText databaseName)
     local LocalDatabase         localDatabaseConfig;
     local LocalDatabaseInstance localDatabase;
     local HashTable.Entry       dbEntry;
+
     if (databaseName == none) {
         return false;
     }
@@ -246,6 +249,7 @@ public final function bool DeleteLocal(BaseText databaseName)
     if (localDatabase != none)
     {
         localDatabaseConfig = localDatabase.GetConfig();
+        localDatabase.WriteToDisk();
         _.memory.Free(localDatabase);
     }
     dbEntry = loadedLocalDatabases.TakeEntry(databaseName);
@@ -270,6 +274,7 @@ private function EraseAllPackageData(BaseText packageToErase)
     local GameInfo          game;
     local DBRecord          nextRecord;
     local array<DBRecord>   allRecords;
+
     packageName = _.text.ToString(packageToErase);
     if (packageName == "") {
         return;
@@ -299,6 +304,7 @@ public final function array<Text> ListLocal()
     local int           i;
     local array<Text>   dbNames;
     local array<string> dbNamesAsStrings;
+
     dbNamesAsStrings = GetPerObjectNames(   "AcediaDB",
                                             string(class'LocalDatabase'.name),
                                             MaxInt);

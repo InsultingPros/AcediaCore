@@ -72,14 +72,9 @@ var private LocalDatabase   configEntry;
 //  Reference to the `DBRecord` that stores root object of this database
 var private DBRecord        rootRecord;
 
-//  As long as this `Timer` runs - we are in the "cooldown" period where no disk
-//  updates can be done (except special cases like this object getting
-//  deallocated).
-var private Timer   diskUpdateTimer;
-//  Only relevant when `diskUpdateTimer` is running. `false` would mean there is
-//  nothing to new to write and the timer will be discarded, but `true` means
-//  that we have to write database on disk and restart the update timer again.
-var private bool    needsDiskUpdate;
+//  Remembers whether we've made a request for the disk access to the scheduler,
+//  to avoid sending multiple ones.
+var private bool pendingDiskUpdate;
 
 //  Last to-be-completed task added to this database
 var private DBTask  lastTask;
@@ -99,8 +94,6 @@ protected function Finalizer()
     WriteToDisk();
     rootRecord = none;
     _server.unreal.OnTick(self).Disconnect();
-    _.memory.Free(diskUpdateTimer);
-    diskUpdateTimer = none;
     configEntry = none;
 }
 
@@ -116,39 +109,23 @@ private final function CompleteAllTasks(
     lastTaskLifeVersion = -1;
 }
 
-private final function LocalDatabaseInstance ScheduleDiskUpdate()
+private final function ScheduleDiskUpdate()
 {
-    if (diskUpdateTimer != none)
+    if (!pendingDiskUpdate)
     {
-        needsDiskUpdate = true;
-        return self;
-    }
-    WriteToDisk();
-    needsDiskUpdate = false;
-    diskUpdateTimer = _server.time.StartTimer(
-        class'LocalDBSettings'.default.writeToDiskDelay);
-    diskUpdateTimer.OnElapsed(self).connect = DoDiskUpdate;
-    return self;
-}
-
-private final function DoDiskUpdate(Timer source)
-{
-    if (needsDiskUpdate)
-    {
-        WriteToDisk();
-        needsDiskUpdate = false;
-        diskUpdateTimer.Start();
-    }
-    else
-    {
-        _.memory.Free(diskUpdateTimer);
-        diskUpdateTimer = none;
+        pendingDiskUpdate = true;
+        _.scheduler.RequestDiskAccess(self).connect = WriteToDisk;
     }
 }
 
-private final function WriteToDisk()
+public final function WriteToDisk()
 {
     local string packageName;
+
+    if (!pendingDiskUpdate) {
+        return;
+    }
+    pendingDiskUpdate = false;
     if (configEntry != none) {
         packageName = _.text.ToString(configEntry.GetPackageName());
     }
