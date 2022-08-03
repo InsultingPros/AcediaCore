@@ -394,7 +394,7 @@ public final function HashTable SetItem(
     if (value != none) {
         value.NewRef();
     }
-    if (oldEntry.value != none && newEntry.value != oldEntry.value) {
+    if (oldEntry.value != none) {
         oldEntry.value.FreeSelf();
     }
     hashTable[bucketIndex].entries[entryIndex] = newEntry;

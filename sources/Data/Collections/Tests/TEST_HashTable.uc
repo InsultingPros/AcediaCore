@@ -26,6 +26,7 @@ var private array<MockItem> mockedItems;
 protected static function TESTS()
 {
     Test_GetSet();
+    Test_Rewrite();
     Test_HasKey();
     Test_GetKeys();
     Test_GetTextKeys();
@@ -87,6 +88,21 @@ protected static function Test_GetSet()
     TEST_ExpectNone(array.GetItem(__().box.byte(67)));
     TEST_ExpectNone(array.GetItem(__().box.float(43.1234)));
     TEST_ExpectNone(array.GetItem(__().text.FromString("Some random stuff")));
+}
+
+protected static function Test_Rewrite()
+{
+    local Text      textObject;
+    local HashTable array;
+
+    array = HashTable(__().memory.Allocate(class'HashTable'));
+    Context("Testing getters and setters for items of `HashTable`.");
+    Issue("`SetItem()` does not handle reference counts correctly when"
+        @ "replacing a value with itself.");
+    textObject = __().text.FromString("value");
+    array.SetItem(__().text.FromString("key"), textObject);
+    array.SetItem(__().text.FromString("key"), textObject);
+    TEST_ExpectTrue(textObject._getRefCount() == 2);
 }
 
 protected static function Test_HasKey()
