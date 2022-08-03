@@ -1,6 +1,6 @@
 /**
  *  Provides convenient access to Aliases-related functions.
- *      Copyright 2020 - 2021 Anton Tarasenko
+ *      Copyright 2020-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
  *
@@ -20,154 +20,169 @@
 class AliasesAPI extends AcediaObject
     dependson(LoggerAPI);
 
-var private LoggerAPI.Definition noWeaponAliasSource, invalidWeaponAliasSource;
-var private LoggerAPI.Definition noColorAliasSource, invalidColorAliasSource;
-var private LoggerAPI.Definition noFeatureAliasSource, invalidFeatureAliasSource;
-var private LoggerAPI.Definition noEntityAliasSource, invalidEntityAliasSource;
+//  To avoid bothering with fetching `Aliases_Feature` each time we need to
+//  access an alias source, we save all the basic ones separately and
+//  `Aliases_Feature` can simply trigger their updates whenever necessary via
+//  `AliasesAPI._reloadSources()` function.
+var private BaseAliasSource weaponAliasSource;
+var private BaseAliasSource colorAliasSource;
+var private BaseAliasSource featureAliasSource;
+var private BaseAliasSource entityAliasSource;
 
-/**
- *  Provides an easier access to the instance of the `AliasSource` of
- *  the given class.
- *
- *  Can fail if `customSourceClass` is incorrectly defined.
- *
- *  @param  customSourceClass   Class of the source we want.
- *  @return Instance of the requested `AliasSource`,
- *      `none` if `customSourceClass` is incorrectly defined.
- */
-public final function AliasSource GetCustomSource(
-    class<AliasSource> customSourceClass)
+public function _reloadSources()
 {
-    return AliasSource(customSourceClass.static.GetInstance(true));
+    local Aliases_Feature feature;
+
+    _.memory.Free(weaponAliasSource);
+    _.memory.Free(colorAliasSource);
+    _.memory.Free(featureAliasSource);
+    _.memory.Free(entityAliasSource);
+    weaponAliasSource   = none;
+    colorAliasSource    = none;
+    featureAliasSource  = none;
+    entityAliasSource   = none;
+    feature = Aliases_Feature(
+        class'Aliases_Feature'.static.GetEnabledInstance());
+    if (feature == none) {
+        return;
+    }
+    weaponAliasSource   = feature.GetWeaponSource();
+    colorAliasSource    = feature.GetColorSource();
+    featureAliasSource  = feature.GetFeatureSource();
+    entityAliasSource   = feature.GetEntitySource();
+    _.memory.Free(feature);
 }
 
 /**
- *  Returns `AliasSource` that is designated in configuration files as
+ *  Provides an easier access to the instance of the custom `BaseAliasSource`
+ *  with a given name `sourceName`.
+ *
+ *  Custom alias sources can be added manually by the admin through the
+ *  `Aliases_Feature` config file..
+ *
+ *  @param  sourceName  Name that alias source was added as to
+ *      `Aliases_Feature`.
+ *  @return Instance of the requested `BaseAliasSource`,
+ *      `none` if `sourceName` is `none`, does not refer to any alias source
+ *      or `Aliases_Feature` is disabled.
+ */
+public final function BaseAliasSource GetCustomSource(BaseText sourceName)
+{
+    local Aliases_Feature feature;
+
+    if (sourceName == none) {
+        return none;
+    }
+    feature =
+        Aliases_Feature(class'Aliases_Feature'.static.GetEnabledInstance());
+    if (feature != none) {
+        return feature.GetCustomSource(sourceName);
+    }
+    return none;
+}
+
+/**
+ *  Returns `BaseAliasSource` that is designated in configuration files as
  *  a source for weapon aliases.
  *
- *  NOTE: while by default weapon aliases source will contain only weapon
- *  aliases, you should not assume that. Acedia allows admins to store all
- *  the aliases in the same config.
- *
- *  @return Reference to the `AliasSource` that contains weapon aliases.
+ *  @return Reference to the `BaseAliasSource` that contains weapon aliases.
  *      Can return `none` if no source for weapons was configured or
  *      the configured source is incorrectly defined.
  */
-public final function AliasSource GetWeaponSource()
+public final function BaseAliasSource GetWeaponSource()
 {
-    local AliasSource           weaponSource;
-    local class<AliasSource>    sourceClass;
-    sourceClass = class'AliasService'.default.weaponAliasesSource;
-    if (sourceClass == none)
-    {
-        _.logger.Auto(noWeaponAliasSource);
-        return none;
+    if (weaponAliasSource != none) {
+        weaponAliasSource.NewRef();
     }
-    weaponSource = AliasSource(sourceClass.static.GetInstance(true));
-    if (weaponSource == none)
-    {
-        _.logger.Auto(invalidWeaponAliasSource).ArgClass(sourceClass);
-        return none;
-    }
-    return weaponSource;
+    return weaponAliasSource;
 }
 
 /**
- *  Returns `AliasSource` that is designated in configuration files as
+ *  Returns `BaseAliasSource` that is designated in configuration files as
  *  a source for color aliases.
  *
- *  NOTE: while by default color aliases source will contain only color aliases,
- *  you should not assume that. Acedia allows admins to store all the aliases
- *  in the same config.
  *
- *  @return Reference to the `AliasSource` that contains color aliases.
+ *  @return Reference to the `BaseAliasSource` that contains color aliases.
  *      Can return `none` if no source for colors was configured or
  *      the configured source is incorrectly defined.
  */
-public final function AliasSource GetColorSource()
+public final function BaseAliasSource GetColorSource()
 {
-    local AliasSource           colorSource;
-    local class<AliasSource>    sourceClass;
-    sourceClass = class'AliasService'.default.colorAliasesSource;
-    if (sourceClass == none)
-    {
-        _.logger.Auto(noColorAliasSource);
-        return none;
+    if (colorAliasSource != none) {
+        colorAliasSource.NewRef();
     }
-    colorSource = AliasSource(sourceClass.static.GetInstance(true));
-    if (colorSource == none)
-    {
-        _.logger.Auto(invalidColorAliasSource).ArgClass(sourceClass);
-        return none;
-    }
-    return colorSource;
+    return colorAliasSource;
 }
 
 /**
- *  Returns `AliasSource` that is designated in configuration files as
+ *  Returns `BaseAliasSource` that is designated in configuration files as
  *  a source for feature aliases.
  *
- *  NOTE: while by default feature aliases source will contain only feature
- *  aliases, you should not assume that. Acedia allows admins to store all the
- *  aliases in the same config.
  *
- *  @return Reference to the `AliasSource` that contains feature aliases.
+ *  @return Reference to the `BaseAliasSource` that contains feature aliases.
  *      Can return `none` if no source for features was configured or
  *      the configured source is incorrectly defined.
  */
-public final function AliasSource GetFeatureSource()
+public final function BaseAliasSource GetFeatureSource()
 {
-    local AliasSource           featureSource;
-    local class<AliasSource>    sourceClass;
-    sourceClass = class'AliasService'.default.featureAliasesSource;
-    if (sourceClass == none)
-    {
-        _.logger.Auto(noFeatureAliasSource);
-        return none;
+    if (featureAliasSource != none) {
+        featureAliasSource.NewRef();
     }
-    featureSource = AliasSource(sourceClass.static.GetInstance(true));
-    if (featureSource == none)
-    {
-        _.logger.Auto(invalidFeatureAliasSource).ArgClass(sourceClass);
-        return none;
-    }
-    return featureSource;
+    return featureAliasSource;
 }
 
 /**
- *  Returns `AliasSource` that is designated in configuration files as
+ *  Returns `BaseAliasSource` that is designated in configuration files as
  *  a source for entity aliases.
  *
- *  NOTE: while by default entity aliases source will contain only entity
- *  aliases, you should not assume that. Acedia allows admins to store all the
- *  aliases in the same config.
  *
- *  @return Reference to the `AliasSource` that contains entity aliases.
+ *  @return Reference to the `BaseAliasSource` that contains entity aliases.
  *      Can return `none` if no source for entities was configured or
  *      the configured source is incorrectly defined.
  */
-public final function AliasSource GetEntitySource()
+public final function BaseAliasSource GetEntitySource()
 {
-    local AliasSource           entitySource;
-    local class<AliasSource>    sourceClass;
-    sourceClass = class'AliasService'.default.entityAliasesSource;
-    if (sourceClass == none)
-    {
-        _.logger.Auto(noEntityAliasSource);
+    if (entityAliasSource != none) {
+        entityAliasSource.NewRef();
+    }
+    return entityAliasSource;
+}
+
+private final function Text ResolveWithSource(
+    BaseText        alias,
+    BaseAliasSource source,
+    optional bool   copyOnFailure)
+{
+    local Text result;
+    local Text trimmedAlias;
+
+    if (alias == none) {
         return none;
     }
-    entitySource = AliasSource(sourceClass.static.GetInstance(true));
-    if (entitySource == none)
-    {
-        _.logger.Auto(invalidEntityAliasSource).ArgClass(sourceClass);
-        return none;
+    if (alias.StartsWith(P("$"))) {
+        trimmedAlias = alias.Copy(1);
     }
-    return entitySource;
+    else {
+        trimmedAlias = alias.Copy();
+    }
+    if (source != none) {
+        result = source.Resolve(trimmedAlias, copyOnFailure);
+    }
+    else if (copyOnFailure) {
+        result = trimmedAlias.Copy();
+    }
+    trimmedAlias.FreeSelf();
+    return result;
 }
 
 /**
- *  Tries to look up a value stored for given alias in an `AliasSource`
- *  configured to store weapon aliases. Returns `none` on failure.
+ *  Tries to look up a value stored for given alias in an `BaseAliasSource`
+ *  configured to store weapon aliases.
+ *
+ *  In Acedia aliases are typically prefixed with '$' to indicate that user
+ *  means to enter alias. This method is able to handle both aliases with and
+ *  without that prefix. This does not lead to conflicts, because '$' is cannot
+ *  be a valid part of any alias.
  *
  *      Lookup of alias can fail if either alias does not exist in weapon alias
  *  source or weapon alias source itself does not exist
@@ -179,7 +194,8 @@ public final function AliasSource GetEntitySource()
  *      look up a value. Case-insensitive.
  *  @param  copyOnFailure   Whether method should return copy of original
  *      `alias` value in case caller source did not have any records
- *      corresponding to `alias`.
+ *      corresponding to `alias`. If `alias` was specified with '$' prefix -
+ *      it will be discarded.
  *  @return If look up was successful - value, associated with the given
  *      alias `alias`. If lookup was unsuccessful, it depends on `copyOnFailure`
  *      flag: `copyOnFailure == false` means method will return `none`
@@ -190,17 +206,17 @@ public final function Text ResolveWeapon(
     BaseText        alias,
     optional bool   copyOnFailure)
 {
-    local AliasSource source;
-    source = GetWeaponSource();
-    if (source != none) {
-        return source.Resolve(alias, copyOnFailure);
-    }
-    return none;
+    return ResolveWithSource(alias, weaponAliasSource, copyOnFailure);
 }
 
 /**
- *  Tries to look up a value stored for given alias in an `AliasSource`
- *  configured to store color aliases. Reports error on failure.
+ *  Tries to look up a value stored for given alias in an `BaseAliasSource`
+ *  configured to store color aliases.
+ *
+ *  In Acedia aliases are typically prefixed with '$' to indicate that user
+ *  means to enter alias. This method is able to handle both aliases with and
+ *  without that prefix. This does not lead to conflicts, because '$' is cannot
+ *  be a valid part of any alias.
  *
  *      Lookup of alias can fail if either alias does not exist in color alias
  *  source or color alias source itself does not exist
@@ -212,7 +228,8 @@ public final function Text ResolveWeapon(
  *      look up a value. Case-insensitive.
  *  @param  copyOnFailure   Whether method should return copy of original
  *      `alias` value in case caller source did not have any records
- *      corresponding to `alias`.
+ *      corresponding to `alias`. If `alias` was specified with '$' prefix -
+ *      it will be discarded.
  *  @return If look up was successful - value, associated with the given
  *      alias `alias`. If lookup was unsuccessful, it depends on `copyOnFailure`
  *      flag: `copyOnFailure == false` means method will return `none`
@@ -223,17 +240,17 @@ public final function Text ResolveColor(
     BaseText        alias,
     optional bool   copyOnFailure)
 {
-    local AliasSource source;
-    source = GetColorSource();
-    if (source != none) {
-        return source.Resolve(alias, copyOnFailure);
-    }
-    return none;
+    return ResolveWithSource(alias, colorAliasSource, copyOnFailure);
 }
 
 /**
- *  Tries to look up a value stored for given alias in an `AliasSource`
- *  configured to store feature aliases. Reports error on failure.
+ *  Tries to look up a value stored for given alias in an `BaseAliasSource`
+ *  configured to store feature aliases.
+ *
+ *  In Acedia aliases are typically prefixed with '$' to indicate that user
+ *  means to enter alias. This method is able to handle both aliases with and
+ *  without that prefix. This does not lead to conflicts, because '$' is cannot
+ *  be a valid part of any alias.
  *
  *      Lookup of alias can fail if either alias does not exist in feature alias
  *  source or feature alias source itself does not exist
@@ -245,7 +262,8 @@ public final function Text ResolveColor(
  *      look up a value. Case-insensitive.
  *  @param  copyOnFailure   Whether method should return copy of original
  *      `alias` value in case caller source did not have any records
- *      corresponding to `alias`.
+ *      corresponding to `alias`. If `alias` was specified with '$' prefix -
+ *      it will be discarded.
  *  @return If look up was successful - value, associated with the given
  *      alias `alias`. If lookup was unsuccessful, it depends on `copyOnFailure`
  *      flag: `copyOnFailure == false` means method will return `none`
@@ -256,17 +274,17 @@ public final function Text ResolveFeature(
     BaseText        alias,
     optional bool   copyOnFailure)
 {
-    local AliasSource source;
-    source = GetFeatureSource();
-    if (source != none) {
-        return source.Resolve(alias, copyOnFailure);
-    }
-    return none;
+    return ResolveWithSource(alias, featureAliasSource, copyOnFailure);
 }
 
 /**
- *  Tries to look up a value stored for given alias in an `AliasSource`
- *  configured to store entity aliases. Reports error on failure.
+ *  Tries to look up a value stored for given alias in an `BaseAliasSource`
+ *  configured to store entity aliases.
+ *
+ *  In Acedia aliases are typically prefixed with '$' to indicate that user
+ *  means to enter alias. This method is able to handle both aliases with and
+ *  without that prefix. This does not lead to conflicts, because '$' is cannot
+ *  be a valid part of any alias.
  *
  *      Lookup of alias can fail if either alias does not exist in entity alias
  *  source or entity alias source itself does not exist
@@ -278,7 +296,8 @@ public final function Text ResolveFeature(
  *      look up a value. Case-insensitive.
  *  @param  copyOnFailure   Whether method should return copy of original
  *      `alias` value in case caller source did not have any records
- *      corresponding to `alias`.
+ *      corresponding to `alias`. If `alias` was specified with '$' prefix -
+ *      it will be discarded.
  *  @return If look up was successful - value, associated with the given
  *      alias `alias`. If lookup was unsuccessful, it depends on `copyOnFailure`
  *      flag: `copyOnFailure == false` means method will return `none`
@@ -289,23 +308,53 @@ public final function Text ResolveEntity(
     BaseText        alias,
     optional bool   copyOnFailure)
 {
-    local AliasSource source;
-    source = GetEntitySource();
-    if (source != none) {
-        return source.Resolve(alias, copyOnFailure);
+    return ResolveWithSource(alias, entityAliasSource, copyOnFailure);
+}
+
+/**
+ *  Tries to look up a value stored for given alias in a custom alias source
+ *  with a given name `sourceName`.
+ *
+ *  In Acedia aliases are typically prefixed with '$' to indicate that user
+ *  means to enter alias. This method is able to handle both aliases with and
+ *  without that prefix. This does not lead to conflicts, because '$' is cannot
+ *  be a valid part of any alias.
+ *
+ *  Custom alias sources are any type of alias source that isn't built-in into
+ *  Acedia. They can either be added manually by the admin through config file.
+ *
+ *      Lookup of alias can fail if either alias does not exist in entity alias
+ *  source or entity alias source itself does not exist
+ *  (due to either faulty configuration or incorrect definition).
+ *      To determine if entity alias source exists you can check
+ *  `_.alias.GetCustomSource()` value.
+ *
+ *  @param  alias           Alias, for which method will attempt to
+ *      look up a value. Case-insensitive.
+ *  @param  copyOnFailure   Whether method should return copy of original
+ *      `alias` value in case caller source did not have any records
+ *      corresponding to `alias`. If `alias` was specified with '$' prefix -
+ *      it will be discarded.
+ *  @return If look up was successful - value, associated with the given
+ *      alias `alias`. If lookup was unsuccessful, it depends on `copyOnFailure`
+ *      flag: `copyOnFailure == false` means method will return `none`
+ *      and `copyOnFailure == true` means method will return `alias.Copy()`.
+ *      If `alias == none` method always returns `none`.
+ */
+public final function Text ResolveCustom(
+    BaseText        sourceName,
+    BaseText        alias,
+    optional bool   copyOnFailure)
+{
+    local BaseAliasSource customSource;
+
+    customSource = GetCustomSource(sourceName);
+    if (customSource == none) {
+        return none;
     }
-    return none;
+    return ResolveWithSource(alias, customSource, copyOnFailure);
 }
 
 defaultproperties
 {
-    //  TODO: all this shit below can be done as two messages
-    noWeaponAliasSource         = (l=LOG_Error,m="No weapon aliases source configured for Acedia's alias API. Error is most likely cause by erroneous config.")
-    invalidWeaponAliasSource    = (l=LOG_Error,m="`AliasSource` class `%1` is configured to store weapon aliases, but it seems to be invalid. This is a bug and not configuration file problem, but issue might be avoided by using a different `AliasSource`.")
-    noColorAliasSource          = (l=LOG_Error,m="No color aliases source configured for Acedia's alias API. Error is most likely cause by erroneous config.")
-    invalidColorAliasSource     = (l=LOG_Error,m="`AliasSource` class `%1` is configured to store color aliases, but it seems to be invalid. This is a bug and not configuration file problem, but issue might be avoided by using a different `AliasSource`.")
-    noFeatureAliasSource        = (l=LOG_Error,m="No feature aliases source configured for Acedia's alias API. Error is most likely cause by erroneous config.")
-    invalidFeatureAliasSource   = (l=LOG_Error,m="`AliasSource` class `%1` is configured to store feature aliases, but it seems to be invalid. This is a bug and not configuration file problem, but issue might be avoided by using a different `AliasSource`.")
-    noEntityAliasSource        = (l=LOG_Error,m="No entity aliases source configured for Acedia's alias API. Error is most likely cause by erroneous config.")
-    invalidEntityAliasSource   = (l=LOG_Error,m="`AliasSource` class `%1` is configured to store entity aliases, but it seems to be invalid. This is a bug and not configuration file problem, but issue might be avoided by using a different `AliasSource`.")
 }

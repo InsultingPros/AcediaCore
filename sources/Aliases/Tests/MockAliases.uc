@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class MockAliases extends Aliases
+class MockAliases extends AliasesStorage
     perObjectConfig
     config(AcediaAliases_Tests);
 

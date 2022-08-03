@@ -23,15 +23,17 @@ class TEST_Aliases extends TestCase
 protected static function TESTS()
 {
     Context("Testing loading aliases from a mock object `MockAliasSource`.");
+    Issue("`GetCustomSource()` fails to return alias source.");
+    TEST_ExpectNotNone(__().alias.GetCustomSource(P("mock")));
     SubTest_AliasLoadingCorrect();
     SubTest_AliasLoadingIncorrect();
 }
 
 protected static function SubTest_AliasLoadingCorrect()
 {
-    local AliasSource source;
+    local BaseAliasSource source;
     Issue("`Resolve()` fails to return alias value that should be loaded.");
-    source = __().alias.GetCustomSource(class'MockAliasSource');
+    source = __().alias.GetCustomSource(P("mock"));
     TEST_ExpectTrue(source.Resolve(P("Global")).ToString() == "value");
     TEST_ExpectTrue(source.Resolve(P("ford")).ToString() == "car");
 
@@ -51,21 +53,19 @@ protected static function SubTest_AliasLoadingCorrect()
     TEST_ExpectTrue(    source.Resolve(P("HardToBeAGod")).ToString()
                     ==  "sci.fi");
 
-    Issue("Aliases with empty values in alias name or their value are handled"
-        @ "incorrectly.");
-    TEST_ExpectTrue(source.Resolve(P("")).ToString() == "empty");
+    Issue("Aliases corresponding to empty values are handled incorrectly.");
     TEST_ExpectTrue(source.Resolve(P("also")).ToString() == "");
 }
 
 protected static function SubTest_AliasLoadingIncorrect()
 {
-    local AliasSource source;
+    local BaseAliasSource source;
     Issue("`AliasAPI` cannot return value custom source.");
-    source = __().alias.GetCustomSource(class'MockAliasSource');
+    source = __().alias.GetCustomSource(P("mock"));
     TEST_ExpectNotNone(source);
 
     Issue("`Resolve()` reports success of finding inexistent alias.");
-    source = __().alias.GetCustomSource(class'MockAliasSource');
+    source = __().alias.GetCustomSource(P("mock"));
     TEST_ExpectNone(source.Resolve(P("noSuchThing")));
 
     Issue("`HasAlias()` reports inexistent alias as present.");

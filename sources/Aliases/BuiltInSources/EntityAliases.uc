@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class EntityAliases extends Aliases
+class EntityAliases extends AliasesStorage
     perObjectConfig
     config(AcediaAliases_Entities);
 

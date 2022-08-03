@@ -17,8 +17,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class CommandAliases extends Aliases
-    perObjectConfig;
+class CommandAliases extends AliasesStorage
+    perObjectConfig
+    config(AcediaAliases_Commands);
 
 defaultproperties
 {

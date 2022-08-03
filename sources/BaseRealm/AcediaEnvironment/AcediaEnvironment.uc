@@ -23,7 +23,7 @@ class AcediaEnvironment extends AcediaObject;
  *  # `AcediaEnvironment`
  *
  *  Instance of this class will be used by Acedia to manage resources available
- *  from different packages like `Feature`s, aliases, etc..
+ *  from different packages like `Feature`s and such other etc..
  *  This is mostly necessary to implement Acedia loader (and, possibly,
  *  its alternatives) that would load available packages and enable `Feature`s
  *  admin wants to be enabled.
@@ -244,13 +244,6 @@ private final function ReadManifest(class<_manifest> manifestClass)
 {
     local int i;
 
-    for (i = 0; i < manifestClass.default.aliasSources.length; i += 1)
-    {
-        if (manifestClass.default.aliasSources[i] == none) {
-            continue;
-        }
-        _.memory.Allocate(manifestClass.default.aliasSources[i]);
-    }
     for (i = 0; i < manifestClass.default.features.length; i += 1)
     {
         if (manifestClass.default.features[i] == none) {

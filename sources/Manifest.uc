@@ -22,13 +22,9 @@
 
 defaultproperties
 {
-    features(0)     = class'Commands_Feature'
-    features(1)     = class'Avarice_Feature'
-    aliasSources(0) = class'AliasSource'
-    aliasSources(1) = class'WeaponAliasSource'
-    aliasSources(2) = class'ColorAliasSource'
-    aliasSources(3) = class'FeatureAliasSource'
-    aliasSources(4) = class'EntityAliasSource'
+    features(0)     = class'Aliases_Feature'
+    features(1)     = class'Commands_Feature'
+    features(2)     = class'Avarice_Feature'
     testCases(0)    = class'TEST_Base'
     testCases(1)    = class'TEST_ActorService'
     testCases(2)    = class'TEST_Boxes'

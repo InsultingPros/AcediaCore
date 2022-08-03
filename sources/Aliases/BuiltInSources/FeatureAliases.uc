@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
-class FeatureAliases extends Aliases
+class FeatureAliases extends AliasesStorage
     perObjectConfig
-    config(AcediaAliases);
+    config(AcediaAliases_Features);
 
 defaultproperties
 {

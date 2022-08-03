@@ -18,7 +18,7 @@
  * along with Acedia.  If not, see <https://www.gnu.org/licenses/>.
  */
 class FeatureAliasSource extends AliasSource
-    config(AcediaAliases);
+    config(AcediaAliases_Features);
 
 defaultproperties
 {
