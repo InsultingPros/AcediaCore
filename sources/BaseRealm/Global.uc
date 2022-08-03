@@ -27,6 +27,7 @@ var protected Global myself;
 
 var public RefAPI           ref;
 var public BoxAPI           box;
+var public MathAPI          math;
 var public LoggerAPI        logger;
 var public CollectionsAPI   collections;
 var public AliasesAPI       alias;
@@ -65,6 +66,7 @@ protected function Initialize()
     ref         = RefAPI(memory.Allocate(class'RefAPI'));
     box         = BoxAPI(memory.Allocate(class'BoxAPI'));
     text        = TextAPI(memory.Allocate(class'TextAPI'));
+    math        = MathAPI(memory.Allocate(class'MathAPI'));
     collections = CollectionsAPI(memory.Allocate(class'CollectionsAPI'));
     logger      = LoggerAPI(memory.Allocate(class'LoggerAPI'));
     color       = ColorAPI(memory.Allocate(class'ColorAPI'));
