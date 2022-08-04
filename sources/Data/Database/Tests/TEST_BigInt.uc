@@ -27,10 +27,10 @@ protected static function TESTS()
     Test_Creating();
     //  So here we nee to test `ToText()` methods separately
     Test_ToText();
-    Test_LeadingZeroes();
-    //Test_AddingValues();
+    Context("Testing basic arithmetic operations on `BigInt`s.");
+    Test_AddingValues();
 }
-// TODO: leading zeroes
+
 protected static function Test_Creating()
 {
     Context("Testing creation of `BigInt`s.");
@@ -93,11 +93,81 @@ protected static function Test_ToText()
         .ToString() == "-9827657892365923510176386357863078603212901078175829");
 }
 
-/*protected static function Test_AddingValues()
+protected static function Test_AddingValues()
 {
-    Context("Testing adding values to `BigInt`");
-    Issue("`JSONPointer` is incorrectly extracted.");
-}*/
+    SubTest_AddingSameSignValues();
+    SubTest_AddingDifferentSignValues();
+}
+
+protected static function SubTest_AddingSameSignValues()
+{
+    local BigInt main, addition;
+
+    Issue("Two positive `BigInt`s are incorrectly added.");
+    main = class'BigInt'.static.FromDecimal_S("927641962323462271784269213864");
+    addition = class'BigInt'.static.FromDecimal_S("16324234842947239847239239");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "927658286558305219024116453103");
+    main = class'BigInt'.static.FromDecimal_S("16324234842947239847239239");
+    addition = class'BigInt'.static
+        .FromDecimal_S("927641962323462271784269213864");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "927658286558305219024116453103");
+    main = class'BigInt'.static.FromDecimal_S("728965872936589276");
+    addition = class'BigInt'.static.FromDecimal_S("728965872936589276");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "1457931745873178552");
+
+    Issue("Two negative `BigInt`s are incorrectly added.");
+    main = class'BigInt'.static.FromDecimal_S("-27641962323462271784269213864");
+    addition = class'BigInt'.static.FromDecimal_S("-6324234842947239847239239");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "-27648286558305219024116453103");
+    main = class'BigInt'.static.FromDecimal_S("-16324234842947239847239239");
+    addition = class'BigInt'.static
+        .FromDecimal_S("-927641962323462271784269213864");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "-927658286558305219024116453103");
+    main = class'BigInt'.static.FromDecimal_S("-728965872936589276");
+    addition = class'BigInt'.static.FromDecimal_S("-728965872936589276");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "-1457931745873178552");
+}
+
+protected static function SubTest_AddingDifferentSignValues()
+{
+    local BigInt main, addition;
+
+    Issue("Negative `BigInt`s is incorrectly added to positive one.");
+    main = class'BigInt'.static.FromDecimal_S("927641962323462271784269213864");
+    addition = class'BigInt'.static.FromDecimal_S("-1632423484294239847239239");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "927640329899977977544421974625");
+    main = class'BigInt'.static.FromDecimal_S("16324234842947239847239239");
+    addition = class'BigInt'.static
+        .FromDecimal_S("-927641962323462271784269213864");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "-927625638088619324544421974625");
+    main = class'BigInt'.static.FromDecimal_S("728965872936589276");
+    addition = class'BigInt'.static.FromDecimal_S("-728965872936589276");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "0");
+
+    Issue("Positive `BigInt`s is incorrectly added to negative one.");
+    main = class'BigInt'.static.FromDecimal_S("-27641962323462271784269213864");
+    addition = class'BigInt'.static.FromDecimal_S("6324234842947239847239239");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "-27635638088619324544421974625");
+    main = class'BigInt'.static.FromDecimal_S("-16324234842947239847239239");
+    addition = class'BigInt'.static
+        .FromDecimal_S("927641962323462271784269213864");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "927625638088619324544421974625");
+    main = class'BigInt'.static.FromDecimal_S("-728965872936589276");
+    addition = class'BigInt'.static.FromDecimal_S("728965872936589276");
+    main.Add(addition);
+    TEST_ExpectTrue(main.ToString() == "0");
+}
 
 defaultproperties
 {

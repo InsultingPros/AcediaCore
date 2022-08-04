@@ -23,6 +23,13 @@
 class BigInt extends AcediaObject
     dependson(MathAPI);
 
+enum BigIntCompareResult
+{
+    BICR_Less,
+    BICR_Equal,
+    BICR_Greater
+};
+
 var private bool negative;
 //  Digits array, from least to most significant:
 //  For example, for 13524:
@@ -70,7 +77,7 @@ private static function BigInt CreateMinimalNegative()
 
 //  Removes unnecessary zeroes from leading digit positions `digits`.
 //  Does not change contained value.
-private final static function TrimLeadingZeroes()
+private final function TrimLeadingZeroes()
 {
     local int i, zeroesToRemove;
 
@@ -188,6 +195,53 @@ public final static function BigInt FromDecimal_S(string value)
     return result;
 }
 
+public function BigIntCompareResult _compareModulus(BigInt other)
+{
+    local int           i;
+    local array<byte>   otherDigits;
+
+    otherDigits = other.digits;
+    if (digits.length == otherDigits.length)
+    {
+        for (i = digits.length - 1; i >= 0; i -= 1)
+        {
+            if (digits[i] < otherDigits[i]) {
+                return BICR_Less;
+            }
+            if (digits[i] > otherDigits[i]) {
+                return BICR_Greater;
+            }
+        }
+        return BICR_Equal;
+    }
+    if (digits.length < otherDigits.length) {
+        return BICR_Less;
+    }
+    return BICR_Greater;
+}
+
+public function BigIntCompareResult Compare(BigInt other)
+{
+    local BigIntCompareResult resultForModulus;
+
+    if (negative && !other.negative) {
+        return BICR_Less;
+    }
+    if (!negative && other.negative) {
+        return BICR_Greater;
+    }
+    resultForModulus = _compareModulus(other);
+    if (resultForModulus == BICR_Equal) {
+        return BICR_Equal;
+    }
+    if (    (negative   &&  (resultForModulus == BICR_Greater))
+        ||  (!negative  &&  (resultForModulus == BICR_Less))    )
+    {
+        return BICR_Less;
+    }
+    return BICR_Greater;
+}
+
 private function _add(BigInt other)
 {
     local int           i;
@@ -201,6 +255,9 @@ private function _add(BigInt other)
     if (digits.length < otherDigits.length) {
         digits.length = otherDigits.length;
     }
+    else {
+        otherDigits.length = digits.length;
+    }
     carry = 0;
     for (i = 0; i < digits.length; i += 1)
     {
@@ -211,11 +268,65 @@ private function _add(BigInt other)
     if (carry > 0) {
         digits[digits.length] = carry;
     }
+    //  No leading zeroes can be created here, so no need to trim
+}
+
+private function _sub(BigInt other)
+{
+    local int                   i;
+    local int                   carry, nextDigit;
+    local array<byte>           minuendDigits, subtrahendDigits;
+    local BigIntCompareResult   resultForModulus;
+
+    if (other == none) {
+        return;
+    }
+    resultForModulus = _compareModulus(other);
+    if (resultForModulus == BICR_Equal)
+    {
+        negative = false;
+        digits.length = 1;
+        digits[0] = 0;
+        return;
+    }
+    if (resultForModulus == BICR_Less)
+    {
+        negative            = !negative;
+        minuendDigits       = other.digits;
+        subtrahendDigits    = digits;
+    }
+    else
+    {
+        minuendDigits       = digits;
+        subtrahendDigits    = other.digits;
+    }
+    digits.length           = minuendDigits.length;
+    subtrahendDigits.length = minuendDigits.length;
+    carry = 0;
+    for (i = 0; i < digits.length; i += 1)
+    {
+        nextDigit = int(minuendDigits[i]) - int(subtrahendDigits[i]) + carry;
+        if (nextDigit < 0)
+        {
+            nextDigit += 10;
+            carry = -1;
+        }
+        else {
+            carry = 0;
+        }
+        digits[i] = nextDigit;
+    }
+    TrimLeadingZeroes();
 }
 
 public function BigInt Add(BigInt other)
 {
-    _add(other);
+    if (negative == other.negative) {
+        _add(other);
+    }
+    else {
+        _sub(other);
+    }
     return self;
 }
 
