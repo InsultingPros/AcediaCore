@@ -41,10 +41,13 @@ var private bool negative;
 //  Valid `BigInt` should not have this array empty.
 var private array<byte> digits;
 
+private const ALMOST_MAX_INT    = 147483647;
+private const DIGITS_IN_MAX_INT = 10;
+
 protected function Constructor()
 {
     //  Init with zero
-    digits[0] = 0;
+    SetZero();
 }
 
 protected function Finalizer()
@@ -53,26 +56,32 @@ protected function Finalizer()
     digits.length = 0;
 }
 
+//  ???
+private function BigInt SetZero()
+{
+    negative = false;
+    digits.length = 1;
+    digits[0] = 0;
+    return self;
+}
+
 //  Minimal `int` value `-2,147,483,648` is slightly a pain to handle, so just
 //  use this pre-made constructor for it
-private static function BigInt CreateMinimalNegative()
+private function BigInt SetMinimalNegative()
 {
-    local array<byte>   newDigits;
-    local BigInt        result;
-    newDigits[0] = 8;
-    newDigits[1] = 4;
-    newDigits[2] = 6;
-    newDigits[3] = 3;
-    newDigits[4] = 8;
-    newDigits[5] = 4;
-    newDigits[6] = 7;
-    newDigits[7] = 4;
-    newDigits[8] = 1;
-    newDigits[9] = 2;
-    result = BigInt(__().memory.Allocate(class'BigInt'));
-    result.digits   = newDigits;
-    result.negative = true;
-    return result;
+    negative = true;
+    digits.length = 10;
+    digits[0] = 8;
+    digits[1] = 4;
+    digits[2] = 6;
+    digits[3] = 3;
+    digits[4] = 8;
+    digits[5] = 4;
+    digits[6] = 7;
+    digits[7] = 4;
+    digits[8] = 1;
+    digits[9] = 2;
+    return self;
 }
 
 //  Removes unnecessary zeroes from leading digit positions `digits`.
@@ -92,79 +101,71 @@ private final function TrimLeadingZeroes()
         zeroesToRemove += 1;
     }
     //  `digits` must not be empty, enforce `0` value in that case
-    if (zeroesToRemove  >= digits.length)
-    {
-        digits.length = 1;
-        digits[0] = 0;
-        negative = false;
+    if (zeroesToRemove  >= digits.length) {
+        SetZero();
     }
     else {
         digits.length = digits.length - zeroesToRemove;
     }
 }
 
-public final static function BigInt FromInt(int value)
+public final function BigInt SetInt(int value)
 {
-    local bool                          valueIsNegative;
-    local array<byte>                   newDigits;
-    local BigInt                        result;
     local MathAPI.IntegerDivisionResult divisionResult;
 
+    negative = false;
+    digits.length = 0;
     if (value < 0)
     {
         //  Treat special case of minimal `int` value `-2,147,483,648` that
         //  won't fit into positive `int` as special and use pre-made
         //  specialized constructor `CreateMinimalNegative()`
         if (value < -MaxInt) {
-            return CreateMinimalNegative();
+            return SetMinimalNegative();
         }
         else
         {
-            valueIsNegative = true;
+            negative = true;
             value *= -1;
         }
     }
     if (value == 0) {
-        newDigits[0] = 0;
+        digits[0] = 0;
     }
     else
     {
         while (value > 0)
         {
             divisionResult = __().math.IntegerDivision(value, 10);
-            value                       = divisionResult.quotient;
-            newDigits[newDigits.length] = divisionResult.remainder;
+            value                   = divisionResult.quotient;
+            digits[digits.length]   = divisionResult.remainder;
         }
     }
-    result = BigInt(__().memory.Allocate(class'BigInt'));
-    result.digits   = newDigits;
-    result.negative = valueIsNegative;
-    result.TrimLeadingZeroes();
-    return result;
+    TrimLeadingZeroes();
+    return self;
 }
 
-public final static function BigInt FromDecimal(BaseText value)
+public final function BigInt Set(BaseText value)
 {
     local int                   i;
-    local bool                  valueIsNegative;
     local byte                  nextDigit;
-    local array<byte>           newDigits;
     local Parser                parser;
-    local BigInt                result;
     local Basetext.Character    nextCharacter;
 
     if (value == none) {
         return none;
     }
     parser = value.Parse();
-    if (parser.Match(P("-")).Ok())
-    {
-        valueIsNegative = true;
-        parser.Confirm();
-    }
+    negative = parser.Match(P("-")).Ok();
+    parser.Confirm();
     parser.R();
-    newDigits.length = parser.GetRemainingLength();
-    i = newDigits.length - 1;
+    digits.length = parser.GetRemainingLength();
+    /*if (digits.length <= 0)
+    {
+        parser.FreeSelf();
+        return SetZero();
+    }*/
+    i = digits.length - 1;
     while (!parser.HasFinished())
     {
         //  This should not happen, but just in case
@@ -173,26 +174,22 @@ public final static function BigInt FromDecimal(BaseText value)
         }
         parser.MCharacter(nextCharacter);
         nextDigit = Clamp(__().text.CharacterToInt(nextCharacter), 0, 9);
-        newDigits[i] = nextDigit;
+        digits[i] = nextDigit;
         i -= 1;
     }
-    result = BigInt(__().memory.Allocate(class'BigInt'));
-    result.digits   = newDigits;
-    result.negative = valueIsNegative;
     parser.FreeSelf();
-    result.TrimLeadingZeroes();
-    return result;
+    TrimLeadingZeroes();
+    return self;
 }
 
-public final static function BigInt FromDecimal_S(string value)
+public final function BigInt Set_S(string value)
 {
-    local MutableText   wrapper;
-    local BigInt        result;
+    local MutableText wrapper;
 
     wrapper = __().text.FromStringM(value);
-    result = FromDecimal(wrapper);
+    Set(wrapper);
     wrapper.FreeSelf();
-    return result;
+    return self;
 }
 
 public function BigIntCompareResult _compareModulus(BigInt other)
@@ -284,9 +281,7 @@ private function _sub(BigInt other)
     resultForModulus = _compareModulus(other);
     if (resultForModulus == BICR_Equal)
     {
-        negative = false;
-        digits.length = 1;
-        digits[0] = 0;
+        SetZero();
         return;
     }
     if (resultForModulus == BICR_Less)
@@ -334,23 +329,72 @@ public function BigInt AddInt(int other)
 {
     local BigInt otherObject;
 
-    otherObject = FromInt(other);
+    otherObject = _.math.ToBigInt(other);
     Add(otherObject);
     _.memory.Free(otherObject);
     return self;
 }
 
-/*public function BigInt Multiply(BigInt other);
-public function BigInt MultiplyInt(int other);
+public function BigInt Subtract(BigInt other)
+{
+    if (negative != other.negative) {
+        _add(other);
+    }
+    else {
+        _sub(other);
+    }
+    return self;
+}
 
-public function bool IsNegative();
-public function (int other);
+public function BigInt SubtractInt(int other)
+{
+    local BigInt otherObject;
 
-public function int ToInt();
+    otherObject = _.math.ToBigInt(other);
+    Add(otherObject);
+    _.memory.Free(otherObject);
+    return self;
+}
 
-public function Text ToText();
+public function bool IsNegative()
+{
+    return negative;
+}
 
-public function Text ToText_M();*/
+public function int ToInt()
+{
+    local int i;
+    local int accumulator;
+    local int mostSignificantDigit;
+
+    if (digits.lenght <= 0) {
+        return 0;
+    }
+    if (digits.lenght > DIGITS_IN_MAX_INT)
+    {
+        if (negative) {
+            return (-MaxInt - 1);
+        }
+        else {
+            return MaxInt;
+        }
+    }
+    mostSignificantDigit = -1;
+    if (digits.lenght == DIGITS_IN_MAX_INT)
+    {
+        mostSignificantDigit = digits[digits.length - 1];
+        digits[i] = DIGITS_IN_MAX_INT - 1;
+    }
+    //  At most `DIGITS_IN_MAX_INT - 1` iterations
+    for (i = 0; i < digits.length; i += 1)
+    {//ALMOST_MAX_INT
+        accumulator *= 10;
+        accumulator += digits[i];
+    }
+    if (mostSignificantDigit < 0) {
+        return accumulator;
+    }
+}
 
 public function Text ToText()
 {

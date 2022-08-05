@@ -31,6 +31,30 @@ struct IntegerDivisionResult
     var int remainder;
 };
 
+public function BigInt ToBigInt(int value)
+{
+    local BigInt result;
+
+    result = BigInt(_.memory.Allocate(class'BigInt'));
+    return result.SetInt(value);
+}
+
+public function BigInt MakeBigInt(Text value)
+{
+    local BigInt result;
+
+    result = BigInt(_.memory.Allocate(class'BigInt'));
+    return result.Set(value);
+}
+
+public function BigInt MakeBigInt_S(string value)
+{
+    local BigInt result;
+
+    result = BigInt(_.memory.Allocate(class'BigInt'));
+    return result.Set_S(value);
+}
+
 /**
  *  Computes remainder of the integer division of `number` by `divisor`.
  *
