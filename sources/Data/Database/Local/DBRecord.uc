@@ -112,7 +112,10 @@ enum DBDataType
     DBAT_String,
     //  We actually store the name of another `DBRecord` that represents either
     //  sub-array or sub-object.
-    DBAT_Reference
+    DBAT_Reference,
+    //  Some integer values we might want to store won't fit into `int`, so we
+    //  store them as `BigIntData`
+    DBAT_BigInt,
 };
 
 /**
@@ -130,6 +133,9 @@ struct StorageItem
     var float       f;
     //  For both `DBRecord` references and JSON strings
     var string      s;
+    //  For storing `BigInt`'s `BigIntData` - last `byte` stores `negative`
+    //  value
+    var array<byte> b;
 };
 var private config array<StorageItem> storage;
 
