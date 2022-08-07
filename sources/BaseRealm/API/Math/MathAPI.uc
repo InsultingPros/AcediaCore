@@ -31,6 +31,13 @@ struct IntegerDivisionResult
     var int remainder;
 };
 
+/**
+ *  Changes current value of `BigInt` to given `BigInt` value.
+ *
+ *  @param  value   New value of the caller `BigInt`. If `none` is given,
+ *      method does nothing.
+ *  @return Self-reference to allow for method chaining.
+ */
 public function BigInt ToBigInt(int value)
 {
     local BigInt result;
@@ -39,20 +46,45 @@ public function BigInt ToBigInt(int value)
     return result.SetInt(value);
 }
 
-public function BigInt MakeBigInt(Text value)
+/**
+ *  Creates new `BigInt` value, base on the decimal representation given by
+ *  `value`.
+ *
+ *  If invalid decimal representation (digits only, possibly with leading sign)
+ *  is given - contents of returned value are undefined. Otherwise cannot fail.
+ *
+ *  @param  value   New value of the caller `BigInt`, given by decimal
+ *      its representation. If `none` is given, method returns `BigInt`
+ *      containing `0` as value.
+ *  @return Created `BigInt`, containing value, given by its the decimal
+ *      representation `value`.
+ */
+public function BigInt MakeBigInt(BaseText value)
 {
     local BigInt result;
 
     result = BigInt(_.memory.Allocate(class'BigInt'));
-    return result.Set(value);
+    return result.SetDecimal(value);
 }
 
+/**
+ *  Creates new `BigInt` value, base on the decimal representation given by
+ *  `value`.
+ *
+ *  If invalid decimal representation (digits only, possibly with leading sign)
+ *  is given - contents of returned value are undefined. Otherwise cannot fail.
+ *
+ *  @param  value   New value of the caller `BigInt`, given by decimal
+ *      its representation.
+ *  @return Created `BigInt`, containing value, given by its the decimal
+ *      representation `value`.
+ */
 public function BigInt MakeBigInt_S(string value)
 {
     local BigInt result;
 
     result = BigInt(_.memory.Allocate(class'BigInt'));
-    return result.Set_S(value);
+    return result.SetDecimal_S(value);
 }
 
 /**
