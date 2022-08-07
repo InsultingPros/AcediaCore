@@ -24,9 +24,13 @@ protected static function TESTS()
 {
     //  Here we use `ToString()` method to check `BigInt` creation,
     //  therefore also testing it
+    Context("Testing creation of `BigInt`s.");
     Test_Creating();
     //  So here we nee to test `ToText()` methods separately
+    Context("Testing `ToText()` method of `BigInt`s.");
     Test_ToText();
+    Context("Testing `ToInt()` method of `BigInt`s.");
+    Test_ToInt();
     Context("Testing basic arithmetic operations on `BigInt`s.");
     Test_AddingValues();
     Test_SubtractingValues();
@@ -34,7 +38,6 @@ protected static function TESTS()
 
 protected static function Test_Creating()
 {
-    Context("Testing creation of `BigInt`s.");
     Issue("`ToString()` doesn't return value `BigInt` was initialized with" @
         "a positive `int`.");
     TEST_ExpectTrue(__().math.ToBigInt(13524).ToString() == "13524");
@@ -70,7 +73,6 @@ protected static function Test_Creating()
 
 protected static function Test_ToText()
 {
-    Context("Testing `ToText()` method of `BigInt`s.");
     Issue("`ToText()` doesn't return value `BigInt` was initialized with" @
         "a positive integer inside `string`.");
     TEST_ExpectTrue(__().math
@@ -204,7 +206,7 @@ protected static function SubTest_SubtractingSameSignValues()
     main.Subtract(sub);
     TEST_ExpectTrue(main.ToString() == "0");
 }
-//Negative `BigInt`s is incorrectly subtracted from positive one. [2]
+
 protected static function SubTest_SubtractingDifferentSignValues()
 {
     local BigInt main, sub;
@@ -236,7 +238,30 @@ protected static function SubTest_SubtractingDifferentSignValues()
     sub = __().math.MakeBigInt_S("728965872936589276");
     main.Subtract(sub);
     TEST_ExpectTrue(main.ToString() == "-1457931745873178552");
-    Log("UMBRA TEST");
+}
+
+protected static function Test_ToInt()
+{
+    Issue("Testing conversion for non-overflowing values.");
+    TEST_ExpectTrue(__().math.MakeBigInt_S("0").ToInt() == 0);
+    TEST_ExpectTrue(__().math.MakeBigInt_S("-0").ToInt() == 0);
+    TEST_ExpectTrue(__().math.MakeBigInt_S("13524").ToInt() == 13524);
+    TEST_ExpectTrue(__().math.MakeBigInt_S("-666").ToInt() == -666);
+    TEST_ExpectTrue(__().math.MakeBigInt_S("2147483647").ToInt() == 2147483647);
+    TEST_ExpectTrue(__().math.MakeBigInt_S("2147483646").ToInt() == 2147483646);
+    TEST_ExpectTrue(
+        __().math.MakeBigInt_S("-2147483648").ToInt() == -2147483648);
+    TEST_ExpectTrue(
+        __().math.MakeBigInt_S("-2147483647").ToInt() == -2147483647);
+
+    Issue("Testing conversion for overflowing values.");
+    TEST_ExpectTrue(__().math.MakeBigInt_S("2147483648").ToInt() == 2147483647);
+    TEST_ExpectTrue(
+        __().math.MakeBigInt_S("8342748293074932473246").ToInt() == 2147483647);
+    TEST_ExpectTrue(
+        __().math.MakeBigInt_S("-2147483649").ToInt() == -2147483648);
+    TEST_ExpectTrue(
+        __().math.MakeBigInt_S("-32545657348437563873").ToInt() == -2147483648);
 }
 
 defaultproperties

@@ -41,8 +41,9 @@ var private bool negative;
 //  Valid `BigInt` should not have this array empty.
 var private array<byte> digits;
 
-private const ALMOST_MAX_INT    = 147483647;
-private const DIGITS_IN_MAX_INT = 10;
+const ALMOST_MAX_INT    = 147483647;
+const DIGITS_IN_MAX_INT = 10;
+const LAST_DIGIT_ORDER  = 1000000000;
 
 protected function Constructor()
 {
@@ -365,12 +366,12 @@ public function int ToInt()
 {
     local int i;
     local int accumulator;
-    local int mostSignificantDigit;
+    local int safeDigitsAmount;
 
-    if (digits.lenght <= 0) {
+    if (digits.length <= 0) {
         return 0;
     }
-    if (digits.lenght > DIGITS_IN_MAX_INT)
+    if (digits.length > DIGITS_IN_MAX_INT)
     {
         if (negative) {
             return (-MaxInt - 1);
@@ -379,21 +380,57 @@ public function int ToInt()
             return MaxInt;
         }
     }
-    mostSignificantDigit = -1;
-    if (digits.lenght == DIGITS_IN_MAX_INT)
-    {
-        mostSignificantDigit = digits[digits.length - 1];
-        digits[i] = DIGITS_IN_MAX_INT - 1;
-    }
     //  At most `DIGITS_IN_MAX_INT - 1` iterations
-    for (i = 0; i < digits.length; i += 1)
-    {//ALMOST_MAX_INT
+    safeDigitsAmount = Min(DIGITS_IN_MAX_INT - 1, digits.length);
+    for (i = safeDigitsAmount - 1; i >= 0; i -= 1)
+    {
         accumulator *= 10;
         accumulator += digits[i];
     }
-    if (mostSignificantDigit < 0) {
+    if (negative) {
+        accumulator *= -1;
+    }
+    accumulator = AddUnsafeDigitToInt(accumulator);
+    return accumulator;
+}
+
+//  Assumes `digits.length <= DIGITS_IN_MAX_INT`
+private function int AddUnsafeDigitToInt(int accumulator)
+{
+    local int   unsafeDigit;
+    local bool  noOverflow;
+
+    if (digits.length < DIGITS_IN_MAX_INT) {
         return accumulator;
     }
+    unsafeDigit = digits[DIGITS_IN_MAX_INT - 1];
+    //  `MaxInt` stats with `2`, so if last/unsafe digit is either `0` or `1`,
+    //  there is no overflow, otherwise - check rest of the digits
+    noOverflow =  (unsafeDigit < 2);
+    if (unsafeDigit == 2)
+    {
+        //  Include `MaxInt` and `-MaxInt-1` (minimal possible value) into
+        //  an overflow too - this way we still give a correct result, but do
+        //  not have to worry about `int`-arithmetic error
+        noOverflow = noOverflow
+            ||  (negative && (accumulator > -ALMOST_MAX_INT - 1))
+            ||  (!negative && (accumulator < ALMOST_MAX_INT));
+    }
+    if (noOverflow)
+    {
+        if (negative) {
+            accumulator -= unsafeDigit * LAST_DIGIT_ORDER;
+        }
+        else {
+            accumulator += unsafeDigit * LAST_DIGIT_ORDER;
+        }
+        return accumulator;
+    }
+    //  Handle overflow
+    if (negative) {
+        return (-MaxInt - 1);
+    }
+    return MaxInt;
 }
 
 public function Text ToText()
