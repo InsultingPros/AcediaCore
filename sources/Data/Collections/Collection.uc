@@ -450,7 +450,7 @@ public final function string GetFormattedStringBy(
     }
     asText = BaseText(result);
     if (asText != none) {
-        return _.text.ToFormattedString(asText);
+        return _.text.IntoFormattedString(asText);
     }
     _.memory.Free(result);
     return defaultValue;
@@ -805,7 +805,7 @@ public final function string GetFormattedStringByJSON(
     }
     asText = BaseText(result);
     if (asText != none) {
-        return _.text.ToFormattedString(asText);
+        return _.text.IntoFormattedString(asText);
     }
     _.memory.Free(result);
     return defaultValue;

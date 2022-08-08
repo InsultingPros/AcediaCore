@@ -336,7 +336,7 @@ public final function string IntoString(/*take*/ BaseText toConvert)
  *  @return `string` representation of passed `BaseText` as a colored `string`.
  *      Empty `string`, if `toConvert == none`.
  */
-public final function string ToColoredString(/*take*/ Text toConvert)
+public final function string IntoColoredString(/*take*/ BaseText toConvert)
 {
     local string result;
     if (toConvert != none) {
@@ -358,7 +358,7 @@ public final function string ToColoredString(/*take*/ Text toConvert)
  *  @return `string` representation of passed `BaseText` as a formatted `string`.
  *      Empty `string`, if `toConvert == none`.
  */
-public final function string ToFormattedString(/*take*/ BaseText toConvert)
+public final function string IntoFormattedString(/*take*/ BaseText toConvert)
 {
     local string result;
     if (toConvert != none) {
