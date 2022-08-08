@@ -21,35 +21,58 @@ class Commands extends FeatureConfig
     perobjectconfig
     config(AcediaSystem);
 
-var public config bool      useChatInput;
-var public config bool      useMutateInput;
-var public config string    chatCommandPrefix;
+var public config bool          useChatInput;
+var public config bool          useMutateInput;
+var public config string        chatCommandPrefix;
+var public config array<string> allowedPlayers;
 
 protected function HashTable ToData()
 {
+    local int       i;
     local HashTable data;
+    local ArrayList playerList;
+
     data = __().collections.EmptyHashTable();
     data.SetBool(P("useChatInput"), useChatInput, true);
     data.SetBool(P("useMutateInput"), useMutateInput, true);
     data.SetString(P("chatCommandPrefix"), chatCommandPrefix);
+    playerList = _.collections.EmptyArrayList();
+    for (i = 0; i < allowedPlayers.length; i += 1) {
+        playerList.AddString(allowedPlayers[i]);
+    }
+    data.SetItem(P("allowedPlayers"), playerList);
+    playerList.FreeSelf();
     return data;
 }
 
 protected function FromData(HashTable source)
 {
+    local int       i;
+    local ArrayList playerList;
+
     if (source == none) {
         return;
     }
     useChatInput        = source.GetBool(P("useChatInput"));
     useMutateInput      = source.GetBool(P("useMutateInput"));
     chatCommandPrefix   = source.GetString(P("chatCommandPrefix"), "!");
+    playerList          = source.GetArrayList(P("allowedPlayers"));
+    allowedPlayers.length = 0;
+    if (playerList == none) {
+        return;
+    }
+    for (i = 0; i < playerList.GetLength(); i += 1) {
+        allowedPlayers[allowedPlayers.length] = playerList.GetString(i);
+    }
+    playerList.FreeSelf();
 }
 
 protected function DefaultIt()
 {
-    useChatInput        = true;
-    useMutateInput      = true;
-    chatCommandPrefix   = "!";
+    useChatInput            = true;
+    useMutateInput          = true;
+    chatCommandPrefix       = "!";
+    allowedPlayers.length   = 0;
 }
 
 defaultproperties

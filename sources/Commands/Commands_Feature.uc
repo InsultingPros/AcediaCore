@@ -46,6 +46,9 @@ var private /*config*/ bool useMutateInput;
 //  Chat messages, prepended by this prefix will be treated as commands.
 //  Default is "!". Empty values are also treated as "!".
 var private /*config*/ Text chatCommandPrefix;
+//  List of steam IDs of players allowed to use commands.
+//  Temporary measure until a better solution is finished.
+var private /*config*/ array<string> allowedPlayers;
 
 var LoggerAPI.Definition errCommandDuplicate;
 
@@ -94,6 +97,7 @@ protected function SwapConfig(FeatureConfig config)
     }
     _.memory.Free(chatCommandPrefix);
     chatCommandPrefix = _.text.FromString(newConfig.chatCommandPrefix);
+    allowedPlayers = newConfig.allowedPlayers;
     if (useChatInput != newConfig.useChatInput)
     {
         useChatInput = newConfig.useChatInput;
@@ -423,6 +427,8 @@ public final function array<Text> GetGroupsNames()
  */
 public final function HandleInput(Parser parser, EPlayer callerPlayer)
 {
+    local int               i;
+    local bool              foundID;
     local string            steamID;
     local PlayerController  controller;
     local Command           commandInstance;
@@ -435,11 +441,15 @@ public final function HandleInput(Parser parser, EPlayer callerPlayer)
     if (controller == none) return;
 
     steamID = controller.GetPlayerIDHash();
-    if (    steamID != "76561198025127722"
-        &&  steamID != "76561198044316328"
-        &&  steamID != "76561198003353515"
-        &&  steamID != "76561198281136503")
+    for (i = 0; i < allowedPlayers.length; i += 1)
     {
+        if (allowedPlayers[i] == steamID)
+        {
+            foundID = true;
+            break;
+        }
+    }
+    if (!foundID) {
         return;
     }
     parser.MUntilMany(commandName, commandDelimiters, true, true);
