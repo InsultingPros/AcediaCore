@@ -70,3 +70,15 @@ to install
 [AcediaLanucher](https://www.insultplayers.ru/git/AcediaFramework/AcediaLauncher).
 There is a way to use AcediaCore without launcher or any other package, but we
 will document it later, after polishing a few things.
+
+## Related projects
+
+Some of the projects that are still in development:
+
+* [AcediaLanucher](https://www.insultplayers.ru/git/AcediaFramework/AcediaLauncher)
+    - for starting up AcediaCore and packages that depend on it;
+* [AcediaFixes](https://www.insultplayers.ru/git/AcediaFramework/AcediaFixes)
+    - game bug fixes have moved into this package;
+* [Futility](https://www.insultplayers.ru/git/AcediaFramework/Futility)
+    - a package that aims to make administration and mod testing easier through
+    Admin-Plus-esque commands and non-gameplay related configuration features.
