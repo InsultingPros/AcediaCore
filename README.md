@@ -67,7 +67,7 @@ focusing mostly on utility APIs:
 There is no need for installation besides copying the mod file into your
 server's `System/` directory, but to actually make use of AcediaCore you need
 to install
-[AcediaLanucher](https://www.insultplayers.ru/git/AcediaFramework/AcediaLauncher).
+[AcediaLauncher](https://www.insultplayers.ru/git/AcediaFramework/AcediaLauncher).
 There is a way to use AcediaCore without launcher or any other package, but we
 will document it later, after polishing a few things.
 
@@ -75,7 +75,7 @@ will document it later, after polishing a few things.
 
 Some of the projects that are still in development:
 
-* [AcediaLanucher](https://www.insultplayers.ru/git/AcediaFramework/AcediaLauncher)
+* [AcediaLauncher](https://www.insultplayers.ru/git/AcediaFramework/AcediaLauncher)
     - for starting up AcediaCore and packages that depend on it;
 * [AcediaFixes](https://www.insultplayers.ru/git/AcediaFramework/AcediaFixes)
     - game bug fixes have moved into this package;
