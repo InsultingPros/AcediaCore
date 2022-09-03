@@ -23,6 +23,6 @@ class FeatureAliases extends AliasesStorage
 
 defaultproperties
 {
-    configName  = "AcediaAliases"
+    configName  = "AcediaAliases_Features"
     sourceClass = class'FeatureAliasSource'
 }
