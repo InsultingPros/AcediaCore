@@ -177,7 +177,7 @@ public final function AcediaObject GetItemBy(BaseText jsonPointerAsText)
 }
 
 /**
- *  Returns a `bool` value stored (in the caller `Collection` or
+ *  Returns a `bool` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
  *  See `GetItemBy()` for more information.
@@ -219,7 +219,7 @@ public final function bool GetBoolBy(
 }
 
 /**
- *  Returns a `byte` value stored (in the caller `Collection` or
+ *  Returns a `byte` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
  *  See `GetItemBy()` for more information.
@@ -261,13 +261,17 @@ public final function byte GetByteBy(
 }
 
 /**
- *  Returns a `int` value stored (in the caller `Collection` or
+ *  Returns a `int` or `float` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by
- *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
+ *  [JSON pointer](https://tools.ietf.org/html/rfc6901) as `int`.
  *  See `GetItemBy()` for more information.
  *
- *  Referred value must be stored as `IntBox` or `IntRef`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `IntBox`, `IntRef`, `FloatBox` or
+ *  `FloatRef` (or one of their sub-classes) for this method to work.
+ *
+ *  Allowing for implicit conversion between non-`byte` numeric types simplifies
+ *  handling parsed input as there is no need to know whether parsed value is
+ *  expected to be integer or floating point.
  *
  *  @param  jsonPointerAsText   Description of a path to the `int` value.
  *  @param  defaultValue        Value to return in case `jsonPointerAsText`
@@ -284,6 +288,8 @@ public final function int GetIntBy(
     local AcediaObject  resultObject;
     local IntBox        asBox;
     local IntRef        asRef;
+    local FloatBox      asFloatBox;
+    local FloatRef      asFloatRef;
 
     resultObject = GetItemBy(jsonPointerAsText);
     if (resultObject == none) {
@@ -298,18 +304,30 @@ public final function int GetIntBy(
     if (asRef != none) {
         result = asRef.Get();
     }
+    asFloatBox = FloatBox(resultObject);
+    if (asFloatBox != none) {
+        result = int(asFloatBox.Get());
+    }
+    asFloatRef = FloatRef(resultObject);
+    if (asFloatRef != none) {
+        result = int(asFloatRef.Get());
+    }
     _.memory.Free(resultObject);
     return result;
 }
 
 /**
- *  Returns a `float` value stored (in the caller `Collection` or
+ *  Returns a `float` or `int` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by
- *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
+ *  [JSON pointer](https://tools.ietf.org/html/rfc6901) as `float`.
  *  See `GetItemBy()` for more information.
  *
- *  Referred value must be stored as `FloatBox` or `FloatRef`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `IntBox`, `IntRef`, `FloatBox` or
+ *  `FloatRef` (or one of their sub-classes) for this method to work.
+ *
+ *  Allowing for implicit conversion between non-`byte` numeric types simplifies
+ *  handling parsed input as there is no need to know whether parsed value is
+ *  expected to be integer or floating point.
  *
  *  @param  jsonPointerAsText   Description of a path to the `float` value.
  *  @param  defaultValue        Value to return in case `jsonPointerAsText`
@@ -326,6 +344,8 @@ public final function float GetFloatBy(
     local AcediaObject  resultObject;
     local FloatBox      asBox;
     local FloatRef      asRef;
+    local IntBox        asIntBox;
+    local IntRef        asIntRef;
 
     resultObject = GetItemBy(jsonPointerAsText);
     if (resultObject == none) {
@@ -340,12 +360,20 @@ public final function float GetFloatBy(
     if (asRef != none) {
         result = asRef.Get();
     }
+    asIntBox = IntBox(resultObject);
+    if (asIntBox != none) {
+        result = float(asIntBox.Get());
+    }
+    asIntRef = IntRef(resultObject);
+    if (asIntRef != none) {
+        result = float(asIntRef.Get());
+    }
     _.memory.Free(resultObject);
     return result;
 }
 
 /**
- *  Returns a `Vector` value stored (in the caller `Collection` or
+ *  Returns a `Vector` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
  *  See `GetItemBy()` for more information.
@@ -387,7 +415,7 @@ public final function Vector GetVectorBy(
 }
 
 /**
- *  Returns a plain string value stored (in the caller `Collection` or
+ *  Returns a plain string value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
  *  See `GetItemBy()` for more information.
@@ -422,7 +450,7 @@ public final function string GetStringBy(
 }
 
 /**
- *  Returns a formatted string value stored (in the caller `Collection` or
+ *  Returns a formatted string value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
  *  See `GetItemBy()` for more information.
@@ -457,7 +485,7 @@ public final function string GetFormattedStringBy(
 }
 
 /**
- *  Returns a `Text` value stored (in the caller `Collection` or
+ *  Returns a `Text` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
  *  See `GetItemBy()` for more information.
@@ -484,7 +512,7 @@ public final function Text GetTextBy(BaseText jsonPointerAsText)
 }
 
 /**
- *  Returns an `HashTable` value stored (in the caller `Collection` or
+ *  Returns an `HashTable` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
  *  See `GetItemBy()` for more information.
@@ -512,7 +540,7 @@ public final function HashTable GetHashTableBy(
 }
 
 /**
- *  Returns an `ArrayList` value stored (in the caller `Collection` or
+ *  Returns an `ArrayList` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by
  *  [JSON pointer](https://tools.ietf.org/html/rfc6901).
  *  See `GetItemBy()` for more information.
@@ -539,7 +567,7 @@ public final function ArrayList GetArrayListBy(BaseText jsonPointerAsText)
 }
 
 /**
- *  Returns a `bool` value stored (in the caller `Collection` or
+ *  Returns a `bool` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by JSON pointer.
  *  See `GetItemByJSON()` for more information.
  *
@@ -580,7 +608,7 @@ public final function bool GetBoolByJSON(
 }
 
 /**
- *  Returns a `byte` value stored (in the caller `Collection` or
+ *  Returns a `byte` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by JSON pointer.
  *  See `GetItemByJSON()` for more information.
  *
@@ -621,12 +649,16 @@ public final function byte GetByteByJSON(
 }
 
 /**
- *  Returns a `int` value stored (in the caller `Collection` or
- *  one of it's sub-collections) pointed by JSON pointer.
+ *  Returns a `int` or `float` value (stored in the caller `Collection` or
+ *  one of it's sub-collections) pointed by JSON pointer as `int`.
  *  See `GetItemByJSON()` for more information.
  *
- *  Referred value must be stored as `IntBox` or `IntRef`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `IntBox`, `IntRef`, `FloatBox` or
+ *  `FloatRef` (or one of their sub-classes) for this method to work.
+ *
+ *  Allowing for implicit conversion between non-`byte` numeric types simplifies
+ *  handling parsed input as there is no need to know whether parsed value is
+ *  expected to be integer or floating point.
  *
  *  @param  jsonPointer     JSON path to the `int` value.
  *  @param  defaultValue    Value to return in case `jsonPointer`
@@ -643,6 +675,8 @@ public final function int GetIntByJSON(
     local AcediaObject  resultObject;
     local IntBox        asBox;
     local IntRef        asRef;
+    local FloatBox      asFloatBox;
+    local FloatRef      asFloatRef;
 
     resultObject = GetItemByJSON(jsonPointer);
     if (resultObject == none) {
@@ -657,17 +691,29 @@ public final function int GetIntByJSON(
     if (asRef != none) {
         result = asRef.Get();
     }
+    asFloatBox = FloatBox(resultObject);
+    if (asFloatBox != none) {
+        result = int(asFloatBox.Get());
+    }
+    asFloatRef = FloatRef(resultObject);
+    if (asFloatRef != none) {
+        result = int(asFloatRef.Get());
+    }
     _.memory.Free(resultObject);
     return result;
 }
 
 /**
- *  Returns a `float` value stored (in the caller `Collection` or
- *  one of it's sub-collections) pointed by JSON pointer.
+ *  Returns a `float` or `int` value (stored in the caller `Collection` or
+ *  one of it's sub-collections) pointed by JSON pointer as `float`.
  *  See `GetItemByJSON()` for more information.
  *
- *  Referred value must be stored as `FloatBox` or `FloatRef`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `IntBox`, `IntRef`, `FloatBox` or
+ *  `FloatRef` (or one of their sub-classes) for this method to work.
+ *
+ *  Allowing for implicit conversion between non-`byte` numeric types simplifies
+ *  handling parsed input as there is no need to know whether parsed value is
+ *  expected to be integer or floating point.
  *
  *  @param  jsonPointer     JSON path to the `float` value.
  *  @param  defaultValue    Value to return in case `jsonPointer`
@@ -684,6 +730,8 @@ public final function float GetFloatByJSON(
     local AcediaObject  resultObject;
     local FloatBox      asBox;
     local FloatRef      asRef;
+    local IntBox        asIntBox;
+    local IntRef        asIntRef;
 
     resultObject = GetItemByJSON(jsonPointer);
     if (resultObject == none) {
@@ -698,12 +746,20 @@ public final function float GetFloatByJSON(
     if (asRef != none) {
         result = asRef.Get();
     }
+    asIntBox = IntBox(resultObject);
+    if (asIntBox != none) {
+        result = float(asIntBox.Get());
+    }
+    asIntRef = IntRef(resultObject);
+    if (asIntRef != none) {
+        result = float(asIntRef.Get());
+    }
     _.memory.Free(resultObject);
     return result;
 }
 
 /**
- *  Returns a `Vector` value stored (in the caller `Collection` or
+ *  Returns a `Vector` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by JSON pointer.
  *  See `GetItemByJSON()` for more information.
  *
@@ -744,7 +800,7 @@ public final function Vector GetVectorByJSON(
 }
 
 /**
- *  Returns a plain string value stored (in the caller `Collection` or
+ *  Returns a plain string value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by JSON pointer.
  *  See `GetItemByJSON()` for more information.
  *
@@ -778,7 +834,7 @@ public final function string GetStringByJSON(
 }
 
 /**
- *  Returns a formatted string value stored (in the caller `Collection` or
+ *  Returns a formatted string value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by JSON pointer.
  *  See `GetItemByJSON()` for more information.
  *
@@ -812,7 +868,7 @@ public final function string GetFormattedStringByJSON(
 }
 
 /**
- *  Returns a `Text` value stored (in the caller `Collection` or
+ *  Returns a `Text` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by JSON pointer.
  *  See `GetItemByJSON()` for more information.
  *
@@ -838,7 +894,7 @@ public final function Text GetTextByJSON(JSONPointer jsonPointer)
 }
 
 /**
- *  Returns an `HashTable` value stored (in the caller `Collection` or
+ *  Returns an `HashTable` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by JSON pointer.
  *  See `GetItemByJSON()` for more information.
  *
@@ -865,7 +921,7 @@ public final function HashTable GetHashTableByJSON(
 }
 
 /**
- *  Returns an `ArrayList` value stored (in the caller `Collection` or
+ *  Returns an `ArrayList` value (stored in the caller `Collection` or
  *  one of it's sub-collections) pointed by JSON pointer.
  *  See `GetItemByJSON()` for more information.
  *

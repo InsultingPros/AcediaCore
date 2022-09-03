@@ -597,11 +597,15 @@ public final function ArrayList SetByte(
 }
 
 /**
- *  Returns `int` item at `index`. If index is invalid or
- *  stores a non-`int` value, returns `defaultValue`.
+ *  Returns `int` or `float` item at `index` as `int`. If index is invalid or
+ *  stores a non-`int` (or non-`float`) value, returns `defaultValue`.
  *
- *  Referred value must be stored as `IntBox` or `IntRef`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `IntBox`, `IntRef`, `FloatBox` or
+ *  `FloatRef` (or one of their sub-classes) for this method to work.
+ *
+ *  Allowing for implicit conversion between non-`byte` numeric types simplifies
+ *  handling parsed input as there is no need to know whether parsed value is
+ *  expected to be integer or floating point.
  *
  *  @param  index           Index of a `int` item that `ArrayList`
  *      has to return.
@@ -616,6 +620,8 @@ public final function int GetInt(int index, optional int defaultValue)
     local AcediaObject  result;
     local IntBox        asBox;
     local IntRef        asRef;
+    local FloatBox      asFloatBox;
+    local FloatRef      asFloatRef;
 
     result = BorrowItem(index);
     if (result == none) {
@@ -628,6 +634,14 @@ public final function int GetInt(int index, optional int defaultValue)
     asRef = IntRef(result);
     if (asRef != none) {
         return asRef.Get();
+    }
+    asFloatBox = FloatBox(result);
+    if (asFloatBox != none) {
+        return int(asFloatBox.Get());
+    }
+    asFloatRef = FloatRef(result);
+    if (asFloatRef != none) {
+        return int(asFloatRef.Get());
     }
     return defaultValue;
 }
@@ -664,11 +678,15 @@ public final function ArrayList SetInt(
 }
 
 /**
- *  Returns `float` item at `index`. If index is invalid or
- *  stores a non-`int` value, returns `defaultValue`.
+ *  Returns `int` or `float` item at `index` as `float`. If index is invalid or
+ *  stores a non-`float` (or non-`int`) value, returns `defaultValue`.
  *
- *  Referred value must be stored as `FloatBox` or `FloatRef`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `IntBox`, `IntRef`, `FloatBox` or
+ *  `FloatRef` (or one of their sub-classes) for this method to work.
+ *
+ *  Allowing for implicit conversion between non-`byte` numeric types simplifies
+ *  handling parsed input as there is no need to know whether parsed value is
+ *  expected to be integer or floating point.
  *
  *  @param  index           Index of a `float` item that `ArrayList`
  *      has to return.
@@ -683,6 +701,8 @@ public final function float GetFloat(int index, optional float defaultValue)
     local AcediaObject  result;
     local FloatBox      asBox;
     local FloatRef      asRef;
+    local IntBox        asIntBox;
+    local IntRef        asIntRef;
 
     result = BorrowItem(index);
     if (result == none) {
@@ -695,6 +715,14 @@ public final function float GetFloat(int index, optional float defaultValue)
     asRef = FloatRef(result);
     if (asRef != none) {
         return asRef.Get();
+    }
+    asIntBox = IntBox(result);
+    if (asIntBox != none) {
+        return float(asIntBox.Get());
+    }
+    asIntRef = IntRef(result);
+    if (asIntRef != none) {
+        return float(asIntRef.Get());
     }
     return defaultValue;
 }

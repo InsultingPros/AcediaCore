@@ -800,11 +800,15 @@ public final function HashTable SetByte(
 }
 
 /**
- *  Returns `int` item at key `key`. If key is invalid or
- *  stores a non-`int` value, returns `defaultValue`.
+ *  Returns `int` or `float` item at key `key` as `int`. If key is invalid or
+ *  stores a non-`int` (or non-`float`) value, returns `defaultValue`.
  *
- *  Referred value must be stored as `IntBox` or `IntRef`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `IntBox`, `IntRef`, `FloatBox` or
+ *  `FloatRef` (or one of their sub-classes) for this method to work.
+ *
+ *  Allowing for implicit conversion between non-`byte` numeric types simplifies
+ *  handling parsed input as there is no need to know whether parsed value is
+ *  expected to be integer or floating point.
  *
  *  @param  key             Key of a `int` item that `HashTable`
  *      has to return.
@@ -819,6 +823,8 @@ public final function int GetInt(AcediaObject key, optional int defaultValue)
     local AcediaObject  result;
     local IntBox        asBox;
     local IntRef        asRef;
+    local FloatBox      asFloatBox;
+    local FloatRef      asFloatRef;
 
     result = BorrowItem(key);
     if (result == none) {
@@ -831,6 +837,14 @@ public final function int GetInt(AcediaObject key, optional int defaultValue)
     asRef = IntRef(result);
     if (asRef != none) {
         return asRef.Get();
+    }
+    asFloatBox = FloatBox(result);
+    if (asFloatBox != none) {
+        return int(asFloatBox.Get());
+    }
+    asFloatRef = FloatRef(result);
+    if (asFloatRef != none) {
+        return int(asFloatRef.Get());
     }
     return defaultValue;
 }
@@ -867,11 +881,15 @@ public final function HashTable SetInt(
 }
 
 /**
- *  Returns `float` item at key `key`. If key is invalid or
- *  stores a non-`float` value, returns `defaultValue`.
+ *  Returns `int` or `float` item at key `key` as `float`. If key is invalid or
+ *  stores a non-`float` (or non-`int`) value, returns `defaultValue`.
  *
- *  Referred value must be stored as `FloatBox` or `FloatRef`
- *  (or one of their sub-classes) for this method to work.
+ *  Referred value must be stored as `IntBox`, `IntRef`, `FloatBox` or
+ *  `FloatRef` (or one of their sub-classes) for this method to work.
+ *
+ *  Allowing for implicit conversion between non-`byte` numeric types simplifies
+ *  handling parsed input as there is no need to know whether parsed value is
+ *  expected to be integer or floating point.
  *
  *  @param  key             Key of a `float` item that `HashTable`
  *      has to return.
@@ -888,6 +906,8 @@ public final function float GetFloat(
     local AcediaObject  result;
     local FloatBox      asBox;
     local FloatRef      asRef;
+    local IntBox        asIntBox;
+    local IntRef        asIntRef;
 
     result = BorrowItem(key);
     if (result == none) {
@@ -900,6 +920,14 @@ public final function float GetFloat(
     asRef = FloatRef(result);
     if (asRef != none) {
         return asRef.Get();
+    }
+    asIntBox = IntBox(result);
+    if (asIntBox != none) {
+        return float(asIntBox.Get());
+    }
+    asIntRef = IntRef(result);
+    if (asIntRef != none) {
+        return float(asIntRef.Get());
     }
     return defaultValue;
 }
