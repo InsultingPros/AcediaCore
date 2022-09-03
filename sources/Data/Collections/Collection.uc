@@ -97,9 +97,15 @@ public final function AcediaObject GetItemByJSON(JSONPointer jsonPointer)
     local Text          nextSegment;
     local AcediaObject  result, nextObject;
     local Collection    prevCollection, nextCollection;
-    if (jsonPointer == none)            return none;
-    if (jsonPointer.GetLength() < 1)    return self;
 
+    if (jsonPointer == none) {
+        return none;
+    }
+    if (jsonPointer.GetLength() < 1)
+    {
+        NewRef();
+        return self;
+    }
     nextCollection = self;
     nextCollection.NewRef();
     while (segmentIndex < jsonPointer.GetLength() - 1)
@@ -124,7 +130,6 @@ public final function AcediaObject GetItemByJSON(JSONPointer jsonPointer)
         result = nextCollection.GetByText(nextSegment);
         _.memory.Free(nextSegment);
     }
-    _.memory.Free(jsonPointer);
     return result;
 }
 
@@ -167,9 +172,14 @@ public final function AcediaObject GetItemBy(BaseText jsonPointerAsText)
 {
     local AcediaObject  result;
     local JSONPointer   jsonPointer;
-    if (jsonPointerAsText == none)      return none;
-    if (jsonPointerAsText.IsEmpty())    return self;
-
+    if (jsonPointerAsText == none) {
+        return none;
+    }
+    if (jsonPointerAsText.IsEmpty())
+    {
+        NewRef();
+        return self;
+    }
     jsonPointer = _.json.Pointer(jsonPointerAsText);
     result = GetItemByJSON(jsonPointer);
     _.memory.Free(jsonPointer);
