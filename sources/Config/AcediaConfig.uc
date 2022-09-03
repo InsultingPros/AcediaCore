@@ -6,8 +6,7 @@
  *  contents of appropriate section. Then any such class can have multiple
  *  records with different "<config_object_name>" values. The only requirement
  *  is that "<config_object_name>" must be considered *valid* by
- *  `BaseText.IsValidName()` standards, otherwise method will return `none`.
- *
+ *  `BaseText.IsValidName()` standards.
  *      Copyright 2021-2022 Anton Tarasenko
  *------------------------------------------------------------------------------
  * This file is part of Acedia.
@@ -30,6 +29,8 @@ class AcediaConfig extends AcediaObject
     abstract;
 
 /**
+ *  # `AcediaConfig`
+ *
  *      This class deals with several issues related to use of such objects,
  *  stemming from the lack of documentation:
  *
@@ -146,14 +147,14 @@ private static function string NameToActualVersion(string configObjectName)
  *
  *  Fails if config object with that name already exists.
  *  Config name must be considered *valid* by `BaseText.IsValidName()`
- *  standards, otherwise method will return `none`.
+ *  standards.
  *
  *  Always writes new config inside the ini file on disk.
  *
  *  @param  name    Name of the new config object.
  *      Must be considered *valid* by `BaseText.IsValidName()`
  *      standards, otherwise method will fail.
- *  @return `false` iff config object name `name` already existed
+ *  @return `false` iff config object name `name` already exists
  *      or `name` is invalid for config object.
  */
 public final static function bool NewConfig(BaseText name)
@@ -183,8 +184,7 @@ public final static function bool NewConfig(BaseText name)
  *  Checks if a config object with a given name exists.
  *
  *  @param  name    Name of the new config object.
- *      Must be considered *valid* by `BaseText.IsValidName()` standards,
- *      otherwise method will return `false`.
+ *      Must be considered *valid* by `BaseText.IsValidName()` standards.
  *  @return `true` iff new config object was created.
  */
 public final static function bool Exists(BaseText name)
@@ -244,8 +244,9 @@ public static function array<Text> AvailableConfigs()
  *
  *  @param  name    Name of the config object, whos settings data is to
  *      be loaded. Must be considered *valid* by `BaseText.IsValidName()`
- *      standards, otherwise method will return `none`.
+ *      standards.
  *  @return `AcediaConfig` of caller class with name `name`.
+ *      Returns `none` if config with given name doesn't exist.
  */
 public final static function AcediaConfig GetConfigInstance(BaseText name)
 {
@@ -277,13 +278,12 @@ public final static function AcediaConfig GetConfigInstance(BaseText name)
  *  `true`.
  *
  *  @param  name    Name of the config object, whos data is to be loaded.
- *      Name must be considered *valid* by `BaseText.IsValidName()` standards, 
- *      otherwise method will return `false`.
+ *      Name must be considered *valid* by `BaseText.IsValidName()` standards.
  *  @return Data of a particular config object, given by the `name`.
  *      Expected to be in format that allows for JSON serialization
  *      (see `JSONAPI.IsCompatible()` for details).
- *      For correctly implemented config objects should only return `none` if
- *      their class was not yet initialized (see `self.Initialize()` method).
+ *      Returns `none` if config with specified name is missing (or their class
+ *      was not yet initialized: see `self.Initialize()` method).
 */
 public final static function HashTable LoadData(BaseText name)
 {
@@ -304,8 +304,7 @@ public final static function HashTable LoadData(BaseText name)
  *  `true`.
  *
  *  @param  name    Name of the config object, whos data is to be modified.
- *      Name must be considered *valid* by `BaseText.IsValidName()` standards, 
- *      otherwise method will return `false`.
+ *      Name must be considered *valid* by `BaseText.IsValidName()` standards.
  *  @param  data    New data for config variables. Expected to be in format that
  *      allows for JSON deserialization (see `JSONAPI.IsCompatible()` for
  *      details).

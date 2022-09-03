@@ -104,6 +104,9 @@ public static function bool SetAutoEnabledConfig(BaseText autoEnabledConfigName)
     local bool          wasAutoEnabled;
     local bool          enabledSomeConfig;
     local FeatureConfig nextConfig;
+
+    __().memory.Free(default.autoEnabledConfig);
+    default.autoEnabledConfig = none;
     names = AvailableConfigs();
     for (i = 0; i < names.length; i += 1)
     {
