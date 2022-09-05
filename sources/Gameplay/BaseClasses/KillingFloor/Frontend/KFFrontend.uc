@@ -23,6 +23,9 @@ class KFFrontend extends BaseFrontend
 var private config class<ATradingComponent> tradingClass;
 var public ATradingComponent                trading;
 
+var private config class<AWavesComponent>   wavesClass;
+var public AWavesComponent                  waves;
+
 var private config class<AHealthComponent>  healthClass;
 var public AHealthComponent                 health;
 
@@ -32,6 +35,9 @@ protected function Constructor()
     if (tradingClass != none) {
         trading = ATradingComponent(_.memory.Allocate(tradingClass));
     }
+    if (wavesClass != none) {
+        waves = AWavesComponent(_.memory.Allocate(wavesClass));
+    }
     if (healthClass != none) {
         health = AHealthComponent(_.memory.Allocate(healthClass));
     }
@@ -40,8 +46,10 @@ protected function Constructor()
 protected function Finalizer()
 {
     _.memory.Free(trading);
+    _.memory.Free(waves);
     _.memory.Free(health);
     trading = none;
+    waves   = none;
     health  = none;
 }
 
@@ -62,5 +70,6 @@ public function EItemTemplateInfo GetItemTemplateInfo(BaseText templateName)
 defaultproperties
 {
     tradingClass    = none
+    wavesClass      = none
     healthClass     = none
 }

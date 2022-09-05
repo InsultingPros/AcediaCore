@@ -36,5 +36,6 @@ defaultproperties
     templatesClass  = class'KF1_TemplatesComponent'
     worldClass      = class'KF1_WorldComponent'
     tradingClass    = class'KF1_TradingComponent'
+    wavesClass      = class'KF1_WavesComponent'
     healthClass     = class'KF1_HealthComponent'
 }
